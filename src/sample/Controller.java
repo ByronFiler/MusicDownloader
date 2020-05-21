@@ -24,7 +24,7 @@ public class Controller {
         switch (event.getCode()) {
 
             case ENTER:
-                view.handleSearch();
+                view.setSearchData(view.handleSearch());
                 break;
 
         }

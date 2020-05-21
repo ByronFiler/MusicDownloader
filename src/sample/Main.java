@@ -16,9 +16,12 @@ public class Main extends Application {
 
         View view = new View(600, 800);
         Controller controller = new Controller();
+        Utils utils = new Utils();
 
         view.controller = controller;
         controller.view = view;
+
+        utils.view = view;
 
 
         view.start(primaryStage);
