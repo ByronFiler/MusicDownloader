@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 public class View implements EventHandler<KeyEvent>
 {
@@ -186,74 +187,27 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized ArrayList<ArrayList<String>> handleSearch() throws IOException {
 
-        // Load the search data
-        ArrayList<ArrayList<String>> searchResults =  utils.allmusicQuery(searchRequest.getText());
+        final Thread tableHandler = new Thread(allMusicTableHandler, "task-thread-am");
+        tableHandler.setDaemon(true);
+        tableHandler.start();
 
+        resultsTable.setTranslateX((600 - resultsTable.getWidth()) / 2);
+        resultsTable.setTranslateY(50);
 
+        searchResultsTitle.setTranslateX((600 - resultsTable.getWidth()) / 2);
+        searchResultsTitle.setTranslateY(10);
 
-        if (searchResults.size() > 0) {
+        downloadButton.setTranslateX((600 - resultsTable.getWidth()) / 2);
+        downloadButton.setTranslateY(460);
+        downloadButton.setDisable(true);
 
-            // Transition to table
+        cancelButton.setTranslateX(480 - (600 - resultsTable.getWidth()) / 2);
+        cancelButton.setTranslateY(460);
 
-            for (ArrayList<String> searchResult: searchResults)
-            {
-                ImageView selectedImage = new ImageView(new Image(new File("resources/song_default.jpg").toURI().toString()));
-                // Determining the image art to use
-                if (searchResult.get(4).equals("Album")) {
-                    if (searchResult.get(5).equals("")) {
-                        selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
-                    } else {
-                        System.out.println("we're here?");
-                        selectedImage = new ImageView(new Image(searchResult.get(5)));
-                    }
-                } else {
-
-                    Document songDataPage = Jsoup.connect(searchResult.get(6)).get();
-
-                    if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").substring(0, 5).equals("https")) {
-                        selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
-                    } else {
-                        selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
-                    }
-
-                }
-
-                resultsTable.getItems().add(
-                        new Utils.resultsSet(
-                            selectedImage,
-                            searchResult.get(0),
-                            searchResult.get(1),
-                            searchResult.get(2),
-                            searchResult.get(3),
-                            searchResult.get(4)
-                    )
-                );
-            }
-
-            resultsTable.setTranslateX((600 - resultsTable.getWidth()) / 2);
-            resultsTable.setTranslateY(50);
-
-            searchResultsTitle.setTranslateX((600 - resultsTable.getWidth()) / 2);
-            searchResultsTitle.setTranslateY(10);
-
-            downloadButton.setTranslateX((600 - resultsTable.getWidth()) / 2);
-            downloadButton.setTranslateY(460);
-            downloadButton.setDisable(true);
-
-            cancelButton.setTranslateX(480 - (600 - resultsTable.getWidth()) / 2);
-            cancelButton.setTranslateY(460);
-
-            resultsTable.setVisible(true);
-            searchResultsTitle.setVisible(true);
-            downloadButton.setVisible(true);
-            cancelButton.setVisible(true);
-
-
-        } else {
-
-            // Inform user invalid search
-
-        }
+        resultsTable.setVisible(true);
+        searchResultsTitle.setVisible(true);
+        downloadButton.setVisible(true);
+        cancelButton.setVisible(true);
 
         return searchResults;
 
@@ -264,8 +218,6 @@ public class View implements EventHandler<KeyEvent>
     }
 
     public synchronized void cancel() {
-
-
 
         // Clear Table and Hide, Revert to search state
         resultsTable.getItems().clear();
@@ -285,13 +237,12 @@ public class View implements EventHandler<KeyEvent>
         searchesProgressText.setVisible(false);
         searchesProgressText.setText("Search Songs: 0%");
 
-
-
     }
 
     public synchronized void initializeDownload() throws IOException, ParseException {
 
         ArrayList<String> request = searchResults.get(resultsTable.getSelectionModel().getSelectedIndex());
+
         songsData = new ArrayList<>();
         metaData = new HashMap<>();
         String directoryName = "";
@@ -381,7 +332,6 @@ public class View implements EventHandler<KeyEvent>
         }
 
         // 15% of loading bar: Youtube Searches
-
         loading.setVisible(true);
         searchesProgressText.setVisible(true);
 
@@ -411,6 +361,72 @@ public class View implements EventHandler<KeyEvent>
         songsData = newSongsData;
         System.out.println(songsData);
     }
+
+    final Task<Void> allMusicTableHandler = new Task<Void>() {
+
+        @Override
+        protected Void call() throws Exception {
+
+            searchResults =  utils.allmusicQuery(searchRequest.getText());
+
+            if (searchResults.size() > 0) {
+
+                // Transition to table
+
+                for (ArrayList<String> searchResult : searchResults) {
+                    ImageView selectedImage = new ImageView(new Image(new File("resources/song_default.jpg").toURI().toString()));
+                    // Determining the image art to use
+                    if (searchResult.get(4).equals("Album")) {
+                        if (searchResult.get(5).equals("")) {
+                            selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
+                        } else {
+                            selectedImage = new ImageView(new Image(searchResult.get(5)));
+                        }
+                    } else {
+
+                        Document songDataPage = Jsoup.connect(searchResult.get(6)).get();
+
+                        if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").substring(0, 5).equals("https")) {
+                            selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
+                        } else {
+                            selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
+                        }
+
+                    }
+
+                    resultsTable.getItems().add(
+                            new Utils.resultsSet(
+                                    selectedImage,
+                                    searchResult.get(0),
+                                    searchResult.get(1),
+                                    searchResult.get(2),
+                                    searchResult.get(3),
+                                    searchResult.get(4)
+                            )
+                    );
+                }
+            } else {
+                System.out.println("Invalid Search");
+            }
+
+            return null;
+
+        }
+
+        public ArrayList<ArrayList<String>> getSearchResults() {
+            return searchResults;
+        }
+
+        /*
+        Callable<ArrayList<ArrayList<String>>> getSearchResults = new Callable<ArrayList<ArrayList<String>>>() {
+            @Override
+            public ArrayList<ArrayList<String>> call() throws Exception {
+                return searchResults;
+            }
+        };
+         */
+
+    };
 
     final Task<Void> youtubeRequestsHandler = new Task<Void>() {
         @Override
@@ -500,8 +516,6 @@ public class View implements EventHandler<KeyEvent>
             }
 
             updateProgress(1, 1);
-
-
 
             return null;
         }
