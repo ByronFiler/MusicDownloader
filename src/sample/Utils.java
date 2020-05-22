@@ -1,5 +1,6 @@
 package sample;
 
+import javafx.scene.image.ImageView;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -21,16 +22,16 @@ public class Utils {
     public View view;
 
     public static class resultsSet {
-        private String albumArtLink;
+        private ImageView albumArt;
         private String title;
         private String artist;
         private String year;
         private String genre;
         private String type;
 
-        public resultsSet(String identifier, String albumArtLink, String title, String artist, String year, String genre, String type) {
+        public resultsSet(ImageView albumArt, String title, String artist, String year, String genre, String type) {
             super();
-            this.albumArtLink = albumArtLink;
+            this.albumArt = albumArt;
             this.title = title;
             this.artist = artist;
             this.year = year;
@@ -38,12 +39,14 @@ public class Utils {
             this.type = type;
         }
 
-        public String getAlbumArtLink() {
-            return albumArtLink;
+        public ImageView getAlbumArt() {
+            albumArt.setFitHeight(75);
+            albumArt.setFitWidth(75);
+            return albumArt;
         }
 
-        public void setAlbumArtLink(String albumArtLink) {
-            this.albumArtLink = albumArtLink;
+        public void setAlbumArt(ImageView albumArtLink) {
+            this.albumArt = albumArtLink;
         }
 
         public String getTitle() {

@@ -12,6 +12,8 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -130,7 +132,7 @@ public class View implements EventHandler<KeyEvent>
         resultsTable.setVisible(false);
 
         TableColumn<String, Utils.resultsSet> albumArtColumn = new TableColumn<>("Album Art");
-        albumArtColumn.setCellValueFactory(new PropertyValueFactory<>("albumArtLink"));
+        albumArtColumn.setCellValueFactory(new PropertyValueFactory<>("albumArt"));
 
         TableColumn<String, Utils.resultsSet> titleColumn = new TableColumn<>("Title");
         titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
@@ -187,15 +189,22 @@ public class View implements EventHandler<KeyEvent>
         // Load the search data
         ArrayList<ArrayList<String>> searchResults =  utils.allmusicQuery(searchRequest.getText());
 
+
+
         if (searchResults.size() > 0) {
 
             // Transition to table
+
+
+
             for (ArrayList<String> searchResult: searchResults)
             {
+
+                System.out.println(searchResult);
+
                 resultsTable.getItems().add(
                         new Utils.resultsSet(
-                            Integer.toString(searchResults.indexOf(searchResult)),
-                            "art",
+                            searchResult.get(4).equals("Album") ? searchResult.get(5).equals("") ? new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString())) : new ImageView(new Image(searchResult.get(5))): new ImageView(new Image(new File("resources/song_default.png").toURI().toString())),
                             searchResult.get(0),
                             searchResult.get(1),
                             searchResult.get(2),
@@ -240,6 +249,8 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized void cancel() {
 
+
+
         // Clear Table and Hide, Revert to search state
         resultsTable.getItems().clear();
         resultsTable.setVisible(false);
@@ -252,10 +263,13 @@ public class View implements EventHandler<KeyEvent>
         cancelButton.setVisible(false);
 
         loading.setProgress(0);
+        loading.progressProperty().unbind();
         loading.setVisible(false);
 
         searchesProgressText.setVisible(false);
         searchesProgressText.setText("Search Songs: 0%");
+
+
 
     }
 
@@ -470,6 +484,8 @@ public class View implements EventHandler<KeyEvent>
             }
 
             updateProgress(1, 1);
+
+
 
             return null;
         }
