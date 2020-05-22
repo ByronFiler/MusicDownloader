@@ -1,5 +1,6 @@
 package sample;
 
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;

@@ -195,16 +195,25 @@ public class View implements EventHandler<KeyEvent>
 
             // Transition to table
 
-
-
             for (ArrayList<String> searchResult: searchResults)
             {
 
-                System.out.println(searchResult);
+                try {
+                    System.out.println(searchResult.get(0) + ": " +  Jsoup.connect(searchResult.get(6)).get().selectFirst("td.cover").selectFirst("img").attr("src"));
+                    System.out.println(Jsoup.connect(searchResult.get(6)).get().selectFirst("td.cover").selectFirst("img").attr("src").substring(0, 5));
+                } catch (NullPointerException Ignored) {}
 
                 resultsTable.getItems().add(
                         new Utils.resultsSet(
-                            searchResult.get(4).equals("Album") ? searchResult.get(5).equals("") ? new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString())) : new ImageView(new Image(searchResult.get(5))): new ImageView(new Image(new File("resources/song_default.png").toURI().toString())),
+                            searchResult.get(4).equals("Album") ?
+                                    searchResult.get(5).equals("") ?
+                                            new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString())) :
+                                            new ImageView(new Image(searchResult.get(5))) :
+                                    Jsoup.connect(searchResult.get(6)).get().selectFirst("td.cover").selectFirst("img").attr("src") != null ?
+                                            Jsoup.connect(searchResult.get(6)).get().selectFirst("td.cover").selectFirst("img").attr("src").substring(0, 5).equals("https") ?
+                                                    new ImageView(new Image(Jsoup.connect(searchResult.get(6)).get().selectFirst("td.cover").selectFirst("img").attr("src"))) :
+                                                    new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString())) :
+                                            new ImageView(new Image(new File("resources/song_default.jpg").toURI().toString())),
                             searchResult.get(0),
                             searchResult.get(1),
                             searchResult.get(2),
