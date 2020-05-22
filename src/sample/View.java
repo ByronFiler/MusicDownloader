@@ -197,23 +197,30 @@ public class View implements EventHandler<KeyEvent>
 
             for (ArrayList<String> searchResult: searchResults)
             {
+                ImageView selectedImage = new ImageView(new Image(new File("resources/song_default.jpg").toURI().toString()));
+                // Determining the image art to use
+                if (searchResult.get(4).equals("Album")) {
+                    if (searchResult.get(5).equals("")) {
+                        selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
+                    } else {
+                        System.out.println("we're here?");
+                        selectedImage = new ImageView(new Image(searchResult.get(5)));
+                    }
+                } else {
 
-                try {
-                    System.out.println(searchResult.get(0) + ": " +  Jsoup.connect(searchResult.get(6)).get().selectFirst("td.cover").selectFirst("img").attr("src"));
-                    System.out.println(Jsoup.connect(searchResult.get(6)).get().selectFirst("td.cover").selectFirst("img").attr("src").substring(0, 5));
-                } catch (NullPointerException Ignored) {}
+                    Document songDataPage = Jsoup.connect(searchResult.get(6)).get();
+
+                    if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").substring(0, 5).equals("https")) {
+                        selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
+                    } else {
+                        selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
+                    }
+
+                }
 
                 resultsTable.getItems().add(
                         new Utils.resultsSet(
-                            searchResult.get(4).equals("Album") ?
-                                    searchResult.get(5).equals("") ?
-                                            new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString())) :
-                                            new ImageView(new Image(searchResult.get(5))) :
-                                    Jsoup.connect(searchResult.get(6)).get().selectFirst("td.cover").selectFirst("img").attr("src") != null ?
-                                            Jsoup.connect(searchResult.get(6)).get().selectFirst("td.cover").selectFirst("img").attr("src").substring(0, 5).equals("https") ?
-                                                    new ImageView(new Image(Jsoup.connect(searchResult.get(6)).get().selectFirst("td.cover").selectFirst("img").attr("src"))) :
-                                                    new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString())) :
-                                            new ImageView(new Image(new File("resources/song_default.jpg").toURI().toString())),
+                            selectedImage,
                             searchResult.get(0),
                             searchResult.get(1),
                             searchResult.get(2),
