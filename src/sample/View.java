@@ -51,6 +51,8 @@ public class View implements EventHandler<KeyEvent>
     public ArrayList<ArrayList<String>> songsData;
     public HashMap<String, String> metaData;
 
+    public boolean quitQueryThread = false;
+
     public View(int w, int h)
     {
         Debug.trace("View::<constructor>");
@@ -175,9 +177,8 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized ArrayList<ArrayList<String>> handleSearch() {
 
-        final Thread tableHandler = new Thread(allMusicTableHandler, "task-thread-am");
-        tableHandler.setDaemon(true);
-        tableHandler.start();
+        quitQueryThread = true;
+        MyThread tableHandler = new MyThread();
 
         resultsTable.setTranslateX((600 - resultsTable.getWidth()) / 2);
         resultsTable.setTranslateY(50);
@@ -218,6 +219,7 @@ public class View implements EventHandler<KeyEvent>
         downloadButton.setVisible(false);
         cancelButton.setVisible(false);
 
+        loading = new ProgressBar();
         loading.setProgress(0);
         loading.progressProperty().unbind();
         loading.setVisible(false);
@@ -324,9 +326,10 @@ public class View implements EventHandler<KeyEvent>
         searchesProgressText.setVisible(true);
 
         // Make Progress Bar Visible
-        final Thread thread = new Thread(youtubeRequestsHandler, "task-thread");
+        Thread thread = new Thread(youtubeRequestsHandler, "task-thread");
         thread.setDaemon(true);
         thread.start();
+
 
     }
 
@@ -334,16 +337,36 @@ public class View implements EventHandler<KeyEvent>
         return songsData;
     }
 
-    final Task<Void> allMusicTableHandler = new Task<>() {
+    class MyThread implements Runnable {
 
-        @Override
-        protected Void call() throws Exception {
+        Thread t;
+        MyThread (){
+            t = new Thread(this, "query");
+            t.start();
+        }
 
-            searchResults =  Utils.allmusicQuery(searchRequest.getText());
+        public void run() {
+
+            try {
+                searchResults =  Utils.allmusicQuery(searchRequest.getText());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
             if (searchResults.size() > 0) {
 
+                // Signal is always sent immediately when running, only want to kill other threads that are in loop, not this one
+                quitQueryThread = false;
+
                 for (ArrayList<String> searchResult : searchResults) {
+
+                    // Sending a new query requires quitting the old
+                    if (quitQueryThread) {
+                        quitQueryThread = false;
+                        resultsTable.getItems().clear();
+                        break;
+                    }
+
 
                     // Reference for web requests
                     Document songDataPage = null;
@@ -362,7 +385,11 @@ public class View implements EventHandler<KeyEvent>
                         }
                     } else {
 
-                        songDataPage = Jsoup.connect(searchResult.get(6)).get();
+                        try {
+                            songDataPage = Jsoup.connect(searchResult.get(6)).get();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
 
                         if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https")) {
                             selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
@@ -396,14 +423,11 @@ public class View implements EventHandler<KeyEvent>
             } else {
                 System.out.println("Invalid Search");
             }
-
-            return null;
-
         }
 
-    };
+    }
 
-    final Task<Void> youtubeRequestsHandler = new Task<>() {
+    Task<Void> youtubeRequestsHandler = new Task<>() {
         @Override
         protected Void call() throws Exception {
 
