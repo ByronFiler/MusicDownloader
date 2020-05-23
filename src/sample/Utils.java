@@ -112,8 +112,9 @@ public class Utils {
 
         for (Element result: results)
         {
+
             // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
-            if (result.select("h4").text().hashCode() != 1969736551) {
+            if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740) {
                 resultData = new ArrayList<>();
 
                 // Handling The Title, If it's a song it has "" surround it, which it to be removed

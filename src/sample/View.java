@@ -5,7 +5,6 @@ import com.mpatric.mp3agic.ID3v24Tag;
 import com.mpatric.mp3agic.Mp3File;
 import com.sapher.youtubedl.YoutubeDL;
 import com.sapher.youtubedl.YoutubeDLRequest;
-import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -18,19 +17,15 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import org.json.simple.parser.ParseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.Callable;
 
 public class View implements EventHandler<KeyEvent>
 {
@@ -92,7 +87,7 @@ public class View implements EventHandler<KeyEvent>
                 e -> {
                     try {
                         initializeDownload();
-                    } catch (IOException | ParseException ioException) {
+                    } catch (IOException ioException) {
                         ioException.printStackTrace();
                     }
                 }
@@ -123,13 +118,7 @@ public class View implements EventHandler<KeyEvent>
         );
 
         resultsTable = new TableView();
-        resultsTable.getSelectionModel().selectedIndexProperty().addListener((obs, oldSelection, newSelection) -> {
-            if (newSelection != null) {
-                downloadButton.setDisable(false);
-            } else {
-                downloadButton.setDisable(true);
-            }
-        });
+        resultsTable.getSelectionModel().selectedIndexProperty().addListener((obs, oldSelection, newSelection) -> downloadButton.setDisable(newSelection == null));
         resultsTable.setVisible(false);
 
         TableColumn<String, Utils.resultsSet> albumArtColumn = new TableColumn<>("Album Art");
@@ -149,7 +138,6 @@ public class View implements EventHandler<KeyEvent>
 
         TableColumn<String, Utils.resultsSet> typeColumn = new TableColumn<>("Type");
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
-
 
         resultsTable.getColumns().add(albumArtColumn);
         resultsTable.getColumns().add(titleColumn);
@@ -185,7 +173,7 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
-    public synchronized ArrayList<ArrayList<String>> handleSearch() throws IOException {
+    public synchronized ArrayList<ArrayList<String>> handleSearch() {
 
         final Thread tableHandler = new Thread(allMusicTableHandler, "task-thread-am");
         tableHandler.setDaemon(true);
@@ -239,7 +227,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    public synchronized void initializeDownload() throws IOException, ParseException {
+    public synchronized void initializeDownload() throws IOException {
 
         ArrayList<String> request = searchResults.get(resultsTable.getSelectionModel().getSelectedIndex());
 
@@ -247,7 +235,7 @@ public class View implements EventHandler<KeyEvent>
         metaData = new HashMap<>();
         String directoryName = "";
 
-        if (request.get(4) == "Album") {
+        if (request.get(4).equals("Album")) {
             // Prepare all songs
 
             // Producing the folder to save the data to
@@ -342,41 +330,31 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    public synchronized void startDownloads(ArrayList<ArrayList<String>> songsData)
-    {
-        searchesProgressText.setText("Locating Songs: Complete");
-        searchesProgressText.setTextFill(Color.GREEN);
-    }
-
-    public synchronized void setProgress(Double percentage){
-        System.out.println(percentage);
-        loading.setProgress(percentage);
-    }
-
     public synchronized ArrayList<ArrayList<String>> getSongsData() {
         return songsData;
     }
 
-    public synchronized void setSongsData(ArrayList<ArrayList<String>> newSongsData) {
-        songsData = newSongsData;
-        System.out.println(songsData);
-    }
-
-    final Task<Void> allMusicTableHandler = new Task<Void>() {
+    final Task<Void> allMusicTableHandler = new Task<>() {
 
         @Override
         protected Void call() throws Exception {
 
-            searchResults =  utils.allmusicQuery(searchRequest.getText());
+            searchResults =  Utils.allmusicQuery(searchRequest.getText());
 
             if (searchResults.size() > 0) {
 
-                // Transition to table
-
                 for (ArrayList<String> searchResult : searchResults) {
-                    ImageView selectedImage = new ImageView(new Image(new File("resources/song_default.jpg").toURI().toString()));
-                    // Determining the image art to use
+
+                    // Reference for web requests
+                    Document songDataPage = null;
+
+                    // Determining the album art to use, and the year
+                    ImageView selectedImage;
+                    String year = searchResult.get(2);
+                    String genre = searchResult.get(3);
                     if (searchResult.get(4).equals("Album")) {
+
+                        // This is an album request, year must be known or won't be found and hence doesn't require a check
                         if (searchResult.get(5).equals("")) {
                             selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
                         } else {
@@ -384,13 +362,23 @@ public class View implements EventHandler<KeyEvent>
                         }
                     } else {
 
-                        Document songDataPage = Jsoup.connect(searchResult.get(6)).get();
+                        songDataPage = Jsoup.connect(searchResult.get(6)).get();
 
-                        if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").substring(0, 5).equals("https")) {
+                        if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https")) {
                             selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
                         } else {
                             selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
                         }
+
+
+                        if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4 && year.length() == 0) {
+                            year = songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear");
+                        }
+
+                        try {
+                            genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length()-1);
+                        } catch (NullPointerException ignored) {}
+
 
                     }
 
@@ -399,8 +387,8 @@ public class View implements EventHandler<KeyEvent>
                                     selectedImage,
                                     searchResult.get(0),
                                     searchResult.get(1),
-                                    searchResult.get(2),
-                                    searchResult.get(3),
+                                    year,
+                                    genre,
                                     searchResult.get(4)
                             )
                     );
@@ -413,41 +401,28 @@ public class View implements EventHandler<KeyEvent>
 
         }
 
-        public ArrayList<ArrayList<String>> getSearchResults() {
-            return searchResults;
-        }
-
-        /*
-        Callable<ArrayList<ArrayList<String>>> getSearchResults = new Callable<ArrayList<ArrayList<String>>>() {
-            @Override
-            public ArrayList<ArrayList<String>> call() throws Exception {
-                return searchResults;
-            }
-        };
-         */
-
     };
 
-    final Task<Void> youtubeRequestsHandler = new Task<Void>() {
+    final Task<Void> youtubeRequestsHandler = new Task<>() {
         @Override
         protected Void call() throws Exception {
 
             ArrayList<ArrayList<String>> songsData = getSongsData();
 
-            Double loadingPercent = (double)0;
-            Double percentIncrease = ((double)1 / (double)songsData.size()) * (double)0.15;
+            double loadingPercent = 0;
+            double percentIncrease = ((double)1 / (double)songsData.size()) * 0.15;
 
-            for (int i = 0; i < songsData.size(); i++){
+            for (ArrayList<String> songsDatum : songsData) {
 
                 updateProgress(loadingPercent, 1);
-                songsData.get(i).add(Utils.evaluateBestLink(Utils.youtubeQuery(metaData.get("artist") + " " + songsData.get(i).get(0)), Integer.parseInt(songsData.get(i).get(1))));
+                songsDatum.add(Utils.evaluateBestLink(Utils.youtubeQuery(metaData.get("artist") + " " + songsDatum.get(0)), Integer.parseInt(songsDatum.get(1))));
 
                 loadingPercent += percentIncrease;
 
             }
 
-            loadingPercent = (double)0.15;
-            percentIncrease = ((double)1 / (double)songsData.size()) * (double)0.85;
+            loadingPercent = 0.15;
+            percentIncrease = ((double)1 / (double)songsData.size()) * 0.85;
             updateProgress(0.15, 1);
 
             for (ArrayList<String> song: songsData)
@@ -504,15 +479,15 @@ public class View implements EventHandler<KeyEvent>
 
                 mp3Applicator.save(metaData.get("directory") + song.get(0) + ".mp3");
 
-                // Delete old file
                 File deletion = new File(metaData.get("directory") + targetFileName);
-                deletion.delete();
+                if (!deletion.delete()) {
+                    Debug.trace("Failed to delete file: " + metaData.get("directory") + targetFileName);
+                }
+            }
 
-                //if (metaData.containsKey("positionInAlbum")) {
-                deletion = new File("art.jpg");
-                deletion.delete();
-                //}
-
+            File deletion = new File(metaData.get("directory") + "art.jpg");
+            if (!deletion.delete()) {
+                Debug.trace("Failed to delete file: " + metaData.get("directory") + "art.jpg");
             }
 
             updateProgress(1, 1);
