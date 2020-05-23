@@ -177,7 +177,6 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized ArrayList<ArrayList<String>> handleSearch() {
 
-        quitQueryThread = true;
         MyThread tableHandler = new MyThread();
 
         resultsTable.setTranslateX((600 - resultsTable.getWidth()) / 2);
@@ -207,6 +206,9 @@ public class View implements EventHandler<KeyEvent>
     }
 
     public synchronized void cancel() {
+
+        // Stops the search thread from running
+        quitQueryThread = true;
 
         // Clear Table and Hide, Revert to search state
         resultsTable.getItems().clear();
@@ -356,7 +358,6 @@ public class View implements EventHandler<KeyEvent>
             if (searchResults.size() > 0) {
 
                 // Signal is always sent immediately when running, only want to kill other threads that are in loop, not this one
-                quitQueryThread = false;
 
                 for (ArrayList<String> searchResult : searchResults) {
 
@@ -420,6 +421,9 @@ public class View implements EventHandler<KeyEvent>
                             )
                     );
                 }
+
+                System.out.println("Thread has completed");
+
             } else {
                 System.out.println("Invalid Search");
             }
