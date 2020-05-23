@@ -47,9 +47,6 @@ public class View implements EventHandler<KeyEvent>
     public ProgressBar loading;
     public Label searchesProgressText;
 
-    public boolean restartQueryThread = false;
-    public boolean quickQuitMusicHandle = false;
-
     public ArrayList<ArrayList<String>> searchResults;
     public ArrayList<ArrayList<String>> songsData;
     public HashMap<String, String> metaData;
@@ -164,11 +161,6 @@ public class View implements EventHandler<KeyEvent>
         window.setScene(scene);
         window.setTitle("Music Downloader");
 
-        final Thread tableHandler;
-        tableHandler = new Thread(allMusicTableHandler, "task-thread-am");
-        tableHandler.setDaemon(true);
-        tableHandler.start();
-
         window.show();
 
     }
@@ -183,9 +175,9 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized ArrayList<ArrayList<String>> handleSearch() {
 
-        restartQueryThread = true;
-
-        searchResults = new ArrayList<>();
+        final Thread tableHandler = new Thread(allMusicTableHandler, "task-thread-am");
+        tableHandler.setDaemon(true);
+        tableHandler.start();
 
         resultsTable.setTranslateX((600 - resultsTable.getWidth()) / 2);
         resultsTable.setTranslateY(50);
@@ -215,8 +207,6 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized void cancel() {
 
-        quickQuitMusicHandle = true;
-
         // Clear Table and Hide, Revert to search state
         resultsTable.getItems().clear();
         resultsTable.setVisible(false);
@@ -228,10 +218,9 @@ public class View implements EventHandler<KeyEvent>
         downloadButton.setVisible(false);
         cancelButton.setVisible(false);
 
-        loading.setVisible(false);
-        loading = new ProgressBar();
         loading.setProgress(0);
         loading.progressProperty().unbind();
+        loading.setVisible(false);
 
         searchesProgressText.setVisible(false);
         searchesProgressText.setText("Search Songs: 0%");
@@ -350,98 +339,67 @@ public class View implements EventHandler<KeyEvent>
         @Override
         protected Void call() throws Exception {
 
-            try {
-                int i = 0;
-                while (i < Integer.MAX_VALUE) {
+            searchResults =  Utils.allmusicQuery(searchRequest.getText());
 
-                    System.out.println("we're here");
+            if (searchResults.size() > 0) {
 
-                    searchResults = Utils.allmusicQuery(searchRequest.getText());
+                for (ArrayList<String> searchResult : searchResults) {
 
-                    if (searchResults.size() > 0) {
+                    // Reference for web requests
+                    Document songDataPage = null;
 
-                        for (ArrayList<String> searchResult : searchResults) {
+                    // Determining the album art to use, and the year
+                    ImageView selectedImage;
+                    String year = searchResult.get(2);
+                    String genre = searchResult.get(3);
+                    if (searchResult.get(4).equals("Album")) {
 
-                            if (quickQuitMusicHandle) {
-                                quickQuitMusicHandle = false;
-                                resultsTable.getItems().clear();
-                                break;
-                            }
-
-                            // Reference for web requests
-                            Document songDataPage = null;
-
-                            // Determining the album art to use, and the year
-                            ImageView selectedImage;
-                            String year = searchResult.get(2);
-                            String genre = searchResult.get(3);
-                            if (searchResult.get(4).equals("Album")) {
-
-                                // This is an album request, year must be known or won't be found and hence doesn't require a check
-                                if (searchResult.get(5).equals("")) {
-                                    selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
-                                } else {
-                                    selectedImage = new ImageView(new Image(searchResult.get(5)));
-                                }
-                            } else {
-
-                                songDataPage = Jsoup.connect(searchResult.get(6)).get();
-
-                                if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https")) {
-                                    selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
-                                } else {
-                                    selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
-                                }
-
-
-                                if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4 && year.length() == 0) {
-                                    year = songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear");
-                                }
-
-                                try {
-                                    genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length() - 1);
-                                } catch (NullPointerException ignored) {
-                                }
-
-
-                            }
-
-                            resultsTable.getItems().add(
-                                    new Utils.resultsSet(
-                                            selectedImage,
-                                            searchResult.get(0),
-                                            searchResult.get(1),
-                                            year,
-                                            genre,
-                                            searchResult.get(4)
-                                    )
-                            );
+                        // This is an album request, year must be known or won't be found and hence doesn't require a check
+                        if (searchResult.get(5).equals("")) {
+                            selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
+                        } else {
+                            selectedImage = new ImageView(new Image(searchResult.get(5)));
                         }
                     } else {
-                        System.out.println("Invalid Search");
-                    }
 
-                    while (true) {
+                        songDataPage = Jsoup.connect(searchResult.get(6)).get();
 
-                        System.out.println("We're here");
-
-                        if (restartQueryThread) {
-                            restartQueryThread = false;
-                            i++;
-                            break;
+                        if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https")) {
+                            selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
+                        } else {
+                            selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
                         }
+
+
+                        if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4 && year.length() == 0) {
+                            year = songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear");
+                        }
+
+                        try {
+                            genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length()-1);
+                        } catch (NullPointerException ignored) {}
+
+
                     }
 
+                    resultsTable.getItems().add(
+                            new Utils.resultsSet(
+                                    selectedImage,
+                                    searchResult.get(0),
+                                    searchResult.get(1),
+                                    year,
+                                    genre,
+                                    searchResult.get(4)
+                            )
+                    );
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } else {
+                System.out.println("Invalid Search");
             }
 
             return null;
 
         }
-
-
 
     };
 
