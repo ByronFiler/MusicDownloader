@@ -48,6 +48,7 @@ public class View implements EventHandler<KeyEvent>
     public Label searchesProgressText;
 
     public boolean restartQueryThread = false;
+    public boolean quickQuitMusicHandle = false;
 
     public ArrayList<ArrayList<String>> searchResults;
     public ArrayList<ArrayList<String>> songsData;
@@ -214,6 +215,8 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized void cancel() {
 
+        quickQuitMusicHandle = true;
+
         // Clear Table and Hide, Revert to search state
         resultsTable.getItems().clear();
         resultsTable.setVisible(false);
@@ -359,6 +362,12 @@ public class View implements EventHandler<KeyEvent>
 
                         for (ArrayList<String> searchResult : searchResults) {
 
+                            if (quickQuitMusicHandle) {
+                                quickQuitMusicHandle = false;
+                                resultsTable.getItems().clear();
+                                break;
+                            }
+
                             // Reference for web requests
                             Document songDataPage = null;
 
@@ -413,12 +422,16 @@ public class View implements EventHandler<KeyEvent>
                     }
 
                     while (true) {
+
+                        System.out.println("We're here");
+
                         if (restartQueryThread) {
                             restartQueryThread = false;
                             i++;
                             break;
                         }
                     }
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();
