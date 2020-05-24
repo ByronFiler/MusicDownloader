@@ -1,11 +1,9 @@
 package sample;
 
-import com.mpatric.mp3agic.ID3v2;
-import com.mpatric.mp3agic.ID3v24Tag;
-import com.mpatric.mp3agic.Mp3File;
+import com.mpatric.mp3agic.*;
 import com.sapher.youtubedl.YoutubeDL;
+import com.sapher.youtubedl.YoutubeDLException;
 import com.sapher.youtubedl.YoutubeDLRequest;
-import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -17,12 +15,14 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import org.json.simple.parser.ParseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.*;
@@ -30,7 +30,6 @@ import java.util.*;
 public class View implements EventHandler<KeyEvent>
 {
     public Controller controller;
-    public Utils utils;
 
     public int width;
     public int height;
@@ -44,7 +43,7 @@ public class View implements EventHandler<KeyEvent>
     public Label title;
     public Button downloadButton;
     public Button cancelButton;
-    public ProgressBar loading;
+    //public ProgressBar loading;
     public Label searchesProgressText;
 
     public ArrayList<ArrayList<String>> searchResults;
@@ -108,6 +107,7 @@ public class View implements EventHandler<KeyEvent>
         searchesProgressText.setTranslateX(60);
         searchesProgressText.setVisible(false);
 
+        /*
         loading = new ProgressBar();
         loading.setProgress(0);
         loading.setTranslateX(60);
@@ -115,9 +115,10 @@ public class View implements EventHandler<KeyEvent>
         loading.setPrefHeight(20);
         loading.setTranslateY(530);
         loading.setVisible(false);
-        loading.progressProperty().bind(
-                youtubeRequestsHandler.progressProperty()
-        );
+        //loading.progressProperty().bind(
+        //        youtubeRequestsHandler.progressProperty()
+        //);
+         */
 
         resultsTable = new TableView();
         resultsTable.getSelectionModel().selectedIndexProperty().addListener((obs, oldSelection, newSelection) -> downloadButton.setDisable(newSelection == null));
@@ -154,7 +155,7 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(resultsTable);
         pane.getChildren().add(downloadButton);
         pane.getChildren().add(cancelButton);
-        pane.getChildren().add(loading);
+        //pane.getChildren().add(loading);
         pane.getChildren().add(searchesProgressText);
 
         Scene scene = new Scene(pane);
@@ -177,7 +178,8 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized ArrayList<ArrayList<String>> handleSearch() {
 
-        MyThread tableHandler = new MyThread();
+        // Could look at changing how vars are passed, less global ideally
+        new allMusicQuery();
 
         resultsTable.setTranslateX((600 - resultsTable.getWidth()) / 2);
         resultsTable.setTranslateY(50);
@@ -221,10 +223,12 @@ public class View implements EventHandler<KeyEvent>
         downloadButton.setVisible(false);
         cancelButton.setVisible(false);
 
+        /*
         loading = new ProgressBar();
         loading.setProgress(0);
         loading.progressProperty().unbind();
         loading.setVisible(false);
+         */
 
         searchesProgressText.setVisible(false);
         searchesProgressText.setText("Search Songs: 0%");
@@ -324,13 +328,11 @@ public class View implements EventHandler<KeyEvent>
         }
 
         // 15% of loading bar: Youtube Searches
-        loading.setVisible(true);
+        //loading.setVisible(true);
         searchesProgressText.setVisible(true);
 
         // Make Progress Bar Visible
-        Thread thread = new Thread(youtubeRequestsHandler, "task-thread");
-        thread.setDaemon(true);
-        thread.start();
+        new youtubeRequestsHandler();
 
 
     }
@@ -339,15 +341,17 @@ public class View implements EventHandler<KeyEvent>
         return songsData;
     }
 
-    class MyThread implements Runnable {
+    class allMusicQuery implements Runnable {
 
         Thread t;
-        MyThread (){
+        allMusicQuery (){
             t = new Thread(this, "query");
             t.start();
         }
 
         public void run() {
+
+            System.out.println("initialised search thread");
 
             try {
                 searchResults =  Utils.allmusicQuery(searchRequest.getText());
@@ -358,6 +362,9 @@ public class View implements EventHandler<KeyEvent>
             if (searchResults.size() > 0) {
 
                 // Signal is always sent immediately when running, only want to kill other threads that are in loop, not this one
+
+                // Needs to check this won't result in future threads being killed
+                quitQueryThread = false;
 
                 for (ArrayList<String> searchResult : searchResults) {
 
@@ -422,15 +429,161 @@ public class View implements EventHandler<KeyEvent>
                     );
                 }
 
-                System.out.println("Thread has completed");
-
             } else {
+
                 System.out.println("Invalid Search");
+
+                // Display a info bit to the user here
+
+                // Cannot just cancel or it will error due to thread differences
+
             }
+
+            System.out.println("completed search thread");
+
         }
 
     }
 
+    class youtubeRequestsHandler implements Runnable {
+
+        Thread t;
+
+        youtubeRequestsHandler() {
+            t = new Thread(this, "downloader");
+            t.start();
+        }
+
+        public void run() {
+
+            System.out.println("initialised download thread");
+
+            ArrayList<ArrayList<String>> songsData = getSongsData();
+
+            //double loadingPercent = 0;
+            //double percentIncrease = ((double)1 / (double)songsData.size()) * 0.15;
+
+            for (ArrayList<String> songsDatum : songsData) {
+
+                //updateProgress(loadingPercent, 1);
+                try {
+                    songsDatum.add(Utils.evaluateBestLink(Utils.youtubeQuery(metaData.get("artist") + " " + songsDatum.get(0)), Integer.parseInt(songsDatum.get(1))));
+                } catch (IOException | ParseException e) {
+                    e.printStackTrace();
+                }
+
+                //loadingPercent += percentIncrease;
+
+            }
+
+            //loadingPercent = 0.15;
+            //percentIncrease = ((double)1 / (double)songsData.size()) * 0.85;
+            //updateProgress(0.15, 1);
+
+            for (ArrayList<String> song: songsData)
+            {
+                YoutubeDLRequest request = new YoutubeDLRequest(song.get(2), metaData.get("directory"));
+                request.setOption("extract-audio");
+                request.setOption("audio-format mp3");
+                request.setOption("ignore-errors");
+                request.setOption("retries", 10);
+                try {
+                    YoutubeDL.execute(request);
+                } catch (YoutubeDLException e) {
+                    e.printStackTrace();
+                }
+
+                //loadingPercent += percentIncrease;
+                //updateProgress(loadingPercent, 1);
+
+                // We want the name of the file which is output to the current working directory in the format [YOUTUBE-TITLE]-[YOUTUBE-WATCH-ID]
+                File folder = new File(metaData.get("directory"));
+                File[] folderContents = folder.listFiles();
+                String targetFileName = "";
+
+                for (File file: Objects.requireNonNull(folderContents)) {
+                    if (file.isFile()) {
+                        if (file.getName().endsWith("-" + song.get(2).substring(32) + ".mp3")) {
+                            targetFileName = file.getName();
+                        }
+                    }
+                }
+
+                // Now to apply the metadata
+                Mp3File mp3Applicator = null;
+                try {
+                    mp3Applicator = new Mp3File(metaData.get("directory") + targetFileName);
+                } catch (IOException | InvalidDataException | UnsupportedTagException e) {
+                    e.printStackTrace();
+                }
+                ID3v2 id3v2tag = new ID3v24Tag();
+                assert mp3Applicator != null;
+                mp3Applicator.setId3v2Tag(id3v2tag);
+
+                // Album Art Application
+                RandomAccessFile albumArtImg = null;
+                try {
+                    albumArtImg = new RandomAccessFile(metaData.get("directory") + "art.jpg", "r");
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+                // Could break this up into mb loads
+                byte[] bytes = new byte[0];
+                try {
+                    assert albumArtImg != null;
+                    bytes = new byte[(int) albumArtImg.length()];
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    albumArtImg.read(bytes);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    albumArtImg.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                id3v2tag.setAlbumImage(bytes, "image/jpg");
+
+                // Applying remaining data
+                id3v2tag.setTitle(song.get(0));
+                id3v2tag.setAlbum(metaData.get("albumTitle"));
+                id3v2tag.setArtist(metaData.get("artist"));
+                id3v2tag.setAlbumArtist(metaData.get("artist"));
+                id3v2tag.setYear(metaData.get("year"));
+
+                if (metaData.containsKey("positionInAlbum")) {
+                    id3v2tag.setTrack(metaData.get("positionInAlbum"));
+                } else {
+                    id3v2tag.setTrack(Integer.toString(songsData.indexOf(song)));
+                }
+
+                try {
+                    mp3Applicator.save(metaData.get("directory") + song.get(0) + ".mp3");
+                } catch (IOException | NotSupportedException e) {
+                    e.printStackTrace();
+                }
+
+                File deletion = new File(metaData.get("directory") + targetFileName);
+                if (!deletion.delete()) {
+                    Debug.trace("Failed to delete file: " + metaData.get("directory") + targetFileName);
+                }
+            }
+
+            File deletion = new File(metaData.get("directory") + "art.jpg");
+            if (!deletion.delete()) {
+                Debug.trace("Failed to delete file: " + metaData.get("directory") + "art.jpg");
+            }
+
+            System.out.println("completed download thread");
+
+        }
+    }
+
+    /*
     Task<Void> youtubeRequestsHandler = new Task<>() {
         @Override
         protected Void call() throws Exception {
@@ -523,5 +676,6 @@ public class View implements EventHandler<KeyEvent>
             return null;
         }
     };
+     */
 
 }
