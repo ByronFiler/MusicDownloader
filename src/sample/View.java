@@ -4,6 +4,7 @@ import com.mpatric.mp3agic.*;
 import com.sapher.youtubedl.YoutubeDL;
 import com.sapher.youtubedl.YoutubeDLException;
 import com.sapher.youtubedl.YoutubeDLRequest;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -22,9 +23,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.InvocationTargetException;
+import java.time.Instant;
 import java.util.*;
 
 public class View implements EventHandler<KeyEvent>
@@ -43,7 +45,7 @@ public class View implements EventHandler<KeyEvent>
     public Label title;
     public Button downloadButton;
     public Button cancelButton;
-    //public ProgressBar loading;
+    public ProgressBar loading;
     public Label searchesProgressText;
 
     public ArrayList<ArrayList<String>> searchResults;
@@ -107,7 +109,9 @@ public class View implements EventHandler<KeyEvent>
         searchesProgressText.setTranslateX(60);
         searchesProgressText.setVisible(false);
 
-        /*
+        try {
+            loading.setVisible(false);
+        } catch (NullPointerException ignored) {}
         loading = new ProgressBar();
         loading.setProgress(0);
         loading.setTranslateX(60);
@@ -118,7 +122,6 @@ public class View implements EventHandler<KeyEvent>
         //loading.progressProperty().bind(
         //        youtubeRequestsHandler.progressProperty()
         //);
-         */
 
         resultsTable = new TableView();
         resultsTable.getSelectionModel().selectedIndexProperty().addListener((obs, oldSelection, newSelection) -> downloadButton.setDisable(newSelection == null));
@@ -155,7 +158,7 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(resultsTable);
         pane.getChildren().add(downloadButton);
         pane.getChildren().add(cancelButton);
-        //pane.getChildren().add(loading);
+        pane.getChildren().add(loading);
         pane.getChildren().add(searchesProgressText);
 
         Scene scene = new Scene(pane);
@@ -223,12 +226,10 @@ public class View implements EventHandler<KeyEvent>
         downloadButton.setVisible(false);
         cancelButton.setVisible(false);
 
-        /*
         loading = new ProgressBar();
         loading.setProgress(0);
-        loading.progressProperty().unbind();
+        //loading.progressProperty().unbind();
         loading.setVisible(false);
-         */
 
         searchesProgressText.setVisible(false);
         searchesProgressText.setText("Search Songs: 0%");
@@ -280,9 +281,13 @@ public class View implements EventHandler<KeyEvent>
 
             Document songDataRequest = Jsoup.connect(request.get(6)).get();
 
-            String genre = songDataRequest.selectFirst("div.song_genres").selectFirst("div.middle").select("a").text();
-            genre = (genre.split("\\(")[0]);
-            genre = genre.substring(0, genre.length()-1);
+            String genre = "";
+
+            try {
+                genre = songDataRequest.selectFirst("div.song_genres").selectFirst("div.middle").select("a").text();
+                genre = genre.split("\\(")[0];
+                genre = genre.substring(0, genre.length() - 1);
+            } catch (NullPointerException ignored) {}
 
             Document albumDataRequest = Jsoup.connect(songDataRequest.selectFirst("div.title").selectFirst("a").attr("href")).get();
 
@@ -332,7 +337,7 @@ public class View implements EventHandler<KeyEvent>
         searchesProgressText.setVisible(true);
 
         // Make Progress Bar Visible
-        new youtubeRequestsHandler();
+        new downloadHandler();
 
 
     }
@@ -377,7 +382,7 @@ public class View implements EventHandler<KeyEvent>
 
 
                         // Reference for web requests
-                        Document songDataPage = null;
+                        Document songDataPage;
 
                         // Determining the album art to use, and the year
                         ImageView selectedImage;
@@ -406,10 +411,9 @@ public class View implements EventHandler<KeyEvent>
                                 year = songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear");
                             }
 
-
-                            genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length() - 1);
-
-
+                            try {
+                                genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length() - 1);
+                            } catch (NullPointerException ignored) {}
 
                         }
 
@@ -442,11 +446,11 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    class youtubeRequestsHandler implements Runnable {
+    class downloadHandler implements Runnable {
 
         Thread t;
 
-        youtubeRequestsHandler() {
+        downloadHandler() {
             t = new Thread(this, "downloader");
             t.start();
         }
@@ -455,25 +459,35 @@ public class View implements EventHandler<KeyEvent>
 
             ArrayList<ArrayList<String>> songsData = getSongsData();
 
-            //double loadingPercent = 0;
-            //double percentIncrease = ((double)1 / (double)songsData.size()) * 0.15;
+            Platform.runLater(() -> searchesProgressText.setText("0% Complete"));
+            Platform.runLater(() -> loading.setVisible(true));
+            Platform.runLater(() -> loading.setProgress(0));
+
+            int totalPlayTime = 0;
+            for (ArrayList<String> song: songsData) {
+                totalPlayTime += Integer.parseInt(song.get(1));
+            }
+
+            double loadingPercent = 0;
+            double percentIncrease = ((double)1 / (double)songsData.size()) * (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
 
             for (ArrayList<String> songsDatum : songsData) {
 
-                //updateProgress(loadingPercent, 1);
                 try {
                     songsDatum.add(Utils.evaluateBestLink(Utils.youtubeQuery(metaData.get("artist") + " " + songsDatum.get(0)), Integer.parseInt(songsDatum.get(1))));
                 } catch (IOException | ParseException e) {
                     e.printStackTrace();
                 }
 
-                //loadingPercent += percentIncrease;
+                loadingPercent += percentIncrease;
+                double tempLoadingPercent = loadingPercent;
+                Platform.runLater(() -> searchesProgressText.setText(Math.round(tempLoadingPercent*10000)/100 + "% Complete"));
+                Platform.runLater(() -> loading.setProgress(tempLoadingPercent));
 
             }
 
-            //loadingPercent = 0.15;
-            //percentIncrease = ((double)1 / (double)songsData.size()) * 0.85;
-            //updateProgress(0.15, 1);
+            loadingPercent = (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
+            percentIncrease = ((double)1 / (double)songsData.size()) * (totalPlayTime * 0.02313 / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
 
             for (ArrayList<String> song: songsData)
             {
@@ -486,9 +500,6 @@ public class View implements EventHandler<KeyEvent>
                     request.setOption("ignore-errors");
                     request.setOption("retries", 10);
                     YoutubeDL.execute(request);
-
-                    //loadingPercent += percentIncrease;
-                    //updateProgress(loadingPercent, 1);
 
                     // We want the name of the file which is output to the current working directory in the format [YOUTUBE-TITLE]-[YOUTUBE-WATCH-ID]
                     File folder = new File(metaData.get("directory"));
@@ -504,15 +515,13 @@ public class View implements EventHandler<KeyEvent>
                     }
 
                     // Now to apply the metadata
-                    Mp3File mp3Applicator = null;
-                    mp3Applicator = new Mp3File(metaData.get("directory") + targetFileName);
+                    Mp3File mp3Applicator = new Mp3File(metaData.get("directory") + targetFileName);
 
                     ID3v2 id3v2tag = new ID3v24Tag();
                     mp3Applicator.setId3v2Tag(id3v2tag);
 
                     // Album Art Application
-                    RandomAccessFile albumArtImg = null;
-                    albumArtImg = new RandomAccessFile(metaData.get("directory") + "art.jpg", "r");
+                    RandomAccessFile albumArtImg = new RandomAccessFile(metaData.get("directory") + "art.jpg", "r");
 
                     // Could break this up into mb loads
                     byte[] bytes;
@@ -545,9 +554,18 @@ public class View implements EventHandler<KeyEvent>
                     if (!deletion.delete()) {
                         Debug.trace("Failed to delete file: " + metaData.get("directory") + targetFileName);
                     }
+
+                    loadingPercent += percentIncrease;
+                    double tempLoadingPercent = loadingPercent;
+
+                    Platform.runLater(() -> loading.setProgress(tempLoadingPercent));
+                    Platform.runLater(() -> searchesProgressText.setText(Math.round(tempLoadingPercent*10000)/100 + "% Complete"));
+
                 } catch (IOException | YoutubeDLException| InvalidDataException | UnsupportedTagException  e) {
                     e.printStackTrace();
                 }
+
+                //Platform.runLater(() -> loading.setProgress(1));
             }
 
             File deletion = new File(metaData.get("directory") + "art.jpg");
