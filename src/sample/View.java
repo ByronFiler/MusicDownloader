@@ -351,8 +351,6 @@ public class View implements EventHandler<KeyEvent>
 
         public void run() {
 
-            System.out.println("initialised search thread");
-
             try {
                 searchResults =  Utils.allmusicQuery(searchRequest.getText());
             } catch (IOException e) {
@@ -361,72 +359,73 @@ public class View implements EventHandler<KeyEvent>
 
             if (searchResults.size() > 0) {
 
-                // Signal is always sent immediately when running, only want to kill other threads that are in loop, not this one
+                try {
 
-                // Needs to check this won't result in future threads being killed
-                quitQueryThread = false;
+                    // Signal is always sent immediately when running, only want to kill other threads that are in loop, not this one
 
-                for (ArrayList<String> searchResult : searchResults) {
+                    // Needs to check this won't result in future threads being killed
+                    quitQueryThread = false;
 
-                    // Sending a new query requires quitting the old
-                    if (quitQueryThread) {
-                        quitQueryThread = false;
-                        resultsTable.getItems().clear();
-                        break;
-                    }
+                    for (ArrayList<String> searchResult : searchResults) {
 
-
-                    // Reference for web requests
-                    Document songDataPage = null;
-
-                    // Determining the album art to use, and the year
-                    ImageView selectedImage;
-                    String year = searchResult.get(2);
-                    String genre = searchResult.get(3);
-                    if (searchResult.get(4).equals("Album")) {
-
-                        // This is an album request, year must be known or won't be found and hence doesn't require a check
-                        if (searchResult.get(5).equals("")) {
-                            selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
-                        } else {
-                            selectedImage = new ImageView(new Image(searchResult.get(5)));
+                        // Sending a new query requires quitting the old
+                        if (quitQueryThread) {
+                            quitQueryThread = false;
+                            resultsTable.getItems().clear();
+                            break;
                         }
-                    } else {
 
-                        try {
+
+                        // Reference for web requests
+                        Document songDataPage = null;
+
+                        // Determining the album art to use, and the year
+                        ImageView selectedImage;
+                        String year = searchResult.get(2);
+                        String genre = searchResult.get(3);
+                        if (searchResult.get(4).equals("Album")) {
+
+                            // This is an album request, year must be known or won't be found and hence doesn't require a check
+                            if (searchResult.get(5).equals("")) {
+                                selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
+                            } else {
+                                selectedImage = new ImageView(new Image(searchResult.get(5)));
+                            }
+                        } else {
+
                             songDataPage = Jsoup.connect(searchResult.get(6)).get();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+
+                            if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https")) {
+                                selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
+                            } else {
+                                selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
+                            }
+
+
+                            if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4 && year.length() == 0) {
+                                year = songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear");
+                            }
+
+
+                            genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length() - 1);
+
+
+
                         }
 
-                        if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https")) {
-                            selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
-                        } else {
-                            selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
-                        }
-
-
-                        if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4 && year.length() == 0) {
-                            year = songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear");
-                        }
-
-                        try {
-                            genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length()-1);
-                        } catch (NullPointerException ignored) {}
-
-
+                        resultsTable.getItems().add(
+                                new Utils.resultsSet(
+                                        selectedImage,
+                                        searchResult.get(0),
+                                        searchResult.get(1),
+                                        year,
+                                        genre,
+                                        searchResult.get(4)
+                                )
+                        );
                     }
-
-                    resultsTable.getItems().add(
-                            new Utils.resultsSet(
-                                    selectedImage,
-                                    searchResult.get(0),
-                                    searchResult.get(1),
-                                    year,
-                                    genre,
-                                    searchResult.get(4)
-                            )
-                    );
+                } catch (NullPointerException | IOException e) {
+                    e.printStackTrace();
                 }
 
             } else {
@@ -438,8 +437,6 @@ public class View implements EventHandler<KeyEvent>
                 // Cannot just cancel or it will error due to thread differences
 
             }
-
-            System.out.println("completed search thread");
 
         }
 
@@ -455,8 +452,6 @@ public class View implements EventHandler<KeyEvent>
         }
 
         public void run() {
-
-            System.out.println("initialised download thread");
 
             ArrayList<ArrayList<String>> songsData = getSongsData();
 
@@ -482,94 +477,76 @@ public class View implements EventHandler<KeyEvent>
 
             for (ArrayList<String> song: songsData)
             {
-                YoutubeDLRequest request = new YoutubeDLRequest(song.get(2), metaData.get("directory"));
-                request.setOption("extract-audio");
-                request.setOption("audio-format mp3");
-                request.setOption("ignore-errors");
-                request.setOption("retries", 10);
+
                 try {
+
+                    YoutubeDLRequest request = new YoutubeDLRequest(song.get(2), metaData.get("directory"));
+                    request.setOption("extract-audio");
+                    request.setOption("audio-format mp3");
+                    request.setOption("ignore-errors");
+                    request.setOption("retries", 10);
                     YoutubeDL.execute(request);
-                } catch (YoutubeDLException e) {
-                    e.printStackTrace();
-                }
 
-                //loadingPercent += percentIncrease;
-                //updateProgress(loadingPercent, 1);
+                    //loadingPercent += percentIncrease;
+                    //updateProgress(loadingPercent, 1);
 
-                // We want the name of the file which is output to the current working directory in the format [YOUTUBE-TITLE]-[YOUTUBE-WATCH-ID]
-                File folder = new File(metaData.get("directory"));
-                File[] folderContents = folder.listFiles();
-                String targetFileName = "";
+                    // We want the name of the file which is output to the current working directory in the format [YOUTUBE-TITLE]-[YOUTUBE-WATCH-ID]
+                    File folder = new File(metaData.get("directory"));
+                    File[] folderContents = folder.listFiles();
+                    String targetFileName = "";
 
-                for (File file: Objects.requireNonNull(folderContents)) {
-                    if (file.isFile()) {
-                        if (file.getName().endsWith("-" + song.get(2).substring(32) + ".mp3")) {
-                            targetFileName = file.getName();
+                    for (File file : Objects.requireNonNull(folderContents)) {
+                        if (file.isFile()) {
+                            if (file.getName().endsWith("-" + song.get(2).substring(32) + ".mp3")) {
+                                targetFileName = file.getName();
+                            }
                         }
                     }
-                }
 
-                // Now to apply the metadata
-                Mp3File mp3Applicator = null;
-                try {
+                    // Now to apply the metadata
+                    Mp3File mp3Applicator = null;
                     mp3Applicator = new Mp3File(metaData.get("directory") + targetFileName);
-                } catch (IOException | InvalidDataException | UnsupportedTagException e) {
-                    e.printStackTrace();
-                }
-                ID3v2 id3v2tag = new ID3v24Tag();
-                assert mp3Applicator != null;
-                mp3Applicator.setId3v2Tag(id3v2tag);
 
-                // Album Art Application
-                RandomAccessFile albumArtImg = null;
-                try {
+                    ID3v2 id3v2tag = new ID3v24Tag();
+                    mp3Applicator.setId3v2Tag(id3v2tag);
+
+                    // Album Art Application
+                    RandomAccessFile albumArtImg = null;
                     albumArtImg = new RandomAccessFile(metaData.get("directory") + "art.jpg", "r");
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-                // Could break this up into mb loads
-                byte[] bytes = new byte[0];
-                try {
-                    assert albumArtImg != null;
+
+                    // Could break this up into mb loads
+                    byte[] bytes;
                     bytes = new byte[(int) albumArtImg.length()];
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {
                     albumArtImg.read(bytes);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {
                     albumArtImg.close();
-                } catch (IOException e) {
+
+                    id3v2tag.setAlbumImage(bytes, "image/jpg");
+
+                    // Applying remaining data
+                    id3v2tag.setTitle(song.get(0));
+                    id3v2tag.setAlbum(metaData.get("albumTitle"));
+                    id3v2tag.setArtist(metaData.get("artist"));
+                    id3v2tag.setAlbumArtist(metaData.get("artist"));
+                    id3v2tag.setYear(metaData.get("year"));
+
+                    if (metaData.containsKey("positionInAlbum")) {
+                        id3v2tag.setTrack(metaData.get("positionInAlbum"));
+                    } else {
+                        id3v2tag.setTrack(Integer.toString(songsData.indexOf(song)));
+                    }
+
+                    try {
+                        mp3Applicator.save(metaData.get("directory") + song.get(0) + ".mp3");
+                    } catch (IOException | NotSupportedException e) {
+                        e.printStackTrace();
+                    }
+
+                    File deletion = new File(metaData.get("directory") + targetFileName);
+                    if (!deletion.delete()) {
+                        Debug.trace("Failed to delete file: " + metaData.get("directory") + targetFileName);
+                    }
+                } catch (IOException | YoutubeDLException| InvalidDataException | UnsupportedTagException  e) {
                     e.printStackTrace();
-                }
-
-                id3v2tag.setAlbumImage(bytes, "image/jpg");
-
-                // Applying remaining data
-                id3v2tag.setTitle(song.get(0));
-                id3v2tag.setAlbum(metaData.get("albumTitle"));
-                id3v2tag.setArtist(metaData.get("artist"));
-                id3v2tag.setAlbumArtist(metaData.get("artist"));
-                id3v2tag.setYear(metaData.get("year"));
-
-                if (metaData.containsKey("positionInAlbum")) {
-                    id3v2tag.setTrack(metaData.get("positionInAlbum"));
-                } else {
-                    id3v2tag.setTrack(Integer.toString(songsData.indexOf(song)));
-                }
-
-                try {
-                    mp3Applicator.save(metaData.get("directory") + song.get(0) + ".mp3");
-                } catch (IOException | NotSupportedException e) {
-                    e.printStackTrace();
-                }
-
-                File deletion = new File(metaData.get("directory") + targetFileName);
-                if (!deletion.delete()) {
-                    Debug.trace("Failed to delete file: " + metaData.get("directory") + targetFileName);
                 }
             }
 
@@ -577,105 +554,8 @@ public class View implements EventHandler<KeyEvent>
             if (!deletion.delete()) {
                 Debug.trace("Failed to delete file: " + metaData.get("directory") + "art.jpg");
             }
-
-            System.out.println("completed download thread");
 
         }
     }
-
-    /*
-    Task<Void> youtubeRequestsHandler = new Task<>() {
-        @Override
-        protected Void call() throws Exception {
-
-            ArrayList<ArrayList<String>> songsData = getSongsData();
-
-            double loadingPercent = 0;
-            double percentIncrease = ((double)1 / (double)songsData.size()) * 0.15;
-
-            for (ArrayList<String> songsDatum : songsData) {
-
-                updateProgress(loadingPercent, 1);
-                songsDatum.add(Utils.evaluateBestLink(Utils.youtubeQuery(metaData.get("artist") + " " + songsDatum.get(0)), Integer.parseInt(songsDatum.get(1))));
-
-                loadingPercent += percentIncrease;
-
-            }
-
-            loadingPercent = 0.15;
-            percentIncrease = ((double)1 / (double)songsData.size()) * 0.85;
-            updateProgress(0.15, 1);
-
-            for (ArrayList<String> song: songsData)
-            {
-                YoutubeDLRequest request = new YoutubeDLRequest(song.get(2), metaData.get("directory"));
-                request.setOption("extract-audio");
-                request.setOption("audio-format mp3");
-                request.setOption("ignore-errors");
-                request.setOption("retries", 10);
-                YoutubeDL.execute(request);
-
-                loadingPercent += percentIncrease;
-                updateProgress(loadingPercent, 1);
-
-                // We want the name of the file which is output to the current working directory in the format [YOUTUBE-TITLE]-[YOUTUBE-WATCH-ID]
-                File folder = new File(metaData.get("directory"));
-                File[] folderContents = folder.listFiles();
-                String targetFileName = "";
-
-                for (File file: Objects.requireNonNull(folderContents)) {
-                    if (file.isFile()) {
-                        if (file.getName().endsWith("-" + song.get(2).substring(32) + ".mp3")) {
-                            targetFileName = file.getName();
-                        }
-                    }
-                }
-
-                // Now to apply the metadata
-                Mp3File mp3Applicator = new Mp3File(metaData.get("directory") + targetFileName);
-                ID3v2 id3v2tag = new ID3v24Tag();
-                mp3Applicator.setId3v2Tag(id3v2tag);
-
-                // Album Art Application
-                RandomAccessFile albumArtImg = new RandomAccessFile(metaData.get("directory") + "art.jpg", "r");
-                // Could break this up into mb loads
-                byte[] bytes = new byte[(int) albumArtImg.length()];
-                albumArtImg.read(bytes);
-                albumArtImg.close();
-
-                id3v2tag.setAlbumImage(bytes, "image/jpg");
-
-                // Applying remaining data
-                id3v2tag.setTitle(song.get(0));
-                id3v2tag.setAlbum(metaData.get("albumTitle"));
-                id3v2tag.setArtist(metaData.get("artist"));
-                id3v2tag.setAlbumArtist(metaData.get("artist"));
-                id3v2tag.setYear(metaData.get("year"));
-
-                if (metaData.containsKey("positionInAlbum")) {
-                    id3v2tag.setTrack(metaData.get("positionInAlbum"));
-                } else {
-                    id3v2tag.setTrack(Integer.toString(songsData.indexOf(song)));
-                }
-
-                mp3Applicator.save(metaData.get("directory") + song.get(0) + ".mp3");
-
-                File deletion = new File(metaData.get("directory") + targetFileName);
-                if (!deletion.delete()) {
-                    Debug.trace("Failed to delete file: " + metaData.get("directory") + targetFileName);
-                }
-            }
-
-            File deletion = new File(metaData.get("directory") + "art.jpg");
-            if (!deletion.delete()) {
-                Debug.trace("Failed to delete file: " + metaData.get("directory") + "art.jpg");
-            }
-
-            updateProgress(1, 1);
-
-            return null;
-        }
-    };
-     */
 
 }
