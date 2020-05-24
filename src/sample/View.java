@@ -109,9 +109,6 @@ public class View implements EventHandler<KeyEvent>
         searchesProgressText.setTranslateX(60);
         searchesProgressText.setVisible(false);
 
-        try {
-            loading.setVisible(false);
-        } catch (NullPointerException ignored) {}
         loading = new ProgressBar();
         loading.setProgress(0);
         loading.setTranslateX(60);
@@ -119,9 +116,6 @@ public class View implements EventHandler<KeyEvent>
         loading.setPrefHeight(20);
         loading.setTranslateY(530);
         loading.setVisible(false);
-        //loading.progressProperty().bind(
-        //        youtubeRequestsHandler.progressProperty()
-        //);
 
         resultsTable = new TableView();
         resultsTable.getSelectionModel().selectedIndexProperty().addListener((obs, oldSelection, newSelection) -> downloadButton.setDisable(newSelection == null));
@@ -226,10 +220,8 @@ public class View implements EventHandler<KeyEvent>
         downloadButton.setVisible(false);
         cancelButton.setVisible(false);
 
-        loading = new ProgressBar();
-        loading.setProgress(0);
-        //loading.progressProperty().unbind();
         loading.setVisible(false);
+        loading.setProgress(0);
 
         searchesProgressText.setVisible(false);
         searchesProgressText.setText("Search Songs: 0%");
@@ -239,6 +231,8 @@ public class View implements EventHandler<KeyEvent>
     public synchronized void initializeDownload() throws IOException {
 
         ArrayList<String> request = searchResults.get(resultsTable.getSelectionModel().getSelectedIndex());
+
+        loading.setVisible(true);
 
         songsData = new ArrayList<>();
         metaData = new HashMap<>();
