@@ -481,7 +481,6 @@ public class View implements EventHandler<KeyEvent>
             }
 
             loadingPercent = (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
-            percentIncrease = ((double)1 / (double)songsData.size()) * (totalPlayTime * 0.02313 / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
 
             for (ArrayList<String> song: songsData)
             {
@@ -549,6 +548,7 @@ public class View implements EventHandler<KeyEvent>
                         Debug.trace("Failed to delete file: " + metaData.get("directory") + targetFileName);
                     }
 
+                    percentIncrease = ((double)Integer.parseInt(song.get(1)) / (double)totalPlayTime) * (totalPlayTime * 0.02313 / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
                     loadingPercent += percentIncrease;
                     double tempLoadingPercent = loadingPercent;
 
