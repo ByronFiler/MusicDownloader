@@ -1,6 +1,5 @@
 package sample;
 
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -14,7 +13,6 @@ import org.jsoup.select.Elements;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 

@@ -4,7 +4,10 @@ import com.mpatric.mp3agic.*;
 import com.sapher.youtubedl.YoutubeDL;
 import com.sapher.youtubedl.YoutubeDLException;
 import com.sapher.youtubedl.YoutubeDLRequest;
+import com.sapher.youtubedl.YoutubeDLResponse;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -15,7 +18,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.stage.Stage;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
@@ -32,12 +37,17 @@ import java.util.*;
 public class View implements EventHandler<KeyEvent>
 {
     public Controller controller;
+    public Settings settings;
 
     public int width;
     public int height;
 
     public Pane pane;
     public Canvas canvas;
+
+    public String outputDirectorySetting;
+    public int musicFormatSetting;
+    public int saveAlbumArtSetting;
 
     public TextField searchRequest;
     public TableView resultsTable;
@@ -47,6 +57,40 @@ public class View implements EventHandler<KeyEvent>
     public Button cancelButton;
     public ProgressBar loading;
     public Label searchesProgressText;
+    public Line footerMarker;
+    public Label settingsLink;
+    public Button settingsLinkButton;
+
+
+    // Settings
+    public Label settingsTitle;
+
+    // Program
+    public Label programSettingsTitle;
+    public Label version;
+    public Label versionResult;
+    public Label latestVersion;
+    public Label latestVersionResult;
+    public Label youtubeDlVerification;
+    public Label youtubeDlVerificationResult;
+
+    // File
+    public Label fileSettingsTitle;
+    public Label outputDirectory;
+    public Label outputDirectoryResult;
+    public Label songDownloadFormat;
+    public ComboBox songDownloadFormatResult;
+    public Label saveAlbumArt;
+    public ComboBox saveAlbumArtResult;
+
+    // Buttons
+    public Button confirmChanges;
+    public Button cancelBackButton;
+
+    // Settings Lines
+    public Line settingTitleSubline;
+    public Line programSettingsTitleSubline;
+    public Line fileSettingsTitleSubline;
 
     public ArrayList<ArrayList<String>> searchResults;
     public ArrayList<ArrayList<String>> songsData;
@@ -68,6 +112,13 @@ public class View implements EventHandler<KeyEvent>
 
         canvas = new Canvas(width, height);
         pane.getChildren().add(canvas);
+
+        settings = new Settings();
+        JSONObject config = settings.getSettings();
+
+        outputDirectorySetting = (String) config.get("output_directory");
+        musicFormatSetting = Integer.parseInt(Long.toString((Long) config.get("music_format")));
+        saveAlbumArtSetting = Integer.parseInt(Long.toString((Long) config.get("save_album_art")));
 
         title = new Label("Music Downloader");
         title.setTextFill(Color.BLACK);
@@ -117,6 +168,24 @@ public class View implements EventHandler<KeyEvent>
         loading.setTranslateY(530);
         loading.setVisible(false);
 
+        footerMarker = new Line(0, 800-50, 600, 800-50);
+
+        // Create a box here surrounding it, invisible to handle clicks in a wider area
+        settingsLink = new Label("Settings");
+        settingsLink.setStyle("-fx-font: 24 arial;");
+        settingsLink.setTranslateY(800 - 40);
+        settingsLink.setTranslateX(10);
+
+        settingsLinkButton = new Button();
+        settingsLinkButton.setPrefSize(100, 25);
+        settingsLinkButton.setTranslateX(10);
+        settingsLinkButton.setTranslateY(800 - 35);
+        settingsLinkButton.setStyle("-fx-cursor: hand;");
+        settingsLinkButton.setOpacity(0);
+        settingsLinkButton.setOnAction(
+                e -> settingsMode()
+        );
+
         resultsTable = new TableView();
         resultsTable.getSelectionModel().selectedIndexProperty().addListener((obs, oldSelection, newSelection) -> downloadButton.setDisable(newSelection == null));
         resultsTable.setVisible(false);
@@ -146,6 +215,105 @@ public class View implements EventHandler<KeyEvent>
         resultsTable.getColumns().add(genreColumn);
         resultsTable.getColumns().add(typeColumn);
 
+        // Settings
+        settingsTitle = new Label("Settings");
+        settingsTitle.setStyle("-fx-font: 28 arial;");
+        settingsTitle.setTranslateX(30);
+        settingsTitle.setTranslateY(10);
+        settingsTitle.setVisible(false);
+
+        programSettingsTitle = new Label("Information");
+        programSettingsTitle.setStyle("-fx-font: 22 arial;");
+        programSettingsTitle.setTranslateX(30);
+        programSettingsTitle.setTranslateY(80);
+        programSettingsTitle.setVisible(false);
+
+        version = new Label("Version: ");
+        version.setStyle("-fx-font: 16 arial;");
+        version.setTranslateX(30);
+        version.setTranslateY(115);
+        version.setVisible(false);
+
+        latestVersion = new Label("Latest Version: ");
+        latestVersion.setStyle("-fx-font: 16 arial;");
+        latestVersion.setTranslateX(30);
+        latestVersion.setTranslateY(135);
+        latestVersion.setVisible(false);
+
+        youtubeDlVerification = new Label("YouTube-DL Status: ");
+        youtubeDlVerification.setStyle("-fx-font: 16 arial;");
+        youtubeDlVerification.setTranslateX(30);
+        youtubeDlVerification.setTranslateY(155);
+        youtubeDlVerification.setVisible(false);
+
+        fileSettingsTitle = new Label("Files");
+        fileSettingsTitle.setStyle("-fx-font: 22 arial;");
+        fileSettingsTitle.setTranslateX(30);
+        fileSettingsTitle.setTranslateY(195);
+        fileSettingsTitle.setVisible(false);
+
+        outputDirectory = new Label("Save music to: ");
+        outputDirectory.setStyle("-fx-font: 16 arial;");
+        outputDirectory.setTranslateX(30);
+        outputDirectory.setTranslateY(230);
+        outputDirectory.setVisible(false);
+
+        outputDirectoryResult = new Label(outputDirectorySetting.equals("") ? System.getProperty("user.dir") : outputDirectorySetting);
+        outputDirectoryResult.setStyle("-fx-font: 16 arial;");
+        outputDirectoryResult.setTranslateY(230);
+        outputDirectoryResult.setVisible(false);
+
+        songDownloadFormat = new Label("Music format: ");
+        songDownloadFormat.setStyle("-fx-font: 16 arial;");
+        songDownloadFormat.setTranslateX(30);
+        songDownloadFormat.setTranslateY(250);
+        songDownloadFormat.setVisible(false);
+
+        songDownloadFormatResult = new ComboBox(FXCollections.observableArrayList(
+                "mp3",
+                "wav",
+                "ogg",
+                "aac"
+        ));
+        songDownloadFormatResult.setTranslateX(600 - 30);
+        songDownloadFormatResult.setTranslateY(250);
+        songDownloadFormatResult.setVisible(false);
+
+        saveAlbumArt = new Label("Save Album Art: ");
+        saveAlbumArt.setStyle("-fx-font: 16 arial;");
+        saveAlbumArt.setTranslateX(30);
+        saveAlbumArt.setTranslateY(270);
+        saveAlbumArt.setVisible(false);
+
+        saveAlbumArtResult = new ComboBox(FXCollections.observableArrayList(
+                "No",
+                "Albums Only",
+                "Songs Only",
+                "All"
+        ));
+        saveAlbumArtResult.setTranslateY(270);
+        saveAlbumArtResult.setVisible(false);
+
+        confirmChanges = new Button("Confirm");
+        confirmChanges.setTranslateY(800-50);
+        confirmChanges.setTranslateX(30);
+        confirmChanges.setVisible(false);
+
+        cancelBackButton = new Button("Cancel");
+        cancelBackButton.setTranslateY(800-50);
+        cancelBackButton.setVisible(false);
+
+        // Settings Lines
+        settingTitleSubline = new Line(30, 45, 600-30, 45);
+        settingTitleSubline.setVisible(false);
+
+        programSettingsTitleSubline = new Line(30, 105, 600-30, 105);
+        programSettingsTitleSubline.setVisible(false);
+
+        fileSettingsTitleSubline = new Line(30, 220, 600-30, 220);
+        fileSettingsTitleSubline.setVisible(false);
+
+        // Search
         pane.getChildren().add(title);
         pane.getChildren().add(searchRequest);
         pane.getChildren().add(searchResultsTitle);
@@ -154,6 +322,33 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(cancelButton);
         pane.getChildren().add(loading);
         pane.getChildren().add(searchesProgressText);
+        pane.getChildren().add(footerMarker);
+        pane.getChildren().add(settingsLink);
+        pane.getChildren().add(settingsLinkButton);
+
+        // Settings
+        pane.getChildren().add(settingsTitle);
+        pane.getChildren().add(programSettingsTitle);
+        pane.getChildren().add(version);
+        //pane.getChildren().add(versionResult);
+        pane.getChildren().add(latestVersion);
+        //pane.getChildren().add(latestVersionResult);
+        pane.getChildren().add(youtubeDlVerification);
+        //pane.getChildren().add(youtubeDlVerificationResult);
+        pane.getChildren().add(fileSettingsTitle);
+        pane.getChildren().add(outputDirectory);
+        pane.getChildren().add(outputDirectoryResult);
+        pane.getChildren().add(songDownloadFormat);
+        pane.getChildren().add(songDownloadFormatResult);
+        pane.getChildren().add(saveAlbumArt);
+        pane.getChildren().add(saveAlbumArtResult);
+        pane.getChildren().add(confirmChanges);
+        pane.getChildren().add(cancelBackButton);
+
+        // Settings Lines
+        pane.getChildren().add(settingTitleSubline);
+        pane.getChildren().add(programSettingsTitleSubline);
+        pane.getChildren().add(fileSettingsTitleSubline);
 
         Scene scene = new Scene(pane);
         scene.setOnKeyPressed(this);
@@ -340,6 +535,57 @@ public class View implements EventHandler<KeyEvent>
         return songsData;
     }
 
+    public synchronized void settingsMode() {
+
+        // Set search to invisible
+        searchRequest.setVisible(false);
+        title.setVisible(false);
+
+        // Setting settings link footer to invisible
+        footerMarker.setVisible(false);
+        settingsLink.setVisible(false);
+        settingsLinkButton.setVisible(false);
+
+        // Set setting elements visible
+        settingsTitle.setVisible(true);
+
+        // Program
+        programSettingsTitle.setVisible(true);
+        latestVersion.setVisible(true);
+        version.setVisible(true);
+        youtubeDlVerification.setVisible(true);
+
+        // File
+        fileSettingsTitle.setVisible(true);
+        outputDirectory.setVisible(true);
+        outputDirectoryResult.setVisible(true);
+        songDownloadFormat.setVisible(true);
+        songDownloadFormatResult.setVisible(true);
+        saveAlbumArt.setVisible(true);
+        saveAlbumArtResult.setVisible(true);
+
+        // Buttons
+        confirmChanges.setVisible(true);
+        cancelBackButton.setVisible(true);
+        cancelBackButton.setTranslateX(600 - 30 - cancelBackButton.getWidth());
+
+        // Lines
+        settingTitleSubline.setVisible(true);
+        programSettingsTitleSubline.setVisible(true);
+        fileSettingsTitleSubline.setVisible(true);
+
+        // Setting the labels for information
+        outputDirectoryResult.setTranslateX(600 - 30 - outputDirectoryResult.getWidth());
+        songDownloadFormatResult.setTranslateX(600 - 30 - songDownloadFormatResult.getWidth());
+        saveAlbumArtResult.setTranslateX(600 - 30 - saveAlbumArtResult.getWidth());
+
+        // Additional selection
+        songDownloadFormatResult.getSelectionModel().select(musicFormatSetting);
+        saveAlbumArtResult.getSelectionModel().select(saveAlbumArtSetting);
+
+
+    }
+
     class allMusicQuery implements Runnable {
 
         Thread t;
@@ -492,8 +738,9 @@ public class View implements EventHandler<KeyEvent>
                     request.setOption("audio-format mp3");
                     request.setOption("ignore-errors");
                     request.setOption("retries", 10);
-                    YoutubeDL.execute(request);
 
+                    YoutubeDLResponse response = YoutubeDL.execute(request);
+                    
                     // We want the name of the file which is output to the current working directory in the format [YOUTUBE-TITLE]-[YOUTUBE-WATCH-ID]
                     File folder = new File(metaData.get("directory"));
                     File[] folderContents = folder.listFiles();
