@@ -3,6 +3,8 @@ package sample;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import java.io.*;
 
@@ -35,11 +37,12 @@ public class Settings {
 
     }
 
-    public synchronized String getVersion() throws IOException, ParseException {
+    public synchronized String getVersion() {
 
         try {
             JSONParser parser = new JSONParser();
-            JSONObject jo = (JSONObject) parser.parse(new FileReader("resources\\json\\config.json"));
+            JSONObject jo = (JSONObject) parser.parse(new FileReader("resources\\json\\meta.json"));
+
             return (String) jo.get("version");
 
         } catch (IOException e) {
@@ -72,6 +75,31 @@ public class Settings {
             return false;
 
         }
+
+    }
+
+    public synchronized String getLatestVersion() {
+
+        try {
+            JSONParser parser = new JSONParser();
+            Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/resources/json/meta.json").get();
+            JSONObject jsonData = (JSONObject) parser.parse(githubRequestLatestVersion.text());
+
+            return (String) jsonData.get("version");
+
+        } catch (IOException | ParseException e) {
+            return "-1";
+        }
+
+    }
+
+    public synchronized String checkYouTubeDl() {
+
+        // Check youtube-dl is working
+
+        // Check ffmpeg is working
+
+        return "Fully Operational";
 
     }
 

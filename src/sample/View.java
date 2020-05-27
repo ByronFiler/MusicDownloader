@@ -49,6 +49,8 @@ public class View implements EventHandler<KeyEvent>
     public int musicFormatSetting;
     public int saveAlbumArtSetting;
 
+    public String programVersion;
+
     public TextField searchRequest;
     public TableView resultsTable;
     public Label searchResultsTitle;
@@ -116,9 +118,13 @@ public class View implements EventHandler<KeyEvent>
         settings = new Settings();
         JSONObject config = settings.getSettings();
 
+        settings.checkYouTubeDl();
+
         outputDirectorySetting = (String) config.get("output_directory");
         musicFormatSetting = Integer.parseInt(Long.toString((Long) config.get("music_format")));
         saveAlbumArtSetting = Integer.parseInt(Long.toString((Long) config.get("save_album_art")));
+
+        programVersion = settings.getVersion();
 
         title = new Label("Music Downloader");
         title.setTextFill(Color.BLACK);
@@ -234,17 +240,32 @@ public class View implements EventHandler<KeyEvent>
         version.setTranslateY(115);
         version.setVisible(false);
 
+        versionResult = new Label(programVersion);
+        versionResult.setStyle("-fx-font: 16 arial;");
+        versionResult.setTranslateY(115);
+        versionResult.setVisible(false);
+
         latestVersion = new Label("Latest Version: ");
         latestVersion.setStyle("-fx-font: 16 arial;");
         latestVersion.setTranslateX(30);
         latestVersion.setTranslateY(135);
         latestVersion.setVisible(false);
 
+        latestVersionResult = new Label("Locating...");
+        latestVersionResult.setStyle("-fx-font: 16 arial;");
+        latestVersionResult.setTranslateY(135);
+        latestVersionResult.setVisible(false);
+
         youtubeDlVerification = new Label("YouTube-DL Status: ");
         youtubeDlVerification.setStyle("-fx-font: 16 arial;");
         youtubeDlVerification.setTranslateX(30);
         youtubeDlVerification.setTranslateY(155);
         youtubeDlVerification.setVisible(false);
+
+        youtubeDlVerificationResult = new Label(settings.checkYouTubeDl());
+        youtubeDlVerificationResult.setStyle("-fx-font: 16 arial;");
+        youtubeDlVerificationResult.setTranslateY(155);
+        youtubeDlVerificationResult.setVisible(false);
 
         fileSettingsTitle = new Label("Files");
         fileSettingsTitle.setStyle("-fx-font: 22 arial;");
@@ -266,7 +287,7 @@ public class View implements EventHandler<KeyEvent>
         songDownloadFormat = new Label("Music format: ");
         songDownloadFormat.setStyle("-fx-font: 16 arial;");
         songDownloadFormat.setTranslateX(30);
-        songDownloadFormat.setTranslateY(250);
+        songDownloadFormat.setTranslateY(255);
         songDownloadFormat.setVisible(false);
 
         songDownloadFormatResult = new ComboBox(FXCollections.observableArrayList(
@@ -276,13 +297,13 @@ public class View implements EventHandler<KeyEvent>
                 "aac"
         ));
         songDownloadFormatResult.setTranslateX(600 - 30);
-        songDownloadFormatResult.setTranslateY(250);
+        songDownloadFormatResult.setTranslateY(255);
         songDownloadFormatResult.setVisible(false);
 
         saveAlbumArt = new Label("Save Album Art: ");
         saveAlbumArt.setStyle("-fx-font: 16 arial;");
         saveAlbumArt.setTranslateX(30);
-        saveAlbumArt.setTranslateY(270);
+        saveAlbumArt.setTranslateY(280);
         saveAlbumArt.setVisible(false);
 
         saveAlbumArtResult = new ComboBox(FXCollections.observableArrayList(
@@ -291,7 +312,7 @@ public class View implements EventHandler<KeyEvent>
                 "Songs Only",
                 "All"
         ));
-        saveAlbumArtResult.setTranslateY(270);
+        saveAlbumArtResult.setTranslateY(280);
         saveAlbumArtResult.setVisible(false);
 
         confirmChanges = new Button("Confirm");
@@ -301,6 +322,7 @@ public class View implements EventHandler<KeyEvent>
 
         cancelBackButton = new Button("Cancel");
         cancelBackButton.setTranslateY(800-50);
+        cancelBackButton.setOnAction(e -> searchMode());
         cancelBackButton.setVisible(false);
 
         // Settings Lines
@@ -330,11 +352,11 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(settingsTitle);
         pane.getChildren().add(programSettingsTitle);
         pane.getChildren().add(version);
-        //pane.getChildren().add(versionResult);
+        pane.getChildren().add(versionResult);
         pane.getChildren().add(latestVersion);
-        //pane.getChildren().add(latestVersionResult);
+        pane.getChildren().add(latestVersionResult);
         pane.getChildren().add(youtubeDlVerification);
-        //pane.getChildren().add(youtubeDlVerificationResult);
+        pane.getChildren().add(youtubeDlVerificationResult);
         pane.getChildren().add(fileSettingsTitle);
         pane.getChildren().add(outputDirectory);
         pane.getChildren().add(outputDirectoryResult);
@@ -552,8 +574,11 @@ public class View implements EventHandler<KeyEvent>
         // Program
         programSettingsTitle.setVisible(true);
         latestVersion.setVisible(true);
+        latestVersionResult.setVisible(true);
         version.setVisible(true);
+        versionResult.setVisible(true);
         youtubeDlVerification.setVisible(true);
+        youtubeDlVerificationResult.setVisible(true);
 
         // File
         fileSettingsTitle.setVisible(true);
@@ -578,12 +603,58 @@ public class View implements EventHandler<KeyEvent>
         outputDirectoryResult.setTranslateX(600 - 30 - outputDirectoryResult.getWidth());
         songDownloadFormatResult.setTranslateX(600 - 30 - songDownloadFormatResult.getWidth());
         saveAlbumArtResult.setTranslateX(600 - 30 - saveAlbumArtResult.getWidth());
+        versionResult.setTranslateX(600 - 30 - versionResult.getWidth());
+        latestVersionResult.setTranslateX(600 - 30 - latestVersionResult.getWidth());
+        youtubeDlVerificationResult.setTranslateX(600 - 30 - youtubeDlVerificationResult.getWidth());
 
         // Additional selection
         songDownloadFormatResult.getSelectionModel().select(musicFormatSetting);
         saveAlbumArtResult.getSelectionModel().select(saveAlbumArtSetting);
 
+        // Scheduling getting latest version
+        new getLatestVersion();
 
+    }
+
+    public synchronized void searchMode() {
+        // Set search to visible
+        searchRequest.setVisible(true);
+        title.setVisible(true);
+
+        // Setting settings link footer to visible
+        footerMarker.setVisible(true);
+        settingsLink.setVisible(true);
+        settingsLinkButton.setVisible(true);
+
+        // Set setting elements invisible
+        settingsTitle.setVisible(false);
+
+        // Program
+        programSettingsTitle.setVisible(false);
+        latestVersion.setVisible(false);
+        latestVersionResult.setVisible(false);
+        version.setVisible(false);
+        versionResult.setVisible(false);
+        youtubeDlVerification.setVisible(false);
+        youtubeDlVerificationResult.setVisible(false);
+
+        // File
+        fileSettingsTitle.setVisible(false);
+        outputDirectory.setVisible(false);
+        outputDirectoryResult.setVisible(false);
+        songDownloadFormat.setVisible(false);
+        songDownloadFormatResult.setVisible(false);
+        saveAlbumArt.setVisible(false);
+        saveAlbumArtResult.setVisible(false);
+
+        // Buttons
+        confirmChanges.setVisible(false);
+        cancelBackButton.setVisible(false);
+
+        // Lines
+        settingTitleSubline.setVisible(false);
+        programSettingsTitleSubline.setVisible(false);
+        fileSettingsTitleSubline.setVisible(false);
     }
 
     class allMusicQuery implements Runnable {
@@ -815,6 +886,33 @@ public class View implements EventHandler<KeyEvent>
             }
 
         }
+    }
+
+    class getLatestVersion implements Runnable {
+
+        Thread t;
+        getLatestVersion (){
+            t = new Thread(this, "get-latest-version");
+            t.start();
+        }
+
+        public void run() {
+
+            Settings settings = new Settings();
+            Platform.runLater(() -> latestVersionResult.setText(settings.getLatestVersion()));
+            // Come back when I know how to do this properly
+            // It works incredibly well and it's shaving literally less than 100th of a second off but could be nicer looking
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            Platform.runLater(() -> latestVersionResult.setTranslateX(600 - 30 - latestVersionResult.getWidth()));
+
+
+
+        }
+
     }
 
 }
