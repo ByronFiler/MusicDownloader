@@ -27,6 +27,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -46,6 +47,7 @@ public class View implements EventHandler<KeyEvent>
     public Canvas canvas;
 
     public String outputDirectorySetting;
+    public String OutputDirectorySettingNew;
     public int musicFormatSetting;
     public int saveAlbumArtSetting;
 
@@ -63,7 +65,6 @@ public class View implements EventHandler<KeyEvent>
     public Label settingsLink;
     public Button settingsLinkButton;
 
-
     // Settings
     public Label settingsTitle;
 
@@ -80,6 +81,7 @@ public class View implements EventHandler<KeyEvent>
     public Label fileSettingsTitle;
     public Label outputDirectory;
     public Label outputDirectoryResult;
+    public Button outputDirectoryButton;
     public Label songDownloadFormat;
     public ComboBox songDownloadFormatResult;
     public Label saveAlbumArt;
@@ -100,15 +102,13 @@ public class View implements EventHandler<KeyEvent>
 
     public boolean quitQueryThread = false;
 
-    public View(int w, int h)
-    {
+    public View(int w, int h) {
         Debug.trace("View::<constructor>");
         width = w;
         height = h;
     }
 
-    public void start(Stage window)
-    {
+    public void start(Stage window) {
         pane = new Pane();
         pane.setId("initial");
 
@@ -121,6 +121,7 @@ public class View implements EventHandler<KeyEvent>
         settings.checkYouTubeDl();
 
         outputDirectorySetting = (String) config.get("output_directory");
+        OutputDirectorySettingNew = outputDirectorySetting;
         musicFormatSetting = Integer.parseInt(Long.toString((Long) config.get("music_format")));
         saveAlbumArtSetting = Integer.parseInt(Long.toString((Long) config.get("save_album_art")));
 
@@ -284,6 +285,13 @@ public class View implements EventHandler<KeyEvent>
         outputDirectoryResult.setTranslateY(230);
         outputDirectoryResult.setVisible(false);
 
+        outputDirectoryButton = new Button();
+        outputDirectoryButton.setTranslateY(230);
+        outputDirectoryButton.setStyle("-fx-cursor: hand;");
+        outputDirectoryButton.setOpacity(0);
+        outputDirectoryButton.setOnAction(e -> new selectFolder());
+        outputDirectoryButton.setVisible(false);
+
         songDownloadFormat = new Label("Music format: ");
         songDownloadFormat.setStyle("-fx-font: 16 arial;");
         songDownloadFormat.setTranslateX(30);
@@ -318,6 +326,7 @@ public class View implements EventHandler<KeyEvent>
         confirmChanges = new Button("Confirm");
         confirmChanges.setTranslateY(800-50);
         confirmChanges.setTranslateX(30);
+        confirmChanges.setOnAction(e -> submit());
         confirmChanges.setVisible(false);
 
         cancelBackButton = new Button("Cancel");
@@ -360,6 +369,7 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(fileSettingsTitle);
         pane.getChildren().add(outputDirectory);
         pane.getChildren().add(outputDirectoryResult);
+        pane.getChildren().add(outputDirectoryButton);
         pane.getChildren().add(songDownloadFormat);
         pane.getChildren().add(songDownloadFormatResult);
         pane.getChildren().add(saveAlbumArt);
@@ -557,6 +567,18 @@ public class View implements EventHandler<KeyEvent>
         return songsData;
     }
 
+    public synchronized void selectNewFolder() {
+
+        try {
+            JFileChooser newFolder = new JFileChooser();
+            newFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            newFolder.showSaveDialog(null);
+
+            OutputDirectorySettingNew = newFolder.getSelectedFile().getPath();
+
+        } catch (NullPointerException ignored) {} // User cancels the operation
+    }
+
     public synchronized void settingsMode() {
 
         // Set search to invisible
@@ -590,6 +612,7 @@ public class View implements EventHandler<KeyEvent>
         saveAlbumArtResult.setVisible(true);
 
         // Buttons
+        outputDirectoryButton.setVisible(true);
         confirmChanges.setVisible(true);
         cancelBackButton.setVisible(true);
         cancelBackButton.setTranslateX(600 - 30 - cancelBackButton.getWidth());
@@ -606,6 +629,10 @@ public class View implements EventHandler<KeyEvent>
         versionResult.setTranslateX(600 - 30 - versionResult.getWidth());
         latestVersionResult.setTranslateX(600 - 30 - latestVersionResult.getWidth());
         youtubeDlVerificationResult.setTranslateX(600 - 30 - youtubeDlVerificationResult.getWidth());
+
+        // Invisilbe button for selection
+        outputDirectoryButton.setTranslateX(600 - 30 - outputDirectoryResult.getWidth());
+        outputDirectoryButton.setPrefSize(outputDirectoryResult.getWidth(), 25);
 
         // Additional selection
         songDownloadFormatResult.getSelectionModel().select(musicFormatSetting);
@@ -655,6 +682,34 @@ public class View implements EventHandler<KeyEvent>
         settingTitleSubline.setVisible(false);
         programSettingsTitleSubline.setVisible(false);
         fileSettingsTitleSubline.setVisible(false);
+    }
+
+    public synchronized void submit() {
+
+        // Saving to file
+        settings.saveSettings(
+                OutputDirectorySettingNew,
+                songDownloadFormatResult
+                        .getSelectionModel()
+                        .selectedIndexProperty()
+                        .getValue(),
+                saveAlbumArtResult
+                        .getSelectionModel()
+                        .selectedIndexProperty()
+                        .getValue()
+        );
+
+        // Setting the vars
+        outputDirectorySetting = OutputDirectorySettingNew;
+        musicFormatSetting = songDownloadFormatResult
+                .getSelectionModel()
+                .selectedIndexProperty()
+                .getValue();
+        saveAlbumArtSetting = saveAlbumArtResult
+                .getSelectionModel()
+                .selectedIndexProperty()
+                .getValue();
+
     }
 
     class allMusicQuery implements Runnable {
@@ -903,7 +958,7 @@ public class View implements EventHandler<KeyEvent>
             // Come back when I know how to do this properly
             // It works incredibly well and it's shaving literally less than 100th of a second off but could be nicer looking
             try {
-                Thread.sleep(10);
+                Thread.sleep(20);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -913,6 +968,38 @@ public class View implements EventHandler<KeyEvent>
 
         }
 
+    }
+
+    class selectFolder implements  Runnable {
+        Thread t;
+        selectFolder (){
+            t = new Thread(this, "folder-selection");
+            t.start();
+        }
+
+        public void run() {
+
+            selectNewFolder();
+
+            // Change this to checking the original width and wait until it's different from new
+
+            Platform.runLater(() -> outputDirectoryResult.setText(OutputDirectorySettingNew));
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            Platform.runLater(() -> outputDirectoryResult.setTranslateX(600 - 30 - outputDirectoryResult.getWidth()));
+
+            Platform.runLater(() -> outputDirectoryButton.setTranslateX(600 - 30 - outputDirectoryResult.getWidth()));
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            Platform.runLater(() -> outputDirectoryButton.setPrefSize(outputDirectoryResult.getWidth(), 25));
+
+        }
     }
 
 }

@@ -21,11 +21,34 @@ public class Controller {
     public void userKeyInteraction (KeyEvent event) throws Exception {
         Debug.trace("User key interaction" + event.getCode());
 
+        if (
+                view.settingsTitle.isVisible() &&
+                view.OutputDirectorySettingNew.equals(view.outputDirectorySetting) &&
+                view.musicFormatSetting == view.songDownloadFormatResult
+                        .getSelectionModel()
+                        .selectedIndexProperty()
+                        .getValue() &&
+                view.saveAlbumArtSetting == view.saveAlbumArtResult
+                        .getSelectionModel()
+                        .selectedIndexProperty()
+                        .getValue()
+        ) {
+            switch (event.getCode()) {
+
+                case ESCAPE:
+                    view.searchMode();
+                    break;
+
+
+            }
+        }
+
         switch (event.getCode()) {
 
             case ENTER:
                 view.setSearchData(view.handleSearch());
                 break;
+
 
         }
 

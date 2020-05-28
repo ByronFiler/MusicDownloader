@@ -103,4 +103,22 @@ public class Settings {
 
     }
 
+    public synchronized void saveSettings(String output_directory, int music_format, int save_album_art) {
+
+        JSONObject newSettings = new JSONObject();
+        newSettings.put("output_directory", output_directory);
+        newSettings.put("music_format", music_format);
+        newSettings.put("save_album_art", save_album_art);
+
+        try {
+            FileWriter configFile = new FileWriter("resources\\json\\config.json");
+            configFile.write(newSettings.toJSONString());
+            configFile.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+    }
+
 }
