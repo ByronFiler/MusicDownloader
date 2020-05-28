@@ -98,14 +98,15 @@ public class Settings {
 
     }
 
-    public synchronized void saveSettings(String output_directory, int music_format, int save_album_art, int album_art, int title, int artist, int year, int track) {
+    public synchronized void saveSettings(String output_directory, int music_format, int save_album_art, int album_art, int album_title, int song_title, int artist, int year, int track) {
 
         JSONObject newSettings = new JSONObject();
         newSettings.put("output_directory", output_directory);
         newSettings.put("music_format", music_format);
         newSettings.put("save_album_art", save_album_art);
         newSettings.put("album_art", album_art);
-        newSettings.put("title", title);
+        newSettings.put("album_title", album_title);
+        newSettings.put("song_title", song_title);
         newSettings.put("artist", artist);
         newSettings.put("year", year);
         newSettings.put("track", track);
