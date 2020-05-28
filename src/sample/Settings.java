@@ -59,7 +59,7 @@ public class Settings {
 
         try {
             FileWriter newConfig = new FileWriter("resources\\json\\config.json");
-            newConfig.write("{\"output_directory\":\"\",\"save_album_art\":1,\"music_format\":0, \"album_art\": 1, \"title\":  1, \"artist\":  1, \"year\": 1, \"track\": 1}");
+            newConfig.write("{\"output_directory\":\"\",\"save_album_art\":1,\"music_format\":0, \"album_art\": 1, \"album_title\":  1, \"song_title\": 1, \"artist\":  1, \"year\": 1, \"track\": 1}");
             newConfig.close();
 
             return true;

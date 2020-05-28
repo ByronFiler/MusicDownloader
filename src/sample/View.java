@@ -1325,6 +1325,11 @@ public class View implements EventHandler<KeyEvent>
 
             selectNewFolder();
 
+            if (OutputDirectorySettingNew.hashCode() == 0) {
+                OutputDirectorySettingNew = outputDirectorySetting;
+                return;
+            }
+
             // Change this to checking the original width and wait until it's different from new
 
             Platform.runLater(() -> outputDirectoryResult.setText(OutputDirectorySettingNew));
