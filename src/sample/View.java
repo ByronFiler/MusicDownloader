@@ -19,6 +19,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
+import javafx.scene.paint.Color;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.jsoup.nodes.Document;
@@ -33,7 +34,6 @@ import java.io.RandomAccessFile;
 import java.util.*;
 
 // TODO: Add settings for metadata application
-// TODO: cancel button should cancel in progress download
 // TODO: Hide download folder where possible until download completed
 // TODO: Add button to install and configure youtube-dl & ffmpeg
 
@@ -48,10 +48,17 @@ public class View implements EventHandler<KeyEvent>
     public Pane pane;
     public Canvas canvas;
 
+    // Settings
     public String outputDirectorySetting;
     public String OutputDirectorySettingNew;
     public int musicFormatSetting;
     public int saveAlbumArtSetting;
+
+    public boolean applyAlbumArt;
+    public boolean applyAlbumTitle;
+    public boolean applyArtist;
+    public boolean applyYear;
+    public boolean applyTrack;
 
     public String programVersion;
 
@@ -85,9 +92,23 @@ public class View implements EventHandler<KeyEvent>
     public Label outputDirectoryResult;
     public Button outputDirectoryButton;
     public Label songDownloadFormat;
-    public ComboBox songDownloadFormatResult;
+    public ComboBox<String> songDownloadFormatResult;
     public Label saveAlbumArt;
-    public ComboBox saveAlbumArtResult;
+    public ComboBox<String> saveAlbumArtResult;
+
+    // Metadata
+    public Label metaDataTitle;
+    public Label albumArtSetting;
+    public ComboBox<String> albumArtSettingResult;
+    public Label albumTitleSetting;
+    public ComboBox<String> albumTitleSettingResult;
+    public Label artistSetting;
+    public ComboBox<String> artistSettingResult;
+    public Label yearSetting;
+    public ComboBox<String> yearSettingResult;
+    public Label trackNumberSetting;
+    public ComboBox<String> trackNumberSettingResult;
+    public Label metaDataWarning;
 
     // Buttons
     public Button confirmChanges;
@@ -97,6 +118,7 @@ public class View implements EventHandler<KeyEvent>
     public Line settingTitleSubline;
     public Line programSettingsTitleSubline;
     public Line fileSettingsTitleSubline;
+    public Line metaDataTitleSubline;
 
     public ArrayList<ArrayList<String>> searchResults;
     public ArrayList<ArrayList<String>> songsData;
@@ -123,12 +145,16 @@ public class View implements EventHandler<KeyEvent>
         settings = new Settings();
         JSONObject config = settings.getSettings();
 
-        settings.checkYouTubeDl();
-
         outputDirectorySetting = (String) config.get("output_directory");
         OutputDirectorySettingNew = outputDirectorySetting;
         musicFormatSetting = Integer.parseInt(Long.toString((Long) config.get("music_format")));
         saveAlbumArtSetting = Integer.parseInt(Long.toString((Long) config.get("save_album_art")));
+
+        applyAlbumArt = (Long) config.get("album_art") != 0;
+        applyAlbumTitle = (Long) config.get("title") != 0;
+        applyArtist = (Long) config.get("artist") != 0;
+        applyYear = (Long) config.get("year") != 0;
+        applyTrack = (Long) config.get("track") != 0;
 
         programVersion = settings.getVersion();
 
@@ -309,6 +335,9 @@ public class View implements EventHandler<KeyEvent>
                 "ogg",
                 "aac"
         ));
+        songDownloadFormatResult.setOnAction(
+                e -> setMetaDataVisibility()
+        );
         songDownloadFormatResult.setTranslateX(600 - 30);
         songDownloadFormatResult.setTranslateY(255);
         songDownloadFormatResult.setVisible(false);
@@ -327,6 +356,84 @@ public class View implements EventHandler<KeyEvent>
         ));
         saveAlbumArtResult.setTranslateY(280);
         saveAlbumArtResult.setVisible(false);
+
+        metaDataTitle = new Label("Meta-Data Application");
+        metaDataTitle.setStyle("-fx-font: 22 arial;");
+        metaDataTitle.setTranslateX(30);
+        metaDataTitle.setTranslateY(320);
+        metaDataTitle.setVisible(false);
+
+        albumArtSetting = new Label("Album Art: ");
+        albumArtSetting.setStyle("-fx-font: 16 arial;");
+        albumArtSetting.setTranslateX(30);
+        albumArtSetting.setTranslateY(355);
+        albumArtSetting.setVisible(false);
+
+        albumArtSettingResult = new ComboBox(FXCollections.observableArrayList(
+                "Enabled",
+                "Disabled"
+        ));
+        albumArtSettingResult.setTranslateY(355);
+        albumArtSettingResult.setVisible(false);
+
+        albumTitleSetting = new Label("Album Title: ");
+        albumTitleSetting.setStyle("-fx-font: 16 arial;");
+        albumTitleSetting.setTranslateX(30);
+        albumTitleSetting.setTranslateY(380);
+        albumTitleSetting.setVisible(false);
+
+        albumTitleSettingResult = new ComboBox(FXCollections.observableArrayList(
+                "Enabled",
+                "Disabled"
+        ));
+        albumTitleSettingResult.setTranslateY(380);
+        albumTitleSettingResult.setVisible(false);
+
+        artistSetting = new Label("Artist: ");
+        artistSetting.setStyle("-fx-font: 16 arial;");
+        artistSetting.setTranslateX(30);
+        artistSetting.setTranslateY(405);
+        artistSetting.setVisible(false);
+
+
+        artistSettingResult = new ComboBox(FXCollections.observableArrayList(
+                "Enabled",
+                "Disabled"
+        ));
+        artistSettingResult.setTranslateY(405);
+        artistSettingResult.setVisible(false);
+
+        yearSetting = new Label("Year: ");
+        yearSetting.setStyle("-fx-font: 16 arial;");
+        yearSetting.setTranslateX(30);
+        yearSetting.setTranslateY(430);
+        yearSetting.setVisible(false);
+
+        yearSettingResult = new ComboBox(FXCollections.observableArrayList(
+                "Enabled",
+                "Disabled"
+        ));
+        yearSettingResult.setTranslateY(430);
+        yearSettingResult.setVisible(false);
+
+        trackNumberSetting = new Label("Track Number: ");
+        trackNumberSetting.setStyle("-fx-font: 16 arial;");
+        trackNumberSetting.setTranslateX(30);
+        trackNumberSetting.setTranslateY(455);
+        trackNumberSetting.setVisible(false);
+
+        trackNumberSettingResult = new ComboBox(FXCollections.observableArrayList(
+                "Enabled",
+                "Disabled"
+        ));
+        trackNumberSettingResult.setTranslateY(455);
+        trackNumberSettingResult.setVisible(false);
+
+        metaDataWarning = new Label("Meta-data application is only available for mp3 files.");
+        metaDataWarning.setStyle("-fx-font: 16 arial;");
+        metaDataWarning.setTranslateX(30);
+        metaDataWarning.setTranslateY(480);
+        metaDataWarning.setVisible(false);
 
         confirmChanges = new Button("Confirm");
         confirmChanges.setTranslateY(800-50);
@@ -348,6 +455,9 @@ public class View implements EventHandler<KeyEvent>
 
         fileSettingsTitleSubline = new Line(30, 220, 600-30, 220);
         fileSettingsTitleSubline.setVisible(false);
+
+        metaDataTitleSubline = new Line(30, 345, 600-30, 345);
+        metaDataTitleSubline.setVisible(false);
 
         // Search
         pane.getChildren().add(title);
@@ -379,13 +489,26 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(songDownloadFormatResult);
         pane.getChildren().add(saveAlbumArt);
         pane.getChildren().add(saveAlbumArtResult);
+        pane.getChildren().add(metaDataTitle);
+        pane.getChildren().add(albumArtSetting);
+        pane.getChildren().add(albumArtSettingResult);
+        pane.getChildren().add(albumTitleSetting);
+        pane.getChildren().add(albumTitleSettingResult);
+        pane.getChildren().add(artistSetting);
+        pane.getChildren().add(artistSettingResult);
+        pane.getChildren().add(yearSetting);
+        pane.getChildren().add(yearSettingResult);
+        pane.getChildren().add(trackNumberSetting);
+        pane.getChildren().add(trackNumberSettingResult);
         pane.getChildren().add(confirmChanges);
         pane.getChildren().add(cancelBackButton);
+        pane.getChildren().add(metaDataWarning);
 
         // Settings Lines
         pane.getChildren().add(settingTitleSubline);
         pane.getChildren().add(programSettingsTitleSubline);
         pane.getChildren().add(fileSettingsTitleSubline);
+        pane.getChildren().add(metaDataTitleSubline);
 
         Scene scene = new Scene(pane);
         scene.setOnKeyPressed(this);
@@ -438,8 +561,36 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    public synchronized void setSearchData(ArrayList<ArrayList<String>> newData) {
-        searchResults = newData;
+    public synchronized ArrayList<ArrayList<String>> getSongsData() {
+        return songsData;
+    }
+
+    public synchronized void setMetaDataVisibility() {
+
+        boolean disableComboBoxes;
+        Color colour;
+
+        if (songDownloadFormatResult.getSelectionModel().selectedIndexProperty().getValue() == 0) {
+            disableComboBoxes = false;
+            colour = Color.BLACK;
+        } else {
+            disableComboBoxes = true;
+            colour = Color.LIGHTGRAY;
+        }
+
+        albumArtSettingResult.setDisable(disableComboBoxes);
+        albumTitleSettingResult.setDisable(disableComboBoxes);
+        artistSettingResult.setDisable(disableComboBoxes);
+        yearSettingResult.setDisable(disableComboBoxes);
+        trackNumberSettingResult.setDisable(disableComboBoxes);
+
+        albumArtSetting.setTextFill(colour);
+        albumTitleSetting.setTextFill(colour);
+        artistSetting.setTextFill(colour);
+        yearSetting.setTextFill(colour);
+        trackNumberSetting.setTextFill(colour);
+
+        metaDataWarning.setVisible(disableComboBoxes);
     }
 
     public synchronized void cancel() {
@@ -579,10 +730,6 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    public synchronized ArrayList<ArrayList<String>> getSongsData() {
-        return songsData;
-    }
-
     public synchronized void selectNewFolder() {
 
         try {
@@ -627,6 +774,19 @@ public class View implements EventHandler<KeyEvent>
         saveAlbumArt.setVisible(true);
         saveAlbumArtResult.setVisible(true);
 
+        // Metadata
+        metaDataTitle.setVisible(true);
+        albumArtSetting.setVisible(true);
+        albumArtSettingResult.setVisible(true);
+        albumTitleSetting.setVisible(true);
+        albumTitleSettingResult.setVisible(true);
+        artistSetting.setVisible(true);
+        artistSettingResult.setVisible(true);
+        yearSetting.setVisible(true);
+        yearSettingResult.setVisible(true);
+        trackNumberSetting.setVisible(true);
+        trackNumberSettingResult.setVisible(true);
+
         // Buttons
         outputDirectoryButton.setVisible(true);
         confirmChanges.setVisible(true);
@@ -637,6 +797,7 @@ public class View implements EventHandler<KeyEvent>
         settingTitleSubline.setVisible(true);
         programSettingsTitleSubline.setVisible(true);
         fileSettingsTitleSubline.setVisible(true);
+        metaDataTitleSubline.setVisible(true);
 
         // Setting the labels for information
         outputDirectoryResult.setTranslateX(600 - 30 - outputDirectoryResult.getWidth());
@@ -646,6 +807,12 @@ public class View implements EventHandler<KeyEvent>
         latestVersionResult.setTranslateX(600 - 30 - latestVersionResult.getWidth());
         youtubeDlVerificationResult.setTranslateX(600 - 30 - youtubeDlVerificationResult.getWidth());
 
+        albumArtSettingResult.setTranslateX(600 - 30 - albumArtSettingResult.getWidth());
+        albumTitleSettingResult.setTranslateX(600 - 30 - albumTitleSettingResult.getWidth());
+        artistSettingResult.setTranslateX(600 - 30 - artistSettingResult.getWidth());
+        yearSettingResult.setTranslateX(600 - 30 - yearSettingResult.getWidth());
+        trackNumberSettingResult.setTranslateX(600 - 30 - trackNumberSettingResult.getWidth());
+
         // Invisilbe button for selection
         outputDirectoryButton.setTranslateX(600 - 30 - outputDirectoryResult.getWidth());
         outputDirectoryButton.setPrefSize(outputDirectoryResult.getWidth(), 25);
@@ -653,6 +820,14 @@ public class View implements EventHandler<KeyEvent>
         // Additional selection
         songDownloadFormatResult.getSelectionModel().select(musicFormatSetting);
         saveAlbumArtResult.getSelectionModel().select(saveAlbumArtSetting);
+
+        albumArtSettingResult.getSelectionModel().select(applyAlbumArt ? 0 : 1);
+        albumTitleSettingResult.getSelectionModel().select(applyAlbumTitle ? 0 : 1);
+        artistSettingResult.getSelectionModel().select(applyArtist ? 0 : 1);
+        yearSettingResult.getSelectionModel().select(applyYear ? 0 : 1);
+        trackNumberSettingResult.getSelectionModel().select(applyTrack ? 0 : 1);
+
+        setMetaDataVisibility();
 
         // Scheduling getting latest version
         new getLatestVersion();
@@ -690,6 +865,20 @@ public class View implements EventHandler<KeyEvent>
         saveAlbumArt.setVisible(false);
         saveAlbumArtResult.setVisible(false);
 
+        // Metadata
+        metaDataTitle.setVisible(false);
+        albumArtSetting.setVisible(false);
+        albumArtSettingResult.setVisible(false);
+        albumTitleSetting.setVisible(false);
+        albumTitleSettingResult.setVisible(false);
+        artistSetting.setVisible(false);
+        artistSettingResult.setVisible(false);
+        yearSetting.setVisible(false);
+        yearSettingResult.setVisible(false);
+        trackNumberSetting.setVisible(false);
+        trackNumberSettingResult.setVisible(false);
+        metaDataWarning.setVisible(false);
+
         // Buttons
         confirmChanges.setVisible(false);
         cancelBackButton.setVisible(false);
@@ -698,6 +887,7 @@ public class View implements EventHandler<KeyEvent>
         settingTitleSubline.setVisible(false);
         programSettingsTitleSubline.setVisible(false);
         fileSettingsTitleSubline.setVisible(false);
+        metaDataTitleSubline.setVisible(false);
     }
 
     public synchronized void submit() {
@@ -712,7 +902,42 @@ public class View implements EventHandler<KeyEvent>
                 saveAlbumArtResult
                         .getSelectionModel()
                         .selectedIndexProperty()
-                        .getValue()
+                        .getValue(),
+                Math.abs(
+                        albumArtSettingResult
+                            .getSelectionModel()
+                            .selectedIndexProperty()
+                            .getValue()
+                        - 1
+                ),
+                Math.abs(
+                        albumTitleSettingResult
+                                .getSelectionModel()
+                                .selectedIndexProperty()
+                                .getValue()
+                                - 1
+                ),
+                Math.abs(
+                        artistSettingResult
+                                .getSelectionModel()
+                                .selectedIndexProperty()
+                                .getValue()
+                                - 1
+                ),
+                Math.abs(
+                        yearSettingResult
+                                .getSelectionModel()
+                                .selectedIndexProperty()
+                                .getValue()
+                                - 1
+                ),
+                Math.abs(
+                        trackNumberSettingResult
+                                .getSelectionModel()
+                                .selectedIndexProperty()
+                                .getValue()
+                                - 1
+                )
         );
 
         // Setting the vars
@@ -909,23 +1134,33 @@ public class View implements EventHandler<KeyEvent>
                         ID3v2 id3v2tag = new ID3v24Tag();
                         mp3Applicator.setId3v2Tag(id3v2tag);
 
-                        // Album Art Application
-                        RandomAccessFile albumArtImg = new RandomAccessFile(metaData.get("directory") + "art.jpg", "r");
+                        if (applyAlbumArt) {
 
-                        // Could break this up into mb loads
-                        byte[] bytes;
-                        bytes = new byte[(int) albumArtImg.length()];
-                        albumArtImg.read(bytes);
-                        albumArtImg.close();
+                            // Album Art Application
+                            RandomAccessFile albumArtImg = new RandomAccessFile(metaData.get("directory") + "art.jpg", "r");
 
-                        id3v2tag.setAlbumImage(bytes, "image/jpg");
+                            // Could break this up into mb loads
+                            byte[] bytes;
+                            bytes = new byte[(int) albumArtImg.length()];
+                            albumArtImg.read(bytes);
+                            albumArtImg.close();
+
+                            id3v2tag.setAlbumImage(bytes, "image/jpg");
+                        }
 
                         // Applying remaining data
                         id3v2tag.setTitle(song.get(0));
-                        id3v2tag.setAlbum(metaData.get("albumTitle"));
-                        id3v2tag.setArtist(metaData.get("artist"));
-                        id3v2tag.setAlbumArtist(metaData.get("artist"));
-                        id3v2tag.setYear(metaData.get("year"));
+
+                        if (applyAlbumTitle)
+                            id3v2tag.setAlbum(metaData.get("albumTitle"));
+
+                        if (applyArtist) {
+                            id3v2tag.setArtist(metaData.get("artist"));
+                            id3v2tag.setAlbumArtist(metaData.get("artist"));
+                        }
+
+                        if (applyYear)
+                            id3v2tag.setYear(metaData.get("year"));
 
                         if (metaData.containsKey("positionInAlbum")) {
                             id3v2tag.setTrack(metaData.get("positionInAlbum"));
@@ -959,7 +1194,6 @@ public class View implements EventHandler<KeyEvent>
                     e.printStackTrace();
                 }
 
-                //Platform.runLater(() -> loading.setProgress(1));
             }
 
             if (saveAlbumArtSetting == 0 || (saveAlbumArtSetting == 1 && metaData.containsKey("positionInAlbum")) || (saveAlbumArtSetting == 2 && !metaData.containsKey("positionInAlbum"))) {
