@@ -7,7 +7,6 @@ import com.sapher.youtubedl.YoutubeDLRequest;
 import com.sapher.youtubedl.YoutubeDLResponse;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -31,9 +30,12 @@ import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.lang.reflect.InvocationTargetException;
-import java.time.Instant;
 import java.util.*;
+
+// TODO: Add settings for metadata application
+// TODO: cancel button should cancel in progress download
+// TODO: Hide download folder where possible until download completed
+// TODO: Add button to install and configure youtube-dl & ffmpeg
 
 public class View implements EventHandler<KeyEvent>
 {
@@ -103,6 +105,7 @@ public class View implements EventHandler<KeyEvent>
     public ArrayList<String> formatReferences = new ArrayList<>(Arrays.asList("mp3", "wav", "ogg", "aac"));
 
     public boolean quitQueryThread = false;
+    public boolean quitDownloadThread = false;
 
     public View(int w, int h) {
         Debug.trace("View::<constructor>");
@@ -425,6 +428,12 @@ public class View implements EventHandler<KeyEvent>
         downloadButton.setVisible(true);
         cancelButton.setVisible(true);
 
+        searchRequest.setVisible(false);
+        title.setVisible(false);
+        footerMarker.setVisible(false);
+        settingsLinkButton.setVisible(false);
+        settingsLink.setVisible(false);
+
         return searchResults;
 
     }
@@ -437,6 +446,7 @@ public class View implements EventHandler<KeyEvent>
 
         // Stops the search thread from running
         quitQueryThread = true;
+        quitDownloadThread = true;
 
         // Clear Table and Hide, Revert to search state
         resultsTable.getItems().clear();
@@ -454,6 +464,10 @@ public class View implements EventHandler<KeyEvent>
 
         searchesProgressText.setVisible(false);
         searchesProgressText.setText("Search Songs: 0%");
+
+        footerMarker.setVisible(true);
+        settingsLinkButton.setVisible(true);
+        settingsLink.setVisible(true);
 
     }
 
@@ -841,6 +855,8 @@ public class View implements EventHandler<KeyEvent>
 
             for (ArrayList<String> songsDatum : songsData) {
 
+
+
                 try {
                     songsDatum.add(Utils.evaluateBestLink(Utils.youtubeQuery(metaData.get("artist") + " " + songsDatum.get(0)), Integer.parseInt(songsDatum.get(1))));
                 } catch (IOException | ParseException e) {
@@ -858,6 +874,10 @@ public class View implements EventHandler<KeyEvent>
 
             for (ArrayList<String> song: songsData)
             {
+
+                if (quitDownloadThread) {
+                    break;
+                }
 
                 try {
 
@@ -883,7 +903,7 @@ public class View implements EventHandler<KeyEvent>
                     }
 
                     // Now to apply the metadata
-                    if (formatReferences.get(musicFormatSetting) == "mp3") {
+                    if (formatReferences.get(musicFormatSetting).equals("mp3")) {
                         Mp3File mp3Applicator = new Mp3File(metaData.get("directory") + targetFileName);
 
                         ID3v2 id3v2tag = new ID3v24Tag();
@@ -924,8 +944,8 @@ public class View implements EventHandler<KeyEvent>
                             Debug.trace("Failed to delete file: " + metaData.get("directory") + targetFileName);
                         }
                     } else {
-                        File file = new File(metaData.get("directory") + targetFileName);
-                        file.renameTo(new File(metaData.get("directory") + song.get(0) + "." + formatReferences.get(musicFormatSetting)));
+                        File file = new File(outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + metaData.get("directory") + targetFileName);
+                        file.renameTo(new File(outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + metaData.get("directory") + song.get(0) + "." + formatReferences.get(musicFormatSetting)));
                     }
 
                     percentIncrease = ((double)Integer.parseInt(song.get(1)) / (double)totalPlayTime) * (totalPlayTime * 0.02313 / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
@@ -943,10 +963,33 @@ public class View implements EventHandler<KeyEvent>
             }
 
             if (saveAlbumArtSetting == 0 || (saveAlbumArtSetting == 1 && metaData.containsKey("positionInAlbum")) || (saveAlbumArtSetting == 2 && !metaData.containsKey("positionInAlbum"))) {
-                File deletion = new File(metaData.get("directory") + "art.jpg");
+                File deletion = new File(outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + "art.jpg");
                 if (!deletion.delete()) {
-                    Debug.trace("Failed to delete file: " + metaData.get("directory") + "art.jpg");
+                    Debug.trace("Failed to delete file: " + (outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting) + "\\" + "art.jpg");
                 }
+            }
+
+            if (quitDownloadThread) {
+                quitDownloadThread = false;
+
+                if (metaData.containsKey("positionInAlbum")) {
+                    // Deleting a song, just name and album art
+
+                    // Delete album art, can't delete song
+                    File albumArt = new File(outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + "art.jpg");
+                    albumArt.delete();
+
+                } else {
+                    // Deleting an album
+                    File albumFolder = new File(metaData.get("directory"));
+                    String[] files = albumFolder.list();
+                    for (String file: files) {
+                        File current = new File(albumFolder.getPath(), file);
+                        current.delete();
+                    }
+                    albumFolder.delete();
+                }
+
             }
 
         }
