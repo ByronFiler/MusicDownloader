@@ -100,6 +100,8 @@ public class View implements EventHandler<KeyEvent>
     public ArrayList<ArrayList<String>> songsData;
     public HashMap<String, String> metaData;
 
+    public ArrayList<String> formatReferences = new ArrayList<>(Arrays.asList("mp3", "wav", "ogg", "aac"));
+
     public boolean quitQueryThread = false;
 
     public View(int w, int h) {
@@ -859,9 +861,9 @@ public class View implements EventHandler<KeyEvent>
 
                 try {
 
-                    YoutubeDLRequest request = new YoutubeDLRequest(song.get(2), metaData.get("directory"));
+                    YoutubeDLRequest request = new YoutubeDLRequest(song.get(2),outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + metaData.get("directory"));
                     request.setOption("extract-audio");
-                    request.setOption("audio-format mp3");
+                    request.setOption("audio-format " + formatReferences.get(musicFormatSetting));
                     request.setOption("ignore-errors");
                     request.setOption("retries", 10);
 
@@ -874,51 +876,56 @@ public class View implements EventHandler<KeyEvent>
 
                     for (File file : Objects.requireNonNull(folderContents)) {
                         if (file.isFile()) {
-                            if (file.getName().endsWith("-" + song.get(2).substring(32) + ".mp3")) {
+                            if (file.getName().endsWith("-" + song.get(2).substring(32) + "." + formatReferences.get(musicFormatSetting))) {
                                 targetFileName = file.getName();
                             }
                         }
                     }
 
                     // Now to apply the metadata
-                    Mp3File mp3Applicator = new Mp3File(metaData.get("directory") + targetFileName);
+                    if (formatReferences.get(musicFormatSetting) == "mp3") {
+                        Mp3File mp3Applicator = new Mp3File(metaData.get("directory") + targetFileName);
 
-                    ID3v2 id3v2tag = new ID3v24Tag();
-                    mp3Applicator.setId3v2Tag(id3v2tag);
+                        ID3v2 id3v2tag = new ID3v24Tag();
+                        mp3Applicator.setId3v2Tag(id3v2tag);
 
-                    // Album Art Application
-                    RandomAccessFile albumArtImg = new RandomAccessFile(metaData.get("directory") + "art.jpg", "r");
+                        // Album Art Application
+                        RandomAccessFile albumArtImg = new RandomAccessFile(metaData.get("directory") + "art.jpg", "r");
 
-                    // Could break this up into mb loads
-                    byte[] bytes;
-                    bytes = new byte[(int) albumArtImg.length()];
-                    albumArtImg.read(bytes);
-                    albumArtImg.close();
+                        // Could break this up into mb loads
+                        byte[] bytes;
+                        bytes = new byte[(int) albumArtImg.length()];
+                        albumArtImg.read(bytes);
+                        albumArtImg.close();
 
-                    id3v2tag.setAlbumImage(bytes, "image/jpg");
+                        id3v2tag.setAlbumImage(bytes, "image/jpg");
 
-                    // Applying remaining data
-                    id3v2tag.setTitle(song.get(0));
-                    id3v2tag.setAlbum(metaData.get("albumTitle"));
-                    id3v2tag.setArtist(metaData.get("artist"));
-                    id3v2tag.setAlbumArtist(metaData.get("artist"));
-                    id3v2tag.setYear(metaData.get("year"));
+                        // Applying remaining data
+                        id3v2tag.setTitle(song.get(0));
+                        id3v2tag.setAlbum(metaData.get("albumTitle"));
+                        id3v2tag.setArtist(metaData.get("artist"));
+                        id3v2tag.setAlbumArtist(metaData.get("artist"));
+                        id3v2tag.setYear(metaData.get("year"));
 
-                    if (metaData.containsKey("positionInAlbum")) {
-                        id3v2tag.setTrack(metaData.get("positionInAlbum"));
+                        if (metaData.containsKey("positionInAlbum")) {
+                            id3v2tag.setTrack(metaData.get("positionInAlbum"));
+                        } else {
+                            id3v2tag.setTrack(Integer.toString(songsData.indexOf(song)));
+                        }
+
+                        try {
+                            mp3Applicator.save(metaData.get("directory") + song.get(0) + ".mp3");
+                        } catch (IOException | NotSupportedException e) {
+                            e.printStackTrace();
+                        }
+
+                        File deletion = new File(metaData.get("directory") + targetFileName);
+                        if (!deletion.delete()) {
+                            Debug.trace("Failed to delete file: " + metaData.get("directory") + targetFileName);
+                        }
                     } else {
-                        id3v2tag.setTrack(Integer.toString(songsData.indexOf(song)));
-                    }
-
-                    try {
-                        mp3Applicator.save(metaData.get("directory") + song.get(0) + ".mp3");
-                    } catch (IOException | NotSupportedException e) {
-                        e.printStackTrace();
-                    }
-
-                    File deletion = new File(metaData.get("directory") + targetFileName);
-                    if (!deletion.delete()) {
-                        Debug.trace("Failed to delete file: " + metaData.get("directory") + targetFileName);
+                        File file = new File(metaData.get("directory") + targetFileName);
+                        file.renameTo(new File(metaData.get("directory") + song.get(0) + "." + formatReferences.get(musicFormatSetting)));
                     }
 
                     percentIncrease = ((double)Integer.parseInt(song.get(1)) / (double)totalPlayTime) * (totalPlayTime * 0.02313 / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
@@ -935,9 +942,11 @@ public class View implements EventHandler<KeyEvent>
                 //Platform.runLater(() -> loading.setProgress(1));
             }
 
-            File deletion = new File(metaData.get("directory") + "art.jpg");
-            if (!deletion.delete()) {
-                Debug.trace("Failed to delete file: " + metaData.get("directory") + "art.jpg");
+            if (saveAlbumArtSetting == 0 || (saveAlbumArtSetting == 1 && metaData.containsKey("positionInAlbum")) || (saveAlbumArtSetting == 2 && !metaData.containsKey("positionInAlbum"))) {
+                File deletion = new File(metaData.get("directory") + "art.jpg");
+                if (!deletion.delete()) {
+                    Debug.trace("Failed to delete file: " + metaData.get("directory") + "art.jpg");
+                }
             }
 
         }
