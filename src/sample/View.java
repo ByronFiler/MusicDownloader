@@ -4,8 +4,8 @@ import com.mpatric.mp3agic.*;
 import com.sapher.youtubedl.YoutubeDL;
 import com.sapher.youtubedl.YoutubeDLException;
 import com.sapher.youtubedl.YoutubeDLRequest;
-import com.sapher.youtubedl.YoutubeDLResponse;
 import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -19,7 +19,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
-import javafx.scene.paint.Color;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.jsoup.nodes.Document;
@@ -144,6 +143,12 @@ public class View implements EventHandler<KeyEvent>
         canvas = new Canvas(width, height);
         pane.getChildren().add(canvas);
 
+        final InvalidationListener resizeListener = observable -> {
+            restructureElements(window.getWidth(), window.getHeight());
+        };
+        window.widthProperty().addListener(resizeListener);
+        window.heightProperty().addListener(resizeListener);
+
         settings = new Settings();
         JSONObject config = settings.getSettings();
 
@@ -164,8 +169,6 @@ public class View implements EventHandler<KeyEvent>
         title = new Label("Music Downloader");
         title.setTextFill(Color.BLACK);
         title.setStyle("-fx-font: 32 arial;");
-        title.setTranslateY(300);
-        title.setTranslateX(170);
 
         searchResultsTitle = new Label("Search Results");
         searchResultsTitle.setTextFill(Color.BLACK);
@@ -173,8 +176,6 @@ public class View implements EventHandler<KeyEvent>
         searchResultsTitle.setVisible(false);
 
         searchRequest = new TextField();
-        searchRequest.setTranslateX(220);
-        searchRequest.setTranslateY(340);
 
         downloadButton = new Button("Download");
         downloadButton.setPrefSize(120, 40);
@@ -227,7 +228,7 @@ public class View implements EventHandler<KeyEvent>
                 e -> settingsMode()
         );
 
-        resultsTable = new TableView();
+        resultsTable = new TableView<PropertyValueFactory<TableColumn<String, Utils.resultsSet>, Utils.resultsSet>>();
         resultsTable.getSelectionModel().selectedIndexProperty().addListener((obs, oldSelection, newSelection) -> downloadButton.setDisable(newSelection == null));
         resultsTable.setVisible(false);
 
@@ -1010,6 +1011,36 @@ public class View implements EventHandler<KeyEvent>
                 .getValue() == 0;
     }
 
+    public synchronized void restructureElements(double width, double height) {
+
+        // Detect the mode
+        if (title.isVisible()) {
+
+            System.out.println(height);
+
+            // Default search mode
+            title.setTranslateX(width/2 - title.getWidth()/2);
+            title.setTranslateY(height/2 - 119.5);
+
+            searchRequest.setTranslateX(width/2 - searchRequest.getWidth()/2);
+            searchRequest.setTranslateY(height/2 - 79.5);
+
+            footerMarker.setStartX(0);
+            footerMarker.setEndX(width);
+            footerMarker.setStartY(height-50 - 39);
+            footerMarker.setEndY(height-50 - 39);
+
+            settingsLink.setTranslateX(10);
+            settingsLink.setTranslateY(height - 40 - 39);
+
+            settingsLinkButton.setTranslateX(10);
+            settingsLinkButton.setTranslateY(height - 40 - 39);
+            settingsLinkButton.setPrefSize(settingsLink.getWidth(), 25);
+
+        }
+
+    }
+
     class allMusicQuery implements Runnable {
 
         Thread t;
@@ -1169,7 +1200,7 @@ public class View implements EventHandler<KeyEvent>
                     request.setOption("ignore-errors");
                     request.setOption("retries", 10);
 
-                    YoutubeDLResponse response = YoutubeDL.execute(request);
+                    YoutubeDL.execute(request);
                     
                     // We want the name of the file which is output to the current working directory in the format [YOUTUBE-TITLE]-[YOUTUBE-WATCH-ID]
                     File folder = new File(metaData.get("directory"));
@@ -1238,7 +1269,8 @@ public class View implements EventHandler<KeyEvent>
                         }
                     } else {
                         File file = new File(outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + metaData.get("directory") + targetFileName);
-                        file.renameTo(new File(outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + metaData.get("directory") + song.get(0) + "." + formatReferences.get(musicFormatSetting)));
+                        if (!file.renameTo(new File(outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + metaData.get("directory") + song.get(0) + "." + formatReferences.get(musicFormatSetting))))
+                            System.out.println("Failed to rename file to: " + (outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + metaData.get("directory") + song.get(0) + "." + formatReferences.get(musicFormatSetting)));
                     }
 
                     percentIncrease = ((double)Integer.parseInt(song.get(1)) / (double)totalPlayTime) * (totalPlayTime * 0.02313 / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
@@ -1269,17 +1301,21 @@ public class View implements EventHandler<KeyEvent>
 
                     // Delete album art, can't delete song
                     File albumArt = new File(outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + "art.jpg");
-                    albumArt.delete();
+                    if (!albumArt.delete())
+                        System.out.println("Failed to delete: " + albumArt.getAbsolutePath());
 
                 } else {
                     // Deleting an album
                     File albumFolder = new File(metaData.get("directory"));
                     String[] files = albumFolder.list();
-                    for (String file: files) {
+                    for (String file : Objects.requireNonNull(files)) {
                         File current = new File(albumFolder.getPath(), file);
-                        current.delete();
+                        if (!current.delete()) {
+                            System.out.println("Failed to delete: " + current.getAbsolutePath());
+                        }
                     }
-                    albumFolder.delete();
+                    if (!albumFolder.delete())
+                        System.out.println("Failed to delete: " + albumFolder.getAbsolutePath());
                 }
 
             }
