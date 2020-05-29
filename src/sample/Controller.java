@@ -2,23 +2,18 @@ package sample;
 
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.KeyCode;
-import javafx.scene.paint.Color;
-import javafx.stage.Stage;
-
-import static javafx.scene.input.KeyCode.ENTER;
 
 
 public class Controller {
 
     public View view;
-    public Main main;
 
     public Controller()
     {
         Debug.trace("Controller::<constructor>");
     }
 
-    public void userKeyInteraction (KeyEvent event) throws Exception {
+    public void userKeyInteraction (KeyEvent event) {
         Debug.trace("User key interaction" + event.getCode());
 
         if (
@@ -33,13 +28,8 @@ public class Controller {
                         .selectedIndexProperty()
                         .getValue()
         ) {
-            switch (event.getCode()) {
-
-                case ESCAPE:
-                    view.searchMode();
-                    break;
-
-
+            if (event.getCode() == KeyCode.ESCAPE) {
+                view.searchMode();
             }
         }
 

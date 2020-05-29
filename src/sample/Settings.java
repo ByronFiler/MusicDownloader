@@ -99,7 +99,6 @@ public class Settings {
     }
 
     public synchronized void saveSettings(String output_directory, int music_format, int save_album_art, int album_art, int album_title, int song_title, int artist, int year, int track) {
-
         JSONObject newSettings = new JSONObject();
         newSettings.put("output_directory", output_directory);
         newSettings.put("music_format", music_format);

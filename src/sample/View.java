@@ -30,6 +30,7 @@ import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Array;
 import java.util.*;
 
 // TODO: Hide download folder where possible until download completed
@@ -117,10 +118,12 @@ public class View implements EventHandler<KeyEvent>
     public Button cancelBackButton;
 
     // Settings Lines
-    public Line settingTitleSubline;
-    public Line programSettingsTitleSubline;
-    public Line fileSettingsTitleSubline;
-    public Line metaDataTitleSubline;
+    public Line settingTitleLine;
+    public Line programSettingsTitleLine;
+    public Line fileSettingsTitleLine;
+    public Line metaDataTitleLine;
+
+    // Element Container
 
     public ArrayList<ArrayList<String>> searchResults;
     public ArrayList<ArrayList<String>> songsData;
@@ -170,12 +173,11 @@ public class View implements EventHandler<KeyEvent>
         programVersion = settings.getVersion();
 
         title = new Label("Music Downloader");
-        title.setTextFill(Color.BLACK);
-        title.setStyle("-fx-font: 32 arial;");
+        title.setId("title");
 
         searchResultsTitle = new Label("Search Results");
         searchResultsTitle.setTextFill(Color.BLACK);
-        searchResultsTitle.setStyle("-fx-font: 28 arial;");
+        searchResultsTitle.setId("subTitle");
         searchResultsTitle.setVisible(false);
 
         searchRequest = new TextField();
@@ -195,9 +197,7 @@ public class View implements EventHandler<KeyEvent>
 
         cancelButton = new Button("Cancel");
         cancelButton.setPrefSize(120, 40);
-        cancelButton.setOnAction(
-                e -> cancel()
-        );
+        cancelButton.setOnAction(e -> cancel());
         cancelButton.setVisible(false);
 
         searchesProgressText = new Label("Locating Songs: 0%");
@@ -211,11 +211,11 @@ public class View implements EventHandler<KeyEvent>
 
         // Create a box here surrounding it, invisible to handle clicks in a wider area
         settingsLink = new Label("Settings");
-        settingsLink.setStyle("-fx-font: 24 arial;");
+        settingsLink.setId("subTitle2");
 
         settingsLinkButton = new Button();
         settingsLinkButton.setPrefSize(100, 25);
-        settingsLinkButton.setStyle("-fx-cursor: hand;");
+        settingsLinkButton.setId("button");
         settingsLinkButton.setOpacity(0);
         settingsLinkButton.setOnAction(
                 e -> settingsMode()
@@ -257,75 +257,73 @@ public class View implements EventHandler<KeyEvent>
 
         // Settings
         settingsTitle = new Label("Settings");
-        settingsTitle.setStyle("-fx-font: 28 arial;");
+        settingsTitle.setId("subTitle");
         settingsTitle.setVisible(false);
 
         programSettingsTitle = new Label("Information");
-        programSettingsTitle.setStyle("-fx-font: 22 arial;");
+        programSettingsTitle.setId("settingsHeader");
         programSettingsTitle.setVisible(false);
 
         version = new Label("Version: ");
-        version.setStyle("-fx-font: 16 arial;");
+        version.setId("settingInfo");
         version.setVisible(false);
 
         versionResult = new Label(programVersion);
-        versionResult.setStyle("-fx-font: 16 arial;");
+        versionResult.setId("settingInfo");
         versionResult.setVisible(false);
 
         latestVersion = new Label("Latest Version: ");
-        latestVersion.setStyle("-fx-font: 16 arial;");
+        latestVersion.setId("settingInfo");
         latestVersion.setVisible(false);
 
         latestVersionResult = new Label("Locating...");
-        latestVersionResult.setStyle("-fx-font: 16 arial;");
+        latestVersionResult.setId("settingInfo");
         latestVersionResult.setVisible(false);
 
         youtubeDlVerification = new Label("YouTube-DL Status: ");
-        youtubeDlVerification.setStyle("-fx-font: 16 arial;");
+        youtubeDlVerification.setId("settingInfo");
         youtubeDlVerification.setVisible(false);
 
         youtubeDlVerificationResult = new Label(settings.checkYouTubeDl());
-        youtubeDlVerificationResult.setStyle("-fx-font: 16 arial;");
+        youtubeDlVerificationResult.setId("settingInfo");
         youtubeDlVerificationResult.setVisible(false);
 
         fileSettingsTitle = new Label("Files");
-        fileSettingsTitle.setStyle("-fx-font: 22 arial;");
+        fileSettingsTitle.setId("settingsHeader");
         fileSettingsTitle.setVisible(false);
 
         outputDirectory = new Label("Save music to: ");
-        outputDirectory.setStyle("-fx-font: 16 arial;");
+        outputDirectory.setId("settingInfo");
         outputDirectory.setVisible(false);
 
         outputDirectoryResult = new Label(outputDirectorySetting.equals("") ? System.getProperty("user.dir") : outputDirectorySetting);
-        outputDirectoryResult.setStyle("-fx-font: 16 arial;");
+        outputDirectoryResult.setId("settingInfo");
         outputDirectoryResult.setVisible(false);
 
         outputDirectoryButton = new Button();
-        outputDirectoryButton.setStyle("-fx-cursor: hand;");
+        outputDirectoryButton.setId("button");
         outputDirectoryButton.setOpacity(0);
         outputDirectoryButton.setOnAction(e -> new selectFolder());
         outputDirectoryButton.setVisible(false);
 
         songDownloadFormat = new Label("Music format: ");
-        songDownloadFormat.setStyle("-fx-font: 16 arial;");
+        songDownloadFormat.setId("settingInfo");
         songDownloadFormat.setVisible(false);
 
-        songDownloadFormatResult = new ComboBox(FXCollections.observableArrayList(
+        songDownloadFormatResult = new ComboBox<>(FXCollections.observableArrayList(
                 "mp3",
                 "wav",
                 "ogg",
                 "aac"
         ));
-        songDownloadFormatResult.setOnAction(
-                e -> setMetaDataVisibility()
-        );
+        songDownloadFormatResult.setOnAction(e -> setMetaDataVisibility());
         songDownloadFormatResult.setVisible(false);
 
         saveAlbumArt = new Label("Save Album Art: ");
-        saveAlbumArt.setStyle("-fx-font: 16 arial;");
+        saveAlbumArt.setId("settingInfo");
         saveAlbumArt.setVisible(false);
 
-        saveAlbumArtResult = new ComboBox(FXCollections.observableArrayList(
+        saveAlbumArtResult = new ComboBox<>(FXCollections.observableArrayList(
                 "No",
                 "Albums Only",
                 "Songs Only",
@@ -334,34 +332,34 @@ public class View implements EventHandler<KeyEvent>
         saveAlbumArtResult.setVisible(false);
 
         metaDataTitle = new Label("Meta-Data Application");
-        metaDataTitle.setStyle("-fx-font: 22 arial;");
+        metaDataTitle.setId("settingsHeader");
         metaDataTitle.setVisible(false);
 
         albumArtSetting = new Label("Album Art: ");
-        albumArtSetting.setStyle("-fx-font: 16 arial;");
+        albumArtSetting.setId("settingInfo");
         albumArtSetting.setVisible(false);
 
-        albumArtSettingResult = new ComboBox(FXCollections.observableArrayList(
+        albumArtSettingResult = new ComboBox<>(FXCollections.observableArrayList(
                 "Enabled",
                 "Disabled"
         ));
         albumArtSettingResult.setVisible(false);
 
         albumTitleSetting = new Label("Album Title: ");
-        albumTitleSetting.setStyle("-fx-font: 16 arial;");
+        albumTitleSetting.setId("settingInfo");
         albumTitleSetting.setVisible(false);
 
-        albumTitleSettingResult = new ComboBox(FXCollections.observableArrayList(
+        albumTitleSettingResult = new ComboBox<>(FXCollections.observableArrayList(
                 "Enabled",
                 "Disabled"
         ));
         albumTitleSettingResult.setVisible(false);
 
         songTitleSetting = new Label("Song Title: ");
-        songTitleSetting.setStyle("-fx-font: 16 arial;");
+        songTitleSetting.setId("settingInfo");
         songTitleSetting.setVisible(false);
 
-        songTitleSettingResult = new ComboBox(FXCollections.observableArrayList(
+        songTitleSettingResult = new ComboBox<>(FXCollections.observableArrayList(
                 "Enabled",
                 "Disabled"
         ));
@@ -369,31 +367,31 @@ public class View implements EventHandler<KeyEvent>
 
 
         artistSetting = new Label("Artist: ");
-        artistSetting.setStyle("-fx-font: 16 arial;");
+        artistSetting.setId("settingInfo");
         artistSetting.setVisible(false);
 
 
-        artistSettingResult = new ComboBox(FXCollections.observableArrayList(
+        artistSettingResult = new ComboBox<>(FXCollections.observableArrayList(
                 "Enabled",
                 "Disabled"
         ));
         artistSettingResult.setVisible(false);
 
         yearSetting = new Label("Year: ");
-        yearSetting.setStyle("-fx-font: 16 arial;");
+        yearSetting.setId("settingInfo");
         yearSetting.setVisible(false);
 
-        yearSettingResult = new ComboBox(FXCollections.observableArrayList(
+        yearSettingResult = new ComboBox<>(FXCollections.observableArrayList(
                 "Enabled",
                 "Disabled"
         ));
         yearSettingResult.setVisible(false);
 
         trackNumberSetting = new Label("Track Number: ");
-        trackNumberSetting.setStyle("-fx-font: 16 arial;");
+        trackNumberSetting.setId("settingInfo");
         trackNumberSetting.setVisible(false);
 
-        trackNumberSettingResult = new ComboBox(FXCollections.observableArrayList(
+        trackNumberSettingResult = new ComboBox<>(FXCollections.observableArrayList(
                 "Enabled",
                 "Disabled"
         ));
@@ -401,29 +399,31 @@ public class View implements EventHandler<KeyEvent>
         trackNumberSettingResult.setVisible(false);
 
         metaDataWarning = new Label("Meta-data application is only available for mp3 files.");
-        metaDataWarning.setStyle("-fx-font: 16 arial;");
+        metaDataWarning.setId("settingInfo");
         metaDataWarning.setVisible(false);
 
         confirmChanges = new Button("Confirm");
         confirmChanges.setOnAction(e -> submit());
+        cancelBackButton.setId("button");
         confirmChanges.setVisible(false);
 
         cancelBackButton = new Button("Cancel");
         cancelBackButton.setOnAction(e -> searchMode());
+        cancelBackButton.setId("button");
         cancelBackButton.setVisible(false);
 
         // Settings Lines
-        settingTitleSubline = new Line();
-        settingTitleSubline.setVisible(false);
+        settingTitleLine = new Line();
+        settingTitleLine.setVisible(false);
 
-        programSettingsTitleSubline = new Line();
-        programSettingsTitleSubline.setVisible(false);
+        programSettingsTitleLine = new Line();
+        programSettingsTitleLine.setVisible(false);
 
-        fileSettingsTitleSubline = new Line();
-        fileSettingsTitleSubline.setVisible(false);
+        fileSettingsTitleLine = new Line();
+        fileSettingsTitleLine.setVisible(false);
 
-        metaDataTitleSubline = new Line();
-        metaDataTitleSubline.setVisible(false);
+        metaDataTitleLine = new Line();
+        metaDataTitleLine.setVisible(false);
 
         // Search
         pane.getChildren().add(title);
@@ -473,12 +473,13 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(metaDataWarning);
 
         // Settings Lines
-        pane.getChildren().add(settingTitleSubline);
-        pane.getChildren().add(programSettingsTitleSubline);
-        pane.getChildren().add(fileSettingsTitleSubline);
-        pane.getChildren().add(metaDataTitleSubline);
+        pane.getChildren().add(settingTitleLine);
+        pane.getChildren().add(programSettingsTitleLine);
+        pane.getChildren().add(fileSettingsTitleLine);
+        pane.getChildren().add(metaDataTitleLine);
 
         Scene scene = new Scene(pane);
+        scene.getStylesheets().add(getClass().getResource("main.css").toExternalForm());
         scene.setOnKeyPressed(this);
 
         window.setScene(scene);
@@ -757,10 +758,10 @@ public class View implements EventHandler<KeyEvent>
         cancelBackButton.setVisible(true);
 
         // Lines
-        settingTitleSubline.setVisible(true);
-        programSettingsTitleSubline.setVisible(true);
-        fileSettingsTitleSubline.setVisible(true);
-        metaDataTitleSubline.setVisible(true);
+        settingTitleLine.setVisible(true);
+        programSettingsTitleLine.setVisible(true);
+        fileSettingsTitleLine.setVisible(true);
+        metaDataTitleLine.setVisible(true);
 
         // Additional selection
         songDownloadFormatResult.getSelectionModel().select(musicFormatSetting);
@@ -837,10 +838,10 @@ public class View implements EventHandler<KeyEvent>
         cancelBackButton.setVisible(false);
 
         // Lines
-        settingTitleSubline.setVisible(false);
-        programSettingsTitleSubline.setVisible(false);
-        fileSettingsTitleSubline.setVisible(false);
-        metaDataTitleSubline.setVisible(false);
+        settingTitleLine.setVisible(false);
+        programSettingsTitleLine.setVisible(false);
+        fileSettingsTitleLine.setVisible(false);
+        metaDataTitleLine.setVisible(false);
 
         restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
     }
@@ -1040,25 +1041,25 @@ public class View implements EventHandler<KeyEvent>
             outputDirectoryButton.setPrefSize(outputDirectoryResult.getWidth(), 25);
 
             // Lines
-            settingTitleSubline.setStartX(30);
-            settingTitleSubline.setStartY(45);
-            settingTitleSubline.setEndX(width-30-19.5);
-            settingTitleSubline.setEndY(45);
+            settingTitleLine.setStartX(30);
+            settingTitleLine.setStartY(45);
+            settingTitleLine.setEndX(width-30-19.5);
+            settingTitleLine.setEndY(45);
 
-            programSettingsTitleSubline.setStartX(30);
-            programSettingsTitleSubline.setStartY(105);
-            programSettingsTitleSubline.setEndX(width-30-19.5);
-            programSettingsTitleSubline.setEndY(105);
+            programSettingsTitleLine.setStartX(30);
+            programSettingsTitleLine.setStartY(105);
+            programSettingsTitleLine.setEndX(width-30-19.5);
+            programSettingsTitleLine.setEndY(105);
 
-            fileSettingsTitleSubline.setStartX(30);
-            fileSettingsTitleSubline.setStartY(220);
-            fileSettingsTitleSubline.setEndX(width-30-19.5);
-            fileSettingsTitleSubline.setEndY(220);
+            fileSettingsTitleLine.setStartX(30);
+            fileSettingsTitleLine.setStartY(220);
+            fileSettingsTitleLine.setEndX(width-30-19.5);
+            fileSettingsTitleLine.setEndY(220);
 
-            metaDataTitleSubline.setStartX(30);
-            metaDataTitleSubline.setStartY(345);
-            metaDataTitleSubline.setEndX(width-30-19.5);
-            metaDataTitleSubline.setEndY(345);
+            metaDataTitleLine.setStartX(30);
+            metaDataTitleLine.setStartY(345);
+            metaDataTitleLine.setEndX(width-30-19.5);
+            metaDataTitleLine.setEndY(345);
 
         } else if (resultsTable.isVisible()) {
 

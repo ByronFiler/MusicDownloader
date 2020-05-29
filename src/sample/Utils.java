@@ -213,22 +213,31 @@ public class Utils {
 
     public static synchronized String generateFolder(String folderRequest) {
         if (Files.exists(Paths.get(folderRequest))) {
-            int i = 0;
+            int i = 1; // Looks better than Album (0)
             while (true) {
 
                 // File exists so move onto the next one
                 if (Files.exists(Paths.get(folderRequest + "(" + i + ")"))) {
                     i++;
                 } else {
-                    new File(folderRequest + "(" + i + ")").mkdir();
-                    return folderRequest + "(" + i + ")";
+                    if (new File(folderRequest + "(" + i + ")").mkdir())
+                        return folderRequest + "(" + i + ")";
+                    else {
+                        System.out.println("Failed to create directory: " + folderRequest + "(" + i + ")");
+                        System.exit(-1);
+                    }
                 }
             }
         } else {
-            new File(folderRequest).mkdir();
-            return folderRequest;
+            if (new File(folderRequest).mkdir())
+                return folderRequest;
+            else {
+                System.out.println("Failed to create directory: " + folderRequest);
+                System.exit(-1);
+            }
         }
 
+        return ""; // Unreachable
 
     }
 
