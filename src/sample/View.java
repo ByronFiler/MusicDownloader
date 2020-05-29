@@ -127,6 +127,7 @@ public class View implements EventHandler<KeyEvent>
 
     public ArrayList<ArrayList<String>> searchResults;
     public ArrayList<ArrayList<String>> songsData;
+    public ArrayList<Utils.resultsSet> resultsData;
     public HashMap<String, String> metaData;
 
     public ArrayList<String> formatReferences = new ArrayList<>(Arrays.asList("mp3", "wav", "ogg", "aac"));
@@ -404,7 +405,7 @@ public class View implements EventHandler<KeyEvent>
 
         confirmChanges = new Button("Confirm");
         confirmChanges.setOnAction(e -> submit());
-        cancelBackButton.setId("button");
+        confirmChanges.setId("button");
         confirmChanges.setVisible(false);
 
         cancelBackButton = new Button("Cancel");
@@ -587,9 +588,18 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized void initializeDownload() throws IOException {
 
-        ArrayList<String> request = searchResults.get(resultsTable.getSelectionModel().getSelectedIndex());
-
+        ArrayList<String> request = searchResults.get(
+                resultsData.indexOf(
+                        resultsTable
+                                .getItems().get(
+                                    resultsTable
+                                            .getSelectionModel()
+                                            .getSelectedIndex()
+                        )
+                )
+        );
         loading.setVisible(true);
+        restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
 
         songsData = new ArrayList<>();
         metaData = new HashMap<>();
@@ -683,8 +693,6 @@ public class View implements EventHandler<KeyEvent>
 
         }
 
-        // 15% of loading bar: Youtube Searches
-        //loading.setVisible(true);
         searchesProgressText.setVisible(true);
 
         // Make Progress Bar Visible
@@ -1079,13 +1087,13 @@ public class View implements EventHandler<KeyEvent>
 
             if (loading.isVisible()) {
                 // Loading data should be restructured too
-                searchesProgressText.setTranslateY(510);
-                searchesProgressText.setTranslateX(60);
+                searchesProgressText.setTranslateY(height - 30 - 85);
+                searchesProgressText.setTranslateX(50);
 
-                loading.setTranslateX(60);
-                loading.setPrefWidth(480);
+                loading.setTranslateX(50);
+                loading.setPrefWidth(resultsTable.getWidth());
                 loading.setPrefHeight(20);
-                loading.setTranslateY(530);
+                loading.setTranslateY(height - 30 - 65);
             }
         }
 
@@ -1103,6 +1111,9 @@ public class View implements EventHandler<KeyEvent>
 
             try {
                 searchResults =  Utils.allmusicQuery(searchRequest.getText());
+
+                System.out.println(searchResults);
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -1115,7 +1126,7 @@ public class View implements EventHandler<KeyEvent>
 
                     // Needs to check this won't result in future threads being killed
                     quitQueryThread = false;
-
+                    resultsData = new ArrayList<>();
                     for (ArrayList<String> searchResult : searchResults) {
 
                         // Sending a new query requires quitting the old
@@ -1162,16 +1173,16 @@ public class View implements EventHandler<KeyEvent>
 
                         }
 
-                        resultsTable.getItems().add(
-                                new Utils.resultsSet(
-                                        selectedImage,
-                                        searchResult.get(0),
-                                        searchResult.get(1),
-                                        year,
-                                        genre,
-                                        searchResult.get(4)
-                                )
+                        Utils.resultsSet results = new Utils.resultsSet(
+                                selectedImage,
+                                searchResult.get(0),
+                                searchResult.get(1),
+                                year,
+                                genre,
+                                searchResult.get(4)
                         );
+                        resultsTable.getItems().add(results);
+                        resultsData.add(results);
                     }
                 } catch (NullPointerException | IOException e) {
                     e.printStackTrace();

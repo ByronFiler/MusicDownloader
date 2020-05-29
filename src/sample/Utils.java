@@ -148,6 +148,8 @@ public class Utils {
                 // Page Link for Albums
                 resultData.add(result.select("div.title").select("a").attr("href"));
 
+                resultData.add(Integer.toString(results.indexOf(result))); // Identifier
+
                 songsData.add(resultData);
             }
         }
