@@ -30,7 +30,6 @@ import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.lang.reflect.Array;
 import java.util.*;
 
 // TODO: Hide download folder where possible until download completed
@@ -713,63 +712,68 @@ public class View implements EventHandler<KeyEvent>
         } catch (NullPointerException ignored) {} // User cancels the operation
     }
 
-    public synchronized void settingsMode() {
-
+    public synchronized void switchSettingVisibility(boolean settingVisibility) {
         // Set search to invisible
-        searchRequest.setVisible(false);
-        title.setVisible(false);
+        searchRequest.setVisible(!settingVisibility);
+        title.setVisible(!settingVisibility);
 
         // Setting settings link footer to invisible
-        footerMarker.setVisible(false);
-        settingsLink.setVisible(false);
-        settingsLinkButton.setVisible(false);
+        footerMarker.setVisible(!settingVisibility);
+        settingsLink.setVisible(!settingVisibility);
+        settingsLinkButton.setVisible(!settingVisibility);
 
         // Set setting elements visible
-        settingsTitle.setVisible(true);
+        settingsTitle.setVisible(settingVisibility);
 
         // Program
-        programSettingsTitle.setVisible(true);
-        latestVersion.setVisible(true);
-        latestVersionResult.setVisible(true);
-        version.setVisible(true);
-        versionResult.setVisible(true);
-        youtubeDlVerification.setVisible(true);
-        youtubeDlVerificationResult.setVisible(true);
+        programSettingsTitle.setVisible(settingVisibility);
+        latestVersion.setVisible(settingVisibility);
+        latestVersionResult.setVisible(settingVisibility);
+        version.setVisible(settingVisibility);
+        versionResult.setVisible(settingVisibility);
+        youtubeDlVerification.setVisible(settingVisibility);
+        youtubeDlVerificationResult.setVisible(settingVisibility);
 
         // File
-        fileSettingsTitle.setVisible(true);
-        outputDirectory.setVisible(true);
-        outputDirectoryResult.setVisible(true);
-        songDownloadFormat.setVisible(true);
-        songDownloadFormatResult.setVisible(true);
-        saveAlbumArt.setVisible(true);
-        saveAlbumArtResult.setVisible(true);
+        fileSettingsTitle.setVisible(settingVisibility);
+        outputDirectory.setVisible(settingVisibility);
+        outputDirectoryResult.setVisible(settingVisibility);
+        songDownloadFormat.setVisible(settingVisibility);
+        songDownloadFormatResult.setVisible(settingVisibility);
+        saveAlbumArt.setVisible(settingVisibility);
+        saveAlbumArtResult.setVisible(settingVisibility);
 
         // Metadata
-        metaDataTitle.setVisible(true);
-        albumArtSetting.setVisible(true);
-        albumArtSettingResult.setVisible(true);
-        albumTitleSetting.setVisible(true);
-        albumTitleSettingResult.setVisible(true);
-        songTitleSetting.setVisible(true);
-        songTitleSettingResult.setVisible(true);
-        artistSetting.setVisible(true);
-        artistSettingResult.setVisible(true);
-        yearSetting.setVisible(true);
-        yearSettingResult.setVisible(true);
-        trackNumberSetting.setVisible(true);
-        trackNumberSettingResult.setVisible(true);
+        metaDataTitle.setVisible(settingVisibility);
+        albumArtSetting.setVisible(settingVisibility);
+        albumArtSettingResult.setVisible(settingVisibility);
+        albumTitleSetting.setVisible(settingVisibility);
+        albumTitleSettingResult.setVisible(settingVisibility);
+        songTitleSetting.setVisible(settingVisibility);
+        songTitleSettingResult.setVisible(settingVisibility);
+        artistSetting.setVisible(settingVisibility);
+        artistSettingResult.setVisible(settingVisibility);
+        yearSetting.setVisible(settingVisibility);
+        yearSettingResult.setVisible(settingVisibility);
+        trackNumberSetting.setVisible(settingVisibility);
+        trackNumberSettingResult.setVisible(settingVisibility);
 
         // Buttons
-        outputDirectoryButton.setVisible(true);
-        confirmChanges.setVisible(true);
-        cancelBackButton.setVisible(true);
+        outputDirectoryButton.setVisible(settingVisibility);
+        confirmChanges.setVisible(settingVisibility);
+        cancelBackButton.setVisible(settingVisibility);
 
         // Lines
-        settingTitleLine.setVisible(true);
-        programSettingsTitleLine.setVisible(true);
-        fileSettingsTitleLine.setVisible(true);
-        metaDataTitleLine.setVisible(true);
+        settingTitleLine.setVisible(settingVisibility);
+        programSettingsTitleLine.setVisible(settingVisibility);
+        fileSettingsTitleLine.setVisible(settingVisibility);
+        metaDataTitleLine.setVisible(settingVisibility);
+
+    }
+
+    public synchronized void settingsMode() {
+
+        switchSettingVisibility(true);
 
         // Additional selection
         songDownloadFormatResult.getSelectionModel().select(musicFormatSetting);
@@ -795,62 +799,8 @@ public class View implements EventHandler<KeyEvent>
     }
 
     public synchronized void searchMode() {
-        // Set search to visible
-        searchRequest.setVisible(true);
-        title.setVisible(true);
 
-        // Setting settings link footer to visible
-        footerMarker.setVisible(true);
-        settingsLink.setVisible(true);
-        settingsLinkButton.setVisible(true);
-
-        // Set setting elements invisible
-        settingsTitle.setVisible(false);
-
-        // Program
-        programSettingsTitle.setVisible(false);
-        latestVersion.setVisible(false);
-        latestVersionResult.setVisible(false);
-        version.setVisible(false);
-        versionResult.setVisible(false);
-        youtubeDlVerification.setVisible(false);
-        youtubeDlVerificationResult.setVisible(false);
-
-        // File
-        fileSettingsTitle.setVisible(false);
-        outputDirectory.setVisible(false);
-        outputDirectoryResult.setVisible(false);
-        songDownloadFormat.setVisible(false);
-        songDownloadFormatResult.setVisible(false);
-        saveAlbumArt.setVisible(false);
-        saveAlbumArtResult.setVisible(false);
-
-        // Metadata
-        metaDataTitle.setVisible(false);
-        albumArtSetting.setVisible(false);
-        albumArtSettingResult.setVisible(false);
-        albumTitleSetting.setVisible(false);
-        albumTitleSettingResult.setVisible(false);
-        songTitleSetting.setVisible(false);
-        songTitleSettingResult.setVisible(false);
-        artistSetting.setVisible(false);
-        artistSettingResult.setVisible(false);
-        yearSetting.setVisible(false);
-        yearSettingResult.setVisible(false);
-        trackNumberSetting.setVisible(false);
-        trackNumberSettingResult.setVisible(false);
-        metaDataWarning.setVisible(false);
-
-        // Buttons
-        confirmChanges.setVisible(false);
-        cancelBackButton.setVisible(false);
-
-        // Lines
-        settingTitleLine.setVisible(false);
-        programSettingsTitleLine.setVisible(false);
-        fileSettingsTitleLine.setVisible(false);
-        metaDataTitleLine.setVisible(false);
-
+        switchSettingVisibility(false);
         restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
     }
 
