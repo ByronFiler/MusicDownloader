@@ -45,6 +45,7 @@ public class View implements EventHandler<KeyEvent>
 
     public Pane pane;
     public Canvas canvas;
+    public Stage mainWindow;
 
     // Settings
     public String outputDirectorySetting;
@@ -137,6 +138,7 @@ public class View implements EventHandler<KeyEvent>
     }
 
     public void start(Stage window) {
+
         pane = new Pane();
         pane.setId("initial");
 
@@ -144,6 +146,7 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(canvas);
 
         final InvalidationListener resizeListener = observable -> {
+            mainWindow = window;
             restructureElements(window.getWidth(), window.getHeight());
         };
         window.widthProperty().addListener(resizeListener);
@@ -198,16 +201,10 @@ public class View implements EventHandler<KeyEvent>
         cancelButton.setVisible(false);
 
         searchesProgressText = new Label("Locating Songs: 0%");
-        searchesProgressText.setTranslateY(510);
-        searchesProgressText.setTranslateX(60);
         searchesProgressText.setVisible(false);
 
         loading = new ProgressBar();
         loading.setProgress(0);
-        loading.setTranslateX(60);
-        loading.setPrefWidth(480);
-        loading.setPrefHeight(20);
-        loading.setTranslateY(530);
         loading.setVisible(false);
 
         footerMarker = new Line(0, 800-50, 600, 800-50);
@@ -215,13 +212,9 @@ public class View implements EventHandler<KeyEvent>
         // Create a box here surrounding it, invisible to handle clicks in a wider area
         settingsLink = new Label("Settings");
         settingsLink.setStyle("-fx-font: 24 arial;");
-        settingsLink.setTranslateY(800 - 40);
-        settingsLink.setTranslateX(10);
 
         settingsLinkButton = new Button();
         settingsLinkButton.setPrefSize(100, 25);
-        settingsLinkButton.setTranslateX(10);
-        settingsLinkButton.setTranslateY(800 - 35);
         settingsLinkButton.setStyle("-fx-cursor: hand;");
         settingsLinkButton.setOpacity(0);
         settingsLinkButton.setOnAction(
@@ -260,68 +253,49 @@ public class View implements EventHandler<KeyEvent>
         // Settings
         settingsTitle = new Label("Settings");
         settingsTitle.setStyle("-fx-font: 28 arial;");
-        settingsTitle.setTranslateX(30);
-        settingsTitle.setTranslateY(10);
         settingsTitle.setVisible(false);
 
         programSettingsTitle = new Label("Information");
         programSettingsTitle.setStyle("-fx-font: 22 arial;");
-        programSettingsTitle.setTranslateX(30);
-        programSettingsTitle.setTranslateY(80);
         programSettingsTitle.setVisible(false);
 
         version = new Label("Version: ");
         version.setStyle("-fx-font: 16 arial;");
-        version.setTranslateX(30);
-        version.setTranslateY(115);
         version.setVisible(false);
 
         versionResult = new Label(programVersion);
         versionResult.setStyle("-fx-font: 16 arial;");
-        versionResult.setTranslateY(115);
         versionResult.setVisible(false);
 
         latestVersion = new Label("Latest Version: ");
         latestVersion.setStyle("-fx-font: 16 arial;");
-        latestVersion.setTranslateX(30);
-        latestVersion.setTranslateY(135);
         latestVersion.setVisible(false);
 
         latestVersionResult = new Label("Locating...");
         latestVersionResult.setStyle("-fx-font: 16 arial;");
-        latestVersionResult.setTranslateY(135);
         latestVersionResult.setVisible(false);
 
         youtubeDlVerification = new Label("YouTube-DL Status: ");
         youtubeDlVerification.setStyle("-fx-font: 16 arial;");
-        youtubeDlVerification.setTranslateX(30);
-        youtubeDlVerification.setTranslateY(155);
         youtubeDlVerification.setVisible(false);
 
         youtubeDlVerificationResult = new Label(settings.checkYouTubeDl());
         youtubeDlVerificationResult.setStyle("-fx-font: 16 arial;");
-        youtubeDlVerificationResult.setTranslateY(155);
         youtubeDlVerificationResult.setVisible(false);
 
         fileSettingsTitle = new Label("Files");
         fileSettingsTitle.setStyle("-fx-font: 22 arial;");
-        fileSettingsTitle.setTranslateX(30);
-        fileSettingsTitle.setTranslateY(195);
         fileSettingsTitle.setVisible(false);
 
         outputDirectory = new Label("Save music to: ");
         outputDirectory.setStyle("-fx-font: 16 arial;");
-        outputDirectory.setTranslateX(30);
-        outputDirectory.setTranslateY(230);
         outputDirectory.setVisible(false);
 
         outputDirectoryResult = new Label(outputDirectorySetting.equals("") ? System.getProperty("user.dir") : outputDirectorySetting);
         outputDirectoryResult.setStyle("-fx-font: 16 arial;");
-        outputDirectoryResult.setTranslateY(230);
         outputDirectoryResult.setVisible(false);
 
         outputDirectoryButton = new Button();
-        outputDirectoryButton.setTranslateY(230);
         outputDirectoryButton.setStyle("-fx-cursor: hand;");
         outputDirectoryButton.setOpacity(0);
         outputDirectoryButton.setOnAction(e -> new selectFolder());
@@ -329,8 +303,6 @@ public class View implements EventHandler<KeyEvent>
 
         songDownloadFormat = new Label("Music format: ");
         songDownloadFormat.setStyle("-fx-font: 16 arial;");
-        songDownloadFormat.setTranslateX(30);
-        songDownloadFormat.setTranslateY(255);
         songDownloadFormat.setVisible(false);
 
         songDownloadFormatResult = new ComboBox(FXCollections.observableArrayList(
@@ -342,14 +314,10 @@ public class View implements EventHandler<KeyEvent>
         songDownloadFormatResult.setOnAction(
                 e -> setMetaDataVisibility()
         );
-        songDownloadFormatResult.setTranslateX(600 - 30);
-        songDownloadFormatResult.setTranslateY(255);
         songDownloadFormatResult.setVisible(false);
 
         saveAlbumArt = new Label("Save Album Art: ");
         saveAlbumArt.setStyle("-fx-font: 16 arial;");
-        saveAlbumArt.setTranslateX(30);
-        saveAlbumArt.setTranslateY(280);
         saveAlbumArt.setVisible(false);
 
         saveAlbumArtResult = new ComboBox(FXCollections.observableArrayList(
@@ -358,59 +326,45 @@ public class View implements EventHandler<KeyEvent>
                 "Songs Only",
                 "All"
         ));
-        saveAlbumArtResult.setTranslateY(280);
         saveAlbumArtResult.setVisible(false);
 
         metaDataTitle = new Label("Meta-Data Application");
         metaDataTitle.setStyle("-fx-font: 22 arial;");
-        metaDataTitle.setTranslateX(30);
-        metaDataTitle.setTranslateY(320);
         metaDataTitle.setVisible(false);
 
         albumArtSetting = new Label("Album Art: ");
         albumArtSetting.setStyle("-fx-font: 16 arial;");
-        albumArtSetting.setTranslateX(30);
-        albumArtSetting.setTranslateY(355);
         albumArtSetting.setVisible(false);
 
         albumArtSettingResult = new ComboBox(FXCollections.observableArrayList(
                 "Enabled",
                 "Disabled"
         ));
-        albumArtSettingResult.setTranslateY(355);
         albumArtSettingResult.setVisible(false);
 
         albumTitleSetting = new Label("Album Title: ");
         albumTitleSetting.setStyle("-fx-font: 16 arial;");
-        albumTitleSetting.setTranslateX(30);
-        albumTitleSetting.setTranslateY(380);
         albumTitleSetting.setVisible(false);
 
         albumTitleSettingResult = new ComboBox(FXCollections.observableArrayList(
                 "Enabled",
                 "Disabled"
         ));
-        albumTitleSettingResult.setTranslateY(380);
         albumTitleSettingResult.setVisible(false);
 
         songTitleSetting = new Label("Song Title: ");
         songTitleSetting.setStyle("-fx-font: 16 arial;");
-        songTitleSetting.setTranslateX(30);
-        songTitleSetting.setTranslateY(405);
         songTitleSetting.setVisible(false);
 
         songTitleSettingResult = new ComboBox(FXCollections.observableArrayList(
                 "Enabled",
                 "Disabled"
         ));
-        songTitleSettingResult.setTranslateY(405);
         songTitleSettingResult.setVisible(false);
 
 
         artistSetting = new Label("Artist: ");
         artistSetting.setStyle("-fx-font: 16 arial;");
-        artistSetting.setTranslateX(30);
-        artistSetting.setTranslateY(430);
         artistSetting.setVisible(false);
 
 
@@ -418,26 +372,20 @@ public class View implements EventHandler<KeyEvent>
                 "Enabled",
                 "Disabled"
         ));
-        artistSettingResult.setTranslateY(430);
         artistSettingResult.setVisible(false);
 
         yearSetting = new Label("Year: ");
         yearSetting.setStyle("-fx-font: 16 arial;");
-        yearSetting.setTranslateX(30);
-        yearSetting.setTranslateY(455);
         yearSetting.setVisible(false);
 
         yearSettingResult = new ComboBox(FXCollections.observableArrayList(
                 "Enabled",
                 "Disabled"
         ));
-        yearSettingResult.setTranslateY(455);
         yearSettingResult.setVisible(false);
 
         trackNumberSetting = new Label("Track Number: ");
         trackNumberSetting.setStyle("-fx-font: 16 arial;");
-        trackNumberSetting.setTranslateX(30);
-        trackNumberSetting.setTranslateY(480);
         trackNumberSetting.setVisible(false);
 
         trackNumberSettingResult = new ComboBox(FXCollections.observableArrayList(
@@ -449,32 +397,27 @@ public class View implements EventHandler<KeyEvent>
 
         metaDataWarning = new Label("Meta-data application is only available for mp3 files.");
         metaDataWarning.setStyle("-fx-font: 16 arial;");
-        metaDataWarning.setTranslateX(30);
-        metaDataWarning.setTranslateY(505);
         metaDataWarning.setVisible(false);
 
         confirmChanges = new Button("Confirm");
-        confirmChanges.setTranslateY(800-50);
-        confirmChanges.setTranslateX(30);
         confirmChanges.setOnAction(e -> submit());
         confirmChanges.setVisible(false);
 
         cancelBackButton = new Button("Cancel");
-        cancelBackButton.setTranslateY(800-50);
         cancelBackButton.setOnAction(e -> searchMode());
         cancelBackButton.setVisible(false);
 
         // Settings Lines
-        settingTitleSubline = new Line(30, 45, 600-30, 45);
+        settingTitleSubline = new Line();
         settingTitleSubline.setVisible(false);
 
-        programSettingsTitleSubline = new Line(30, 105, 600-30, 105);
+        programSettingsTitleSubline = new Line();
         programSettingsTitleSubline.setVisible(false);
 
-        fileSettingsTitleSubline = new Line(30, 220, 600-30, 220);
+        fileSettingsTitleSubline = new Line();
         fileSettingsTitleSubline.setVisible(false);
 
-        metaDataTitleSubline = new Line(30, 345, 600-30, 345);
+        metaDataTitleSubline = new Line();
         metaDataTitleSubline.setVisible(false);
 
         // Search
@@ -553,19 +496,7 @@ public class View implements EventHandler<KeyEvent>
         // Could look at changing how vars are passed, less global ideally
         new allMusicQuery();
 
-        resultsTable.setTranslateX((600 - resultsTable.getWidth()) / 2);
-        resultsTable.setTranslateY(50);
-
-        searchResultsTitle.setTranslateX((600 - resultsTable.getWidth()) / 2);
-        searchResultsTitle.setTranslateY(10);
-
-        downloadButton.setTranslateX((600 - resultsTable.getWidth()) / 2);
-        downloadButton.setTranslateY(460);
         downloadButton.setDisable(true);
-
-        cancelButton.setTranslateX(480 - (600 - resultsTable.getWidth()) / 2);
-        cancelButton.setTranslateY(460);
-
         resultsTable.setVisible(true);
         searchResultsTitle.setVisible(true);
         downloadButton.setVisible(true);
@@ -576,6 +507,8 @@ public class View implements EventHandler<KeyEvent>
         footerMarker.setVisible(false);
         settingsLinkButton.setVisible(false);
         settingsLink.setVisible(false);
+
+        restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
 
         return searchResults;
 
@@ -815,32 +748,12 @@ public class View implements EventHandler<KeyEvent>
         outputDirectoryButton.setVisible(true);
         confirmChanges.setVisible(true);
         cancelBackButton.setVisible(true);
-        cancelBackButton.setTranslateX(600 - 30 - cancelBackButton.getWidth());
 
         // Lines
         settingTitleSubline.setVisible(true);
         programSettingsTitleSubline.setVisible(true);
         fileSettingsTitleSubline.setVisible(true);
         metaDataTitleSubline.setVisible(true);
-
-        // Setting the labels for information
-        outputDirectoryResult.setTranslateX(600 - 30 - outputDirectoryResult.getWidth());
-        songDownloadFormatResult.setTranslateX(600 - 30 - songDownloadFormatResult.getWidth());
-        saveAlbumArtResult.setTranslateX(600 - 30 - saveAlbumArtResult.getWidth());
-        versionResult.setTranslateX(600 - 30 - versionResult.getWidth());
-        latestVersionResult.setTranslateX(600 - 30 - latestVersionResult.getWidth());
-        youtubeDlVerificationResult.setTranslateX(600 - 30 - youtubeDlVerificationResult.getWidth());
-
-        albumArtSettingResult.setTranslateX(600 - 30 - albumArtSettingResult.getWidth());
-        albumTitleSettingResult.setTranslateX(600 - 30 - albumTitleSettingResult.getWidth());
-        songTitleSettingResult.setTranslateX(600 - 30 - songTitleSettingResult.getWidth());
-        artistSettingResult.setTranslateX(600 - 30 - artistSettingResult.getWidth());
-        yearSettingResult.setTranslateX(600 - 30 - yearSettingResult.getWidth());
-        trackNumberSettingResult.setTranslateX(600 - 30 - trackNumberSettingResult.getWidth());
-
-        // Invisilbe button for selection
-        outputDirectoryButton.setTranslateX(600 - 30 - outputDirectoryResult.getWidth());
-        outputDirectoryButton.setPrefSize(outputDirectoryResult.getWidth(), 25);
 
         // Additional selection
         songDownloadFormatResult.getSelectionModel().select(musicFormatSetting);
@@ -854,6 +767,11 @@ public class View implements EventHandler<KeyEvent>
         trackNumberSettingResult.getSelectionModel().select(applyTrack ? 0 : 1);
 
         setMetaDataVisibility();
+
+        restructureElements(
+                mainWindow.getWidth(),
+                mainWindow.getHeight()
+        );
 
         // Scheduling getting latest version
         new getLatestVersion();
@@ -1016,8 +934,6 @@ public class View implements EventHandler<KeyEvent>
         // Detect the mode
         if (title.isVisible()) {
 
-            System.out.println(height);
-
             // Default search mode
             title.setTranslateX(width/2 - title.getWidth()/2);
             title.setTranslateY(height/2 - 119.5);
@@ -1037,6 +953,128 @@ public class View implements EventHandler<KeyEvent>
             settingsLinkButton.setTranslateY(height - 40 - 39);
             settingsLinkButton.setPrefSize(settingsLink.getWidth(), 25);
 
+        } else if (settingsTitle.isVisible()) {
+
+            // Settings mode
+            settingsTitle.setTranslateX(30);
+            settingsTitle.setTranslateY(10);
+
+            // Info
+            programSettingsTitle.setTranslateX(30);
+            programSettingsTitle.setTranslateY(80);
+            version.setTranslateX(30);
+            version.setTranslateY(115);
+            versionResult.setTranslateY(115);
+            versionResult.setTranslateX(width - 19 - 30 - versionResult.getWidth());
+            latestVersion.setTranslateX(30);
+            latestVersion.setTranslateY(135);
+            latestVersionResult.setTranslateY(135);
+            latestVersionResult.setTranslateX(width - 19 - 30 - latestVersionResult.getWidth());
+            youtubeDlVerification.setTranslateX(30);
+            youtubeDlVerification.setTranslateY(155);
+            youtubeDlVerificationResult.setTranslateY(155);
+            youtubeDlVerificationResult.setTranslateX(width - 19 - 30 - youtubeDlVerificationResult.getWidth());
+
+            // Files
+            fileSettingsTitle.setTranslateX(30);
+            fileSettingsTitle.setTranslateY(195);
+            outputDirectory.setTranslateX(30);
+            outputDirectory.setTranslateY(230);
+            outputDirectoryResult.setTranslateY(230);
+            outputDirectoryResult.setTranslateX(width - 19 - 30 - outputDirectoryResult.getWidth());
+            outputDirectoryButton.setTranslateY(230);
+            songDownloadFormat.setTranslateX(30);
+            songDownloadFormat.setTranslateY(255);
+            songDownloadFormatResult.setTranslateY(255);
+            songDownloadFormatResult.setTranslateX(width - 19 - 30 - songDownloadFormatResult.getWidth());
+            saveAlbumArt.setTranslateX(30);
+            saveAlbumArt.setTranslateY(280);
+            saveAlbumArtResult.setTranslateY(280);
+            saveAlbumArtResult.setTranslateX(width - 19 - 30 - saveAlbumArtResult.getWidth());
+
+            // Meta-data
+            metaDataTitle.setTranslateX(30);
+            metaDataTitle.setTranslateY(320);
+            albumArtSetting.setTranslateX(30);
+            albumArtSetting.setTranslateY(355);
+            albumArtSettingResult.setTranslateY(355);
+            albumArtSettingResult.setTranslateX(width - 19 - 30 - albumArtSettingResult.getWidth());
+            albumTitleSetting.setTranslateX(30);
+            albumTitleSetting.setTranslateY(380);
+            albumTitleSettingResult.setTranslateY(380);
+            albumTitleSettingResult.setTranslateX(width - 19 - 30 - albumTitleSettingResult.getWidth());
+            songTitleSetting.setTranslateX(30);
+            songTitleSetting.setTranslateY(405);
+            songTitleSettingResult.setTranslateY(405);
+            songTitleSettingResult.setTranslateX(width - 19 - 30 - songTitleSettingResult.getWidth());
+            artistSetting.setTranslateX(30);
+            artistSetting.setTranslateY(430);
+            artistSettingResult.setTranslateY(430);
+            artistSettingResult.setTranslateX(width - 19 - 30 - artistSettingResult.getWidth());
+            yearSetting.setTranslateX(30);
+            yearSetting.setTranslateY(455);
+            yearSettingResult.setTranslateY(455);
+            yearSettingResult.setTranslateX(width - 19 - 30 - yearSettingResult.getWidth());
+            trackNumberSetting.setTranslateX(30);
+            trackNumberSetting.setTranslateY(480);
+            trackNumberSettingResult.setTranslateY(480);
+            trackNumberSettingResult.setTranslateX(width - 19 - 30 - trackNumberSettingResult.getWidth());
+            metaDataWarning.setTranslateX(30);
+            metaDataWarning.setTranslateY(505);
+
+            // Buttons
+            confirmChanges.setTranslateY(height-50-39);
+            confirmChanges.setTranslateX(30);
+            cancelBackButton.setTranslateY(height-50-39);
+            cancelBackButton.setTranslateX(width - 19 - 30 - cancelBackButton.getWidth());
+            outputDirectoryButton.setTranslateX(width -19 - 30 - outputDirectoryResult.getWidth());
+            outputDirectoryButton.setPrefSize(outputDirectoryResult.getWidth(), 25);
+
+            // Lines
+            settingTitleSubline.setStartX(30);
+            settingTitleSubline.setStartY(45);
+            settingTitleSubline.setEndX(width-30-19.5);
+            settingTitleSubline.setEndY(45);
+
+            programSettingsTitleSubline.setStartX(30);
+            programSettingsTitleSubline.setStartY(105);
+            programSettingsTitleSubline.setEndX(width-30-19.5);
+            programSettingsTitleSubline.setEndY(105);
+
+            fileSettingsTitleSubline.setStartX(30);
+            fileSettingsTitleSubline.setStartY(220);
+            fileSettingsTitleSubline.setEndX(width-30-19.5);
+            fileSettingsTitleSubline.setEndY(220);
+
+            metaDataTitleSubline.setStartX(30);
+            metaDataTitleSubline.setStartY(345);
+            metaDataTitleSubline.setEndX(width-30-19.5);
+            metaDataTitleSubline.setEndY(345);
+
+        } else if (resultsTable.isVisible()) {
+
+            // Search mode
+            searchResultsTitle.setTranslateX((width - 19 - resultsTable.getWidth()) / 2);
+            searchResultsTitle.setTranslateY(10);
+
+            resultsTable.setTranslateX((width - 19 - resultsTable.getWidth()) / 2);
+            resultsTable.setTranslateY(50);
+
+            downloadButton.setTranslateX((width - 19 - resultsTable.getWidth()) / 2);
+            downloadButton.setTranslateY(460);
+            cancelButton.setTranslateX((width - 19 - resultsTable.getWidth()) / 2 + resultsTable.getWidth() - cancelButton.getWidth());
+            cancelButton.setTranslateY(460);
+
+            if (loading.isVisible()) {
+                // Loading data should be restructured too
+                searchesProgressText.setTranslateY(510);
+                searchesProgressText.setTranslateX(60);
+
+                loading.setTranslateX(60);
+                loading.setPrefWidth(480);
+                loading.setPrefHeight(20);
+                loading.setTranslateY(530);
+            }
         }
 
     }

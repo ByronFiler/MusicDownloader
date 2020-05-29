@@ -49,6 +49,10 @@ public class Controller {
                 view.searchResults = view.handleSearch();
                 break;
 
+            case X:
+                view.searchRequest.setText("The Dark Side of the Moon");
+                view.searchResults = view.handleSearch();
+
 
         }
 
