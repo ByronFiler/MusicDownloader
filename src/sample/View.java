@@ -30,6 +30,7 @@ import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.time.Instant;
 import java.util.*;
 
 // TODO: Hide download folder where possible until download completed
@@ -122,9 +123,6 @@ public class View implements EventHandler<KeyEvent>
     public Line fileSettingsTitleLine;
     public Line metaDataTitleLine;
 
-    // Element Container
-    public ArrayList<Label> searchPage = new ArrayList<>();
-
     // Data
     public ArrayList<ArrayList<String>> searchResults;
     public ArrayList<ArrayList<String>> songsData;
@@ -186,11 +184,10 @@ public class View implements EventHandler<KeyEvent>
         title = new Label("Music Downloader");
         title.setId("title");
 
-        searchResultsTitle = new Label("Search Results");
-        searchResultsTitle.setId("subTitle");
-        searchResultsTitle.setVisible(false);
-
         searchRequest = new TextField();
+        searchRequest.setId("search");
+        searchRequest.setPrefSize(400, 20);
+
         footerMarker = new Line();
 
         settingsLink = new Label("Settings");
@@ -203,6 +200,10 @@ public class View implements EventHandler<KeyEvent>
         settingsLinkButton.setOnAction(e -> settingsMode());
 
         /* Search Results Page */
+        searchResultsTitle = new Label("Search Results");
+        searchResultsTitle.setId("subTitle");
+        searchResultsTitle.setVisible(false);
+
         resultsTable = new TableView<PropertyValueFactory<TableColumn<String, Utils.resultsSet>, Utils.resultsSet>>();
         resultsTable.getSelectionModel().selectedIndexProperty().addListener((obs, oldSelection, newSelection) -> downloadButton.setDisable(newSelection == null));
         resultsTable.setVisible(false);
@@ -319,7 +320,7 @@ public class View implements EventHandler<KeyEvent>
         songDownloadFormat.setVisible(false);
 
         songDownloadFormatResult = new ComboBox<>(FXCollections.observableArrayList("mp3", "wav", "ogg", "aac"));
-        songDownloadFormatResult.setOnAction(e -> setMetaDataVisibility());
+        songDownloadFormatResult.setOnAction(e -> {setMetaDataVisibility(); evaluateSettingsChanges();} );
         songDownloadFormatResult.setVisible(false);
 
         saveAlbumArt = new Label("Save Album Art: ");
@@ -327,6 +328,7 @@ public class View implements EventHandler<KeyEvent>
         saveAlbumArt.setVisible(false);
 
         saveAlbumArtResult = new ComboBox<>(FXCollections.observableArrayList("No", "Albums Only", "Songs Only", "All"));
+        saveAlbumArtResult.setOnAction(e -> evaluateSettingsChanges());
         saveAlbumArtResult.setVisible(false);
 
         metaDataTitle = new Label("Meta-Data Application");
@@ -338,6 +340,7 @@ public class View implements EventHandler<KeyEvent>
         albumArtSetting.setVisible(false);
 
         albumArtSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
+        albumArtSettingResult.setOnAction(e -> evaluateSettingsChanges());
         albumArtSettingResult.setVisible(false);
 
         albumTitleSetting = new Label("Album Title: ");
@@ -345,6 +348,7 @@ public class View implements EventHandler<KeyEvent>
         albumTitleSetting.setVisible(false);
 
         albumTitleSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
+        albumTitleSettingResult.setOnAction(e -> evaluateSettingsChanges());
         albumTitleSettingResult.setVisible(false);
 
         songTitleSetting = new Label("Song Title: ");
@@ -352,6 +356,7 @@ public class View implements EventHandler<KeyEvent>
         songTitleSetting.setVisible(false);
 
         songTitleSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
+        songTitleSettingResult.setOnAction(e -> evaluateSettingsChanges());
         songTitleSettingResult.setVisible(false);
 
 
@@ -361,6 +366,7 @@ public class View implements EventHandler<KeyEvent>
 
 
         artistSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
+        artistSettingResult.setOnAction(e -> evaluateSettingsChanges());
         artistSettingResult.setVisible(false);
 
         yearSetting = new Label("Year: ");
@@ -368,6 +374,7 @@ public class View implements EventHandler<KeyEvent>
         yearSetting.setVisible(false);
 
         yearSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
+        yearSettingResult.setOnAction(e -> evaluateSettingsChanges());
         yearSettingResult.setVisible(false);
 
         trackNumberSetting = new Label("Track Number: ");
@@ -375,6 +382,7 @@ public class View implements EventHandler<KeyEvent>
         trackNumberSetting.setVisible(false);
 
         trackNumberSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
+        trackNumberSettingResult.setOnAction(e -> evaluateSettingsChanges());
         trackNumberSettingResult.setTranslateY(480);
         trackNumberSettingResult.setVisible(false);
 
@@ -384,12 +392,14 @@ public class View implements EventHandler<KeyEvent>
 
         confirmChanges = new Button("Confirm");
         confirmChanges.setOnAction(e -> submit());
-        confirmChanges.setId("button");
+        confirmChanges.setId("confirm_button");
+        confirmChanges.setPrefSize(100, 50);
         confirmChanges.setVisible(false);
 
-        cancelBackButton = new Button("Cancel");
+        cancelBackButton = new Button("Back");
         cancelBackButton.setOnAction(e -> searchMode());
         cancelBackButton.setId("button");
+        cancelBackButton.setPrefSize(100, 50);
         cancelBackButton.setVisible(false);
 
         // Settings Lines
@@ -768,6 +778,7 @@ public class View implements EventHandler<KeyEvent>
         trackNumberSettingResult.getSelectionModel().select(applyTrack ? 0 : 1);
 
         setMetaDataVisibility();
+        evaluateSettingsChanges();
 
         restructureElements(
                 mainWindow.getWidth(),
@@ -972,9 +983,9 @@ public class View implements EventHandler<KeyEvent>
             metaDataWarning.setTranslateY(505);
 
             // Buttons
-            confirmChanges.setTranslateY(height-50-39);
+            confirmChanges.setTranslateY(height- confirmChanges.getHeight() - 25 - 39);
             confirmChanges.setTranslateX(30);
-            cancelBackButton.setTranslateY(height-50-39);
+            cancelBackButton.setTranslateY(height- cancelBackButton.getHeight() - 25 - 39);
             cancelBackButton.setTranslateX(width - 19 - 30 - cancelBackButton.getWidth());
             outputDirectoryButton.setTranslateX(width -19 - 30 - outputDirectoryResult.getWidth());
             outputDirectoryButton.setPrefSize(outputDirectoryResult.getWidth(), 25);
@@ -1027,6 +1038,29 @@ public class View implements EventHandler<KeyEvent>
                 loading.setTranslateY(height - 30 - 65);
             }
         }
+
+    }
+
+    public synchronized void evaluateSettingsChanges() {
+
+        if (
+            musicFormatSetting != songDownloadFormatResult.getSelectionModel().getSelectedIndex() ||
+            saveAlbumArtSetting != saveAlbumArtResult.getSelectionModel().getSelectedIndex() ||
+            ((applyAlbumArt && albumArtSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyAlbumArt && albumArtSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+            ((applyAlbumTitle && albumTitleSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyAlbumTitle && albumTitleSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+            ((applyArtist && artistSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyArtist && artistSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+            ((applySongTitle && songTitleSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applySongTitle && songTitleSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+            ((applyYear && yearSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyYear && yearSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+            ((applyTrack && trackNumberSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyTrack && trackNumberSettingResult.getSelectionModel().getSelectedIndex() == 0))
+        ) {
+            confirmChanges.setDisable(false);
+            cancelBackButton.setText("Cancel");
+        } else {
+            // Default button states
+            confirmChanges.setDisable(true);
+            cancelBackButton.setText("Back");
+        }
+
 
     }
 
@@ -1322,17 +1356,11 @@ public class View implements EventHandler<KeyEvent>
         public void run() {
 
             Settings settings = new Settings();
+
+            double originalWidth = latestVersionResult.getWidth();
             Platform.runLater(() -> latestVersionResult.setText(settings.getLatestVersion()));
-            // Come back when I know how to do this properly
-            // It works incredibly well and it's shaving literally less than 100th of a second off but could be nicer looking
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            Platform.runLater(() -> latestVersionResult.setTranslateX(600 - 30 - latestVersionResult.getWidth()));
-
-
+            while (latestVersionResult.getWidth() == originalWidth) {} // Ugly fix to an ugly fix?
+            Platform.runLater(() -> restructureElements(mainWindow.getWidth(), mainWindow.getHeight()));
 
         }
 
@@ -1396,7 +1424,9 @@ public class View implements EventHandler<KeyEvent>
             // Keep in background until the window is closed
             while (mainWindow.isShowing()) { }
 
+            // Quit running threads, download is important query is mostly for performance
             quitDownloadThread = true;
+            quitQueryThread = true;
 
         }
     }

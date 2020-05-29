@@ -21,3 +21,14 @@
 #button {
     -fx-cursor: hand;
 }
+
+#search {
+    -fx-border-radius: 10px;
+    -fx-border-width: 1px;
+}
+
+#confirm_button {
+    -fx-cursor: hand;
+    -fx-background-color: green;
+    -fx-text-fill: white;
+}
