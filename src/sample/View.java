@@ -230,18 +230,23 @@ public class View implements EventHandler<KeyEvent>
 
         TableColumn<String, Utils.resultsSet> titleColumn = new TableColumn<>("Title");
         titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
+        titleColumn.prefWidthProperty().bind(resultsTable.widthProperty().multiply(0.2).add(-15));
 
         TableColumn<String, Utils.resultsSet> artistColumn = new TableColumn<>("Artist");
         artistColumn.setCellValueFactory(new PropertyValueFactory<>("artist"));
+        artistColumn.prefWidthProperty().bind(resultsTable.widthProperty().multiply(0.2).add(-15));
 
         TableColumn<String, Utils.resultsSet> yearColumn = new TableColumn<>("Year");
         yearColumn.setCellValueFactory(new PropertyValueFactory<>("year"));
+        yearColumn.prefWidthProperty().bind(resultsTable.widthProperty().multiply(0.2).add(-15));
 
         TableColumn<String, Utils.resultsSet> genreColumn = new TableColumn<>("Genre");
         genreColumn.setCellValueFactory(new PropertyValueFactory<>("genre"));
+        genreColumn.prefWidthProperty().bind(resultsTable.widthProperty().multiply(0.2).add(-15));
 
         TableColumn<String, Utils.resultsSet> typeColumn = new TableColumn<>("Type");
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
+        typeColumn.prefWidthProperty().bind(resultsTable.widthProperty().multiply(0.2).add(-15));
 
         resultsTable.getColumns().add(albumArtColumn);
         resultsTable.getColumns().add(titleColumn);
@@ -575,6 +580,8 @@ public class View implements EventHandler<KeyEvent>
         settingsLinkButton.setVisible(true);
         settingsLink.setVisible(true);
 
+        restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
+
     }
 
     public synchronized void initializeDownload() throws IOException {
@@ -834,6 +841,8 @@ public class View implements EventHandler<KeyEvent>
         programSettingsTitleSubline.setVisible(false);
         fileSettingsTitleSubline.setVisible(false);
         metaDataTitleSubline.setVisible(false);
+
+        restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
     }
 
     public synchronized void submit() {
@@ -1054,16 +1063,18 @@ public class View implements EventHandler<KeyEvent>
         } else if (resultsTable.isVisible()) {
 
             // Search mode
-            searchResultsTitle.setTranslateX((width - 19 - resultsTable.getWidth()) / 2);
+            searchResultsTitle.setTranslateX(50);
             searchResultsTitle.setTranslateY(10);
 
-            resultsTable.setTranslateX((width - 19 - resultsTable.getWidth()) / 2);
+            resultsTable.setTranslateX(50);
             resultsTable.setTranslateY(50);
+            resultsTable.setPrefWidth(width - 100 - 19.5);
+            resultsTable.setPrefHeight(height - 30 - 200);
 
-            downloadButton.setTranslateX((width - 19 - resultsTable.getWidth()) / 2);
-            downloadButton.setTranslateY(460);
-            cancelButton.setTranslateX((width - 19 - resultsTable.getWidth()) / 2 + resultsTable.getWidth() - cancelButton.getWidth());
-            cancelButton.setTranslateY(460);
+            downloadButton.setTranslateX(50);
+            downloadButton.setTranslateY(height - 30 - 140);
+            cancelButton.setTranslateX(width - 19.5 - 50 - cancelButton.getWidth());
+            cancelButton.setTranslateY(height - 30 - 140);
 
             if (loading.isVisible()) {
                 // Loading data should be restructured too
