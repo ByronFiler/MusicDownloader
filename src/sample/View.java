@@ -971,6 +971,8 @@ public class View implements EventHandler<KeyEvent>
                 .getSelectionModel()
                 .selectedIndexProperty()
                 .getValue() == 0;
+
+        evaluateSettingsChanges();
     }
 
     public synchronized void restructureElements(double width, double height) {
