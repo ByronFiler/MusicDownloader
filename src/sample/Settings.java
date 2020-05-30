@@ -59,7 +59,7 @@ public class Settings {
 
         try {
             FileWriter newConfig = new FileWriter("resources\\json\\config.json");
-            newConfig.write("{\"output_directory\":\"\",\"save_album_art\":1,\"music_format\":0, \"album_art\": 1, \"album_title\":  1, \"song_title\": 1, \"artist\":  1, \"year\": 1, \"track\": 1}");
+            newConfig.write("{\"output_directory\":\"\",\"save_album_art\":1,\"music_format\":0, \"album_art\":1, \"album_title\":1, \"song_title\":1, \"artist\":1, \"year\":1, \"track\":1,\"theme\":0, \"data_saver\":0}");
             newConfig.close();
 
             return true;
@@ -98,7 +98,7 @@ public class Settings {
 
     }
 
-    public synchronized void saveSettings(String output_directory, int music_format, int save_album_art, int album_art, int album_title, int song_title, int artist, int year, int track) {
+    public synchronized void saveSettings(String output_directory, int music_format, int save_album_art, int album_art, int album_title, int song_title, int artist, int year, int track, int theme, int data_saver) {
         JSONObject newSettings = new JSONObject();
         newSettings.put("output_directory", output_directory);
         newSettings.put("music_format", music_format);
@@ -109,6 +109,8 @@ public class Settings {
         newSettings.put("artist", artist);
         newSettings.put("year", year);
         newSettings.put("track", track);
+        newSettings.put("theme", theme);
+        newSettings.put("data_saver", data_saver);
 
         try {
             FileWriter configFile = new FileWriter("resources\\json\\config.json");

@@ -8,6 +8,7 @@ import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
@@ -15,6 +16,9 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -25,7 +29,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +38,11 @@ import java.util.*;
 
 // TODO: Hide download folder where possible until download completed
 // TODO: Add button to install and configure youtube-dl & ffmpeg
+// TODO: Draw elements sequentially and dynamically
+// TODO: Add a dark theme setting
+// TODO: Add a "data saving" mode where album art requests just default to save data/time
+// TODO: Look if I can speed up search by sending all jpeg requests simultaneously
+// TODO: Look into make all settings scrollable or potentially different pages
 
 public class View implements EventHandler<KeyEvent>
 {
@@ -44,6 +52,7 @@ public class View implements EventHandler<KeyEvent>
     public int width;
     public int height;
 
+    public Scene scene;
     public Pane pane;
     public Canvas canvas;
     public Stage mainWindow;
@@ -60,6 +69,9 @@ public class View implements EventHandler<KeyEvent>
     public boolean applyArtist;
     public boolean applyYear;
     public boolean applyTrack;
+
+    public boolean darkTheme;
+    public boolean dataSaver;
 
     public String programVersion;
 
@@ -113,6 +125,13 @@ public class View implements EventHandler<KeyEvent>
     public ComboBox<String> trackNumberSettingResult;
     public Label metaDataWarning;
 
+    // Application
+    public Label applicationSettingTitle;
+    public Label darkModeSetting;
+    public ComboBox<String> darkModeSettingResult;
+    public Label dataSaverSetting;
+    public ComboBox<String> dataSaverSettingResult;
+
     // Buttons
     public Button confirmChanges;
     public Button cancelBackButton;
@@ -122,6 +141,7 @@ public class View implements EventHandler<KeyEvent>
     public Line programSettingsTitleLine;
     public Line fileSettingsTitleLine;
     public Line metaDataTitleLine;
+    public Line applicationSettingTitleLine;
 
     // Data
     public ArrayList<ArrayList<String>> searchResults;
@@ -176,6 +196,9 @@ public class View implements EventHandler<KeyEvent>
         applyYear = (Long) config.get("year") != 0;
         applyTrack = (Long) config.get("track") != 0;
 
+        darkTheme = (Long) config.get("theme") != 0;
+        dataSaver = (Long) config.get("data_saver") != 0;
+
         programVersion = settings.getVersion();
 
         /* JAVA-FX DESIGN */
@@ -189,6 +212,7 @@ public class View implements EventHandler<KeyEvent>
         searchRequest.setPrefSize(400, 20);
 
         footerMarker = new Line();
+        footerMarker.setId("line");
 
         settingsLink = new Label("Settings");
         settingsLink.setId("subTitle2");
@@ -205,6 +229,7 @@ public class View implements EventHandler<KeyEvent>
         searchResultsTitle.setVisible(false);
 
         resultsTable = new TableView<PropertyValueFactory<TableColumn<String, Utils.resultsSet>, Utils.resultsSet>>();
+        resultsTable.setId("table");
         resultsTable.getSelectionModel().selectedIndexProperty().addListener((obs, oldSelection, newSelection) -> downloadButton.setDisable(newSelection == null));
         resultsTable.setVisible(false);
 
@@ -390,6 +415,26 @@ public class View implements EventHandler<KeyEvent>
         metaDataWarning.setId("settingInfo");
         metaDataWarning.setVisible(false);
 
+        applicationSettingTitle = new Label("Application Configuration");
+        applicationSettingTitle.setId("settingsHeader");
+        applicationSettingTitle.setVisible(false);
+
+        darkModeSetting = new Label("Theme: ");
+        darkModeSetting.setId("settingInfo");
+        darkModeSetting.setVisible(false);
+
+        darkModeSettingResult = new ComboBox<>(FXCollections.observableArrayList("Normal", "Night"));
+        darkModeSettingResult.setOnAction(e -> {evaluateSettingsChanges(); switchTheme(darkModeSettingResult.getSelectionModel().getSelectedIndex() == 1);});
+        darkModeSettingResult.setVisible(false);
+
+        dataSaverSetting = new Label("Data Saver Mode: ");
+        dataSaverSetting.setId("settingInfo");
+        dataSaverSetting.setVisible(false);
+
+        dataSaverSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
+        dataSaverSettingResult.setOnAction(e -> evaluateSettingsChanges());
+        dataSaverSettingResult.setVisible(false);
+
         confirmChanges = new Button("Confirm");
         confirmChanges.setOnAction(e -> submit());
         confirmChanges.setId("confirm_button");
@@ -404,16 +449,24 @@ public class View implements EventHandler<KeyEvent>
 
         // Settings Lines
         settingTitleLine = new Line();
+        settingTitleLine.setId("line");
         settingTitleLine.setVisible(false);
 
         programSettingsTitleLine = new Line();
+        programSettingsTitleLine.setId("line");
         programSettingsTitleLine.setVisible(false);
 
         fileSettingsTitleLine = new Line();
+        fileSettingsTitleLine.setId("line");
         fileSettingsTitleLine.setVisible(false);
 
         metaDataTitleLine = new Line();
+        metaDataTitleLine.setId("line");
         metaDataTitleLine.setVisible(false);
+
+        applicationSettingTitleLine = new Line();
+        applicationSettingTitleLine.setId("line");
+        applicationSettingTitle.setVisible(false);
 
         // Search Page
         pane.getChildren().add(title);
@@ -461,6 +514,11 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(yearSettingResult);
         pane.getChildren().add(trackNumberSetting);
         pane.getChildren().add(trackNumberSettingResult);
+        pane.getChildren().add(applicationSettingTitle);
+        pane.getChildren().add(darkModeSetting);
+        pane.getChildren().add(darkModeSettingResult);
+        pane.getChildren().add(dataSaverSetting);
+        pane.getChildren().add(dataSaverSettingResult);
         pane.getChildren().add(confirmChanges);
         pane.getChildren().add(cancelBackButton);
         pane.getChildren().add(metaDataWarning);
@@ -468,9 +526,12 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(programSettingsTitleLine);
         pane.getChildren().add(fileSettingsTitleLine);
         pane.getChildren().add(metaDataTitleLine);
+        pane.getChildren().add(applicationSettingTitleLine);
 
-        Scene scene = new Scene(pane);
+
+        scene = new Scene(pane);
         scene.getStylesheets().add(getClass().getResource("main.css").toExternalForm());
+        switchTheme(darkTheme);
         scene.setOnKeyPressed(this);
 
         window.setScene(scene);
@@ -509,10 +570,6 @@ public class View implements EventHandler<KeyEvent>
 
         return searchResults;
 
-    }
-
-    public synchronized ArrayList<ArrayList<String>> getSongsData() {
-        return songsData;
     }
 
     public synchronized void setMetaDataVisibility() {
@@ -749,6 +806,13 @@ public class View implements EventHandler<KeyEvent>
         trackNumberSetting.setVisible(settingVisibility);
         trackNumberSettingResult.setVisible(settingVisibility);
 
+        // Application
+        applicationSettingTitle.setVisible(settingVisibility);
+        darkModeSetting.setVisible(settingVisibility);
+        darkModeSettingResult.setVisible(settingVisibility);
+        dataSaverSetting.setVisible(settingVisibility);
+        dataSaverSettingResult.setVisible(settingVisibility);
+
         // Buttons
         outputDirectoryButton.setVisible(settingVisibility);
         confirmChanges.setVisible(settingVisibility);
@@ -759,6 +823,7 @@ public class View implements EventHandler<KeyEvent>
         programSettingsTitleLine.setVisible(settingVisibility);
         fileSettingsTitleLine.setVisible(settingVisibility);
         metaDataTitleLine.setVisible(settingVisibility);
+        applicationSettingTitleLine.setVisible(settingVisibility);
 
     }
 
@@ -776,14 +841,13 @@ public class View implements EventHandler<KeyEvent>
         artistSettingResult.getSelectionModel().select(applyArtist ? 0 : 1);
         yearSettingResult.getSelectionModel().select(applyYear ? 0 : 1);
         trackNumberSettingResult.getSelectionModel().select(applyTrack ? 0 : 1);
+        darkModeSettingResult.getSelectionModel().select(darkTheme ? 1 : 0);
+        dataSaverSettingResult.getSelectionModel().select(dataSaver ? 0 : 1);
 
         setMetaDataVisibility();
         evaluateSettingsChanges();
 
-        restructureElements(
-                mainWindow.getWidth(),
-                mainWindow.getHeight()
-        );
+        restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
 
         // Scheduling getting latest version
         new getLatestVersion();
@@ -794,6 +858,7 @@ public class View implements EventHandler<KeyEvent>
 
         switchSettingVisibility(false);
         restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
+        switchTheme(darkTheme);
     }
 
     public synchronized void submit() {
@@ -850,6 +915,17 @@ public class View implements EventHandler<KeyEvent>
                                 .selectedIndexProperty()
                                 .getValue()
                                 - 1
+                ),
+                darkModeSettingResult
+                        .getSelectionModel()
+                        .selectedIndexProperty()
+                        .getValue(),
+                Math.abs(
+                        dataSaverSettingResult
+                                .getSelectionModel()
+                                .selectedIndexProperty()
+                                .getValue()
+                                - 1
                 )
         );
 
@@ -884,6 +960,14 @@ public class View implements EventHandler<KeyEvent>
                 .selectedIndexProperty()
                 .getValue() == 0;
         applyTrack = trackNumberSettingResult
+                .getSelectionModel()
+                .selectedIndexProperty()
+                .getValue() == 0;
+        darkTheme = darkModeSettingResult
+                .getSelectionModel()
+                .selectedIndexProperty()
+                .getValue() != 0;
+        dataSaver = dataSaverSettingResult
                 .getSelectionModel()
                 .selectedIndexProperty()
                 .getValue() == 0;
@@ -982,6 +1066,20 @@ public class View implements EventHandler<KeyEvent>
             metaDataWarning.setTranslateX(30);
             metaDataWarning.setTranslateY(505);
 
+            // Application
+            int metaDataWarningPush = metaDataWarning.isVisible() ? 35 : 0;
+
+            applicationSettingTitle.setTranslateX(30);
+            applicationSettingTitle.setTranslateY(520 + metaDataWarningPush);
+            darkModeSetting.setTranslateX(30);
+            darkModeSetting.setTranslateY(555 + metaDataWarningPush);
+            darkModeSettingResult.setTranslateX(width - 19 - 30 - darkModeSettingResult.getWidth());
+            darkModeSettingResult.setTranslateY(555 + metaDataWarningPush);
+            dataSaverSetting.setTranslateX(30);
+            dataSaverSetting.setTranslateY(580 + metaDataWarningPush);
+            dataSaverSettingResult.setTranslateX(width - 19 - 30 - dataSaverSettingResult.getWidth());
+            dataSaverSettingResult.setTranslateY(580 + metaDataWarningPush);
+
             // Buttons
             confirmChanges.setTranslateY(height- confirmChanges.getHeight() - 25 - 39);
             confirmChanges.setTranslateX(30);
@@ -1010,6 +1108,11 @@ public class View implements EventHandler<KeyEvent>
             metaDataTitleLine.setStartY(345);
             metaDataTitleLine.setEndX(width-30-19.5);
             metaDataTitleLine.setEndY(345);
+
+            applicationSettingTitleLine.setStartX(30);
+            applicationSettingTitleLine.setStartY(545 + metaDataWarningPush);
+            applicationSettingTitleLine.setEndX(width-30-19.5);
+            applicationSettingTitleLine.setEndY(545 + metaDataWarningPush);
 
         } else if (resultsTable.isVisible()) {
 
@@ -1051,7 +1154,9 @@ public class View implements EventHandler<KeyEvent>
             ((applyArtist && artistSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyArtist && artistSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
             ((applySongTitle && songTitleSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applySongTitle && songTitleSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
             ((applyYear && yearSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyYear && yearSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
-            ((applyTrack && trackNumberSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyTrack && trackNumberSettingResult.getSelectionModel().getSelectedIndex() == 0))
+            ((applyTrack && trackNumberSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyTrack && trackNumberSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+            ((darkTheme && darkModeSettingResult.getSelectionModel().getSelectedIndex() != 1) || (!darkTheme && darkModeSettingResult.getSelectionModel().getSelectedIndex() == 1)) ||
+            ((dataSaver && dataSaverSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!dataSaver && dataSaverSettingResult.getSelectionModel().getSelectedIndex() == 0))
         ) {
             confirmChanges.setDisable(false);
             cancelBackButton.setText("Cancel");
@@ -1061,6 +1166,22 @@ public class View implements EventHandler<KeyEvent>
             cancelBackButton.setText("Back");
         }
 
+
+    }
+
+    public synchronized void switchTheme(boolean nightMode) {
+
+        try {
+            if (nightMode) {
+                scene.getStylesheets().add(getClass().getResource("night_theme.css").toExternalForm());
+                scene.getStylesheets().remove(getClass().getResource("normal_theme.css").toExternalForm());
+            } else {
+                scene.getStylesheets().add(getClass().getResource("normal_theme.css").toExternalForm());
+                scene.getStylesheets().remove(getClass().getResource("night_theme.css").toExternalForm());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -1175,8 +1296,6 @@ public class View implements EventHandler<KeyEvent>
         }
 
         public void run() {
-
-            ArrayList<ArrayList<String>> songsData = getSongsData();
 
             Platform.runLater(() -> searchesProgressText.setText("0% Complete"));
             Platform.runLater(() -> loading.setVisible(true));

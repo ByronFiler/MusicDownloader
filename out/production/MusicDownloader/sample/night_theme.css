@@ -1,0 +1,36 @@
+#initial {
+    -fx-background-color: "#121212";
+}
+
+#title{
+    -fx-text-fill: "#cfcfcf";
+}
+
+#subTitle {
+    -fx-text-fill: "#cfcfcf";
+}
+
+#subTitle2 {
+    -fx-text-fill: "#cfcfcf";
+}
+
+#settingsHeader {
+    -fx-text-fill: "#cfcfcf";
+}
+
+#settingInfo {
+    -fx-text-fill: "#cfcfcf";
+}
+
+#line {
+    -fx-stroke: "#cfcfcf";
+}
+
+#table {
+    -fx-background-color: "#121212";
+    -fx-text-fill: "#cfcfcf";
+}
+
+#column {
+    -fx-my-cell-background: "#121212";
+}

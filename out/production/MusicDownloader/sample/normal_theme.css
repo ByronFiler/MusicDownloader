@@ -1,0 +1,11 @@
+#initial {
+    -fx-background-color: "#c1c1c1";
+}
+
+#subTitle {
+    -fx-text-fill: "#363434";
+}
+
+#line {
+    -fx-stroke: "#363434";
+}
