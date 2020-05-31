@@ -39,7 +39,10 @@ import java.util.*;
 // TODO: Hide download folder where possible until download completed
 // TODO: Add button to install and configure youtube-dl & ffmpeg
 // TODO: Draw elements sequentially and dynamically
-// TODO: Add a dark theme setting
+// TODO: Improve dark theme setting
+// TODO: Fix errors with changing CSS
+// TODO: Move CSS Files somewhere else
+// TODO: Rewrite Main.css and redesign general look of the application
 // TODO: Add a "data saving" mode where album art requests just default to save data/time
 // TODO: Look if I can speed up search by sending all jpeg requests simultaneously
 // TODO: Look into make all settings scrollable or potentially different pages
@@ -276,7 +279,7 @@ public class View implements EventHandler<KeyEvent>
         );
         downloadButton.setVisible(false);
 
-        cancelButton = new Button("Cancel");
+        cancelButton = new Button("Back");
         cancelButton.setPrefSize(120, 40);
         cancelButton.setOnAction(e -> cancel());
         cancelButton.setVisible(false);
@@ -1299,6 +1302,7 @@ public class View implements EventHandler<KeyEvent>
 
         public void run() {
 
+            Platform.runLater(() -> cancelButton.setText("Cancel"));
             Platform.runLater(() -> searchesProgressText.setText("0% Complete"));
             Platform.runLater(() -> loading.setVisible(true));
             Platform.runLater(() -> loading.setProgress(0));
@@ -1435,6 +1439,8 @@ public class View implements EventHandler<KeyEvent>
                     Debug.trace("Failed to delete file: " + (outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting) + "\\" + "art.jpg");
                 }
             }
+
+            Platform.runLater(() -> cancelButton.setText("Back"));
 
             if (quitDownloadThread) {
                 quitDownloadThread = false;
