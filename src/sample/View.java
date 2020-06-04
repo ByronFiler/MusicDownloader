@@ -39,7 +39,6 @@ import java.util.*;
 // TODO: Fix dark theme, should set text colours properly and the results table
 // TODO: Add button to install and configure youtube-dl & ffmpeg
 // TODO: Look if I can speed up search by sending all jpeg & download requests simultaneously
-// TODO: Look into make all settings scrollable or potentially different pages
 // TODO: Fix errors with changing CSS
 // TODO: Move CSS Files somewhere else
 // TODO: Rewrite Main.css and redesign general look of the application
@@ -336,14 +335,22 @@ public class View implements EventHandler<KeyEvent>
         latestVersionResult = new Label("Locating...");
         latestVersionResult.setId("settingInfo");
         latestVersionResult.setVisible(false);
+        if (dataSaver) {
+            new getLatestVersion();
+        }
 
         youtubeDlVerification = new Label("YouTube-DL Status: ");
         youtubeDlVerification.setId("settingInfo");
         youtubeDlVerification.setVisible(false);
 
-        youtubeDlVerificationResult = new Label(settings.checkYouTubeDl());
+        //youtubeDlVerificationResult = new Label(settings.checkYouTubeDl());
+        youtubeDlVerificationResult = new Label("Checking...");
         youtubeDlVerificationResult.setId("settingInfo");
         youtubeDlVerificationResult.setVisible(false);
+        if (dataSaver) {
+            // Calls it once on program startup, instead of each time settings is accessed
+            new youtubeDlVerification();
+        }
 
         fileSettingsTitle = new Label("Files");
         fileSettingsTitle.setId("settingsHeader");
@@ -987,8 +994,11 @@ public class View implements EventHandler<KeyEvent>
 
         restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
 
-        // Scheduling getting latest version
-        new getLatestVersion();
+        // Scheduling getting latest version, if data saver disabled
+        if (!dataSaver) {
+            new getLatestVersion();
+            new youtubeDlVerification();
+        }
 
     }
 
@@ -1550,8 +1560,8 @@ public class View implements EventHandler<KeyEvent>
         public void run() {
 
             Settings settings = new Settings();
-
             double originalWidth = latestVersionResult.getWidth();
+
             Platform.runLater(() -> latestVersionResult.setText(settings.getLatestVersion()));
             while (latestVersionResult.getWidth() == originalWidth) {} // Ugly fix to an ugly fix?
             Platform.runLater(() -> restructureElements(mainWindow.getWidth(), mainWindow.getHeight()));
@@ -1625,4 +1635,32 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
+    class youtubeDlVerification implements Runnable {
+        Thread t;
+
+        youtubeDlVerification () {
+            t = new Thread(this, "youtube-dl-verification");
+            t.start();
+        }
+
+        public void run() {
+
+            boolean youtubeDlStatus = Settings.checkYouTubeDl();
+            double originalWidth = youtubeDlVerificationResult.getWidth();
+
+            if (youtubeDlStatus) {
+
+                Platform.runLater(() -> youtubeDlVerificationResult.setText("Fully Operational"));
+
+            } else {
+
+                Platform.runLater(() -> youtubeDlVerificationResult.setText("YouTubeDl: Not Configured"));
+
+            }
+
+            while (youtubeDlVerificationResult.getWidth() == originalWidth) {}
+            Platform.runLater(() -> restructureElements(mainWindow.getWidth(), mainWindow.getHeight()));
+
+        }
+    }
 }

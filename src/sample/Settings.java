@@ -1,5 +1,8 @@
 package sample;
 
+import com.sapher.youtubedl.YoutubeDL;
+import com.sapher.youtubedl.YoutubeDLException;
+import com.sapher.youtubedl.YoutubeDLRequest;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -7,6 +10,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.*;
+import java.util.ArrayList;
 
 public class Settings {
 
@@ -88,13 +92,33 @@ public class Settings {
 
     }
 
-    public synchronized String checkYouTubeDl() {
+    public static boolean checkYouTubeDl() {
 
         // Check youtube-dl is working
+        try {
+            YoutubeDLRequest request = new YoutubeDLRequest("https://www.youtube.com/watch?v=7-qGKqveZaM");
+            request.setOption("extract-audio");
+            request.setOption("audio-format mp3");
+            request.setOption("ignore-errors");
+            request.setOption("retries", 10);
+            YoutubeDL.execute(request);
 
-        // Check ffmpeg is working
+            File delete = new File("Shortest Video on Youtube EVER! 0 seconds nearly 1 (fastest)-7-qGKqveZaM.mp3");
+            if (!delete.delete()) {
+                Debug.trace("Failed to delete file: " + delete.getAbsolutePath());
+            }
 
-        return "Fully Operational";
+            return true;
+
+        } catch (YoutubeDLException e) {
+            return false;
+        }
+
+    }
+
+    public static boolean checkFFMPEG() {
+
+        return true;
 
     }
 
