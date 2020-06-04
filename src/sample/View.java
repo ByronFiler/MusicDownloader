@@ -9,7 +9,6 @@ import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
@@ -32,18 +31,15 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import javax.swing.*;
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.*;
 
-// TODO: Draw elements sequentially and dynamically
+// TODO: Fix dark theme, should set text colours properly and the results table
 // TODO: Add button to install and configure youtube-dl & ffmpeg
-// TODO: Implement "data saving" mode where album art requests just default to save data/time
-// TODO: Look if I can speed up search by sending all jpeg requests simultaneously
+// TODO: Look if I can speed up search by sending all jpeg & download requests simultaneously
 // TODO: Look into make all settings scrollable or potentially different pages
-// TODO: Improve dark theme setting
 // TODO: Fix errors with changing CSS
 // TODO: Move CSS Files somewhere else
 // TODO: Rewrite Main.css and redesign general look of the application
@@ -174,9 +170,6 @@ public class View implements EventHandler<KeyEvent>
     public ArrayList<Utils.resultsSet> resultsData;
     public HashMap<String, String> metaData;
 
-    // Containers
-    public ArrayList<Label> applicationInformationContainer;
-
     public ArrayList<String> formatReferences = new ArrayList<>(Arrays.asList("mp3", "wav", "ogg", "aac"));
 
     public boolean quitQueryThread = false;
@@ -284,12 +277,14 @@ public class View implements EventHandler<KeyEvent>
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
         typeColumn.prefWidthProperty().bind(resultsTable.widthProperty().multiply(0.2).add(-15));
 
-        resultsTable.getColumns().add(albumArtColumn);
-        resultsTable.getColumns().add(titleColumn);
-        resultsTable.getColumns().add(artistColumn);
-        resultsTable.getColumns().add(yearColumn);
-        resultsTable.getColumns().add(genreColumn);
-        resultsTable.getColumns().add(typeColumn);
+        resultsTable.getColumns().addAll(
+                albumArtColumn,
+                titleColumn,
+                artistColumn,
+                yearColumn,
+                genreColumn,
+                typeColumn
+        );
 
         downloadButton = new Button("Download");
         downloadButton.setPrefSize(120, 40);
@@ -645,25 +640,33 @@ public class View implements EventHandler<KeyEvent>
         settingsContainer.setVisible(false);
 
         // Search Page
-        pane.getChildren().add(title);
-        pane.getChildren().add(searchRequest);
-        pane.getChildren().add(footerMarker);
-        pane.getChildren().add(settingsLink);
-        pane.getChildren().add(settingsLinkButton);
+        pane.getChildren().addAll(
+                title,
+                searchRequest,
+                footerMarker,
+                settingsLink,
+                settingsLinkButton
+        );
 
         // Search Page
-        pane.getChildren().add(searchResultsTitle);
-        pane.getChildren().add(resultsTable);
-        pane.getChildren().add(downloadButton);
-        pane.getChildren().add(cancelButton);
+        pane.getChildren().addAll(
+                searchResultsTitle,
+                resultsTable,
+                downloadButton,
+                cancelButton
+        );
         // Search Page: Downloads
-        pane.getChildren().add(loading);
-        pane.getChildren().add(searchesProgressText);
+        pane.getChildren().addAll(
+                loading,
+                searchesProgressText
+        );
 
         // Settings Page
-        pane.getChildren().add(settingsContainer);
-        pane.getChildren().add(confirmChanges);
-        pane.getChildren().add(cancelBackButton);
+        pane.getChildren().addAll(
+                settingsContainer,
+                confirmChanges,
+                cancelBackButton
+        );
 
         scene = new Scene(pane);
         scene.getStylesheets().add(getClass().getResource("main.css").toExternalForm());
@@ -1281,7 +1284,6 @@ public class View implements EventHandler<KeyEvent>
                             break;
                         }
 
-
                         // Reference for web requests
                         Document songDataPage;
 
@@ -1291,30 +1293,39 @@ public class View implements EventHandler<KeyEvent>
                         String genre = searchResult.get(3);
                         if (searchResult.get(4).equals("Album")) {
 
-                            // This is an album request, year must be known or won't be found and hence doesn't require a check
-                            if (searchResult.get(5).equals("")) {
+                            if (dataSaver) {
                                 selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
                             } else {
-                                selectedImage = new ImageView(new Image(searchResult.get(5)));
+                                // This is an album request, year must be known or won't be found and hence doesn't require a check
+                                if (searchResult.get(5).equals("")) {
+                                    selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
+                                } else {
+                                    selectedImage = new ImageView(new Image(searchResult.get(5)));
+                                }
                             }
                         } else {
 
-                            songDataPage = Jsoup.connect(searchResult.get(6)).get();
-
-                            if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https")) {
-                                selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
-                            } else {
+                            if (dataSaver) {
                                 selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
+                            } else {
+                                songDataPage = Jsoup.connect(searchResult.get(6)).get();
+
+                                if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https")) {
+                                    selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
+                                } else {
+                                    selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
+                                }
+
+
+                                if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4 && year.length() == 0) {
+                                    year = songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear");
+                                }
+
+                                try {
+                                    genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length() - 1);
+                                } catch (NullPointerException ignored) {
+                                }
                             }
-
-
-                            if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4 && year.length() == 0) {
-                                year = songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear");
-                            }
-
-                            try {
-                                genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length() - 1);
-                            } catch (NullPointerException ignored) {}
 
                         }
 
