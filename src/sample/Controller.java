@@ -36,8 +36,11 @@ public class Controller {
         switch (event.getCode()) {
 
             case ENTER:
-                view.searchResults = view.handleSearch();
-                break;
+
+                if (view.searchRequest.isVisible()) {
+                    view.searchResults = view.handleSearch();
+                    break;
+                }
 
             case ESCAPE:
                 view.searchRequest.setText("The Dark Side of the Moon");

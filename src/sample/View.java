@@ -9,17 +9,19 @@ import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
@@ -30,22 +32,21 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.time.Instant;
 import java.util.*;
 
-// TODO: Hide download folder where possible until download completed
-// TODO: Add button to install and configure youtube-dl & ffmpeg
 // TODO: Draw elements sequentially and dynamically
+// TODO: Add button to install and configure youtube-dl & ffmpeg
+// TODO: Implement "data saving" mode where album art requests just default to save data/time
+// TODO: Look if I can speed up search by sending all jpeg requests simultaneously
+// TODO: Look into make all settings scrollable or potentially different pages
 // TODO: Improve dark theme setting
 // TODO: Fix errors with changing CSS
 // TODO: Move CSS Files somewhere else
 // TODO: Rewrite Main.css and redesign general look of the application
-// TODO: Add a "data saving" mode where album art requests just default to save data/time
-// TODO: Look if I can speed up search by sending all jpeg requests simultaneously
-// TODO: Look into make all settings scrollable or potentially different pages
 
 public class View implements EventHandler<KeyEvent>
 {
@@ -91,6 +92,28 @@ public class View implements EventHandler<KeyEvent>
     public Button settingsLinkButton;
 
     // Settings
+    VBox versionResultContainer;
+    VBox latestVersionResultContainer;
+    VBox youtubeDlVerificationResultContainer;
+
+    VBox outputDirectoryResultContainer;
+    VBox outputDirectoryButtonContainer;
+    VBox songDownloadFormatResultContainer;
+    VBox saveAlbumArtResultContainer;
+
+    VBox metaDataInfoContainer;
+    VBox albumArtSettingResultContainer;
+    VBox albumTitleSettingResultContainer;
+    VBox songTitleSettingResultContainer;
+    VBox artistSettingResultContainer;
+    VBox yearSettingResultContainer;
+    VBox trackNumberSettingResultContainer;
+
+    VBox darkModeSettingResultContainer;
+    VBox dataSaverSettingResultContainer;
+
+    public ScrollPane settingsContainer;
+    public BorderPane settingsContainerBase;
     public Label settingsTitle;
 
     // Program
@@ -126,7 +149,6 @@ public class View implements EventHandler<KeyEvent>
     public ComboBox<String> yearSettingResult;
     public Label trackNumberSetting;
     public ComboBox<String> trackNumberSettingResult;
-    public Label metaDataWarning;
 
     // Application
     public Label applicationSettingTitle;
@@ -151,6 +173,9 @@ public class View implements EventHandler<KeyEvent>
     public ArrayList<ArrayList<String>> songsData;
     public ArrayList<Utils.resultsSet> resultsData;
     public HashMap<String, String> metaData;
+
+    // Containers
+    public ArrayList<Label> applicationInformationContainer;
 
     public ArrayList<String> formatReferences = new ArrayList<>(Arrays.asList("mp3", "wav", "ogg", "aac"));
 
@@ -214,7 +239,7 @@ public class View implements EventHandler<KeyEvent>
         searchRequest.setId("search");
         searchRequest.setPrefSize(400, 20);
 
-        footerMarker = new Line();
+        footerMarker = new Line(0, 0, 0, 0);
         footerMarker.setId("line");
 
         settingsLink = new Label("Settings");
@@ -387,11 +412,9 @@ public class View implements EventHandler<KeyEvent>
         songTitleSettingResult.setOnAction(e -> evaluateSettingsChanges());
         songTitleSettingResult.setVisible(false);
 
-
         artistSetting = new Label("Artist: ");
         artistSetting.setId("settingInfo");
         artistSetting.setVisible(false);
-
 
         artistSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         artistSettingResult.setOnAction(e -> evaluateSettingsChanges());
@@ -413,10 +436,6 @@ public class View implements EventHandler<KeyEvent>
         trackNumberSettingResult.setOnAction(e -> evaluateSettingsChanges());
         trackNumberSettingResult.setTranslateY(480);
         trackNumberSettingResult.setVisible(false);
-
-        metaDataWarning = new Label("Meta-data application is only available for mp3 files.");
-        metaDataWarning.setId("settingInfo");
-        metaDataWarning.setVisible(false);
 
         applicationSettingTitle = new Label("Application Configuration");
         applicationSettingTitle.setId("settingsHeader");
@@ -451,25 +470,179 @@ public class View implements EventHandler<KeyEvent>
         cancelBackButton.setVisible(false);
 
         // Settings Lines
-        settingTitleLine = new Line();
+        settingTitleLine = new Line(0, 0, 0, 0);
         settingTitleLine.setId("line");
         settingTitleLine.setVisible(false);
 
-        programSettingsTitleLine = new Line();
+        programSettingsTitleLine = new Line(0, 0, 0, 0);
         programSettingsTitleLine.setId("line");
         programSettingsTitleLine.setVisible(false);
 
-        fileSettingsTitleLine = new Line();
+        fileSettingsTitleLine = new Line(0, 0, 0, 0);
         fileSettingsTitleLine.setId("line");
         fileSettingsTitleLine.setVisible(false);
 
-        metaDataTitleLine = new Line();
+        metaDataTitleLine = new Line(0, 0, 0, 0);
         metaDataTitleLine.setId("line");
         metaDataTitleLine.setVisible(false);
 
-        applicationSettingTitleLine = new Line();
+        applicationSettingTitleLine = new Line(0, 0, 0, 0);
         applicationSettingTitleLine.setId("line");
         applicationSettingTitle.setVisible(false);
+
+        // "Top" Title Section
+        VBox titleContainer = new VBox();
+        titleContainer.getChildren().addAll(settingsTitle, settingTitleLine);
+
+        // Program Settings Title & Line
+        VBox programSettingNameContainer = new VBox();
+        programSettingNameContainer.getChildren().addAll(
+                programSettingsTitle,
+                programSettingsTitleLine
+        );
+        programSettingNameContainer.setPadding(new Insets(20, 0, 0, 0));
+
+        // Program Settings Information
+        VBox programSettingInfoContainer = new VBox();
+        programSettingInfoContainer.getChildren().addAll(
+                version,
+                latestVersion,
+                youtubeDlVerification
+        );
+        programSettingInfoContainer.setPadding(new Insets(50, 0, 0, 0));
+
+        // Program Settings Data: YoutubeDlVerification
+        versionResultContainer = new VBox();
+        versionResultContainer.getChildren().add(versionResult);
+
+        // Program Settings Data: YoutubeDlVerification
+        latestVersionResultContainer = new VBox();
+        latestVersionResultContainer.getChildren().add(latestVersionResult);;
+
+        // Program Settings Data: YoutubeDlVerification
+        youtubeDlVerificationResultContainer = new VBox();
+        youtubeDlVerificationResultContainer.getChildren().add(youtubeDlVerificationResult);
+
+        // File Settings Title & Line
+        VBox fileSettingNameContainer = new VBox();
+        fileSettingNameContainer.getChildren().addAll(
+                fileSettingsTitle,
+                fileSettingsTitleLine
+        );
+        fileSettingNameContainer.setPadding(new Insets(130, 0, 0, 0));
+
+        VBox fileSettingInfoContainer = new VBox(7.5);
+        fileSettingInfoContainer.getChildren().addAll(
+                outputDirectory,
+                songDownloadFormat,
+                saveAlbumArt
+        );
+        fileSettingInfoContainer.setPadding(new Insets(160, 0, 0, 0));
+
+        outputDirectoryResultContainer = new VBox();
+        outputDirectoryResultContainer.getChildren().add(outputDirectoryResult);
+
+        outputDirectoryButtonContainer = new VBox();
+        outputDirectoryButtonContainer.getChildren().add(outputDirectoryButton);
+
+        songDownloadFormatResultContainer = new VBox();
+        songDownloadFormatResultContainer.getChildren().add(songDownloadFormatResult);
+
+        saveAlbumArtResultContainer = new VBox();
+        saveAlbumArtResultContainer.getChildren().add(saveAlbumArtResult);
+
+        VBox metaDataNameContainer = new VBox();
+        metaDataNameContainer.getChildren().addAll(metaDataTitle, metaDataTitleLine);
+        metaDataNameContainer.setPadding(new Insets(250, 0, 0, 0));
+
+        metaDataInfoContainer = new VBox();
+        metaDataInfoContainer.getChildren().addAll(
+                albumArtSetting,
+                albumTitleSetting,
+                songTitleSetting,
+                artistSetting,
+                yearSetting,
+                trackNumberSetting
+        );
+        metaDataInfoContainer.setSpacing(7.5);
+        metaDataInfoContainer.setPadding(new Insets(280, 0, 0, 0));
+
+        albumArtSettingResultContainer = new VBox();
+        albumArtSettingResultContainer.getChildren().add(albumArtSettingResult);
+
+        albumTitleSettingResultContainer = new VBox();
+        albumTitleSettingResultContainer.getChildren().add(albumTitleSettingResult);
+
+        songTitleSettingResultContainer = new VBox();
+        songTitleSettingResultContainer.getChildren().add(songTitleSettingResult);
+
+        artistSettingResultContainer = new VBox();
+        artistSettingResultContainer.getChildren().add(artistSettingResult);
+
+        yearSettingResultContainer = new VBox();
+        yearSettingResultContainer.getChildren().add(yearSettingResult);
+
+        trackNumberSettingResultContainer = new VBox();
+        trackNumberSettingResultContainer.getChildren().add(trackNumberSettingResult);
+
+        VBox applicationSettingNameContainer = new VBox();
+        applicationSettingNameContainer.getChildren().addAll(applicationSettingTitle, applicationSettingTitleLine);
+        applicationSettingNameContainer.setPadding(new Insets(450, 0, 0, 0));
+
+        VBox applicationSettingsInfoContainer = new VBox(7.5);
+        applicationSettingsInfoContainer.getChildren().addAll(darkModeSetting, dataSaverSetting);
+        applicationSettingsInfoContainer.setPadding(new Insets(480, 0, 0, 0));
+
+        darkModeSettingResultContainer = new VBox();
+        darkModeSettingResultContainer.getChildren().add(darkModeSettingResult);
+
+        dataSaverSettingResultContainer = new VBox();
+        dataSaverSettingResultContainer.getChildren().add(dataSaverSettingResult);
+
+        // Left Stack Pane Titles, Lines, Information
+        Pane leftStack = new Pane();
+        leftStack.getChildren().addAll(
+                programSettingNameContainer,
+                programSettingInfoContainer,
+                fileSettingNameContainer,
+                fileSettingInfoContainer,
+                metaDataNameContainer,
+                metaDataInfoContainer,
+                applicationSettingNameContainer,
+                applicationSettingsInfoContainer
+        );
+
+        // Right Stack Pane, Data
+        Pane rightStack = new Pane();
+        rightStack.getChildren().addAll(
+                dataSaverSettingResultContainer,
+                darkModeSettingResultContainer,
+                trackNumberSettingResultContainer,
+                yearSettingResultContainer,
+                artistSettingResultContainer,
+                songTitleSettingResultContainer,
+                albumTitleSettingResultContainer,
+                albumArtSettingResultContainer,
+                saveAlbumArtResultContainer,
+                songDownloadFormatResultContainer,
+                outputDirectoryResultContainer,
+                outputDirectoryButtonContainer,
+                youtubeDlVerificationResultContainer,
+                latestVersionResultContainer,
+                versionResultContainer
+        );
+
+        // Settings Scroll-pane
+        settingsContainerBase = new BorderPane();
+        settingsContainerBase.setPadding(new Insets(10, 10, 10, 10));
+        settingsContainerBase.setTop(titleContainer);
+        settingsContainerBase.setLeft(leftStack);
+        settingsContainerBase.setRight(rightStack);
+
+        // Overall Container
+        settingsContainer = new ScrollPane();
+        settingsContainer.setContent(settingsContainerBase);
+        settingsContainer.setVisible(false);
 
         // Search Page
         pane.getChildren().add(title);
@@ -488,49 +661,9 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(searchesProgressText);
 
         // Settings Page
-        pane.getChildren().add(settingsTitle);
-        pane.getChildren().add(programSettingsTitle);
-        pane.getChildren().add(version);
-        pane.getChildren().add(versionResult);
-        pane.getChildren().add(latestVersion);
-        pane.getChildren().add(latestVersionResult);
-        pane.getChildren().add(youtubeDlVerification);
-        pane.getChildren().add(youtubeDlVerificationResult);
-        pane.getChildren().add(fileSettingsTitle);
-        pane.getChildren().add(outputDirectory);
-        pane.getChildren().add(outputDirectoryResult);
-        pane.getChildren().add(outputDirectoryButton);
-        pane.getChildren().add(songDownloadFormat);
-        pane.getChildren().add(songDownloadFormatResult);
-        pane.getChildren().add(saveAlbumArt);
-        pane.getChildren().add(saveAlbumArtResult);
-        pane.getChildren().add(metaDataTitle);
-        pane.getChildren().add(albumArtSetting);
-        pane.getChildren().add(albumArtSettingResult);
-        pane.getChildren().add(albumTitleSetting);
-        pane.getChildren().add(albumTitleSettingResult);
-        pane.getChildren().add(songTitleSetting);
-        pane.getChildren().add(songTitleSettingResult);
-        pane.getChildren().add(artistSetting);
-        pane.getChildren().add(artistSettingResult);
-        pane.getChildren().add(yearSetting);
-        pane.getChildren().add(yearSettingResult);
-        pane.getChildren().add(trackNumberSetting);
-        pane.getChildren().add(trackNumberSettingResult);
-        pane.getChildren().add(applicationSettingTitle);
-        pane.getChildren().add(darkModeSetting);
-        pane.getChildren().add(darkModeSettingResult);
-        pane.getChildren().add(dataSaverSetting);
-        pane.getChildren().add(dataSaverSettingResult);
+        pane.getChildren().add(settingsContainer);
         pane.getChildren().add(confirmChanges);
         pane.getChildren().add(cancelBackButton);
-        pane.getChildren().add(metaDataWarning);
-        pane.getChildren().add(settingTitleLine);
-        pane.getChildren().add(programSettingsTitleLine);
-        pane.getChildren().add(fileSettingsTitleLine);
-        pane.getChildren().add(metaDataTitleLine);
-        pane.getChildren().add(applicationSettingTitleLine);
-
 
         scene = new Scene(pane);
         scene.getStylesheets().add(getClass().getResource("main.css").toExternalForm());
@@ -601,8 +734,6 @@ public class View implements EventHandler<KeyEvent>
         artistSetting.setTextFill(colour);
         yearSetting.setTextFill(colour);
         trackNumberSetting.setTextFill(colour);
-
-        metaDataWarning.setVisible(disableComboBoxes);
     }
 
     public synchronized void cancel() {
@@ -774,6 +905,7 @@ public class View implements EventHandler<KeyEvent>
         settingsLinkButton.setVisible(!settingVisibility);
 
         // Set setting elements visible
+        settingsContainer.setVisible(settingVisibility);
         settingsTitle.setVisible(settingVisibility);
 
         // Program
@@ -1005,119 +1137,43 @@ public class View implements EventHandler<KeyEvent>
         } else if (settingsTitle.isVisible()) {
 
             // Settings mode
-            settingsTitle.setTranslateX(30);
-            settingsTitle.setTranslateY(10);
+            settingsContainer.setPrefSize(width - 78 + 5, height - 20 - (height - (height- confirmChanges.getHeight() - 25 - 39)) - 20);
 
-            // Info
-            programSettingsTitle.setTranslateX(30);
-            programSettingsTitle.setTranslateY(80);
-            version.setTranslateX(30);
-            version.setTranslateY(115);
-            versionResult.setTranslateY(115);
-            versionResult.setTranslateX(width - 19 - 30 - versionResult.getWidth());
-            latestVersion.setTranslateX(30);
-            latestVersion.setTranslateY(135);
-            latestVersionResult.setTranslateY(135);
-            latestVersionResult.setTranslateX(width - 19 - 30 - latestVersionResult.getWidth());
-            youtubeDlVerification.setTranslateX(30);
-            youtubeDlVerification.setTranslateY(155);
-            youtubeDlVerificationResult.setTranslateY(155);
-            youtubeDlVerificationResult.setTranslateX(width - 19 - 30 - youtubeDlVerificationResult.getWidth());
+            settingsContainer.setTranslateX(30);
+            settingsContainer.setTranslateY(20);
 
-            // Files
-            fileSettingsTitle.setTranslateX(30);
-            fileSettingsTitle.setTranslateY(195);
-            outputDirectory.setTranslateX(30);
-            outputDirectory.setTranslateY(230);
-            outputDirectoryResult.setTranslateY(230);
-            outputDirectoryResult.setTranslateX(width - 19 - 30 - outputDirectoryResult.getWidth());
-            outputDirectoryButton.setTranslateY(230);
-            songDownloadFormat.setTranslateX(30);
-            songDownloadFormat.setTranslateY(255);
-            songDownloadFormatResult.setTranslateY(255);
-            songDownloadFormatResult.setTranslateX(width - 19 - 30 - songDownloadFormatResult.getWidth());
-            saveAlbumArt.setTranslateX(30);
-            saveAlbumArt.setTranslateY(280);
-            saveAlbumArtResult.setTranslateY(280);
-            saveAlbumArtResult.setTranslateX(width - 19 - 30 - saveAlbumArtResult.getWidth());
+            versionResultContainer.setPadding(new Insets(50, 0, 0, -versionResult.getWidth()));
+            latestVersionResultContainer.setPadding(new Insets(70, 0, 0, -latestVersionResult.getWidth()));
+            youtubeDlVerificationResultContainer.setPadding(new Insets(90, 0, 0, -youtubeDlVerificationResult.getWidth()));
 
-            // Meta-data
-            metaDataTitle.setTranslateX(30);
-            metaDataTitle.setTranslateY(320);
-            albumArtSetting.setTranslateX(30);
-            albumArtSetting.setTranslateY(355);
-            albumArtSettingResult.setTranslateY(355);
-            albumArtSettingResult.setTranslateX(width - 19 - 30 - albumArtSettingResult.getWidth());
-            albumTitleSetting.setTranslateX(30);
-            albumTitleSetting.setTranslateY(380);
-            albumTitleSettingResult.setTranslateY(380);
-            albumTitleSettingResult.setTranslateX(width - 19 - 30 - albumTitleSettingResult.getWidth());
-            songTitleSetting.setTranslateX(30);
-            songTitleSetting.setTranslateY(405);
-            songTitleSettingResult.setTranslateY(405);
-            songTitleSettingResult.setTranslateX(width - 19 - 30 - songTitleSettingResult.getWidth());
-            artistSetting.setTranslateX(30);
-            artistSetting.setTranslateY(430);
-            artistSettingResult.setTranslateY(430);
-            artistSettingResult.setTranslateX(width - 19 - 30 - artistSettingResult.getWidth());
-            yearSetting.setTranslateX(30);
-            yearSetting.setTranslateY(455);
-            yearSettingResult.setTranslateY(455);
-            yearSettingResult.setTranslateX(width - 19 - 30 - yearSettingResult.getWidth());
-            trackNumberSetting.setTranslateX(30);
-            trackNumberSetting.setTranslateY(480);
-            trackNumberSettingResult.setTranslateY(480);
-            trackNumberSettingResult.setTranslateX(width - 19 - 30 - trackNumberSettingResult.getWidth());
-            metaDataWarning.setTranslateX(30);
-            metaDataWarning.setTranslateY(505);
+            outputDirectoryResultContainer.setPadding(new Insets(160, 0, 0, -outputDirectoryResult.getWidth()));
+            outputDirectoryButtonContainer.setPadding(new Insets(160, 0, 0, -outputDirectoryResult.getWidth()));
+            songDownloadFormatResultContainer.setPadding(new Insets(185, 0, 0, -songDownloadFormatResult.getWidth()));
+            saveAlbumArtResultContainer.setPadding(new Insets(210, 0, 0, -saveAlbumArtResult.getWidth()));
 
-            // Application
-            int metaDataWarningPush = metaDataWarning.isVisible() ? 35 : 0;
+            albumArtSettingResultContainer.setPadding(new Insets(280, 0, 0, -albumArtSettingResult.getWidth()));
+            albumTitleSettingResultContainer.setPadding(new Insets(305, 0, 0, -albumTitleSettingResult.getWidth()));
+            songTitleSettingResultContainer.setPadding(new Insets(330, 0, 0, -songTitleSettingResult.getWidth()));
+            artistSettingResultContainer.setPadding(new Insets(355, 0, 0, -artistSettingResult.getWidth()));
+            yearSettingResultContainer.setPadding(new Insets(380, 0, 0, -yearSettingResult.getWidth()));
+            trackNumberSettingResultContainer.setPadding(new Insets(-75, 0, 0, -trackNumberSettingResult.getWidth())); // Strange Top Position, 480 instead of 0
 
-            applicationSettingTitle.setTranslateX(30);
-            applicationSettingTitle.setTranslateY(520 + metaDataWarningPush);
-            darkModeSetting.setTranslateX(30);
-            darkModeSetting.setTranslateY(555 + metaDataWarningPush);
-            darkModeSettingResult.setTranslateX(width - 19 - 30 - darkModeSettingResult.getWidth());
-            darkModeSettingResult.setTranslateY(555 + metaDataWarningPush);
-            dataSaverSetting.setTranslateX(30);
-            dataSaverSetting.setTranslateY(580 + metaDataWarningPush);
-            dataSaverSettingResult.setTranslateX(width - 19 - 30 - dataSaverSettingResult.getWidth());
-            dataSaverSettingResult.setTranslateY(580 + metaDataWarningPush);
+            darkModeSettingResultContainer.setPadding(new Insets(480, 0, 0, -darkModeSettingResult.getWidth()));
+            dataSaverSettingResultContainer.setPadding(new Insets(505, 0, 0, -dataSaverSettingResult.getWidth()));
+
+            // Lines
+            settingTitleLine.setEndX(width-30-19.5-50);
+            programSettingsTitleLine.setEndX(width-30-19.5-50);
+            fileSettingsTitleLine.setEndX(width-30-19.5-50);
+            metaDataTitleLine.setEndX(width-30-19.5-50);
+            applicationSettingTitleLine.setEndX(width-30-19.5-50);
 
             // Buttons
             confirmChanges.setTranslateY(height- confirmChanges.getHeight() - 25 - 39);
             confirmChanges.setTranslateX(30);
             cancelBackButton.setTranslateY(height- cancelBackButton.getHeight() - 25 - 39);
-            cancelBackButton.setTranslateX(width - 19 - 30 - cancelBackButton.getWidth());
-            outputDirectoryButton.setTranslateX(width -19 - 30 - outputDirectoryResult.getWidth());
+            cancelBackButton.setTranslateX(width - 19 - 30 +5 - cancelBackButton.getWidth());
             outputDirectoryButton.setPrefSize(outputDirectoryResult.getWidth(), 25);
-
-            // Lines
-            settingTitleLine.setStartX(30);
-            settingTitleLine.setStartY(45);
-            settingTitleLine.setEndX(width-30-19.5);
-            settingTitleLine.setEndY(45);
-
-            programSettingsTitleLine.setStartX(30);
-            programSettingsTitleLine.setStartY(105);
-            programSettingsTitleLine.setEndX(width-30-19.5);
-            programSettingsTitleLine.setEndY(105);
-
-            fileSettingsTitleLine.setStartX(30);
-            fileSettingsTitleLine.setStartY(220);
-            fileSettingsTitleLine.setEndX(width-30-19.5);
-            fileSettingsTitleLine.setEndY(220);
-
-            metaDataTitleLine.setStartX(30);
-            metaDataTitleLine.setStartY(345);
-            metaDataTitleLine.setEndX(width-30-19.5);
-            metaDataTitleLine.setEndY(345);
-
-            applicationSettingTitleLine.setStartX(30);
-            applicationSettingTitleLine.setStartY(545 + metaDataWarningPush);
-            applicationSettingTitleLine.setEndX(width-30-19.5);
-            applicationSettingTitleLine.setEndY(545 + metaDataWarningPush);
 
         } else if (resultsTable.isVisible()) {
 
