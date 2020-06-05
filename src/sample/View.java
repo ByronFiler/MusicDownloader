@@ -38,6 +38,8 @@ import java.util.*;
 
 // TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
 // TODO: If a particular request is taking too long, let's say >2 seconds, just use default data to save query time
+// TODO: Apply same search optimisation tactic to youtube downloads
+// TODO: Re-add the estimated timer, factor in multiple thread calculations
 // TODO: Stop that last element from being highlighted when settings is opened
 // TODO: Add button to install and configure youtube-dl & ffmpeg
 // TODO: Look if I can speed up search by sending all jpeg & download requests simultaneously
@@ -788,6 +790,7 @@ public class View implements EventHandler<KeyEvent>
             metaData.put("directory", directoryName + "\\");
 
             // Downloading the album art
+            System.out.println(request);
             Utils.downloadAlbumArt(directoryName + "\\", request.get(5));
 
             // Extracting all songs from album name & playtime
@@ -1217,6 +1220,10 @@ public class View implements EventHandler<KeyEvent>
                     quitQueryThread = false;
                     resultsData = new ArrayList<>();
 
+                    for (int i = 0; i < searchResults.size(); i++) {
+                        resultsData.add(null);
+                    }
+
                     searchResultFullData = new Utils.resultsSet[searchResults.size()];
 
                     for (ArrayList<String> searchResult : searchResults) {
@@ -1349,8 +1356,7 @@ public class View implements EventHandler<KeyEvent>
                         searchResult.get(4)
                 );
                 searchResultFullData[searchResults.indexOf(searchResult)] = results;
-                //resultsTable.getItems().add(results);
-                resultsData.add(results);
+                resultsData.set(searchResults.indexOf(searchResult), results);
 
             } catch (IOException e) {
                 e.printStackTrace();
