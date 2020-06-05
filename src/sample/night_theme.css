@@ -3,11 +3,11 @@
 }
 
 #title{
-    -fx-text-fill: "#cfcfcf";
+    -fx-text-fill: "#fff";
 }
 
 #subTitle {
-    -fx-text-fill: "#cfcfcf";
+    -fx-text-fill: "#fff";
 }
 
 #subTitle2 {
@@ -15,11 +15,19 @@
 }
 
 #settingsHeader {
-    -fx-text-fill: "#cfcfcf";
+    -fx-text-fill: "#fff";
 }
 
 #settingInfo {
     -fx-text-fill: "#cfcfcf";
+}
+
+#tableCell0 {
+    -fx-background: "#181818";
+}
+
+#settingsHandler {
+    -fx-background: "#181818";
 }
 
 #line {
@@ -29,6 +37,15 @@
 #table {
     -fx-background-color: "#121212";
     -fx-text-fill: "#cfcfcf";
+    -fx-background: "#181818";
+}
+
+.table-row-cell {
+    -fx-background: "#181818";
+}
+
+.table-column {
+    -fx-background-color: "#181818";
 }
 
 #column {

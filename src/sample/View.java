@@ -37,11 +37,16 @@ import java.io.RandomAccessFile;
 import java.util.*;
 
 // TODO: Fix dark theme, should set text colours properly and the results table
+// TODO: Stop that last element from being highlighted when settings is opened
 // TODO: Add button to install and configure youtube-dl & ffmpeg
 // TODO: Look if I can speed up search by sending all jpeg & download requests simultaneously
 // TODO: Fix errors with changing CSS
 // TODO: Move CSS Files somewhere else
 // TODO: Rewrite Main.css and redesign general look of the application
+// TODO: Fix all warnings
+// TODO: Add a README
+// TODO: Add a license
+// TODO: Add a gitignore: music files, art.jpg, possible class files?
 
 public class View implements EventHandler<KeyEvent>
 {
@@ -615,6 +620,8 @@ public class View implements EventHandler<KeyEvent>
         // Overall Container
         settingsContainer = new ScrollPane();
         settingsContainer.setContent(settingsContainerBase);
+        settingsContainer.setId("settingsHandler");
+
         settingsContainer.setVisible(false);
 
         // Search Page
@@ -1071,7 +1078,7 @@ public class View implements EventHandler<KeyEvent>
             settingsLinkButton.setTranslateY(height - 40 - 39);
             settingsLinkButton.setPrefSize(settingsLink.getWidth(), 25);
 
-        } else if (settingsTitle.isVisible()) {
+        } else if (settingsContainer.isVisible()) {
 
             // Settings mode
             settingsContainer.setPrefSize(width - 78 + 5, height - 20 - (height - (height- confirmChanges.getHeight() - 25 - 39)) - 20);
