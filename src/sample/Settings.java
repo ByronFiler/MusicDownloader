@@ -94,23 +94,16 @@ public class Settings {
 
     public static boolean checkYouTubeDl() {
 
-        // Check youtube-dl is working
         try {
-            YoutubeDLRequest request = new YoutubeDLRequest("https://www.youtube.com/watch?v=7-qGKqveZaM");
-            request.setOption("extract-audio");
-            request.setOption("audio-format mp3");
-            request.setOption("ignore-errors");
-            request.setOption("retries", 10);
-            YoutubeDL.execute(request);
 
-            File delete = new File("Shortest Video on Youtube EVER! 0 seconds nearly 1 (fastest)-7-qGKqveZaM.mp3");
-            if (!delete.delete()) {
-                Debug.trace("Failed to delete file: " + delete.getAbsolutePath());
-            }
+            // Will throw an error if not bound
+            Runtime rt = Runtime.getRuntime();
+            String[] commands = {"youtube-dl"};
+            Process proc = rt.exec(commands);
 
             return true;
 
-        } catch (YoutubeDLException e) {
+        } catch (IOException e) {
             return false;
         }
 
@@ -118,9 +111,20 @@ public class Settings {
 
     public static boolean checkFFMPEG() {
 
-        // Check locally, absolutely do **not** attempt to use maven, lesson learned
+        try {
 
-        return true;
+            // Will throw an error if not bound to command
+            Runtime rt = Runtime.getRuntime();
+            String[] commands = {"ffmpeg"};
+            rt.exec(commands);
+
+            return true;
+
+        } catch (IOException e) {
+
+            return false;
+
+        }
 
     }
 
