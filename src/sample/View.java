@@ -341,19 +341,12 @@ public class View implements EventHandler<KeyEvent>
 
         youtubeDlVerificationResult = new Label("Checking...");
         youtubeDlVerificationResult.setId("settingInfo");
-        if (dataSaver) {
-            // Calls it once on program startup, instead of each time settings is accessed
-            new youtubeDlVerification();
-        }
 
         ffmpegVerification = new Label("FFMPEG Status: ");
         ffmpegVerification.setId("settingInfo");
 
         ffmpegVerificationResult = new Label("Checking...");
         ffmpegVerificationResult.setId("settingInfo");
-        if (dataSaver) {
-            new ffmpegVerificationThread();
-        }
 
         fileSettingsTitle = new Label("Files");
         fileSettingsTitle.setId("settingsHeader");
@@ -975,9 +968,9 @@ public class View implements EventHandler<KeyEvent>
         // Scheduling getting latest version, if data saver disabled
         if (!dataSaver) {
             new getLatestVersion();
-            new youtubeDlVerification();
-            new ffmpegVerificationThread();
         }
+        new youtubeDlVerification();
+        new ffmpegVerificationThread();
 
     }
 
