@@ -36,12 +36,15 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.*;
 
+// TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
+// TODO: If a particular request is taking too long, let's say >2 seconds, just use default data to save query time
 // TODO: Stop that last element from being highlighted when settings is opened
 // TODO: Add button to install and configure youtube-dl & ffmpeg
 // TODO: Look if I can speed up search by sending all jpeg & download requests simultaneously
 // TODO: Move CSS Files somewhere else
 // TODO: Rewrite Main.css and redesign general look of the application
 // TODO: Fix all warnings
+// TODO: Add testing
 // TODO: Add a README
 // TODO: Add a license
 // TODO: Add a gitignore: music files, art.jpg, possible class files?
@@ -171,6 +174,7 @@ public class View implements EventHandler<KeyEvent>
 
     // Data
     public ArrayList<ArrayList<String>> searchResults;
+    public Utils.resultsSet[] searchResultFullData;
     public ArrayList<ArrayList<String>> songsData;
     public ArrayList<Utils.resultsSet> resultsData;
     public HashMap<String, String> metaData;
@@ -488,7 +492,7 @@ public class View implements EventHandler<KeyEvent>
 
         // Program Settings Data: YoutubeDlVerification
         latestVersionResultContainer = new VBox();
-        latestVersionResultContainer.getChildren().add(latestVersionResult);;
+        latestVersionResultContainer.getChildren().add(latestVersionResult);
 
         // Program Settings Data: YoutubeDlVerification
         youtubeDlVerificationResultContainer = new VBox();
@@ -500,10 +504,7 @@ public class View implements EventHandler<KeyEvent>
 
         // File Settings Title & Line
         VBox fileSettingNameContainer = new VBox();
-        fileSettingNameContainer.getChildren().addAll(
-                fileSettingsTitle,
-                fileSettingsTitleLine
-        );
+        fileSettingNameContainer.getChildren().addAll(fileSettingsTitle, fileSettingsTitleLine);
         fileSettingNameContainer.setPadding(new Insets(150, 0, 0, 0));
 
         VBox fileSettingInfoContainer = new VBox(7.5);
@@ -1215,6 +1216,9 @@ public class View implements EventHandler<KeyEvent>
                     // Needs to check this won't result in future threads being killed
                     quitQueryThread = false;
                     resultsData = new ArrayList<>();
+
+                    searchResultFullData = new Utils.resultsSet[searchResults.size()];
+
                     for (ArrayList<String> searchResult : searchResults) {
 
                         // Sending a new query requires quitting the old
@@ -1224,63 +1228,34 @@ public class View implements EventHandler<KeyEvent>
                             break;
                         }
 
-                        // Reference for web requests
-                        Document songDataPage;
+                        addToTable tableAdder = new addToTable();
+                        tableAdder.setSearchResult(searchResult);
+                    }
 
-                        // Determining the album art to use, and the year
-                        ImageView selectedImage;
-                        String year = searchResult.get(2);
-                        String genre = searchResult.get(3);
-                        if (searchResult.get(4).equals("Album")) {
+                    while (true) {
 
-                            if (dataSaver) {
-                                selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
-                            } else {
-                                // This is an album request, year must be known or won't be found and hence doesn't require a check
-                                if (searchResult.get(5).equals("")) {
-                                    selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
-                                } else {
-                                    selectedImage = new ImageView(new Image(searchResult.get(5)));
-                                }
-                            }
-                        } else {
+                        int completedThreads = 0;
+                        int totalThreads = searchResultFullData.length;
 
-                            if (dataSaver) {
-                                selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
-                            } else {
-                                songDataPage = Jsoup.connect(searchResult.get(6)).get();
+                        for (Utils.resultsSet resultPending: searchResultFullData) {
 
-                                if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https")) {
-                                    selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
-                                } else {
-                                    selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
-                                }
-
-
-                                if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4 && year.length() == 0) {
-                                    year = songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear");
-                                }
-
-                                try {
-                                    genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length() - 1);
-                                } catch (NullPointerException ignored) {
-                                }
+                            // Thread has completed when it is not null
+                            if (resultPending != null) {
+                                completedThreads++;
                             }
 
                         }
 
-                        Utils.resultsSet results = new Utils.resultsSet(
-                                selectedImage,
-                                searchResult.get(0),
-                                searchResult.get(1),
-                                year,
-                                genre,
-                                searchResult.get(4)
-                        );
-                        resultsTable.getItems().add(results);
-                        resultsData.add(results);
+                        if (completedThreads == totalThreads) {
+                            break;
+                        }
                     }
-                } catch (NullPointerException | IOException e) {
+
+                    for (Utils.resultsSet result: searchResultFullData) {
+                        resultsTable.getItems().add(result);
+                    }
+
+                } catch (NullPointerException e) {
                     e.printStackTrace();
                 }
 
@@ -1292,6 +1267,93 @@ public class View implements EventHandler<KeyEvent>
 
                 // Cannot just cancel or it will error due to thread differences
 
+            }
+
+        }
+
+    }
+
+    class addToTable implements Runnable {
+
+        Thread t;
+        ArrayList<String> searchResult;
+
+        addToTable() {
+            t = new Thread(this, "table-adder");
+            t.start();
+        }
+
+        public ArrayList<String> getSearchResult() {
+            return searchResult;
+        }
+
+        public void setSearchResult(ArrayList<String> searchResultSet) {
+            searchResult = searchResultSet;
+        }
+
+        public void run() {
+
+            try {
+
+                // Reference for web requests
+                Document songDataPage;
+
+                // Determining the album art to use, and the year
+                ImageView selectedImage;
+                String year = searchResult.get(2);
+                String genre = searchResult.get(3);
+                if (searchResult.get(4).equals("Album")) {
+
+                    if (dataSaver) {
+                        selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
+                    } else {
+                        // This is an album request, year must be known or won't be found and hence doesn't require a check
+                        if (searchResult.get(5).equals("")) {
+                            selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
+                        } else {
+                            selectedImage = new ImageView(new Image(searchResult.get(5)));
+                        }
+                    }
+                } else {
+
+                    if (dataSaver) {
+                        selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
+                    } else {
+                        songDataPage = Jsoup.connect(searchResult.get(6)).get();
+
+                        if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https")) {
+                            selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
+                        } else {
+                            selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
+                        }
+
+
+                        if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4 && year.length() == 0) {
+                            year = songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear");
+                        }
+
+                        try {
+                            genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length() - 1);
+                        } catch (NullPointerException ignored) {
+                        }
+                    }
+
+                }
+
+                Utils.resultsSet results = new Utils.resultsSet(
+                        selectedImage,
+                        searchResult.get(0),
+                        searchResult.get(1),
+                        year,
+                        genre,
+                        searchResult.get(4)
+                );
+                searchResultFullData[searchResults.indexOf(searchResult)] = results;
+                //resultsTable.getItems().add(results);
+                resultsData.add(results);
+
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
         }

@@ -1,16 +1,14 @@
 package sample;
 
-import com.sapher.youtubedl.YoutubeDL;
-import com.sapher.youtubedl.YoutubeDLException;
-import com.sapher.youtubedl.YoutubeDLRequest;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.io.*;
-import java.util.ArrayList;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class Settings {
 
@@ -97,10 +95,7 @@ public class Settings {
         try {
 
             // Will throw an error if not bound
-            Runtime rt = Runtime.getRuntime();
-            String[] commands = {"youtube-dl"};
-            Process proc = rt.exec(commands);
-
+            Runtime.getRuntime().exec(new String[]{"youtube-dl"});
             return true;
 
         } catch (IOException e) {
@@ -114,10 +109,7 @@ public class Settings {
         try {
 
             // Will throw an error if not bound to command
-            Runtime rt = Runtime.getRuntime();
-            String[] commands = {"ffmpeg"};
-            rt.exec(commands);
-
+            Runtime.getRuntime().exec(new String[]{"ffmpeg"});
             return true;
 
         } catch (IOException e) {
