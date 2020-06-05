@@ -26,6 +26,10 @@
     -fx-stroke: "#363434";
 }
 
+#settingsHandler {
+    -fx-background: white;
+}
+
 #table {
     -fx-background-color: "#c1c1c1";
     -fx-text-fill: "#363434";

@@ -36,11 +36,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.*;
 
-// TODO: Fix dark theme, should set text colours properly and the results table
 // TODO: Stop that last element from being highlighted when settings is opened
 // TODO: Add button to install and configure youtube-dl & ffmpeg
 // TODO: Look if I can speed up search by sending all jpeg & download requests simultaneously
-// TODO: Fix errors with changing CSS
 // TODO: Move CSS Files somewhere else
 // TODO: Rewrite Main.css and redesign general look of the application
 // TODO: Fix all warnings
