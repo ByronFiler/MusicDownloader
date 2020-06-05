@@ -90,6 +90,7 @@ public class View implements EventHandler<KeyEvent>
     VBox versionResultContainer;
     VBox latestVersionResultContainer;
     VBox youtubeDlVerificationResultContainer;
+    VBox ffmpegVerificationResultContainer;
 
     VBox outputDirectoryResultContainer;
     VBox outputDirectoryButtonContainer;
@@ -119,6 +120,8 @@ public class View implements EventHandler<KeyEvent>
     public Label latestVersionResult;
     public Label youtubeDlVerification;
     public Label youtubeDlVerificationResult;
+    public Label ffmpegVerification;
+    public Label ffmpegVerificationResult;
 
     // File
     public Label fileSettingsTitle;
@@ -314,150 +317,124 @@ public class View implements EventHandler<KeyEvent>
         /* Settings Page */
         settingsTitle = new Label("Settings");
         settingsTitle.setId("subTitle");
-        settingsTitle.setVisible(false);
 
         programSettingsTitle = new Label("Information");
         programSettingsTitle.setId("settingsHeader");
-        programSettingsTitle.setVisible(false);
 
         version = new Label("Version: ");
         version.setId("settingInfo");
-        version.setVisible(false);
 
         versionResult = new Label(programVersion);
         versionResult.setId("settingInfo");
-        versionResult.setVisible(false);
 
         latestVersion = new Label("Latest Version: ");
         latestVersion.setId("settingInfo");
-        latestVersion.setVisible(false);
 
         latestVersionResult = new Label("Locating...");
         latestVersionResult.setId("settingInfo");
-        latestVersionResult.setVisible(false);
         if (dataSaver) {
             new getLatestVersion();
         }
 
         youtubeDlVerification = new Label("YouTube-DL Status: ");
         youtubeDlVerification.setId("settingInfo");
-        youtubeDlVerification.setVisible(false);
 
-        //youtubeDlVerificationResult = new Label(settings.checkYouTubeDl());
         youtubeDlVerificationResult = new Label("Checking...");
         youtubeDlVerificationResult.setId("settingInfo");
-        youtubeDlVerificationResult.setVisible(false);
         if (dataSaver) {
             // Calls it once on program startup, instead of each time settings is accessed
             new youtubeDlVerification();
         }
 
+        ffmpegVerification = new Label("FFMPEG Status: ");
+        ffmpegVerification.setId("settingInfo");
+
+        ffmpegVerificationResult = new Label("Checking...");
+        ffmpegVerificationResult.setId("settingInfo");
+        if (dataSaver) {
+            new ffmpegVerificationThread();
+        }
+
         fileSettingsTitle = new Label("Files");
         fileSettingsTitle.setId("settingsHeader");
-        fileSettingsTitle.setVisible(false);
 
         outputDirectory = new Label("Save music to: ");
         outputDirectory.setId("settingInfo");
-        outputDirectory.setVisible(false);
 
         outputDirectoryResult = new Label(outputDirectorySetting.equals("") ? System.getProperty("user.dir") : outputDirectorySetting);
         outputDirectoryResult.setId("settingInfo");
-        outputDirectoryResult.setVisible(false);
 
         outputDirectoryButton = new Button();
         outputDirectoryButton.setId("button");
         outputDirectoryButton.setOpacity(0);
         outputDirectoryButton.setOnAction(e -> new selectFolder());
-        outputDirectoryButton.setVisible(false);
 
         songDownloadFormat = new Label("Music format: ");
         songDownloadFormat.setId("settingInfo");
-        songDownloadFormat.setVisible(false);
 
         songDownloadFormatResult = new ComboBox<>(FXCollections.observableArrayList("mp3", "wav", "ogg", "aac"));
         songDownloadFormatResult.setOnAction(e -> {setMetaDataVisibility(); evaluateSettingsChanges();} );
-        songDownloadFormatResult.setVisible(false);
 
         saveAlbumArt = new Label("Save Album Art: ");
         saveAlbumArt.setId("settingInfo");
-        saveAlbumArt.setVisible(false);
 
         saveAlbumArtResult = new ComboBox<>(FXCollections.observableArrayList("No", "Albums Only", "Songs Only", "All"));
         saveAlbumArtResult.setOnAction(e -> evaluateSettingsChanges());
-        saveAlbumArtResult.setVisible(false);
 
         metaDataTitle = new Label("Meta-Data Application");
         metaDataTitle.setId("settingsHeader");
-        metaDataTitle.setVisible(false);
 
         albumArtSetting = new Label("Album Art: ");
         albumArtSetting.setId("settingInfo");
-        albumArtSetting.setVisible(false);
 
         albumArtSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         albumArtSettingResult.setOnAction(e -> evaluateSettingsChanges());
-        albumArtSettingResult.setVisible(false);
 
         albumTitleSetting = new Label("Album Title: ");
         albumTitleSetting.setId("settingInfo");
-        albumTitleSetting.setVisible(false);
 
         albumTitleSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         albumTitleSettingResult.setOnAction(e -> evaluateSettingsChanges());
-        albumTitleSettingResult.setVisible(false);
 
         songTitleSetting = new Label("Song Title: ");
         songTitleSetting.setId("settingInfo");
-        songTitleSetting.setVisible(false);
 
         songTitleSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         songTitleSettingResult.setOnAction(e -> evaluateSettingsChanges());
-        songTitleSettingResult.setVisible(false);
 
         artistSetting = new Label("Artist: ");
         artistSetting.setId("settingInfo");
-        artistSetting.setVisible(false);
 
         artistSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         artistSettingResult.setOnAction(e -> evaluateSettingsChanges());
-        artistSettingResult.setVisible(false);
 
         yearSetting = new Label("Year: ");
         yearSetting.setId("settingInfo");
-        yearSetting.setVisible(false);
 
         yearSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         yearSettingResult.setOnAction(e -> evaluateSettingsChanges());
-        yearSettingResult.setVisible(false);
 
         trackNumberSetting = new Label("Track Number: ");
         trackNumberSetting.setId("settingInfo");
-        trackNumberSetting.setVisible(false);
 
         trackNumberSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         trackNumberSettingResult.setOnAction(e -> evaluateSettingsChanges());
         trackNumberSettingResult.setTranslateY(480);
-        trackNumberSettingResult.setVisible(false);
 
         applicationSettingTitle = new Label("Application Configuration");
         applicationSettingTitle.setId("settingsHeader");
-        applicationSettingTitle.setVisible(false);
 
         darkModeSetting = new Label("Theme: ");
         darkModeSetting.setId("settingInfo");
-        darkModeSetting.setVisible(false);
 
         darkModeSettingResult = new ComboBox<>(FXCollections.observableArrayList("Normal", "Night"));
         darkModeSettingResult.setOnAction(e -> {evaluateSettingsChanges(); switchTheme(darkModeSettingResult.getSelectionModel().getSelectedIndex() == 1);});
-        darkModeSettingResult.setVisible(false);
 
         dataSaverSetting = new Label("Data Saver Mode: ");
         dataSaverSetting.setId("settingInfo");
-        dataSaverSetting.setVisible(false);
 
         dataSaverSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         dataSaverSettingResult.setOnAction(e -> evaluateSettingsChanges());
-        dataSaverSettingResult.setVisible(false);
 
         confirmChanges = new Button("Confirm");
         confirmChanges.setOnAction(e -> submit());
@@ -474,23 +451,18 @@ public class View implements EventHandler<KeyEvent>
         // Settings Lines
         settingTitleLine = new Line(0, 0, 0, 0);
         settingTitleLine.setId("line");
-        settingTitleLine.setVisible(false);
 
         programSettingsTitleLine = new Line(0, 0, 0, 0);
         programSettingsTitleLine.setId("line");
-        programSettingsTitleLine.setVisible(false);
 
         fileSettingsTitleLine = new Line(0, 0, 0, 0);
         fileSettingsTitleLine.setId("line");
-        fileSettingsTitleLine.setVisible(false);
 
         metaDataTitleLine = new Line(0, 0, 0, 0);
         metaDataTitleLine.setId("line");
-        metaDataTitleLine.setVisible(false);
 
         applicationSettingTitleLine = new Line(0, 0, 0, 0);
         applicationSettingTitleLine.setId("line");
-        applicationSettingTitle.setVisible(false);
 
         // "Top" Title Section
         VBox titleContainer = new VBox();
@@ -509,7 +481,8 @@ public class View implements EventHandler<KeyEvent>
         programSettingInfoContainer.getChildren().addAll(
                 version,
                 latestVersion,
-                youtubeDlVerification
+                youtubeDlVerification,
+                ffmpegVerification
         );
         programSettingInfoContainer.setPadding(new Insets(50, 0, 0, 0));
 
@@ -525,13 +498,17 @@ public class View implements EventHandler<KeyEvent>
         youtubeDlVerificationResultContainer = new VBox();
         youtubeDlVerificationResultContainer.getChildren().add(youtubeDlVerificationResult);
 
+        // Program Settings Data: ffmpegVerification
+        ffmpegVerificationResultContainer = new VBox();
+        ffmpegVerificationResultContainer.getChildren().add(ffmpegVerificationResult);
+
         // File Settings Title & Line
         VBox fileSettingNameContainer = new VBox();
         fileSettingNameContainer.getChildren().addAll(
                 fileSettingsTitle,
                 fileSettingsTitleLine
         );
-        fileSettingNameContainer.setPadding(new Insets(130, 0, 0, 0));
+        fileSettingNameContainer.setPadding(new Insets(150, 0, 0, 0));
 
         VBox fileSettingInfoContainer = new VBox(7.5);
         fileSettingInfoContainer.getChildren().addAll(
@@ -539,7 +516,7 @@ public class View implements EventHandler<KeyEvent>
                 songDownloadFormat,
                 saveAlbumArt
         );
-        fileSettingInfoContainer.setPadding(new Insets(160, 0, 0, 0));
+        fileSettingInfoContainer.setPadding(new Insets(180, 0, 0, 0));
 
         outputDirectoryResultContainer = new VBox();
         outputDirectoryResultContainer.getChildren().add(outputDirectoryResult);
@@ -555,7 +532,7 @@ public class View implements EventHandler<KeyEvent>
 
         VBox metaDataNameContainer = new VBox();
         metaDataNameContainer.getChildren().addAll(metaDataTitle, metaDataTitleLine);
-        metaDataNameContainer.setPadding(new Insets(250, 0, 0, 0));
+        metaDataNameContainer.setPadding(new Insets(270, 0, 0, 0));
 
         metaDataInfoContainer = new VBox();
         metaDataInfoContainer.getChildren().addAll(
@@ -567,7 +544,7 @@ public class View implements EventHandler<KeyEvent>
                 trackNumberSetting
         );
         metaDataInfoContainer.setSpacing(7.5);
-        metaDataInfoContainer.setPadding(new Insets(280, 0, 0, 0));
+        metaDataInfoContainer.setPadding(new Insets(300, 0, 0, 0));
 
         albumArtSettingResultContainer = new VBox();
         albumArtSettingResultContainer.getChildren().add(albumArtSettingResult);
@@ -589,11 +566,11 @@ public class View implements EventHandler<KeyEvent>
 
         VBox applicationSettingNameContainer = new VBox();
         applicationSettingNameContainer.getChildren().addAll(applicationSettingTitle, applicationSettingTitleLine);
-        applicationSettingNameContainer.setPadding(new Insets(450, 0, 0, 0));
+        applicationSettingNameContainer.setPadding(new Insets(470, 0, 0, 0));
 
         VBox applicationSettingsInfoContainer = new VBox(7.5);
         applicationSettingsInfoContainer.getChildren().addAll(darkModeSetting, dataSaverSetting);
-        applicationSettingsInfoContainer.setPadding(new Insets(480, 0, 0, 0));
+        applicationSettingsInfoContainer.setPadding(new Insets(500, 0, 0, 0));
 
         darkModeSettingResultContainer = new VBox();
         darkModeSettingResultContainer.getChildren().add(darkModeSettingResult);
@@ -629,6 +606,7 @@ public class View implements EventHandler<KeyEvent>
                 songDownloadFormatResultContainer,
                 outputDirectoryResultContainer,
                 outputDirectoryButtonContainer,
+                ffmpegVerificationResultContainer,
                 youtubeDlVerificationResultContainer,
                 latestVersionResultContainer,
                 versionResultContainer
@@ -998,6 +976,7 @@ public class View implements EventHandler<KeyEvent>
         if (!dataSaver) {
             new getLatestVersion();
             new youtubeDlVerification();
+            new ffmpegVerificationThread();
         }
 
     }
@@ -1158,21 +1137,22 @@ public class View implements EventHandler<KeyEvent>
             versionResultContainer.setPadding(new Insets(50, 0, 0, -versionResult.getWidth()));
             latestVersionResultContainer.setPadding(new Insets(70, 0, 0, -latestVersionResult.getWidth()));
             youtubeDlVerificationResultContainer.setPadding(new Insets(90, 0, 0, -youtubeDlVerificationResult.getWidth()));
+            ffmpegVerificationResultContainer.setPadding(new Insets(110, 0, 0, -ffmpegVerificationResult.getWidth()));
 
-            outputDirectoryResultContainer.setPadding(new Insets(160, 0, 0, -outputDirectoryResult.getWidth()));
-            outputDirectoryButtonContainer.setPadding(new Insets(160, 0, 0, -outputDirectoryResult.getWidth()));
-            songDownloadFormatResultContainer.setPadding(new Insets(185, 0, 0, -songDownloadFormatResult.getWidth()));
-            saveAlbumArtResultContainer.setPadding(new Insets(210, 0, 0, -saveAlbumArtResult.getWidth()));
+            outputDirectoryResultContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth()));
+            outputDirectoryButtonContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth()));
+            songDownloadFormatResultContainer.setPadding(new Insets(205, 0, 0, -songDownloadFormatResult.getWidth()));
+            saveAlbumArtResultContainer.setPadding(new Insets(230, 0, 0, -saveAlbumArtResult.getWidth()));
 
-            albumArtSettingResultContainer.setPadding(new Insets(280, 0, 0, -albumArtSettingResult.getWidth()));
-            albumTitleSettingResultContainer.setPadding(new Insets(305, 0, 0, -albumTitleSettingResult.getWidth()));
-            songTitleSettingResultContainer.setPadding(new Insets(330, 0, 0, -songTitleSettingResult.getWidth()));
-            artistSettingResultContainer.setPadding(new Insets(355, 0, 0, -artistSettingResult.getWidth()));
-            yearSettingResultContainer.setPadding(new Insets(380, 0, 0, -yearSettingResult.getWidth()));
-            trackNumberSettingResultContainer.setPadding(new Insets(-75, 0, 0, -trackNumberSettingResult.getWidth())); // Strange Top Position, 480 instead of 0
+            albumArtSettingResultContainer.setPadding(new Insets(300, 0, 0, -albumArtSettingResult.getWidth()));
+            albumTitleSettingResultContainer.setPadding(new Insets(325, 0, 0, -albumTitleSettingResult.getWidth()));
+            songTitleSettingResultContainer.setPadding(new Insets(350, 0, 0, -songTitleSettingResult.getWidth()));
+            artistSettingResultContainer.setPadding(new Insets(375, 0, 0, -artistSettingResult.getWidth()));
+            yearSettingResultContainer.setPadding(new Insets(400, 0, 0, -yearSettingResult.getWidth()));
+            trackNumberSettingResultContainer.setPadding(new Insets(-55, 0, 0, -trackNumberSettingResult.getWidth())); // Strange Top Position, 480 instead of 0
 
-            darkModeSettingResultContainer.setPadding(new Insets(480, 0, 0, -darkModeSettingResult.getWidth()));
-            dataSaverSettingResultContainer.setPadding(new Insets(505, 0, 0, -dataSaverSettingResult.getWidth()));
+            darkModeSettingResultContainer.setPadding(new Insets(500, 0, 0, -darkModeSettingResult.getWidth()));
+            dataSaverSettingResultContainer.setPadding(new Insets(525, 0, 0, -dataSaverSettingResult.getWidth()));
 
             // Lines
             settingTitleLine.setEndX(width-30-19.5-50);
@@ -1662,5 +1642,36 @@ public class View implements EventHandler<KeyEvent>
             Platform.runLater(() -> restructureElements(mainWindow.getWidth(), mainWindow.getHeight()));
 
         }
+    }
+
+    class ffmpegVerificationThread implements Runnable {
+
+        Thread t;
+
+        ffmpegVerificationThread () {
+            t = new Thread(this, "ffmpeg-verification");
+            t.start();
+        }
+
+        public void run() {
+
+            boolean ffmpegStatus = Settings.checkFFMPEG();
+            double originalWidth = ffmpegVerificationResult.getWidth();
+
+            if (ffmpegStatus) {
+
+                Platform.runLater(() -> ffmpegVerificationResult.setText("Fully Operational"));
+
+            } else {
+
+                Platform.runLater(() -> ffmpegVerificationResult.setText("FFMPEG: Not Configured"));
+
+            }
+
+            while (ffmpegVerificationResult.getWidth() == originalWidth) {}
+            Platform.runLater(() -> restructureElements(mainWindow.getWidth(), mainWindow.getHeight()));
+
+        }
+
     }
 }

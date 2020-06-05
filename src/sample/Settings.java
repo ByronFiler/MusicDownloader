@@ -118,6 +118,8 @@ public class Settings {
 
     public static boolean checkFFMPEG() {
 
+        // Check locally, absolutely do **not** attempt to use maven, lesson learned
+
         return true;
 
     }
