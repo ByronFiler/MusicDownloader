@@ -887,59 +887,11 @@ public class View implements EventHandler<KeyEvent>
 
         // Set setting elements visible
         settingsContainer.setVisible(settingVisibility);
-        settingsTitle.setVisible(settingVisibility);
-
-        // Program
-        programSettingsTitle.setVisible(settingVisibility);
-        latestVersion.setVisible(settingVisibility);
-        latestVersionResult.setVisible(settingVisibility);
-        version.setVisible(settingVisibility);
-        versionResult.setVisible(settingVisibility);
-        youtubeDlVerification.setVisible(settingVisibility);
-        youtubeDlVerificationResult.setVisible(settingVisibility);
-
-        // File
-        fileSettingsTitle.setVisible(settingVisibility);
-        outputDirectory.setVisible(settingVisibility);
-        outputDirectoryResult.setVisible(settingVisibility);
-        songDownloadFormat.setVisible(settingVisibility);
-        songDownloadFormatResult.setVisible(settingVisibility);
-        saveAlbumArt.setVisible(settingVisibility);
-        saveAlbumArtResult.setVisible(settingVisibility);
-
-        // Metadata
-        metaDataTitle.setVisible(settingVisibility);
-        albumArtSetting.setVisible(settingVisibility);
-        albumArtSettingResult.setVisible(settingVisibility);
-        albumTitleSetting.setVisible(settingVisibility);
-        albumTitleSettingResult.setVisible(settingVisibility);
-        songTitleSetting.setVisible(settingVisibility);
-        songTitleSettingResult.setVisible(settingVisibility);
-        artistSetting.setVisible(settingVisibility);
-        artistSettingResult.setVisible(settingVisibility);
-        yearSetting.setVisible(settingVisibility);
-        yearSettingResult.setVisible(settingVisibility);
-        trackNumberSetting.setVisible(settingVisibility);
-        trackNumberSettingResult.setVisible(settingVisibility);
-
-        // Application
-        applicationSettingTitle.setVisible(settingVisibility);
-        darkModeSetting.setVisible(settingVisibility);
-        darkModeSettingResult.setVisible(settingVisibility);
-        dataSaverSetting.setVisible(settingVisibility);
-        dataSaverSettingResult.setVisible(settingVisibility);
 
         // Buttons
         outputDirectoryButton.setVisible(settingVisibility);
         confirmChanges.setVisible(settingVisibility);
         cancelBackButton.setVisible(settingVisibility);
-
-        // Lines
-        settingTitleLine.setVisible(settingVisibility);
-        programSettingsTitleLine.setVisible(settingVisibility);
-        fileSettingsTitleLine.setVisible(settingVisibility);
-        metaDataTitleLine.setVisible(settingVisibility);
-        applicationSettingTitleLine.setVisible(settingVisibility);
 
     }
 
