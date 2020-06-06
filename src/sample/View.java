@@ -34,22 +34,31 @@ import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.*;
+import java.util.stream.IntStream;
 
-// TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
-// TODO: If a particular request is taking too long, let's say >2 seconds, just use default data to save query time
-// TODO: Apply same search optimisation tactic to youtube downloads
-// TODO: Re-add the estimated timer, factor in multiple thread calculations
-// TODO: Stop that last element from being highlighted when settings is opened
-// TODO: Add button to install and configure youtube-dl & ffmpeg
-// TODO: Look if I can speed up search by sending all jpeg & download requests simultaneously
-// TODO: Move CSS Files somewhere else
-// TODO: Rewrite Main.css and redesign general look of the application
-// TODO: Fix all warnings
-// TODO: Add testing
-// TODO: Add a README
-// TODO: Add a license
-// TODO: Add a gitignore: music files, art.jpg, possible class files?
+/*
+ TODO: Fix downloading to the correct location
+ TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
+ TODO: If a particular request is taking too long, let's say >2 seconds, just use default data to save query time
+ TODO: Look if I can auto-complete queries
+ TODO: Apply same search optimisation tactic to youtube downloads
+ TODO: Re-add the estimated timer
+ TODO: When the download is completed hide the timer and change the completed text to green
+ TODO: Stop that last element from being highlighted when settings is opened
+ TODO: Add button to install and configure youtube-dl & ffmpeg
+ TODO: Move CSS Files somewhere else
+ TODO: Rewrite Main.css and redesign general look of the application
+ TODO: Fix all warnings
+ TODO: Add testing
+ TODO: Add a README
+ TODO: Add a license
+ TODO: Add a gitignore: music files, art.jpg, possible class files?
+*/
 
 public class View implements EventHandler<KeyEvent>
 {
@@ -182,6 +191,9 @@ public class View implements EventHandler<KeyEvent>
     public HashMap<String, String> metaData;
 
     public ArrayList<String> formatReferences = new ArrayList<>(Arrays.asList("mp3", "wav", "ogg", "aac"));
+
+    public double loadingPercent;
+    public double percentIncrease;
 
     public boolean quitQueryThread = false;
     public boolean quitDownloadThread = false;
@@ -790,7 +802,6 @@ public class View implements EventHandler<KeyEvent>
             metaData.put("directory", directoryName + "\\");
 
             // Downloading the album art
-            System.out.println(request);
             Utils.downloadAlbumArt(directoryName + "\\", request.get(5));
 
             // Extracting all songs from album name & playtime
@@ -1219,10 +1230,7 @@ public class View implements EventHandler<KeyEvent>
                     // Needs to check this won't result in future threads being killed
                     quitQueryThread = false;
                     resultsData = new ArrayList<>();
-
-                    for (int i = 0; i < searchResults.size(); i++) {
-                        resultsData.add(null);
-                    }
+                    IntStream.range(0, searchResults.size()).forEach(i -> resultsData.add(null));
 
                     searchResultFullData = new Utils.resultsSet[searchResults.size()];
 
@@ -1288,10 +1296,6 @@ public class View implements EventHandler<KeyEvent>
         addToTable() {
             t = new Thread(this, "table-adder");
             t.start();
-        }
-
-        public ArrayList<String> getSearchResult() {
-            return searchResult;
         }
 
         public void setSearchResult(ArrayList<String> searchResultSet) {
@@ -1387,22 +1391,31 @@ public class View implements EventHandler<KeyEvent>
                 totalPlayTime += Integer.parseInt(song.get(1));
             }
 
-            double loadingPercent = 0;
-            double percentIncrease = ((double)1 / (double)songsData.size()) * (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
+            loadingPercent = 0;
+            percentIncrease = ((double)1 / (double)songsData.size()) * (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
 
             for (ArrayList<String> songsDatum : songsData) {
 
-                try {
-                    songsDatum.add(Utils.evaluateBestLink(Utils.youtubeQuery(metaData.get("artist") + " " + songsDatum.get(0)), Integer.parseInt(songsDatum.get(1))));
-                } catch (IOException | ParseException e) {
-                    e.printStackTrace();
+                youtubeQueryThread searchThread = new youtubeQueryThread();
+                searchThread.setSongsDatum(songsDatum);
+
+            }
+
+            while (true) {
+
+                int completedThreads = 0;
+
+                for (ArrayList<String> lengthCheck : songsData) {
+
+                    if (lengthCheck.size() == 3) {
+                        completedThreads++;
+                    }
+
                 }
 
-                loadingPercent += percentIncrease;
-                double tempLoadingPercent = loadingPercent;
-                Platform.runLater(() -> searchesProgressText.setText(Math.round(tempLoadingPercent*10000)/100 + "% Complete"));
-                Platform.runLater(() -> loading.setProgress(tempLoadingPercent));
-
+                if (completedThreads == songsData.size()) {
+                    break;
+                }
             }
 
             loadingPercent = (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
@@ -1509,9 +1522,10 @@ public class View implements EventHandler<KeyEvent>
             }
 
             if (saveAlbumArtSetting == 0 || (saveAlbumArtSetting == 1 && metaData.containsKey("positionInAlbum")) || (saveAlbumArtSetting == 2 && !metaData.containsKey("positionInAlbum"))) {
-                File deletion = new File(outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + "art.jpg");
-                if (!deletion.delete()) {
-                    Debug.trace("Failed to delete file: " + (outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting) + "\\" + "art.jpg");
+                try {
+                    Files.delete(Paths.get(outputDirectorySetting.equals("") ? metaData.get("directory") + "/art.jpg" : outputDirectorySetting + "/art.jpg"));
+                } catch (IOException e) {
+                    Debug.trace("Failed to delete file: " + (outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting) + "/" + "art.jpg");
                 }
             }
 
@@ -1524,10 +1538,12 @@ public class View implements EventHandler<KeyEvent>
                     // Deleting a song, just name and album art
 
                     // Delete album art, can't delete song
-                    File albumArt = new File(outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + "art.jpg");
-                    if (!albumArt.delete())
-                        System.out.println("Failed to delete: " + albumArt.getAbsolutePath());
-
+                    try {
+                        Files.delete(Paths.get(outputDirectorySetting.equals("") ? metaData.get("directory") + "/art.jpg" : outputDirectorySetting + "/art.jpg"));
+                    } catch (IOException e) {
+                        System.out.println(outputDirectorySetting.equals("") ? metaData.get("directory") + "/art.jpg" : outputDirectorySetting + "/art.jpg");
+                        e.printStackTrace();
+                    }
                 } else {
                     // Deleting an album
                     File albumFolder = new File(metaData.get("directory"));
@@ -1547,6 +1563,42 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
+    class youtubeQueryThread implements Runnable {
+
+        Thread t;
+        ArrayList<String> songsDatum;
+
+        youtubeQueryThread() {
+            t = new Thread(this, "youtube-query");
+            t.start();
+        }
+
+        public void setSongsDatum(ArrayList<String> set) {
+            songsDatum = set;
+        }
+
+        public void run() {
+
+            try {
+                songsDatum.add(
+                        Utils.evaluateBestLink(
+                                Utils.youtubeQuery(
+                                        metaData.get("artist") + " " + songsDatum.get(0)),
+                                        Integer.parseInt(songsDatum.get(1))
+                        )
+                );
+            } catch (IOException | ParseException e) {
+                e.printStackTrace();
+            }
+
+            loadingPercent += percentIncrease;
+            double tempLoadingPercent = loadingPercent;
+            Platform.runLater(() -> searchesProgressText.setText(Math.round(tempLoadingPercent*10000)/100 + "% Complete"));
+            Platform.runLater(() -> loading.setProgress(tempLoadingPercent));
+        }
+
+    }
+    
     class getLatestVersion implements Runnable {
 
         Thread t;

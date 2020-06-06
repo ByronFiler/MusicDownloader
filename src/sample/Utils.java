@@ -245,9 +245,6 @@ public class Utils {
 
     public static synchronized void downloadAlbumArt(String albumDirectory, String urlRequest) throws IOException {
 
-        System.out.println(albumDirectory);
-        System.out.println(urlRequest);
-
         URL url = new URL(urlRequest);
         InputStream in = new BufferedInputStream(url.openStream());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
