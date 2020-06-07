@@ -128,12 +128,11 @@ public class Utils {
         return songLenSec;
     }
 
-    public static synchronized ArrayList<ArrayList<String>> allmusicQuery(String query) throws IOException {
+    public static synchronized ArrayList<ArrayList<String>> allmusicQuery(Document doc) throws IOException {
 
         ArrayList<ArrayList<String>> songsData = new ArrayList<>();
         ArrayList<String> resultData;
 
-        Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + query).get();
         Elements mst = doc.select("ul.search-results");
         Elements results = mst.select("li");
 

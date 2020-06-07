@@ -12,31 +12,33 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
-import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Objects;
 import java.util.stream.IntStream;
 
 /*
@@ -201,9 +203,10 @@ public class View implements EventHandler<KeyEvent>
     public double loadingPercent;
     public double percentIncrease;
 
+    generateAutocomplete autocompleteGenerator;
+
     public boolean quitQueryThread = false;
     public boolean quitDownloadThread = false;
-    public boolean quitAutocompleteThread = false;
 
     public View(int w, int h) {
         Debug.trace("View::<constructor>");
@@ -321,21 +324,25 @@ public class View implements EventHandler<KeyEvent>
         autocompleteResultsTable.setVisible(false);
         autocompleteResultsTable.getStyleClass().add("noheader");
         autocompleteResultsTable.setId("autocompleteTable");
-        autocompleteResultsTable
-                .getSelectionModel()
-                .selectedIndexProperty()
-                .addListener(
-                        (obs,
-                         oldSelection,
-                         newSelection
-                        ) -> searchRequest.setText(
-                                (
-                                        (Utils.autocompleteResultsSet) autocompleteResultsTable
-                                                .getItems()
-                                                .get((Integer) newSelection))
-                                        .getName()
-                        )
-                );
+        autocompleteResultsTable.prefWidthProperty().bind(searchRequest.widthProperty());
+
+        try {
+            autocompleteResultsTable
+                    .getSelectionModel()
+                    .selectedIndexProperty()
+                    .addListener(
+                            (obs,
+                             oldSelection,
+                             newSelection
+                            ) -> searchRequest.setText(
+                                    (
+                                            (Utils.autocompleteResultsSet) autocompleteResultsTable
+                                                    .getItems()
+                                                    .get((Integer) newSelection))
+                                            .getName()
+                            )
+                    );
+        } catch (IndexOutOfBoundsException ignored) {}
 
         TableColumn<String, Utils.resultsSet> iconColumn = new TableColumn<>();
         iconColumn.setCellValueFactory(new PropertyValueFactory<>("icon"));
@@ -1120,8 +1127,10 @@ public class View implements EventHandler<KeyEvent>
 
             autocompleteResultsTable.setTranslateX(width / 2 - searchRequest.getWidth() / 2);
             autocompleteResultsTable.setTranslateY(height / 2 - 56);
-            autocompleteResultsTable.setPrefSize(searchRequest.getWidth(), ((height - 50 - 39 - 40) - (height / 2 - 56)));
 
+            // Maximum Height
+            autocompleteResultsTable.setPrefHeight(autocompleteResultsTable.getItems().size() * 31 > (height-129) - (height / 2 - 56) ? (height-129) - (height / 2 - 56) : autocompleteResultsTable.getItems().size() * 31);
+            
             footerMarker.setStartX(0);
             footerMarker.setEndX(width);
             footerMarker.setStartY(height - 50 - 39);
@@ -1249,10 +1258,12 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized void generateQueryAutocomplete(String searchQuery) {
 
-        quitAutocompleteThread = true;
         if (searchQuery.length() > 3) {
 
-            generateAutocomplete autocompleteGenerator = new generateAutocomplete();
+            try {
+                autocompleteGenerator.kill();
+            } catch (Exception e) { }
+            autocompleteGenerator = new generateAutocomplete();
             autocompleteGenerator.setAutocompleteQuery(searchQuery);
 
         } else {
@@ -1273,6 +1284,7 @@ public class View implements EventHandler<KeyEvent>
 
         Thread t;
         String autocompleteQuery;
+        boolean killRequest = false;
 
         generateAutocomplete (){
             t = new Thread(this, "autocomplete");
@@ -1283,10 +1295,13 @@ public class View implements EventHandler<KeyEvent>
             autocompleteQuery = request;
         }
 
+        public void kill() {
+            killRequest = true;
+        }
+
         public void run() {
 
             // Wait for either the thread kill signal or the web request to be completed
-            quitAutocompleteThread = false;
             autoCompleteWeb requestThread = new autoCompleteWeb();
             requestThread.setSearchQuery(autocompleteQuery);
 
@@ -1296,11 +1311,7 @@ public class View implements EventHandler<KeyEvent>
                 try { Thread.sleep(100); } catch (InterruptedException ignored) {}
 
                 // Not being found, ideally need to kill the web request
-                if (quitAutocompleteThread) {
-
-                    System.out.println("Received Quit Signal for: " + autocompleteQuery);
-
-                    break; }
+                if (killRequest) { break; }
 
                 if (!requestThread.getAutocompleteResults().isEmpty()) {
 
@@ -1309,6 +1320,8 @@ public class View implements EventHandler<KeyEvent>
                     autocompleteResultsTable.getItems().clear();
 
                     for (ArrayList<String> queryResult: requestThread.getAutocompleteResults()) {
+
+
 
                         autocompleteResultsTable.getItems().add(
                                 new Utils.autocompleteResultsSet(
@@ -1319,6 +1332,8 @@ public class View implements EventHandler<KeyEvent>
 
                     }
 
+                    restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
+
                     // Clean the table
                     // Reposition elements
                     // Apply the table data based on the new data
@@ -1328,6 +1343,7 @@ public class View implements EventHandler<KeyEvent>
                 }
 
             }
+
 
         }
 
@@ -1355,13 +1371,20 @@ public class View implements EventHandler<KeyEvent>
         public void run() {
 
             try {
-                for (ArrayList<String> searchResult: Utils.allmusicQuery(searchQuery)) {
+
+                Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + searchQuery).get();
+                for (ArrayList<String> searchResult: Utils.allmusicQuery(doc)) {
 
                     ArrayList<String> resultsData = new ArrayList<>();
                     resultsData.add(searchResult.get(4));
                     resultsData.add(searchResult.get(0));
 
-                    autocompleteResults.add(resultsData); // Song or Album and Name
+                    // Prevents duplicated results
+                    if (!autocompleteResults.contains(resultsData)) {
+
+                        autocompleteResults.add(resultsData); // Song or Album and Name
+
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -1382,7 +1405,9 @@ public class View implements EventHandler<KeyEvent>
         public void run() {
 
             try {
-                searchResults =  Utils.allmusicQuery(searchRequest.getText());
+
+                Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + searchRequest.getText()).get();
+                searchResults =  Utils.allmusicQuery(doc);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -1905,7 +1930,7 @@ public class View implements EventHandler<KeyEvent>
 
             }
 
-            while (ffmpegVerificationResult.getWidth() == originalWidth) {}
+            while (ffmpegVerificationResult.getWidth() == originalWidth);
             Platform.runLater(() -> restructureElements(mainWindow.getWidth(), mainWindow.getHeight()));
 
         }
