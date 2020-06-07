@@ -35,25 +35,30 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.IntStream;
 
 /*
+
+ Hey Byron, try to fix the CSS on that, try to make it look a bit more blended and also searching multiple times seems to break it
+ Probably something not being reset or threads not being killed causing a lot of lag, time will tell
+
  TODO: Fix downloading to the correct location
+ TODO: Add a download speed indicator
  TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
  TODO: If a particular request is taking too long, let's say >2 seconds, just use default data to save query time
  TODO: Look if I can auto-complete queries
  TODO: Apply same search optimisation tactic to youtube downloads
  TODO: Re-add the estimated timer
+ TODO: Data-saver mode should disable auto queries ie when typing in
  TODO: When the download is completed hide the timer and change the completed text to green
  TODO: Stop that last element from being highlighted when settings is opened
  TODO: Add button to install and configure youtube-dl & ffmpeg
  TODO: Move CSS Files somewhere else
  TODO: Rewrite Main.css and redesign general look of the application
- TODO: Fix all warnings
+ TODO: Restructure threading to separate files and threading objects for statuses and debugging, start time, end time, status, exit details etc
+ TODO: Fix warnings
  TODO: Add testing
  TODO: Add a README
  TODO: Add a license
@@ -102,6 +107,7 @@ public class View implements EventHandler<KeyEvent>
     public Line footerMarker;
     public Label settingsLink;
     public Button settingsLinkButton;
+    public TableView autocompleteResultsTable;
 
     // Settings
     VBox versionResultContainer;
@@ -197,6 +203,7 @@ public class View implements EventHandler<KeyEvent>
 
     public boolean quitQueryThread = false;
     public boolean quitDownloadThread = false;
+    public boolean quitAutocompleteThread = false;
 
     public View(int w, int h) {
         Debug.trace("View::<constructor>");
@@ -254,6 +261,7 @@ public class View implements EventHandler<KeyEvent>
         searchRequest = new TextField();
         searchRequest.setId("search");
         searchRequest.setPrefSize(400, 20);
+        searchRequest.textProperty().addListener((observableValue, s, t1) -> generateQueryAutocomplete(t1));
 
         footerMarker = new Line(0, 0, 0, 0);
         footerMarker.setId("line");
@@ -308,6 +316,36 @@ public class View implements EventHandler<KeyEvent>
                 genreColumn,
                 typeColumn
         );
+
+        autocompleteResultsTable = new TableView<PropertyValueFactory<TableColumn<String, Utils.autocompleteResultsSet>, Utils.autocompleteResultsSet>>();
+        autocompleteResultsTable.setVisible(false);
+        autocompleteResultsTable.getStyleClass().add("noheader");
+        autocompleteResultsTable.setId("autocompleteTable");
+        autocompleteResultsTable
+                .getSelectionModel()
+                .selectedIndexProperty()
+                .addListener(
+                        (obs,
+                         oldSelection,
+                         newSelection
+                        ) -> searchRequest.setText(
+                                (
+                                        (Utils.autocompleteResultsSet) autocompleteResultsTable
+                                                .getItems()
+                                                .get((Integer) newSelection))
+                                        .getName()
+                        )
+                );
+
+        TableColumn<String, Utils.resultsSet> iconColumn = new TableColumn<>();
+        iconColumn.setCellValueFactory(new PropertyValueFactory<>("icon"));
+        iconColumn.prefWidthProperty().bind(autocompleteResultsTable.widthProperty().multiply(0).add(32));
+
+        TableColumn<String, Utils.resultsSet> nameColumn = new TableColumn<>();
+        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        nameColumn.prefWidthProperty().bind(autocompleteResultsTable.widthProperty().add(-25));
+
+        autocompleteResultsTable.getColumns().addAll(iconColumn, nameColumn);
 
         downloadButton = new Button("Download");
         downloadButton.setPrefSize(120, 40);
@@ -641,6 +679,7 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().addAll(
                 title,
                 searchRequest,
+                autocompleteResultsTable,
                 footerMarker,
                 settingsLink,
                 settingsLinkButton
@@ -1073,16 +1112,20 @@ public class View implements EventHandler<KeyEvent>
         if (title.isVisible()) {
 
             // Default search mode
-            title.setTranslateX(width/2 - title.getWidth()/2);
-            title.setTranslateY(height/2 - 119.5);
+            title.setTranslateX(width / 2 - title.getWidth() / 2);
+            title.setTranslateY(height / 2 - 119.5);
 
-            searchRequest.setTranslateX(width/2 - searchRequest.getWidth()/2);
-            searchRequest.setTranslateY(height/2 - 79.5);
+            searchRequest.setTranslateX(width / 2 - searchRequest.getWidth() / 2);
+            searchRequest.setTranslateY(height / 2 - 79.5);
+
+            autocompleteResultsTable.setTranslateX(width / 2 - searchRequest.getWidth() / 2);
+            autocompleteResultsTable.setTranslateY(height / 2 - 56);
+            autocompleteResultsTable.setPrefSize(searchRequest.getWidth(), ((height - 50 - 39 - 40) - (height / 2 - 56)));
 
             footerMarker.setStartX(0);
             footerMarker.setEndX(width);
-            footerMarker.setStartY(height-50 - 39);
-            footerMarker.setEndY(height-50 - 39);
+            footerMarker.setStartY(height - 50 - 39);
+            footerMarker.setEndY(height - 50 - 39);
 
             settingsLink.setTranslateX(10);
             settingsLink.setTranslateY(height - 40 - 39);
@@ -1200,6 +1243,130 @@ public class View implements EventHandler<KeyEvent>
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+
+    }
+
+    public synchronized void generateQueryAutocomplete(String searchQuery) {
+
+        quitAutocompleteThread = true;
+        if (searchQuery.length() > 3) {
+
+            generateAutocomplete autocompleteGenerator = new generateAutocomplete();
+            autocompleteGenerator.setAutocompleteQuery(searchQuery);
+
+        } else {
+
+            restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
+            autocompleteResultsTable.setVisible(false);
+
+            // Return to a normal state
+            // Hide Table
+            // Return to normal positions
+            // Clear table
+
+        }
+
+    }
+
+    class generateAutocomplete implements Runnable {
+
+        Thread t;
+        String autocompleteQuery;
+
+        generateAutocomplete (){
+            t = new Thread(this, "autocomplete");
+            t.start();
+        }
+
+        public void setAutocompleteQuery(String request){
+            autocompleteQuery = request;
+        }
+
+        public void run() {
+
+            // Wait for either the thread kill signal or the web request to be completed
+            quitAutocompleteThread = false;
+            autoCompleteWeb requestThread = new autoCompleteWeb();
+            requestThread.setSearchQuery(autocompleteQuery);
+
+            while (true) {
+
+                // Calling this too rapidly without delay eats up performance and won't work
+                try { Thread.sleep(100); } catch (InterruptedException ignored) {}
+
+                // Not being found, ideally need to kill the web request
+                if (quitAutocompleteThread) {
+
+                    System.out.println("Received Quit Signal for: " + autocompleteQuery);
+
+                    break; }
+
+                if (!requestThread.getAutocompleteResults().isEmpty()) {
+
+                    restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
+                    autocompleteResultsTable.setVisible(true);
+                    autocompleteResultsTable.getItems().clear();
+
+                    for (ArrayList<String> queryResult: requestThread.getAutocompleteResults()) {
+
+                        autocompleteResultsTable.getItems().add(
+                                new Utils.autocompleteResultsSet(
+                                        queryResult.get(0).equals("Album") ? new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString())) : new ImageView(new Image(new File("resources/song_default.png").toURI().toString())),
+                                        queryResult.get(1)
+                                )
+                        );
+
+                    }
+
+                    // Clean the table
+                    // Reposition elements
+                    // Apply the table data based on the new data
+                    // Break
+
+                    break;
+                }
+
+            }
+
+        }
+
+    }
+
+    static class autoCompleteWeb implements Runnable {
+
+        Thread t;
+        String searchQuery;
+        ArrayList<ArrayList<String>> autocompleteResults = new ArrayList<>();
+
+        autoCompleteWeb (){
+            t = new Thread(this, "autocomplete-web");
+            t.start();
+        }
+
+        public void setSearchQuery(String setRequest) {
+            searchQuery = setRequest;
+        }
+
+        public ArrayList<ArrayList<String>> getAutocompleteResults() {
+            return autocompleteResults;
+        }
+
+        public void run() {
+
+            try {
+                for (ArrayList<String> searchResult: Utils.allmusicQuery(searchQuery)) {
+
+                    ArrayList<String> resultsData = new ArrayList<>();
+                    resultsData.add(searchResult.get(4));
+                    resultsData.add(searchResult.get(0));
+
+                    autocompleteResults.add(resultsData); // Song or Album and Name
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
 
     }

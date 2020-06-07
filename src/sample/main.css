@@ -23,6 +23,8 @@
 }
 
 #search {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
     -fx-border-radius: 10px;
     -fx-border-width: 1px;
 }
@@ -31,4 +33,26 @@
     -fx-cursor: hand;
     -fx-background-color: green;
     -fx-text-fill: white;
+}
+
+.noheader .column-header-background {
+    -fx-max-height: 0;
+    -fx-pref-height: 0;
+    -fx-min-height: 0;
+}
+
+#autocompleteTable {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-table-cell-border-color: transparent;
+}
+
+#autocompleteTable .scroll-bar * {
+    -fx-min-width: 0;
+    -fx-pref-width: 0;
+    -fx-max-width: 0;
+
+    -fx-min-height: 0;
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
 }

@@ -87,6 +87,35 @@ public class Utils {
         }
     }
 
+    public static class autocompleteResultsSet {
+        private ImageView icon;
+        private String name;
+
+        public autocompleteResultsSet(ImageView icon, String name) {
+            super();
+            this.icon = icon;
+            this.name = name;
+        }
+
+        public ImageView getIcon() {
+            icon.setFitHeight(25);
+            icon.setFitWidth(25);
+            return icon;
+        }
+
+        public void setIcon(ImageView icon) {
+            this.icon = icon;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
+
     public static synchronized int timeConversion(String stringTime){
         String[] songDataBreak = stringTime.split(":");
         int songLenSec = 0;

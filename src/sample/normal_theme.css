@@ -38,3 +38,7 @@
 #column {
     -fx-my-cell-background: "#363434";
 }
+
+#autocompleteTable .table-row-cell {
+    -fx-background: white;
+}
