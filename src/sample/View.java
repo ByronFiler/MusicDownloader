@@ -42,16 +42,12 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 
 /*
-
- Hey Byron, try to fix the CSS on that, try to make it look a bit more blended and also searching multiple times seems to break it
- Probably something not being reset or threads not being killed causing a lot of lag, time will tell
-
+ TODO: Attempt to bind element values instead of constant readjustments, live in the light of certain south cruel bindings
+ TODO: Fix bug where sometimes table would be visible without elements, not sure how to trigger
  TODO: Fix downloading to the correct location
  TODO: Add a download speed indicator
  TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
  TODO: If a particular request is taking too long, let's say >2 seconds, just use default data to save query time
- TODO: Look if I can auto-complete queries
- TODO: Apply same search optimisation tactic to youtube downloads
  TODO: Re-add the estimated timer
  TODO: Data-saver mode should disable auto queries ie when typing in
  TODO: When the download is completed hide the timer and change the completed text to green
@@ -325,24 +321,25 @@ public class View implements EventHandler<KeyEvent>
         autocompleteResultsTable.getStyleClass().add("noheader");
         autocompleteResultsTable.setId("autocompleteTable");
         autocompleteResultsTable.prefWidthProperty().bind(searchRequest.widthProperty());
-
-        try {
-            autocompleteResultsTable
-                    .getSelectionModel()
-                    .selectedIndexProperty()
-                    .addListener(
-                            (obs,
-                             oldSelection,
-                             newSelection
-                            ) -> searchRequest.setText(
+        autocompleteResultsTable
+                .getSelectionModel()
+                .selectedIndexProperty()
+                .addListener(
+                        (obs,
+                         oldSelection,
+                         newSelection
+                        ) -> {
+                            try {
+                                searchRequest.setText(
                                     (
-                                            (Utils.autocompleteResultsSet) autocompleteResultsTable
-                                                    .getItems()
-                                                    .get((Integer) newSelection))
-                                            .getName()
-                            )
-                    );
-        } catch (IndexOutOfBoundsException ignored) {}
+                                        (Utils.autocompleteResultsSet) autocompleteResultsTable
+                                                .getItems()
+                                                .get((Integer) newSelection)
+                                    ).getName()
+                                );
+                            } catch (IndexOutOfBoundsException ignored) {}
+                        }
+                );
 
         TableColumn<String, Utils.resultsSet> iconColumn = new TableColumn<>();
         iconColumn.setCellValueFactory(new PropertyValueFactory<>("icon"));
@@ -743,6 +740,8 @@ public class View implements EventHandler<KeyEvent>
         downloadButton.setVisible(true);
         cancelButton.setVisible(true);
 
+        autocompleteResultsTable.setVisible(false);
+        autocompleteResultsTable.getItems().clear();
         searchRequest.setVisible(false);
         title.setVisible(false);
         footerMarker.setVisible(false);
@@ -1130,7 +1129,7 @@ public class View implements EventHandler<KeyEvent>
 
             // Maximum Height
             autocompleteResultsTable.setPrefHeight(autocompleteResultsTable.getItems().size() * 31 > (height-129) - (height / 2 - 56) ? (height-129) - (height / 2 - 56) : autocompleteResultsTable.getItems().size() * 31);
-            
+
             footerMarker.setStartX(0);
             footerMarker.setEndX(width);
             footerMarker.setStartY(height - 50 - 39);
@@ -1308,10 +1307,15 @@ public class View implements EventHandler<KeyEvent>
             while (true) {
 
                 // Calling this too rapidly without delay eats up performance and won't work
-                try { Thread.sleep(100); } catch (InterruptedException ignored) {}
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ignored) {
+                }
 
                 // Not being found, ideally need to kill the web request
-                if (killRequest) { break; }
+                if (killRequest) {
+                    break;
+                }
 
                 if (!requestThread.getAutocompleteResults().isEmpty()) {
 
@@ -1319,17 +1323,13 @@ public class View implements EventHandler<KeyEvent>
                     autocompleteResultsTable.setVisible(true);
                     autocompleteResultsTable.getItems().clear();
 
-                    for (ArrayList<String> queryResult: requestThread.getAutocompleteResults()) {
-
-
-
+                    for (ArrayList<String> queryResult : requestThread.getAutocompleteResults()) {
                         autocompleteResultsTable.getItems().add(
                                 new Utils.autocompleteResultsSet(
                                         queryResult.get(0).equals("Album") ? new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString())) : new ImageView(new Image(new File("resources/song_default.png").toURI().toString())),
                                         queryResult.get(1)
                                 )
                         );
-
                     }
 
                     restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
@@ -1343,6 +1343,7 @@ public class View implements EventHandler<KeyEvent>
                 }
 
             }
+
 
 
         }
