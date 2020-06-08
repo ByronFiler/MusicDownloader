@@ -6,6 +6,7 @@ import com.sapher.youtubedl.YoutubeDLException;
 import com.sapher.youtubedl.YoutubeDLRequest;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
+import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -42,25 +43,32 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 
 /*
- TODO: Attempt to bind element values instead of constant readjustments, live in the light of certain south cruel bindings
- TODO: Fix bug where sometimes table would be visible without elements, not sure how to trigger
- TODO: Fix downloading to the correct location
- TODO: Add a download speed indicator
- TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
- TODO: If a particular request is taking too long, let's say >2 seconds, just use default data to save query time
- TODO: Re-add the estimated timer
- TODO: Data-saver mode should disable auto queries ie when typing in
- TODO: When the download is completed hide the timer and change the completed text to green
- TODO: Stop that last element from being highlighted when settings is opened
- TODO: Add button to install and configure youtube-dl & ffmpeg
- TODO: Move CSS Files somewhere else
- TODO: Rewrite Main.css and redesign general look of the application
- TODO: Restructure threading to separate files and threading objects for statuses and debugging, start time, end time, status, exit details etc
- TODO: Fix warnings
+ Git
  TODO: Add testing
  TODO: Add a README
  TODO: Add a license
  TODO: Add a gitignore: music files, art.jpg, possible class files?
+
+ Optimisations
+ TODO: If a particular request is taking too long, let's say >2 seconds, just use default data to save query time
+ TODO: When the download is completed hide the timer and change the completed text to green
+ TODO: Stop that last element from being highlighted when settings is opened
+ TODO: Move CSS Files somewhere else
+ TODO: Rewrite Main.css and redesign general look of the application
+ TODO: Fix warnings
+ TODO: Restructure threading to separate files and threading objects for statuses and debugging, start time, end time, status, exit details etc
+
+ Bugs
+ TODO: Fix bug where sometimes table would be visible without elements, not sure how to trigger
+ TODO: Fix downloading to the correct location
+ TODO: Data-saver mode should disable auto queries ie when typing in
+
+ Features
+ TODO: Add a download speed indicator
+ TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
+ TODO: Re-add the estimated timer
+ TODO: Add button to install and configure youtube-dl & ffmpeg
+
 */
 
 public class View implements EventHandler<KeyEvent>
@@ -226,7 +234,6 @@ public class View implements EventHandler<KeyEvent>
 
         final InvalidationListener resizeListener = observable -> {
             mainWindow = window;
-            restructureElements(window.getWidth(), window.getHeight());
         };
         window.widthProperty().addListener(resizeListener);
         window.heightProperty().addListener(resizeListener);
@@ -266,6 +273,7 @@ public class View implements EventHandler<KeyEvent>
         footerMarker.setId("line");
 
         settingsLink = new Label("Settings");
+        settingsLink.setTranslateX(10);
         settingsLink.setId("subTitle2");
 
         settingsLinkButton = new Button();
@@ -273,15 +281,20 @@ public class View implements EventHandler<KeyEvent>
         settingsLinkButton.setId("button");
         settingsLinkButton.setOpacity(0);
         settingsLinkButton.setOnAction(e -> settingsMode());
+        settingsLinkButton.setTranslateX(10);
 
         /* Search Results Page */
         searchResultsTitle = new Label("Search Results");
         searchResultsTitle.setId("subTitle");
         searchResultsTitle.setVisible(false);
+        searchResultsTitle.setTranslateX(50);
+        searchResultsTitle.setTranslateY(10);
 
         resultsTable = new TableView<PropertyValueFactory<TableColumn<String, Utils.resultsSet>, Utils.resultsSet>>();
         resultsTable.setId("table");
         resultsTable.getSelectionModel().selectedIndexProperty().addListener((obs, oldSelection, newSelection) -> downloadButton.setDisable(newSelection == null));
+        resultsTable.setTranslateX(50);
+        resultsTable.setTranslateY(50);
         resultsTable.setVisible(false);
 
         TableColumn<String, Utils.resultsSet> albumArtColumn = new TableColumn<>("Album Art");
@@ -353,6 +366,7 @@ public class View implements EventHandler<KeyEvent>
 
         downloadButton = new Button("Download");
         downloadButton.setPrefSize(120, 40);
+        downloadButton.setTranslateX(50);
         downloadButton.setOnAction(
                 e -> {
                     try {
@@ -371,10 +385,13 @@ public class View implements EventHandler<KeyEvent>
 
         /* Search Results Page: Downloads */
         searchesProgressText = new Label("Locating Songs: 0%");
+        searchesProgressText.setTranslateX(50);
         searchesProgressText.setVisible(false);
 
         loading = new ProgressBar();
         loading.setProgress(0);
+        loading.setTranslateX(50);
+        loading.setPrefHeight(20);
         loading.setVisible(false);
 
         /* Settings Page */
@@ -423,6 +440,7 @@ public class View implements EventHandler<KeyEvent>
         outputDirectoryButton = new Button();
         outputDirectoryButton.setId("button");
         outputDirectoryButton.setOpacity(0);
+        outputDirectoryButton.setPrefHeight(25);
         outputDirectoryButton.setOnAction(e -> new selectFolder());
 
         songDownloadFormat = new Label("Music format: ");
@@ -496,6 +514,7 @@ public class View implements EventHandler<KeyEvent>
         confirmChanges.setOnAction(e -> submit());
         confirmChanges.setId("confirm_button");
         confirmChanges.setPrefSize(100, 50);
+        confirmChanges.setTranslateX(30);
         confirmChanges.setVisible(false);
 
         cancelBackButton = new Button("Back");
@@ -676,6 +695,8 @@ public class View implements EventHandler<KeyEvent>
         settingsContainer = new ScrollPane();
         settingsContainer.setContent(settingsContainerBase);
         settingsContainer.setId("settingsHandler");
+        settingsContainer.setTranslateX(30);
+        settingsContainer.setTranslateY(20);
 
         settingsContainer.setVisible(false);
 
@@ -719,6 +740,65 @@ public class View implements EventHandler<KeyEvent>
 
         window.show();
 
+        // Bindings: Search Page
+        title.layoutYProperty().bind(mainWindow.heightProperty().divide(2).add(-119.5));
+        title.layoutXProperty().bind(mainWindow.widthProperty().divide(2).add(-title.getWidth() / 2));
+        searchRequest.layoutXProperty().bind(mainWindow.widthProperty().divide(2).add(- searchRequest.getWidth() / 2));
+        searchRequest.layoutYProperty().bind(mainWindow.heightProperty().divide(2).add(-79.5));
+        autocompleteResultsTable.layoutXProperty().bind(mainWindow.widthProperty().divide(2).add(- searchRequest.getWidth() / 2));
+        autocompleteResultsTable.layoutYProperty().bind(mainWindow.heightProperty().divide(2).add(-56));
+        autocompleteResultsTable.maxHeightProperty().bind(mainWindow.heightProperty().divide(2).subtract(185));
+
+        footerMarker.endXProperty().bind(mainWindow.widthProperty());
+        footerMarker.startYProperty().bind(mainWindow.heightProperty().add(-89));
+        footerMarker.endYProperty().bind(mainWindow.heightProperty().add(-89));
+        settingsLink.layoutYProperty().bind(mainWindow.heightProperty().add(-79));
+        settingsLinkButton.layoutYProperty().bind(mainWindow.heightProperty().add(-79));
+
+        // Bindings: Settings
+        settingsContainer.prefWidthProperty().bind(mainWindow.widthProperty().subtract(73));
+        settingsContainer.prefHeightProperty().bind(mainWindow.heightProperty().subtract(confirmChanges.getHeight()+104));
+
+        versionResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(50, 0, 0, -versionResult.getWidth())));
+        latestVersionResultContainer.setPadding(new Insets(70, 0, 0, -latestVersionResult.getWidth()));
+        youtubeDlVerificationResultContainer.setPadding(new Insets(90, 0, 0, -youtubeDlVerificationResult.getWidth()));
+        ffmpegVerificationResultContainer.setPadding(new Insets(110, 0, 0, -ffmpegVerificationResult.getWidth()));
+
+        outputDirectoryResultContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth()));
+        outputDirectoryButtonContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth()));
+        songDownloadFormatResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(205, 0, 0, -songDownloadFormatResult.getWidth())));
+        saveAlbumArtResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(230, 0, 0, -saveAlbumArtResult.getWidth())));
+
+        albumArtSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(300, 0, 0, -albumArtSettingResult.getWidth())));
+        albumTitleSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(325, 0, 0, -albumTitleSettingResult.getWidth())));
+        songTitleSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(350, 0, 0, -songTitleSettingResult.getWidth())));
+        artistSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(375, 0, 0, -artistSettingResult.getWidth())));
+        yearSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(400, 0, 0, -yearSettingResult.getWidth())));
+        trackNumberSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(-55, 0, 0, -trackNumberSettingResult.getWidth())));
+
+        darkModeSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(500, 0, 0, -darkModeSettingResult.getWidth())));
+        dataSaverSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(525, 0, 0, -dataSaverSettingResult.getWidth())));
+
+        settingTitleLine.endXProperty().bind(mainWindow.widthProperty().subtract(99.5));
+        programSettingsTitleLine.endXProperty().bind(mainWindow.widthProperty().subtract(99.5));
+        fileSettingsTitleLine.endXProperty().bind(mainWindow.widthProperty().subtract(99.5));
+        metaDataTitleLine.endXProperty().bind(mainWindow.widthProperty().subtract(99.5));
+        applicationSettingTitleLine.endXProperty().bind(mainWindow.widthProperty().subtract(99.5));
+
+        confirmChanges.layoutYProperty().bind(mainWindow.heightProperty().subtract( 64 + confirmChanges.getHeight()));
+        cancelBackButton.layoutXProperty().bind(mainWindow.widthProperty().subtract(44 + cancelBackButton.getWidth()));
+        cancelBackButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(64 + cancelBackButton.getHeight()));
+        outputDirectoryButton.prefWidthProperty().bind(outputDirectoryResult.widthProperty());
+
+        // Bindings: Search Results
+        resultsTable.prefWidthProperty().bind(mainWindow.widthProperty().subtract(119.5));
+        resultsTable.prefHeightProperty().bind(mainWindow.heightProperty().subtract(230));
+        downloadButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(170));
+        cancelButton.layoutXProperty().bind(mainWindow.widthProperty().subtract(69.5 + cancelButton.getWidth()));
+        cancelButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(170));
+        searchesProgressText.layoutYProperty().bind(mainWindow.heightProperty().subtract(115));
+        loading.prefWidthProperty().bind(resultsTable.widthProperty());
+        loading.layoutYProperty().bind(mainWindow.heightProperty().subtract(95));
     }
 
     public void handle(KeyEvent event) {
@@ -747,8 +827,6 @@ public class View implements EventHandler<KeyEvent>
         footerMarker.setVisible(false);
         settingsLinkButton.setVisible(false);
         settingsLink.setVisible(false);
-
-        restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
 
         return searchResults;
 
@@ -809,8 +887,6 @@ public class View implements EventHandler<KeyEvent>
         settingsLinkButton.setVisible(true);
         settingsLink.setVisible(true);
 
-        restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
-
     }
 
     public synchronized void initializeDownload() throws IOException {
@@ -826,7 +902,6 @@ public class View implements EventHandler<KeyEvent>
                 )
         );
         loading.setVisible(true);
-        restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
 
         songsData = new ArrayList<>();
         metaData = new HashMap<>();
@@ -980,7 +1055,7 @@ public class View implements EventHandler<KeyEvent>
         setMetaDataVisibility();
         evaluateSettingsChanges();
 
-        restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
+
 
         // Scheduling getting latest version, if data saver disabled
         if (!dataSaver) {
@@ -994,7 +1069,6 @@ public class View implements EventHandler<KeyEvent>
     public synchronized void searchMode() {
 
         switchSettingVisibility(false);
-        restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
         switchTheme(darkTheme);
     }
 
@@ -1112,108 +1186,6 @@ public class View implements EventHandler<KeyEvent>
         evaluateSettingsChanges();
     }
 
-    public synchronized void restructureElements(double width, double height) {
-
-        // Detect the mode
-        if (title.isVisible()) {
-
-            // Default search mode
-            title.setTranslateX(width / 2 - title.getWidth() / 2);
-            title.setTranslateY(height / 2 - 119.5);
-
-            searchRequest.setTranslateX(width / 2 - searchRequest.getWidth() / 2);
-            searchRequest.setTranslateY(height / 2 - 79.5);
-
-            autocompleteResultsTable.setTranslateX(width / 2 - searchRequest.getWidth() / 2);
-            autocompleteResultsTable.setTranslateY(height / 2 - 56);
-
-            // Maximum Height
-            autocompleteResultsTable.setPrefHeight(autocompleteResultsTable.getItems().size() * 31 > (height-129) - (height / 2 - 56) ? (height-129) - (height / 2 - 56) : autocompleteResultsTable.getItems().size() * 31);
-
-            footerMarker.setStartX(0);
-            footerMarker.setEndX(width);
-            footerMarker.setStartY(height - 50 - 39);
-            footerMarker.setEndY(height - 50 - 39);
-
-            settingsLink.setTranslateX(10);
-            settingsLink.setTranslateY(height - 40 - 39);
-
-            settingsLinkButton.setTranslateX(10);
-            settingsLinkButton.setTranslateY(height - 40 - 39);
-            settingsLinkButton.setPrefSize(settingsLink.getWidth(), 25);
-
-        } else if (settingsContainer.isVisible()) {
-
-            // Settings mode
-            settingsContainer.setPrefSize(width - 78 + 5, height - 20 - (height - (height- confirmChanges.getHeight() - 25 - 39)) - 20);
-
-            settingsContainer.setTranslateX(30);
-            settingsContainer.setTranslateY(20);
-
-            versionResultContainer.setPadding(new Insets(50, 0, 0, -versionResult.getWidth()));
-            latestVersionResultContainer.setPadding(new Insets(70, 0, 0, -latestVersionResult.getWidth()));
-            youtubeDlVerificationResultContainer.setPadding(new Insets(90, 0, 0, -youtubeDlVerificationResult.getWidth()));
-            ffmpegVerificationResultContainer.setPadding(new Insets(110, 0, 0, -ffmpegVerificationResult.getWidth()));
-
-            outputDirectoryResultContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth()));
-            outputDirectoryButtonContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth()));
-            songDownloadFormatResultContainer.setPadding(new Insets(205, 0, 0, -songDownloadFormatResult.getWidth()));
-            saveAlbumArtResultContainer.setPadding(new Insets(230, 0, 0, -saveAlbumArtResult.getWidth()));
-
-            albumArtSettingResultContainer.setPadding(new Insets(300, 0, 0, -albumArtSettingResult.getWidth()));
-            albumTitleSettingResultContainer.setPadding(new Insets(325, 0, 0, -albumTitleSettingResult.getWidth()));
-            songTitleSettingResultContainer.setPadding(new Insets(350, 0, 0, -songTitleSettingResult.getWidth()));
-            artistSettingResultContainer.setPadding(new Insets(375, 0, 0, -artistSettingResult.getWidth()));
-            yearSettingResultContainer.setPadding(new Insets(400, 0, 0, -yearSettingResult.getWidth()));
-            trackNumberSettingResultContainer.setPadding(new Insets(-55, 0, 0, -trackNumberSettingResult.getWidth())); // Strange Top Position, 480 instead of 0
-
-            darkModeSettingResultContainer.setPadding(new Insets(500, 0, 0, -darkModeSettingResult.getWidth()));
-            dataSaverSettingResultContainer.setPadding(new Insets(525, 0, 0, -dataSaverSettingResult.getWidth()));
-
-            // Lines
-            settingTitleLine.setEndX(width-30-19.5-50);
-            programSettingsTitleLine.setEndX(width-30-19.5-50);
-            fileSettingsTitleLine.setEndX(width-30-19.5-50);
-            metaDataTitleLine.setEndX(width-30-19.5-50);
-            applicationSettingTitleLine.setEndX(width-30-19.5-50);
-
-            // Buttons
-            confirmChanges.setTranslateY(height- confirmChanges.getHeight() - 25 - 39);
-            confirmChanges.setTranslateX(30);
-            cancelBackButton.setTranslateY(height- cancelBackButton.getHeight() - 25 - 39);
-            cancelBackButton.setTranslateX(width - 19 - 30 +5 - cancelBackButton.getWidth());
-            outputDirectoryButton.setPrefSize(outputDirectoryResult.getWidth(), 25);
-
-        } else if (resultsTable.isVisible()) {
-
-            // Search mode
-            searchResultsTitle.setTranslateX(50);
-            searchResultsTitle.setTranslateY(10);
-
-            resultsTable.setTranslateX(50);
-            resultsTable.setTranslateY(50);
-            resultsTable.setPrefWidth(width - 100 - 19.5);
-            resultsTable.setPrefHeight(height - 30 - 200);
-
-            downloadButton.setTranslateX(50);
-            downloadButton.setTranslateY(height - 30 - 140);
-            cancelButton.setTranslateX(width - 19.5 - 50 - cancelButton.getWidth());
-            cancelButton.setTranslateY(height - 30 - 140);
-
-            if (loading.isVisible()) {
-                // Loading data should be restructured too
-                searchesProgressText.setTranslateY(height - 30 - 85);
-                searchesProgressText.setTranslateX(50);
-
-                loading.setTranslateX(50);
-                loading.setPrefWidth(resultsTable.getWidth());
-                loading.setPrefHeight(20);
-                loading.setTranslateY(height - 30 - 65);
-            }
-        }
-
-    }
-
     public synchronized void evaluateSettingsChanges() {
 
         if (
@@ -1267,7 +1239,6 @@ public class View implements EventHandler<KeyEvent>
 
         } else {
 
-            restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
             autocompleteResultsTable.setVisible(false);
 
             // Return to a normal state
@@ -1319,7 +1290,6 @@ public class View implements EventHandler<KeyEvent>
 
                 if (!requestThread.getAutocompleteResults().isEmpty()) {
 
-                    restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
                     autocompleteResultsTable.setVisible(true);
                     autocompleteResultsTable.getItems().clear();
 
@@ -1332,13 +1302,7 @@ public class View implements EventHandler<KeyEvent>
                         );
                     }
 
-                    restructureElements(mainWindow.getWidth(), mainWindow.getHeight());
-
-                    // Clean the table
-                    // Reposition elements
-                    // Apply the table data based on the new data
-                    // Break
-
+                    autocompleteResultsTable.setPrefHeight(autocompleteResultsTable.getItems().size() * 31);
                     break;
                 }
 
@@ -1807,7 +1771,7 @@ public class View implements EventHandler<KeyEvent>
 
             Platform.runLater(() -> latestVersionResult.setText(settings.getLatestVersion()));
             while (latestVersionResult.getWidth() == originalWidth) {} // Ugly fix to an ugly fix?
-            Platform.runLater(() -> restructureElements(mainWindow.getWidth(), mainWindow.getHeight()));
+            Platform.runLater(() -> latestVersionResultContainer.setPadding(new Insets(70, 0, 0, -latestVersionResult.getWidth())));
 
         }
 
@@ -1832,20 +1796,24 @@ public class View implements EventHandler<KeyEvent>
             // Change this to checking the original width and wait until it's different from new
 
             Platform.runLater(() -> outputDirectoryResult.setText(OutputDirectorySettingNew));
+
             try {
                 Thread.sleep(20);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            Platform.runLater(() -> outputDirectoryResult.setTranslateX(600 - 30 - outputDirectoryResult.getWidth()));
 
+            Platform.runLater(() -> outputDirectoryResult.setTranslateX(600 - 30 - outputDirectoryResult.getWidth()));
             Platform.runLater(() -> outputDirectoryButton.setTranslateX(600 - 30 - outputDirectoryResult.getWidth()));
+
             try {
                 Thread.sleep(20);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             Platform.runLater(() -> outputDirectoryButton.setPrefSize(outputDirectoryResult.getWidth(), 25));
+            Platform.runLater(() -> outputDirectoryResultContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth())));
+            Platform.runLater(() -> outputDirectoryButtonContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth())));
 
         }
     }
@@ -1902,7 +1870,7 @@ public class View implements EventHandler<KeyEvent>
             }
 
             while (youtubeDlVerificationResult.getWidth() == originalWidth) {}
-            Platform.runLater(() -> restructureElements(mainWindow.getWidth(), mainWindow.getHeight()));
+            Platform.runLater(() -> youtubeDlVerificationResultContainer.setPadding(new Insets(90, 0, 0, -youtubeDlVerificationResult.getWidth())));
 
         }
     }
@@ -1932,7 +1900,7 @@ public class View implements EventHandler<KeyEvent>
             }
 
             while (ffmpegVerificationResult.getWidth() == originalWidth);
-            Platform.runLater(() -> restructureElements(mainWindow.getWidth(), mainWindow.getHeight()));
+            Platform.runLater(() -> ffmpegVerificationResultContainer.setPadding(new Insets(110, 0, 0, -ffmpegVerificationResult.getWidth())));
 
         }
 
