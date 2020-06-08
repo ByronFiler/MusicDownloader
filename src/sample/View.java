@@ -5,7 +5,6 @@ import com.sapher.youtubedl.YoutubeDL;
 import com.sapher.youtubedl.YoutubeDLException;
 import com.sapher.youtubedl.YoutubeDLRequest;
 import javafx.application.Platform;
-import javafx.beans.InvalidationListener;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
@@ -44,7 +43,6 @@ import java.util.stream.IntStream;
 
 /*
  Git
- TODO: Add testing
  TODO: Add a README
  TODO: Add a license
  TODO: Add a gitignore: music files, art.jpg, possible class files?
@@ -68,6 +66,9 @@ import java.util.stream.IntStream;
  TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
  TODO: Re-add the estimated timer
  TODO: Add button to install and configure youtube-dl & ffmpeg
+
+ Misc
+ TODO: Add testing
 
 */
 
@@ -232,12 +233,7 @@ public class View implements EventHandler<KeyEvent>
 
         new smartQuitDownload();
 
-        final InvalidationListener resizeListener = observable -> {
-            mainWindow = window;
-        };
-        window.widthProperty().addListener(resizeListener);
-        window.heightProperty().addListener(resizeListener);
-
+        mainWindow = window;
         settings = new Settings();
         JSONObject config = settings.getSettings();
 
@@ -813,6 +809,7 @@ public class View implements EventHandler<KeyEvent>
 
         // Could look at changing how vars are passed, less global ideally
         new allMusicQuery();
+        try { autocompleteGenerator.kill(); } catch (Exception ignored) {}
 
         downloadButton.setDisable(true);
         resultsTable.setVisible(true);
@@ -1229,22 +1226,20 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized void generateQueryAutocomplete(String searchQuery) {
 
-        if (searchQuery.length() > 3) {
+        if (!dataSaver) {
 
-            try {
-                autocompleteGenerator.kill();
-            } catch (Exception e) { }
-            autocompleteGenerator = new generateAutocomplete();
-            autocompleteGenerator.setAutocompleteQuery(searchQuery);
+            if (searchQuery.length() > 3) {
 
-        } else {
+                try { autocompleteGenerator.kill(); } catch (Exception ignored) {}
+                autocompleteGenerator = new generateAutocomplete();
+                autocompleteGenerator.setAutocompleteQuery(searchQuery);
 
-            autocompleteResultsTable.setVisible(false);
+            } else {
 
-            // Return to a normal state
-            // Hide Table
-            // Return to normal positions
-            // Clear table
+                autocompleteResultsTable.setVisible(false);
+                autocompleteResultsTable.getItems().clear();
+
+            }
 
         }
 
@@ -1837,7 +1832,7 @@ public class View implements EventHandler<KeyEvent>
             }
 
             // Keep in background until the window is closed
-            while (mainWindow.isShowing()) { }
+            while (mainWindow.isShowing());
 
             // Quit running threads, download is important query is mostly for performance
             quitDownloadThread = true;
