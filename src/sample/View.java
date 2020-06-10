@@ -1,9 +1,6 @@
 package sample;
 
 import com.mpatric.mp3agic.*;
-import com.sapher.youtubedl.YoutubeDL;
-import com.sapher.youtubedl.YoutubeDLException;
-import com.sapher.youtubedl.YoutubeDLRequest;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -30,9 +27,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import javax.swing.*;
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -48,14 +43,14 @@ import java.util.stream.IntStream;
  TODO: Add a README
  TODO: Add a license
  TODO: Add a gitignore: music files, art.jpg, possible class files?
+ TODO: Tidy up repo, remove unnecessary files
 
  Optimisations
  TODO: If a particular request is taking too long, let's say >2 seconds, just use default data to save query time
- TODO: When the download is completed hide the timer and change the completed text to green
  TODO: Move CSS Files somewhere else
  TODO: Rewrite Main.css and redesign general look of the application
  TODO: Fix warnings
- TODO: Restructure threading to separate files and threading objects for statuses and debugging, start time, end time, status, exit details etc
+ TODO: Improve thread handling and debugging
  TODO: Try to use better objects for transmissions
  TODO: Look at how global variables are used
  TODO: Change a lot of start content of a java-fx page thing
@@ -64,13 +59,15 @@ import java.util.stream.IntStream;
  TODO: Go through each function and optimise
 
  Known Bugs
- TODO: Fix bug where sometimes table would be visible without elements, not sure how to trigger
+ TODO: Sometimes searching takes far longer than it should
+ TODO: Estimated timer is far greater than it should be
  TODO: Buttons appear to overlap in settings
  TODO: Add error handling when the request directory no longer exists for downloads, default to standard
- TODO: Estimated timer is far greater than it should be
+ TODO: Check handling when json directory doesn't exist
+ TODO: Check program can handle making new default settings files on the fly
+ TODO: Don't add elements with no name to search results table on either
 
  Features
- TODO: Add a "real" download speed indicator instead of just effective
  TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
  TODO: Add button to install and configure youtube-dl & ffmpeg
  TODO: Look into macOS and Linux compatibility
@@ -79,6 +76,7 @@ import java.util.stream.IntStream;
  TODO: Add testing
  TODO: Remove JARs and use Gradle
  TODO: Use debugging and error classes properly
+ TODO: Increase use of debugging and logging of errors
 
 */
 
@@ -220,8 +218,6 @@ public class View implements EventHandler<KeyEvent>
     public double loadingPercent;
     public double percentIncrease;
 
-    public int downloadSpeed;
-
     generateAutocomplete autocompleteGenerator;
     timerCountdown countDown;
     loadingIncrementer prettyLoader;
@@ -236,7 +232,6 @@ public class View implements EventHandler<KeyEvent>
     }
 
     public void start(Stage window) {
-
         /* JAVA-FX INITIALISATION */
 
         pane = new Pane();
@@ -919,6 +914,9 @@ public class View implements EventHandler<KeyEvent>
         searchesProgressText.setVisible(false);
         searchesProgressText.setText("Search Songs: 0%");
 
+        downloadSpeedLabel.setVisible(false);
+        timeRemainingLabel.setVisible(false);
+
         footerMarker.setVisible(true);
         settingsLinkButton.setVisible(true);
         settingsLink.setVisible(true);
@@ -927,17 +925,19 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized void initializeDownload() throws IOException {
 
+        // Results table contains images and text, this will never error but it thinks it could
         ArrayList<String> request = searchResults.get(
                 resultsData.indexOf(
                         resultsTable
                                 .getItems()
                                 .get(
-                                    resultsTable
-                                            .getSelectionModel()
-                                            .getSelectedIndex()
-                        )
+                                        resultsTable
+                                                .getSelectionModel()
+                                                .getSelectedIndex()
+                                )
                 )
         );
+
         loading.setVisible(true);
 
 
@@ -1053,6 +1053,7 @@ public class View implements EventHandler<KeyEvent>
     public synchronized void selectNewFolder() {
 
         try {
+
             JFileChooser newFolder = new JFileChooser();
             newFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             newFolder.showSaveDialog(null);
@@ -1622,73 +1623,46 @@ public class View implements EventHandler<KeyEvent>
 
             loadingPercent = (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
 
+            // Going to send all requests simultaneously and take collective
+
             for (ArrayList<String> song: songsData)
             {
+                download downloader = new download();
+                downloader.initialize(metaData.get("directory"), song.get(2), formatReferences.get(musicFormatSetting));
+                while (!downloader.isComplete()) {
+
+                    int finalTotalPlayTime = totalPlayTime;
+                    Platform.runLater(() -> loading.setProgress(loadingPercent + (((double)Integer.parseInt(song.get(1)) / (double) finalTotalPlayTime) * (finalTotalPlayTime * 0.02313 / (0.5518 * songsData.size() + finalTotalPlayTime * 0.02313)) * (downloader.getPercentComplete()/100) )));
+
+                    if (downloader.getDownloadSpeed() != null)
+                        Platform.runLater(() -> downloadSpeedLabel.setText(downloader.getDownloadSpeed()));
+
+                    try {Thread.sleep(50);} catch (InterruptedException ignored) {}
+                    Platform.runLater(() -> downloadSpeedLabel.setTranslateX(loading.getTranslateX() + 19.5 - downloadSpeedLabel.getWidth()));
+
+                }
 
                 if (quitDownloadThread) {
                     Debug.trace("Download thread quit signal received before downloading song " + songsData.indexOf(song) + " of " + songsData.size());
                     break;
                 }
 
-                //RemainingTime * ( (100 - startPercent) / (endPercent - startPercent) )
-                prettyLoader = new loadingIncrementer();
-                prettyLoader.initialize(
-                        loadingPercent,
-                        (
-                                loadingPercent +
-                                        (
-                                                (double)Integer.parseInt(song.get(1)) / (double)totalPlayTime
-                                        ) * (
-                                                totalPlayTime * 0.02313
-                                                        / (0.5518 * songsData.size() + totalPlayTime * 0.02313)
-                                        )
-                        ),
-                        (
-                                (
-                                        totalPlayTimeRemaining - Integer.parseInt(song.get(1))
-                                ) / (
-                                        Integer.parseInt(song.get(1)) / ((double)(Instant.now().toEpochMilli() - initialTime) / 1000)
-                                )
-                        ) / (
-                                (100 - (loadingPercent*100) ) / (
-                                        (
-                                                (
-                                                        loadingPercent +
-                                                                (
-                                                                        (double) Integer.parseInt(song.get(1))
-                                                                                / (double)totalPlayTime
-                                                                )
-                                                                        * (totalPlayTime * 0.02313 / (0.5518 * songsData.size() + totalPlayTime * 0.02313))
-                                                ) * 100
-                                        ) - (loadingPercent*100) )
-                        )
-                );
-
                 try {
-                    YoutubeDLRequest request = new YoutubeDLRequest(song.get(2), metaData.get("directory"));
-                    request.setOption("extract-audio");
-                    request.setOption("audio-format " + formatReferences.get(musicFormatSetting));
-                    request.setOption("ignore-errors");
-                    request.setOption("retries", 10);
-
-                    YoutubeDL.execute(request);
-                    
-                    // We want the name of the file which is output to the current working directory in the format [YOUTUBE-TITLE]-[YOUTUBE-WATCH-ID]
-                    File folder = new File(metaData.get("directory"));
+                    File folder = new File(System.getProperty("user.dir"));
                     File[] folderContents = folder.listFiles();
                     String targetFileName = "";
 
                     for (File file : Objects.requireNonNull(folderContents)) {
                         if (file.isFile()) {
                             if (file.getName().endsWith("-" + song.get(2).substring(32) + "." + formatReferences.get(musicFormatSetting))) {
-                                targetFileName = file.getName();
+                                targetFileName = file.getAbsolutePath();
                             }
                         }
                     }
 
                     // Now to apply the metadata
                     if (formatReferences.get(musicFormatSetting).equals("mp3")) {
-                        Mp3File mp3Applicator = new Mp3File(metaData.get("directory") + targetFileName);
+                        Mp3File mp3Applicator = new Mp3File(targetFileName);
 
                         ID3v2 id3v2tag = new ID3v24Tag();
                         mp3Applicator.setId3v2Tag(id3v2tag);
@@ -1730,26 +1704,22 @@ public class View implements EventHandler<KeyEvent>
 
                         try {
                             mp3Applicator.save(metaData.get("directory") + song.get(0) + ".mp3");
+
+                            // Delete old file
+
+                            if ( !new File(targetFileName).delete()) {
+                                Debug.error("Failed to delete file: " + targetFileName);
+                            }
+
                         } catch (IOException | NotSupportedException e) {
                             e.printStackTrace();
                         }
 
-                        File deletion = new File(metaData.get("directory") + targetFileName);
-                        if (!deletion.delete()) {
-                            Debug.trace("Failed to delete file: " + metaData.get("directory") + targetFileName);
-                        }
-                    } else {
-                        File file = new File(outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + metaData.get("directory") + targetFileName);
-                        if (!file.renameTo(new File(outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + metaData.get("directory") + song.get(0) + "." + formatReferences.get(musicFormatSetting))))
-                            System.out.println("Failed to rename file to: " + (outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + metaData.get("directory") + song.get(0) + "." + formatReferences.get(musicFormatSetting)));
                     }
 
                     percentIncrease = ((double)Integer.parseInt(song.get(1)) / (double)totalPlayTime) * (totalPlayTime * 0.02313 / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
                     loadingPercent += percentIncrease;
                     double tempLoadingPercent = loadingPercent;
-
-                    prettyLoader.kill();
-                    while (!prettyLoader.isDead());
 
                     Platform.runLater(() -> loading.setProgress(tempLoadingPercent));
                     Platform.runLater(() -> searchesProgressText.setText(Math.round(tempLoadingPercent*10000)/100 + "% Complete"));
@@ -1761,7 +1731,6 @@ public class View implements EventHandler<KeyEvent>
 
                     try {
                         // Kill the existing timer and wait until it's dead before continuing
-                        System.out.println("Waiting for thread to die");
                         countDown.kill();
                         while (!countDown.isDead());
                     } catch (NullPointerException ignored) {} // On first execution
@@ -1771,34 +1740,7 @@ public class View implements EventHandler<KeyEvent>
 
                     Platform.runLater(() -> timeRemainingLabel.setTranslateX( (mainWindow.getWidth()/2) - (timeRemainingLabel.getWidth()/2) -19.5));
 
-                    // Download speed calculation Bytes per Second
-
-                    double realDownloadSpeed = new File(metaData.get("directory") + song.get(0) + ".mp3").length() / ((double)(Instant.now().toEpochMilli() - initialTime) / 1000);
-                    double prettyDownloadSpeed = 0;
-                    String units = null;
-
-
-                    if (realDownloadSpeed < 1024) {
-                        units = "b";
-                        prettyDownloadSpeed = Math.round(realDownloadSpeed);
-                    } else if (realDownloadSpeed >= 1024 && downloadSpeed < 1024 * 1024) {
-                        units = "kb";
-                        prettyDownloadSpeed = Math.round(realDownloadSpeed / 1024);
-                    } else if (realDownloadSpeed >= 1024 * 1024) {
-                        units = "mb";
-                        prettyDownloadSpeed = Math.round(realDownloadSpeed / (1024 * 1024));
-                    }
-
-                    double finalPrettyDownloadSpeed = prettyDownloadSpeed;
-                    String finalUnits = units;
-                    double originalWidth = downloadSpeedLabel.getWidth();
-                    long preTime = Instant.now().toEpochMilli();
-
-                    Platform.runLater(() -> downloadSpeedLabel.setText(finalPrettyDownloadSpeed + " " + finalUnits + "/s"));
-                    while (downloadSpeedLabel.getWidth() == originalWidth && Instant.now().toEpochMilli() - preTime < 100);
-                    Platform.runLater(() -> downloadSpeedLabel.setTranslateX(loading.getTranslateX() + 19.5 - downloadSpeedLabel.getWidth()));
-
-                } catch (IOException | YoutubeDLException| InvalidDataException | UnsupportedTagException  e) {
+                } catch (IOException | InvalidDataException | UnsupportedTagException  e) {
                     e.printStackTrace();
                 }
 
@@ -1810,6 +1752,10 @@ public class View implements EventHandler<KeyEvent>
                 timeRemainingLabel.setVisible(false);
                 downloadSpeedLabel.setVisible(false);
             });
+
+            if (! new File(metaData.get("directory") + "\\exec.bat").delete()) {
+                Debug.error("Failed to delete: " + metaData.get("directory") + "\\exec.bat");
+            }
 
             if (saveAlbumArtSetting == 0 || (saveAlbumArtSetting == 1 && metaData.containsKey("positionInAlbum")) || (saveAlbumArtSetting == 2 && !metaData.containsKey("positionInAlbum"))) {
                 try {
@@ -1960,6 +1906,7 @@ public class View implements EventHandler<KeyEvent>
 
         public void run() {
 
+            /*
             // Initial where window doesn't exist
             while (true) {
                 try {
@@ -1979,6 +1926,8 @@ public class View implements EventHandler<KeyEvent>
             // Quit running threads, download is important query is mostly for performance
             quitDownloadThread = true;
             quitQueryThread = true;
+
+             */
 
         }
     }
@@ -2155,4 +2104,89 @@ public class View implements EventHandler<KeyEvent>
         }
 
     }
+
+    class download implements Runnable {
+
+        String url;
+        String directory;
+        String format;
+        String downloadSpeed;
+        double percentComplete = 0;
+        String eta;
+        boolean complete = false;
+        Thread t;
+
+        public download() {
+            t = new Thread(this, "download");
+            t.start();
+        }
+
+        public void initialize(String dir, String urlRequest, String form) {
+            directory = dir;
+            url = urlRequest;
+            format = form;
+        }
+
+        public String getDownloadSpeed() {
+            return downloadSpeed;
+        }
+
+        public double getPercentComplete() {
+            return percentComplete;
+        }
+
+        public String getEta() {
+            return eta;
+        }
+
+        public boolean isComplete() {
+            return complete;
+        }
+
+        public void run() {
+
+            try {
+                // Making the bat to execute
+                FileWriter batCreator = new FileWriter(directory + "\\exec.bat");
+                batCreator.write("youtube-dl " + url + " --extract-audio --audio-format " + format + " --ignore-errors --retries 10");
+                batCreator.close();
+
+                // Sending the Youtube-DL Request
+                ProcessBuilder builder = new ProcessBuilder(directory + "\\exec.bat");
+                builder.redirectErrorStream(true);
+                Process process = builder.start();
+                InputStream is = process.getInputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
+                String line = null;
+                while ((line = reader.readLine()) != null) {
+
+                    try {
+
+                        if (line.contains("[download]") && !line.contains("Destination")) {
+
+                            // Parse Percent Complete
+                            percentComplete = Double.parseDouble(line.split("%")[0].split("]")[1].split("\\.")[0].replaceAll("\\D+", "").replaceAll("\\s",""));
+
+                            // Parse Download Speed
+                            downloadSpeed = line.split("at")[1].split("ETA")[0].replaceAll("\\s","");
+
+                            // Parse ETA
+                            eta = Integer.parseInt(line.split("ETA")[1].replaceAll("\\s","").split(":")[0]) *60 + line.split("ETA")[1].replaceAll("\\s","").split(":")[1];
+
+                        }
+
+                    } catch (ArrayIndexOutOfBoundsException | NumberFormatException ignored) {}
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            complete = true;
+
+        }
+
+    }
+
 }

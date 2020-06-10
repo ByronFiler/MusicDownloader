@@ -276,14 +276,17 @@ public class Utils {
         URL url = new URL(urlRequest);
         InputStream in = new BufferedInputStream(url.openStream());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
+
         byte[] buf = new byte[1024];
         int n;
-        while (-1!=(n=in.read(buf)))
-        {
+
+        while (-1!=(n=in.read(buf))) {
             out.write(buf, 0, n);
         }
+
         out.close();
         in.close();
+
         byte[] response = out.toByteArray();
 
         // Write the album art to the folder
