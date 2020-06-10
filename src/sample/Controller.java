@@ -14,7 +14,7 @@ public class Controller {
     }
 
     public void userKeyInteraction (KeyEvent event) {
-        Debug.trace("User key interaction" + event.getCode());
+        //Debug.trace("User key interaction" + event.getCode());
 
         if (
                 view.settingsTitle.isVisible() &&

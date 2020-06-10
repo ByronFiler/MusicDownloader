@@ -59,16 +59,16 @@ import java.util.stream.IntStream;
  Bugs
  TODO: Fix bug where sometimes table would be visible without elements, not sure how to trigger
  TODO: Fix downloading to the correct location
- TODO: Data-saver mode should disable auto queries ie when typing in
 
  Features
  TODO: Add a download speed indicator
  TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
- TODO: Re-add the estimated timer
+ TODO: Re-add the estimated timer: Initial can be wait for the web requests then use that as a basis, then maybe 10 seconds percent achiveded for calc?
  TODO: Add button to install and configure youtube-dl & ffmpeg
 
  Misc
  TODO: Add testing
+ TODO: Remove JARs and use Gradle
 
 */
 
@@ -784,7 +784,7 @@ public class View implements EventHandler<KeyEvent>
         confirmChanges.layoutYProperty().bind(mainWindow.heightProperty().subtract( 64 + confirmChanges.getHeight()));
         cancelBackButton.layoutXProperty().bind(mainWindow.widthProperty().subtract(44 + cancelBackButton.getWidth()));
         cancelBackButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(64 + cancelBackButton.getHeight()));
-        outputDirectoryButton.prefWidthProperty().bind(outputDirectoryResult.widthProperty());
+        outputDirectoryButton.setPrefWidth(outputDirectoryResult.getWidth());
 
         // Bindings: Search Results
         resultsTable.prefWidthProperty().bind(mainWindow.widthProperty().subtract(119.5));
@@ -1765,7 +1765,7 @@ public class View implements EventHandler<KeyEvent>
             double originalWidth = latestVersionResult.getWidth();
 
             Platform.runLater(() -> latestVersionResult.setText(settings.getLatestVersion()));
-            while (latestVersionResult.getWidth() == originalWidth) {} // Ugly fix to an ugly fix?
+            while (latestVersionResult.getWidth() == originalWidth) { try {Thread.sleep(10);} catch (InterruptedException ignored) {} }
             Platform.runLater(() -> latestVersionResultContainer.setPadding(new Insets(70, 0, 0, -latestVersionResult.getWidth())));
 
         }
@@ -1781,34 +1781,35 @@ public class View implements EventHandler<KeyEvent>
 
         public void run() {
 
+            // TODO: FIX THIS, For some reason not repositioning or able to get the size, no idea why
+
             selectNewFolder();
 
-            if (OutputDirectorySettingNew.hashCode() == 0) {
-                OutputDirectorySettingNew = outputDirectorySetting;
-                return;
-            }
-
-            // Change this to checking the original width and wait until it's different from new
-
-            Platform.runLater(() -> outputDirectoryResult.setText(OutputDirectorySettingNew));
-
             try {
-                Thread.sleep(20);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                // 0 is a cancelled operation, hence don't do anything throw an error to quickly exit
+                if (OutputDirectorySettingNew.hashCode() == 0) {
+                    OutputDirectorySettingNew = outputDirectorySetting;
+                    throw new Exception();
+                }
 
-            Platform.runLater(() -> outputDirectoryResult.setTranslateX(600 - 30 - outputDirectoryResult.getWidth()));
-            Platform.runLater(() -> outputDirectoryButton.setTranslateX(600 - 30 - outputDirectoryResult.getWidth()));
+                double originalWidth = outputDirectoryResult.getWidth();
+                Platform.runLater(() -> outputDirectoryResult.setText(OutputDirectorySettingNew));
 
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            Platform.runLater(() -> outputDirectoryButton.setPrefSize(outputDirectoryResult.getWidth(), 25));
-            Platform.runLater(() -> outputDirectoryResultContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth())));
-            Platform.runLater(() -> outputDirectoryButtonContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth())));
+                // Wait for the text to to be set, then update the rest
+                while (originalWidth == outputDirectoryResult.getWidth());
+                Platform.runLater(() -> outputDirectoryResultContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth())));
+
+                // Update the button click
+                originalWidth = outputDirectoryButton.getWidth();
+                Platform.runLater(() -> outputDirectoryButton.setPrefWidth(outputDirectoryResult.getWidth()));
+                while (originalWidth == outputDirectoryButton.getWidth());
+                Platform.runLater(() -> outputDirectoryButtonContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth())));
+
+                // Save the settings
+                outputDirectorySetting = OutputDirectorySettingNew;
+                submit();
+
+            } catch (Exception ignored) {}
 
         }
     }
