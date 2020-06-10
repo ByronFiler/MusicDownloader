@@ -28,12 +28,15 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -56,15 +59,19 @@ import java.util.stream.IntStream;
  TODO: Try to use better objects for transmissions
  TODO: Relook at how global variables are used
  TODO: Change a lot of start content of a java-fx page thing
+ TODO: Windows file explorer would preferable to JavaFX one
 
  Known Bugs
  TODO: Fix bug where sometimes table would be visible without elements, not sure how to trigger
+ TODO: Buttons appear to overlap in settings
+ TODO: Add error handling when the request directory no longer exists for downloads, default to standard
 
  Features
  TODO: Add a download speed indicator
  TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
- TODO: Re-add the estimated timer: Initial can be wait for the web requests then use that as a basis, then maybe 10 seconds percent achiveded for calc?
+ TODO: Re-add the estimated timer: Initial can be wait for the web requests then use that as a basis, then maybe 10 seconds percent achieved for calc?
  TODO: Add button to install and configure youtube-dl & ffmpeg
+ TODO: Look into macOS and Linux compatibility
 
  Misc
  TODO: Add testing
@@ -102,8 +109,8 @@ public class View implements EventHandler<KeyEvent>
     public boolean darkTheme;
     public boolean dataSaver;
 
+    // Search & Download
     public String programVersion;
-
     public TextField searchRequest;
     public TableView resultsTable;
     public Label searchResultsTitle;
@@ -116,6 +123,8 @@ public class View implements EventHandler<KeyEvent>
     public Label settingsLink;
     public Button settingsLinkButton;
     public TableView autocompleteResultsTable;
+    public Label downloadSpeedLabel;
+    public Label timeRemainingLabel;
 
     // Settings
     VBox versionResultContainer;
@@ -209,7 +218,11 @@ public class View implements EventHandler<KeyEvent>
     public double loadingPercent;
     public double percentIncrease;
 
+    public int downloadSpeed;
+    public int timeRemaining;
+
     generateAutocomplete autocompleteGenerator;
+    timerCountdown countDown;
 
     public boolean quitQueryThread = false;
     public boolean quitDownloadThread = false;
@@ -384,6 +397,12 @@ public class View implements EventHandler<KeyEvent>
         searchesProgressText = new Label("Locating Songs: 0%");
         searchesProgressText.setTranslateX(50);
         searchesProgressText.setVisible(false);
+
+        timeRemainingLabel = new Label();
+        timeRemainingLabel.setVisible(false);
+
+        downloadSpeedLabel = new Label();
+        downloadSpeedLabel.setVisible(false);
 
         loading = new ProgressBar();
         loading.setProgress(0);
@@ -727,7 +746,9 @@ public class View implements EventHandler<KeyEvent>
         // Search Page: Downloads
         pane.getChildren().addAll(
                 loading,
-                searchesProgressText
+                searchesProgressText,
+                timeRemainingLabel,
+                downloadSpeedLabel
         );
 
         // Settings Page
@@ -804,8 +825,13 @@ public class View implements EventHandler<KeyEvent>
         cancelButton.layoutXProperty().bind(mainWindow.widthProperty().subtract(69.5 + cancelButton.getWidth()));
         cancelButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(170));
         searchesProgressText.layoutYProperty().bind(mainWindow.heightProperty().subtract(115));
+        timeRemainingLabel.setTranslateX( (loading.getWidth() / 2) + (timeRemainingLabel.getWidth()/2) - 19.5 );
+        timeRemainingLabel.layoutYProperty().bind(mainWindow.heightProperty().subtract(115));
+        downloadSpeedLabel.layoutXProperty().bind(loading.widthProperty().subtract(19.5));
+        downloadSpeedLabel.layoutYProperty().bind(mainWindow.heightProperty().subtract(115));
         loading.prefWidthProperty().bind(resultsTable.widthProperty());
         loading.layoutYProperty().bind(mainWindow.heightProperty().subtract(95));
+
     }
 
     public void handle(KeyEvent event) {
@@ -902,7 +928,8 @@ public class View implements EventHandler<KeyEvent>
         ArrayList<String> request = searchResults.get(
                 resultsData.indexOf(
                         resultsTable
-                                .getItems().get(
+                                .getItems()
+                                .get(
                                     resultsTable
                                             .getSelectionModel()
                                             .getSelectedIndex()
@@ -911,9 +938,11 @@ public class View implements EventHandler<KeyEvent>
         );
         loading.setVisible(true);
 
+
+
         songsData = new ArrayList<>();
         metaData = new HashMap<>();
-        String directoryName = "";
+        String directoryName;
 
         if (request.get(4).equals("Album")) {
             // Prepare all songs
@@ -1002,9 +1031,19 @@ public class View implements EventHandler<KeyEvent>
         }
 
         searchesProgressText.setVisible(true);
+        timeRemainingLabel.setVisible(true);
+        //downloadSpeedLabel.setVisible(true);
 
         // Make Progress Bar Visible
         new downloadHandler();
+
+        cancelButton.setText("Cancel");
+        searchesProgressText.setText("0% Complete");
+        downloadSpeedLabel.setText("Calculating...");
+        timeRemainingLabel.setText("Calculating...");
+        timeRemainingLabel.setTranslateX( (mainWindow.getWidth()/2) - (timeRemainingLabel.getWidth()/2) - 19.5);
+        loading.setVisible(true);
+        loading.setProgress(0);
 
 
     }
@@ -1542,15 +1581,13 @@ public class View implements EventHandler<KeyEvent>
 
         public void run() {
 
-            Platform.runLater(() -> cancelButton.setText("Cancel"));
-            Platform.runLater(() -> searchesProgressText.setText("0% Complete"));
-            Platform.runLater(() -> loading.setVisible(true));
-            Platform.runLater(() -> loading.setProgress(0));
+            // Await for the change and reposition download speed and time remaining
 
             int totalPlayTime = 0;
             for (ArrayList<String> song: songsData) {
                 totalPlayTime += Integer.parseInt(song.get(1));
             }
+            int totalPlayTimeRemaining = totalPlayTime;
 
             loadingPercent = 0;
             percentIncrease = ((double)1 / (double)songsData.size()) * (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
@@ -1561,6 +1598,8 @@ public class View implements EventHandler<KeyEvent>
                 searchThread.setSongsDatum(songsDatum);
 
             }
+
+            long initialTime = Instant.now().toEpochMilli();
 
             while (true) {
 
@@ -1581,10 +1620,10 @@ public class View implements EventHandler<KeyEvent>
 
             loadingPercent = (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
 
-            System.out.println(quitDownloadThread);
-
             for (ArrayList<String> song: songsData)
             {
+
+                initialTime = Instant.now().toEpochMilli();
 
                 if (quitDownloadThread) {
                     Debug.trace("Download thread quit signal received before downloading song " + songsData.indexOf(song) + " of " + songsData.size());
@@ -1678,11 +1717,36 @@ public class View implements EventHandler<KeyEvent>
                     Platform.runLater(() -> loading.setProgress(tempLoadingPercent));
                     Platform.runLater(() -> searchesProgressText.setText(Math.round(tempLoadingPercent*10000)/100 + "% Complete"));
 
+                    // Remaining Playtime / Time Taken Per second to download last song = Estimated Time Remaining <variance for smaller songs
+                    totalPlayTimeRemaining -= Integer.parseInt(song.get(1));
+
+                    int finalTotalPlayTimeRemaining = totalPlayTimeRemaining;
+
+                    try {
+                        // Kill the existing timer and wait until it's dead before continuing
+                        countDown.kill();
+                        while (!countDown.isDead());
+                    } catch (NullPointerException ignored) {} // On first execution
+
+                    countDown = new timerCountdown();
+                    countDown.setTimeRemaining((int) Math.round(finalTotalPlayTimeRemaining / (Integer.parseInt(song.get(1)) / ((double)(Instant.now().toEpochMilli() - initialTime) / 1000))));
+
+                    Platform.runLater(() -> timeRemainingLabel.setTranslateX( (mainWindow.getWidth()/2) - (timeRemainingLabel.getWidth()/2) -19.5));
+
                 } catch (IOException | YoutubeDLException| InvalidDataException | UnsupportedTagException  e) {
                     e.printStackTrace();
                 }
 
             }
+
+            Platform.runLater(() -> {
+                searchesProgressText.setText("Completed");
+                searchesProgressText.setTextFill(Color.GREEN);
+                timeRemainingLabel.setVisible(false);
+                downloadSpeedLabel.setVisible(false);
+            });
+
+            Debug.trace("Download took: " + (double) (Instant.now().toEpochMilli() - initialTime) / 1000 + " seconds");
 
             if (saveAlbumArtSetting == 0 || (saveAlbumArtSetting == 1 && metaData.containsKey("positionInAlbum")) || (saveAlbumArtSetting == 2 && !metaData.containsKey("positionInAlbum"))) {
                 try {
@@ -1836,10 +1900,13 @@ public class View implements EventHandler<KeyEvent>
             // Initial where window doesn't exist
             while (true) {
                 try {
+
+                    Thread.sleep(50);
+
                     // Temporarily false as things load in
                     if (mainWindow.isShowing())
                         break;
-                } catch (NullPointerException ignored) {}
+                } catch (NullPointerException | InterruptedException ignored) {}
             }
 
             // Keep in background until the window is closed
@@ -1908,6 +1975,65 @@ public class View implements EventHandler<KeyEvent>
 
             while (ffmpegVerificationResult.getWidth() == originalWidth);
             Platform.runLater(() -> ffmpegVerificationResultContainer.setPadding(new Insets(110, 0, 0, -ffmpegVerificationResult.getWidth())));
+
+        }
+
+    }
+
+    class timerCountdown implements Runnable {
+
+        // Consider looking into moving into ScheduledExecutorService
+        // https://stackoverflow.com/questions/54394042/java-how-to-avoid-using-thread-sleep-in-a-loop
+
+        Thread t;
+        int timeRemaining;
+        boolean killSignal = false;
+        boolean dead = false;
+
+        timerCountdown (){
+            t = new Thread(this, "timer-countdown");
+            t.start();
+        }
+
+        public void setTimeRemaining(int newTime) {
+            timeRemaining = newTime;
+        }
+
+        public boolean isDead() {
+            return dead;
+        }
+
+        public void kill() {
+            killSignal = true;
+        }
+
+        public void run(){
+
+            // Count down from time remaining
+            for (; timeRemaining > 0; timeRemaining--) {
+
+                if (killSignal)
+                    break;
+
+                try {
+                    Thread.sleep(1000);
+
+                    Platform.runLater(
+                            () -> timeRemainingLabel.setText(
+                                    Duration.ofSeconds(timeRemaining)
+                                    .toString()
+                                            .substring(2)
+                                            .replaceAll("(\\d[HMS])(?!$)", "$1 ")
+                                            .toLowerCase()
+                                    + " Remaining"
+                            )
+                    );
+
+                } catch (InterruptedException ignored) {}
+
+            }
+
+            dead = true;
 
         }
 
