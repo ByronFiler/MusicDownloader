@@ -56,9 +56,8 @@ import java.util.stream.IntStream;
  TODO: Fix warnings
  TODO: Restructure threading to separate files and threading objects for statuses and debugging, start time, end time, status, exit details etc
 
- Bugs
+ Known Bugs
  TODO: Fix bug where sometimes table would be visible without elements, not sure how to trigger
- TODO: Fix downloading to the correct location
 
  Features
  TODO: Add a download speed indicator
@@ -69,6 +68,7 @@ import java.util.stream.IntStream;
  Misc
  TODO: Add testing
  TODO: Remove JARs and use Gradle
+ TODO: Use debugging and error classes properly
 
 */
 
@@ -908,7 +908,7 @@ public class View implements EventHandler<KeyEvent>
             // Prepare all songs
 
             // Producing the folder to save the data to
-            directoryName = Utils.generateFolder(request.get(0)); // Create new unique directory with album name
+            directoryName = Utils.generateFolder(outputDirectorySetting + "\\" + request.get(0)); // Create new unique directory with album name
 
             // Meta data required is found in the search
             metaData.put("albumTitle", request.get(0));
@@ -977,12 +977,10 @@ public class View implements EventHandler<KeyEvent>
             metaData.put("year", songDataRequest.selectFirst("td.year").text());
             metaData.put("genre", genre);
             metaData.put("positionInAlbum", positionInAlbum);
-            metaData.put("directory", System.getProperty("user.dir") + "\\");
-
-            // Folder link is not as song will be place in CWD
+            metaData.put("directory", outputDirectorySetting + "\\");
 
             // Download album art
-            Utils.downloadAlbumArt(directoryName, songDataRequest.selectFirst("td.cover").select("img").attr("src"));
+            Utils.downloadAlbumArt(outputDirectorySetting + "\\", songDataRequest.selectFirst("td.cover").select("img").attr("src"));
 
             // Generate song length and playtime
             ArrayList<String> songDataToAdd = new ArrayList<>();
@@ -1572,16 +1570,18 @@ public class View implements EventHandler<KeyEvent>
 
             loadingPercent = (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
 
+            System.out.println(quitDownloadThread);
+
             for (ArrayList<String> song: songsData)
             {
 
                 if (quitDownloadThread) {
+                    Debug.trace("Download thread quit signal received before downloading song " + songsData.indexOf(song) + " of " + songsData.size());
                     break;
                 }
 
                 try {
-
-                    YoutubeDLRequest request = new YoutubeDLRequest(song.get(2),outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting + "\\" + metaData.get("directory"));
+                    YoutubeDLRequest request = new YoutubeDLRequest(song.get(2), metaData.get("directory"));
                     request.setOption("extract-audio");
                     request.setOption("audio-format " + formatReferences.get(musicFormatSetting));
                     request.setOption("ignore-errors");
@@ -1675,9 +1675,9 @@ public class View implements EventHandler<KeyEvent>
 
             if (saveAlbumArtSetting == 0 || (saveAlbumArtSetting == 1 && metaData.containsKey("positionInAlbum")) || (saveAlbumArtSetting == 2 && !metaData.containsKey("positionInAlbum"))) {
                 try {
-                    Files.delete(Paths.get(outputDirectorySetting.equals("") ? metaData.get("directory") + "/art.jpg" : outputDirectorySetting + "/art.jpg"));
+                    Files.delete(Paths.get(metaData.get("directory") + "\\art.jpg"));
                 } catch (IOException e) {
-                    Debug.trace("Failed to delete file: " + (outputDirectorySetting.equals("") ? metaData.get("directory") : outputDirectorySetting) + "/" + "art.jpg");
+                    Debug.error("Failed to delete file: " + metaData.get("directory") + "\\art.jpg");
                 }
             }
 
@@ -1781,8 +1781,6 @@ public class View implements EventHandler<KeyEvent>
 
         public void run() {
 
-            // TODO: FIX THIS, For some reason not repositioning or able to get the size, no idea why
-
             selectNewFolder();
 
             try {
@@ -1827,13 +1825,17 @@ public class View implements EventHandler<KeyEvent>
             // Initial where window doesn't exist
             while (true) {
                 try {
-                    mainWindow.isShowing();
-                    break;
+                    // Temporarily false as things load in
+                    if (mainWindow.isShowing())
+                        break;
                 } catch (NullPointerException ignored) {}
             }
 
             // Keep in background until the window is closed
             while (mainWindow.isShowing());
+
+            System.out.println(mainWindow.isShowing());
+            Debug.trace("Detected application is closed, killing running threads.");
 
             // Quit running threads, download is important query is mostly for performance
             quitDownloadThread = true;
