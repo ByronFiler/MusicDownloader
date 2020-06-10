@@ -67,9 +67,8 @@ import java.util.stream.IntStream;
  TODO: Add error handling when the request directory no longer exists for downloads, default to standard
 
  Features
- TODO: Add a download speed indicator
+ TODO: Increment the loading bar as it downloads
  TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
- TODO: Re-add the estimated timer: Initial can be wait for the web requests then use that as a basis, then maybe 10 seconds percent achieved for calc?
  TODO: Add button to install and configure youtube-dl & ffmpeg
  TODO: Look into macOS and Linux compatibility
 
@@ -219,7 +218,6 @@ public class View implements EventHandler<KeyEvent>
     public double percentIncrease;
 
     public int downloadSpeed;
-    public int timeRemaining;
 
     generateAutocomplete autocompleteGenerator;
     timerCountdown countDown;
@@ -1032,7 +1030,7 @@ public class View implements EventHandler<KeyEvent>
 
         searchesProgressText.setVisible(true);
         timeRemainingLabel.setVisible(true);
-        //downloadSpeedLabel.setVisible(true);
+        downloadSpeedLabel.setVisible(true);
 
         // Make Progress Bar Visible
         new downloadHandler();
@@ -1623,8 +1621,6 @@ public class View implements EventHandler<KeyEvent>
             for (ArrayList<String> song: songsData)
             {
 
-                initialTime = Instant.now().toEpochMilli();
-
                 if (quitDownloadThread) {
                     Debug.trace("Download thread quit signal received before downloading song " + songsData.indexOf(song) + " of " + songsData.size());
                     break;
@@ -1733,6 +1729,31 @@ public class View implements EventHandler<KeyEvent>
 
                     Platform.runLater(() -> timeRemainingLabel.setTranslateX( (mainWindow.getWidth()/2) - (timeRemainingLabel.getWidth()/2) -19.5));
 
+                    // Download speed calculation Bytes per Second
+
+                    double realDownloadSpeed = new File(metaData.get("directory") + song.get(0) + ".mp3").length() / ((double)(Instant.now().toEpochMilli() - initialTime) / 1000);
+                    double prettyDownloadSpeed = 0;
+                    String units = null;
+
+
+                    if (realDownloadSpeed < 1024) {
+                        units = "bytes";
+                        prettyDownloadSpeed = Math.round(realDownloadSpeed);
+                    } else if (realDownloadSpeed >= 1024 && downloadSpeed < 1024 * 1024) {
+                        units = Math.round(realDownloadSpeed / 1024) == 1 ? "kilobyte" : "kilobytes";
+                        prettyDownloadSpeed = Math.round(realDownloadSpeed / 1024);
+                    } else if (realDownloadSpeed >= 1024 * 1024) {
+                        units = Math.round(realDownloadSpeed / (1024 * 1024)) == 1 ? "megabyte" : "megabytes";
+                        prettyDownloadSpeed = Math.round(realDownloadSpeed / (1024 * 1024));
+                    }
+
+                    double finalPrettyDownloadSpeed = prettyDownloadSpeed;
+                    String finalUnits = units;
+                    double originalWidth = downloadSpeedLabel.getWidth();
+                    long preTime = Instant.now().toEpochMilli();
+                    Platform.runLater(() -> downloadSpeedLabel.setText(finalPrettyDownloadSpeed + " " + finalUnits + " per second"));
+                    while (downloadSpeedLabel.getWidth() == originalWidth && Instant.now().toEpochMilli() - preTime < 100);
+                    Platform.runLater(() -> downloadSpeedLabel.setTranslateX(loading.getTranslateX() + 19.5 - downloadSpeedLabel.getWidth()));
                 } catch (IOException | YoutubeDLException| InvalidDataException | UnsupportedTagException  e) {
                     e.printStackTrace();
                 }
@@ -1745,8 +1766,6 @@ public class View implements EventHandler<KeyEvent>
                 timeRemainingLabel.setVisible(false);
                 downloadSpeedLabel.setVisible(false);
             });
-
-            Debug.trace("Download took: " + (double) (Instant.now().toEpochMilli() - initialTime) / 1000 + " seconds");
 
             if (saveAlbumArtSetting == 0 || (saveAlbumArtSetting == 1 && metaData.containsKey("positionInAlbum")) || (saveAlbumArtSetting == 2 && !metaData.containsKey("positionInAlbum"))) {
                 try {
