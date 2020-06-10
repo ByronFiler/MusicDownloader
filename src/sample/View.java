@@ -28,7 +28,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
@@ -50,11 +49,13 @@ import java.util.stream.IntStream;
  Optimisations
  TODO: If a particular request is taking too long, let's say >2 seconds, just use default data to save query time
  TODO: When the download is completed hide the timer and change the completed text to green
- TODO: Stop that last element from being highlighted when settings is opened
  TODO: Move CSS Files somewhere else
  TODO: Rewrite Main.css and redesign general look of the application
  TODO: Fix warnings
  TODO: Restructure threading to separate files and threading objects for statuses and debugging, start time, end time, status, exit details etc
+ TODO: Try to use better objects for transmissions
+ TODO: Relook at how global variables are used
+ TODO: Change a lot of start content of a java-fx page thing
 
  Known Bugs
  TODO: Fix bug where sometimes table would be visible without elements, not sure how to trigger
@@ -444,12 +445,14 @@ public class View implements EventHandler<KeyEvent>
 
         songDownloadFormatResult = new ComboBox<>(FXCollections.observableArrayList("mp3", "wav", "ogg", "aac"));
         songDownloadFormatResult.setOnAction(e -> {setMetaDataVisibility(); evaluateSettingsChanges();} );
+        songDownloadFormatResult.setId("combobox");
 
         saveAlbumArt = new Label("Save Album Art: ");
         saveAlbumArt.setId("settingInfo");
 
         saveAlbumArtResult = new ComboBox<>(FXCollections.observableArrayList("No", "Albums Only", "Songs Only", "All"));
         saveAlbumArtResult.setOnAction(e -> evaluateSettingsChanges());
+        saveAlbumArtResult.setId("combobox");
 
         metaDataTitle = new Label("Meta-Data Application");
         metaDataTitle.setId("settingsHeader");
@@ -459,30 +462,35 @@ public class View implements EventHandler<KeyEvent>
 
         albumArtSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         albumArtSettingResult.setOnAction(e -> evaluateSettingsChanges());
+        albumArtSettingResult.setId("combobox");
 
         albumTitleSetting = new Label("Album Title: ");
         albumTitleSetting.setId("settingInfo");
 
         albumTitleSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         albumTitleSettingResult.setOnAction(e -> evaluateSettingsChanges());
+        albumTitleSettingResult.setId("combobox");
 
         songTitleSetting = new Label("Song Title: ");
         songTitleSetting.setId("settingInfo");
 
         songTitleSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         songTitleSettingResult.setOnAction(e -> evaluateSettingsChanges());
+        songTitleSettingResult.setId("combobox");
 
         artistSetting = new Label("Artist: ");
         artistSetting.setId("settingInfo");
 
         artistSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         artistSettingResult.setOnAction(e -> evaluateSettingsChanges());
+        artistSettingResult.setId("combobox");
 
         yearSetting = new Label("Year: ");
         yearSetting.setId("settingInfo");
 
         yearSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         yearSettingResult.setOnAction(e -> evaluateSettingsChanges());
+        yearSettingResult.setId("combobox");
 
         trackNumberSetting = new Label("Track Number: ");
         trackNumberSetting.setId("settingInfo");
@@ -490,6 +498,7 @@ public class View implements EventHandler<KeyEvent>
         trackNumberSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         trackNumberSettingResult.setOnAction(e -> evaluateSettingsChanges());
         trackNumberSettingResult.setTranslateY(480);
+        trackNumberSettingResult.setId("combobox");
 
         applicationSettingTitle = new Label("Application Configuration");
         applicationSettingTitle.setId("settingsHeader");
@@ -499,12 +508,14 @@ public class View implements EventHandler<KeyEvent>
 
         darkModeSettingResult = new ComboBox<>(FXCollections.observableArrayList("Normal", "Night"));
         darkModeSettingResult.setOnAction(e -> {evaluateSettingsChanges(); switchTheme(darkModeSettingResult.getSelectionModel().getSelectedIndex() == 1);});
+        darkModeSettingResult.setId("combobox");
 
         dataSaverSetting = new Label("Data Saver Mode: ");
         dataSaverSetting.setId("settingInfo");
 
         dataSaverSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
         dataSaverSettingResult.setOnAction(e -> evaluateSettingsChanges());
+        dataSaverSettingResult.setId("combobox");
 
         confirmChanges = new Button("Confirm");
         confirmChanges.setOnAction(e -> submit());
@@ -1833,8 +1844,6 @@ public class View implements EventHandler<KeyEvent>
 
             // Keep in background until the window is closed
             while (mainWindow.isShowing());
-
-            System.out.println(mainWindow.isShowing());
             Debug.trace("Detected application is closed, killing running threads.");
 
             // Quit running threads, download is important query is mostly for performance

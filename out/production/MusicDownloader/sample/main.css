@@ -47,6 +47,13 @@
     -fx-table-cell-border-color: transparent;
 }
 
+#combobox {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-border-color: grey;
+    -fx-border-radius: 2px;
+}
+
 #autocompleteTable .scroll-bar * {
     -fx-min-width: 0;
     -fx-pref-width: 0;
