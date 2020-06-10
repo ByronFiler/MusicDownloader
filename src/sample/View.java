@@ -57,17 +57,20 @@ import java.util.stream.IntStream;
  TODO: Fix warnings
  TODO: Restructure threading to separate files and threading objects for statuses and debugging, start time, end time, status, exit details etc
  TODO: Try to use better objects for transmissions
- TODO: Relook at how global variables are used
+ TODO: Look at how global variables are used
  TODO: Change a lot of start content of a java-fx page thing
  TODO: Windows file explorer would preferable to JavaFX one
+ TODO: Change youtube-dl wrapper to my own wrapper where I can get progress as it downloads and report that
+ TODO: Go through each function and optimise
 
  Known Bugs
  TODO: Fix bug where sometimes table would be visible without elements, not sure how to trigger
  TODO: Buttons appear to overlap in settings
  TODO: Add error handling when the request directory no longer exists for downloads, default to standard
+ TODO: Estimated timer is far greater than it should be
 
  Features
- TODO: Increment the loading bar as it downloads
+ TODO: Add a "real" download speed indicator instead of just effective
  TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
  TODO: Add button to install and configure youtube-dl & ffmpeg
  TODO: Look into macOS and Linux compatibility
@@ -221,6 +224,7 @@ public class View implements EventHandler<KeyEvent>
 
     generateAutocomplete autocompleteGenerator;
     timerCountdown countDown;
+    loadingIncrementer prettyLoader;
 
     public boolean quitQueryThread = false;
     public boolean quitDownloadThread = false;
@@ -1626,6 +1630,40 @@ public class View implements EventHandler<KeyEvent>
                     break;
                 }
 
+                //RemainingTime * ( (100 - startPercent) / (endPercent - startPercent) )
+                prettyLoader = new loadingIncrementer();
+                prettyLoader.initialize(
+                        loadingPercent,
+                        (
+                                loadingPercent +
+                                        (
+                                                (double)Integer.parseInt(song.get(1)) / (double)totalPlayTime
+                                        ) * (
+                                                totalPlayTime * 0.02313
+                                                        / (0.5518 * songsData.size() + totalPlayTime * 0.02313)
+                                        )
+                        ),
+                        (
+                                (
+                                        totalPlayTimeRemaining - Integer.parseInt(song.get(1))
+                                ) / (
+                                        Integer.parseInt(song.get(1)) / ((double)(Instant.now().toEpochMilli() - initialTime) / 1000)
+                                )
+                        ) / (
+                                (100 - (loadingPercent*100) ) / (
+                                        (
+                                                (
+                                                        loadingPercent +
+                                                                (
+                                                                        (double) Integer.parseInt(song.get(1))
+                                                                                / (double)totalPlayTime
+                                                                )
+                                                                        * (totalPlayTime * 0.02313 / (0.5518 * songsData.size() + totalPlayTime * 0.02313))
+                                                ) * 100
+                                        ) - (loadingPercent*100) )
+                        )
+                );
+
                 try {
                     YoutubeDLRequest request = new YoutubeDLRequest(song.get(2), metaData.get("directory"));
                     request.setOption("extract-audio");
@@ -1710,6 +1748,9 @@ public class View implements EventHandler<KeyEvent>
                     loadingPercent += percentIncrease;
                     double tempLoadingPercent = loadingPercent;
 
+                    prettyLoader.kill();
+                    while (!prettyLoader.isDead());
+
                     Platform.runLater(() -> loading.setProgress(tempLoadingPercent));
                     Platform.runLater(() -> searchesProgressText.setText(Math.round(tempLoadingPercent*10000)/100 + "% Complete"));
 
@@ -1720,6 +1761,7 @@ public class View implements EventHandler<KeyEvent>
 
                     try {
                         // Kill the existing timer and wait until it's dead before continuing
+                        System.out.println("Waiting for thread to die");
                         countDown.kill();
                         while (!countDown.isDead());
                     } catch (NullPointerException ignored) {} // On first execution
@@ -1737,13 +1779,13 @@ public class View implements EventHandler<KeyEvent>
 
 
                     if (realDownloadSpeed < 1024) {
-                        units = "bytes";
+                        units = "b";
                         prettyDownloadSpeed = Math.round(realDownloadSpeed);
                     } else if (realDownloadSpeed >= 1024 && downloadSpeed < 1024 * 1024) {
-                        units = Math.round(realDownloadSpeed / 1024) == 1 ? "kilobyte" : "kilobytes";
+                        units = "kb";
                         prettyDownloadSpeed = Math.round(realDownloadSpeed / 1024);
                     } else if (realDownloadSpeed >= 1024 * 1024) {
-                        units = Math.round(realDownloadSpeed / (1024 * 1024)) == 1 ? "megabyte" : "megabytes";
+                        units = "mb";
                         prettyDownloadSpeed = Math.round(realDownloadSpeed / (1024 * 1024));
                     }
 
@@ -1751,9 +1793,11 @@ public class View implements EventHandler<KeyEvent>
                     String finalUnits = units;
                     double originalWidth = downloadSpeedLabel.getWidth();
                     long preTime = Instant.now().toEpochMilli();
-                    Platform.runLater(() -> downloadSpeedLabel.setText(finalPrettyDownloadSpeed + " " + finalUnits + " per second"));
+
+                    Platform.runLater(() -> downloadSpeedLabel.setText(finalPrettyDownloadSpeed + " " + finalUnits + "/s"));
                     while (downloadSpeedLabel.getWidth() == originalWidth && Instant.now().toEpochMilli() - preTime < 100);
                     Platform.runLater(() -> downloadSpeedLabel.setTranslateX(loading.getTranslateX() + 19.5 - downloadSpeedLabel.getWidth()));
+
                 } catch (IOException | YoutubeDLException| InvalidDataException | UnsupportedTagException  e) {
                     e.printStackTrace();
                 }
@@ -2049,6 +2093,60 @@ public class View implements EventHandler<KeyEvent>
                     );
 
                 } catch (InterruptedException ignored) {}
+
+            }
+
+            dead = true;
+
+        }
+
+    }
+
+    class loadingIncrementer implements Runnable {
+
+        Thread t;
+        boolean killSignal = false;
+        boolean dead = false;
+        double startPercentage;
+        double currentPercentage;
+        double targetPercentage;
+        int time;
+
+        public loadingIncrementer() {
+            t = new Thread(this, "loading-incrementor");
+            t.start();
+        }
+
+        public void initialize(double start, double end, double t) {
+            startPercentage = start;
+            currentPercentage = startPercentage;
+            targetPercentage = end;
+            time = Math.toIntExact(Math.round(t));
+        }
+
+        public boolean isDead() {
+            return dead;
+        }
+
+        public void kill() {
+            killSignal = true;
+        }
+
+        public void run() {
+
+            double increment = (targetPercentage - startPercentage) / time;
+
+            // For each percentage wait the time and increment the loading bar
+            for (; time > 0; time--) {
+
+                if (killSignal)
+                    break;
+
+                try {Thread.sleep(1000);} catch (InterruptedException ignored) {}
+
+                currentPercentage += increment;
+
+                Platform.runLater(() -> loading.setProgress(currentPercentage));
 
             }
 
