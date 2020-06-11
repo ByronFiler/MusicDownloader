@@ -228,7 +228,7 @@ public class View implements EventHandler<KeyEvent>
     public boolean quitDownloadThread = false;
 
     public View(int w, int h) {
-        Debug.trace("View::<constructor>");
+        Debug.trace(null, "View::<constructor>");
         width = w;
         height = h;
     }
@@ -1645,7 +1645,7 @@ public class View implements EventHandler<KeyEvent>
                 }
 
                 if (quitDownloadThread) {
-                    Debug.trace("Download thread quit signal received before downloading song " + songsData.indexOf(song) + " of " + songsData.size());
+                    Debug.trace(t, "Quit signal received before downloading song " + songsData.indexOf(song) + " of " + songsData.size());
                     break;
                 }
 
@@ -1710,7 +1710,7 @@ public class View implements EventHandler<KeyEvent>
                             // Delete old file
 
                             if ( !new File(targetFileName).delete()) {
-                                Debug.error("Failed to delete file: " + targetFileName);
+                                Debug.error(t, "Failed to delete file: " + targetFileName, new IOException().getStackTrace());
                             }
 
                         } catch (IOException | NotSupportedException e) {
@@ -1756,14 +1756,14 @@ public class View implements EventHandler<KeyEvent>
             });
 
             if (! new File(metaData.get("directory") + "\\exec.bat").delete()) {
-                Debug.error("Failed to delete: " + metaData.get("directory") + "\\exec.bat");
+                Debug.error(t, "Failed to delete: " + metaData.get("directory") + "\\exec.bat", new IOException().getStackTrace());
             }
 
             if (saveAlbumArtSetting == 0 || (saveAlbumArtSetting == 1 && metaData.containsKey("positionInAlbum")) || (saveAlbumArtSetting == 2 && !metaData.containsKey("positionInAlbum"))) {
                 try {
                     Files.delete(Paths.get(metaData.get("directory") + "\\art.jpg"));
                 } catch (IOException e) {
-                    Debug.error("Failed to delete file: " + metaData.get("directory") + "\\art.jpg");
+                    Debug.error(t, "Failed to delete file: " + metaData.get("directory") + "\\art.jpg", new IOException().getStackTrace());
                 }
             }
 
@@ -1909,6 +1909,8 @@ public class View implements EventHandler<KeyEvent>
 
         public void run() {
 
+            Debug.trace(t, "Started");
+
             // Initial where window doesn't exist
             while (true) {
 
@@ -1922,12 +1924,14 @@ public class View implements EventHandler<KeyEvent>
                 } catch (NullPointerException ignored) {}
             }
 
+            Debug.trace(t, "Detected window is now open.");
+
             // Keep in background until the window is closed
             while (windowIsShowing){
                 windowIsShowing = mainWindow.isShowing();
             };
 
-            Debug.trace("[smart-quit] Window closed detected, killing threads.");
+            Debug.trace(t,"Window closed detected, killing threads.");
 
             // Quit running threads, download is important query is mostly for performance
             quitDownloadThread = true;
@@ -1977,6 +1981,7 @@ public class View implements EventHandler<KeyEvent>
 
         public void run() {
 
+            Debug.trace(t, "Started");
             boolean ffmpegStatus = Settings.checkFFMPEG();
             double originalWidth = ffmpegVerificationResult.getWidth();
 
@@ -1993,6 +1998,8 @@ public class View implements EventHandler<KeyEvent>
             while (ffmpegVerificationResult.getWidth() == originalWidth);
             Platform.runLater(() -> ffmpegVerificationResultContainer.setPadding(new Insets(110, 0, 0, -ffmpegVerificationResult.getWidth())));
 
+            Debug.trace(t, "Completed");
+
         }
 
     }
@@ -2003,9 +2010,9 @@ public class View implements EventHandler<KeyEvent>
         // https://stackoverflow.com/questions/54394042/java-how-to-avoid-using-thread-sleep-in-a-loop
 
         Thread t;
-        int timeRemaining;
-        boolean killSignal = false;
-        boolean dead = false;
+        private int timeRemaining;
+        private boolean killSignal = false;
+        private boolean dead = false;
 
         timerCountdown (){
             t = new Thread(this, "timer-countdown");
@@ -2058,13 +2065,15 @@ public class View implements EventHandler<KeyEvent>
 
     static class download implements Runnable {
 
-        String url;
-        String directory;
-        String format;
-        String downloadSpeed;
-        double percentComplete = 0;
-        String eta;
-        boolean complete = false;
+        private String url;
+        private String directory;
+        private String format;
+        private String downloadSpeed;
+        private String eta;
+
+        private double percentComplete = 0;
+        private boolean complete = false;
+
         Thread t;
 
         public download() {

@@ -17,8 +17,8 @@ public class Main extends Application {
 
         utils.view = view;
 
-
         view.start(primaryStage);
+        Debug.trace(null, "Primary Stage Generated");
 
     }
 

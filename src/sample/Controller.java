@@ -8,13 +8,12 @@ public class Controller {
 
     public View view;
 
-    public Controller()
-    {
-        Debug.trace("Controller::<constructor>");
+    public Controller() {
+        Debug.trace(null, "<constructor>");
     }
 
     public void userKeyInteraction (KeyEvent event) {
-        //Debug.trace("User key interaction" + event.getCode());
+        //Debug.trace(null, "User key interaction" + event.getCode());
 
         if (
                 view.settingsTitle.isVisible() &&
