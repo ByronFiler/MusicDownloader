@@ -59,6 +59,8 @@ import java.util.stream.IntStream;
  TODO: Go through each function and optimise
 
  Known Bugs
+ TODO: Cancel should kill youtube-dl listener threads
+ TODO: Spamming download button should kill previous download instance, instead it attempts to run two at once
  TODO: Sometimes searching takes far longer than it should
  TODO: Estimated timer is far greater than it should be
  TODO: Buttons appear to overlap in settings
@@ -66,6 +68,7 @@ import java.util.stream.IntStream;
  TODO: Check handling when json directory doesn't exist
  TODO: Check program can handle making new default settings files on the fly
  TODO: Don't add elements with no name to search results table on either
+ TODO: Get reu to try and break this
 
  Features
  TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
@@ -220,7 +223,6 @@ public class View implements EventHandler<KeyEvent>
 
     generateAutocomplete autocompleteGenerator;
     timerCountdown countDown;
-    loadingIncrementer prettyLoader;
 
     public boolean quitQueryThread = false;
     public boolean quitDownloadThread = false;
@@ -1898,6 +1900,7 @@ public class View implements EventHandler<KeyEvent>
 
     class smartQuitDownload implements  Runnable {
         Thread t;
+        private volatile boolean windowIsShowing;
 
         smartQuitDownload () {
             t = new Thread(this, "smart-quit");
@@ -1906,28 +1909,30 @@ public class View implements EventHandler<KeyEvent>
 
         public void run() {
 
-            /*
             // Initial where window doesn't exist
             while (true) {
+
+                windowIsShowing = mainWindow.isShowing();
+
                 try {
-
-                    Thread.sleep(50);
-
                     // Temporarily false as things load in
-                    if (mainWindow.isShowing())
+                    if (windowIsShowing)
                         break;
-                } catch (NullPointerException | InterruptedException ignored) {}
+
+                } catch (NullPointerException ignored) {}
             }
 
             // Keep in background until the window is closed
-            while (mainWindow.isShowing());
-            Debug.trace("Detected application is closed, killing running threads.");
+            while (windowIsShowing){
+                windowIsShowing = mainWindow.isShowing();
+            };
+
+            Debug.trace("[smart-quit] Window closed detected, killing threads.");
 
             // Quit running threads, download is important query is mostly for performance
             quitDownloadThread = true;
             quitQueryThread = true;
 
-             */
 
         }
     }
@@ -2051,61 +2056,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    class loadingIncrementer implements Runnable {
-
-        Thread t;
-        boolean killSignal = false;
-        boolean dead = false;
-        double startPercentage;
-        double currentPercentage;
-        double targetPercentage;
-        int time;
-
-        public loadingIncrementer() {
-            t = new Thread(this, "loading-incrementor");
-            t.start();
-        }
-
-        public void initialize(double start, double end, double t) {
-            startPercentage = start;
-            currentPercentage = startPercentage;
-            targetPercentage = end;
-            time = Math.toIntExact(Math.round(t));
-        }
-
-        public boolean isDead() {
-            return dead;
-        }
-
-        public void kill() {
-            killSignal = true;
-        }
-
-        public void run() {
-
-            double increment = (targetPercentage - startPercentage) / time;
-
-            // For each percentage wait the time and increment the loading bar
-            for (; time > 0; time--) {
-
-                if (killSignal)
-                    break;
-
-                try {Thread.sleep(1000);} catch (InterruptedException ignored) {}
-
-                currentPercentage += increment;
-
-                Platform.runLater(() -> loading.setProgress(currentPercentage));
-
-            }
-
-            dead = true;
-
-        }
-
-    }
-
-    class download implements Runnable {
+    static class download implements Runnable {
 
         String url;
         String directory;
