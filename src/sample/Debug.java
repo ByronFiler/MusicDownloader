@@ -21,7 +21,7 @@ public class Debug {
             entry("autoCompleteWeb", true),
             entry("allMusicQuery", true),
             entry("addToTable", true),
-            entry("downloadHandler", true),
+            entry("download-handler", true),
             entry("youtubeQueryThread", true),
             entry("getLatestVersion", true),
             entry("selectFolder", true),

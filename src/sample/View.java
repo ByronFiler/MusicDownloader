@@ -60,8 +60,7 @@ import java.util.stream.IntStream;
 
  Known Bugs
  TODO: Cancel should kill youtube-dl listener threads
- TODO: Spamming download button should kill previous download instance, instead it attempts to run two at once
- TODO: Sometimes searching takes far longer than it should
+ TODO: Sometimes searching takes far longer than it should, should be fixed with a timeout
  TODO: Estimated timer is far greater than it should be
  TODO: Buttons appear to overlap in settings
  TODO: Add error handling when the request directory no longer exists for downloads, default to standard
@@ -69,9 +68,10 @@ import java.util.stream.IntStream;
  TODO: Check program can handle making new default settings files on the fly
  TODO: Don't add elements with no name to search results table on either
  TODO: Get reu to try and break this
+ TODO: Album art name should be a random hash until download is over then should have a specific name to avoid conflicts
 
  Features
- TODO: Try and make searching a bit nicer, no just no results page, maybe a table with default elements, searching page... or something else
+ TODO: Add a spinning loading bar on search until the search results table is populated
  TODO: Add button to install and configure youtube-dl & ffmpeg
  TODO: Look into macOS and Linux compatibility
 
@@ -223,9 +223,9 @@ public class View implements EventHandler<KeyEvent>
 
     generateAutocomplete autocompleteGenerator;
     timerCountdown countDown;
+    downloadHandler handleDownload;
 
     public boolean quitQueryThread = false;
-    public boolean quitDownloadThread = false;
 
     public View(int w, int h) {
         Debug.trace(null, "View::<constructor>");
@@ -896,8 +896,12 @@ public class View implements EventHandler<KeyEvent>
     public synchronized void cancel() {
 
         // Stops the search thread from running
-        quitQueryThread = true;
-        quitDownloadThread = true;
+        try {
+
+            quitQueryThread = true;
+            handleDownload.kill();
+
+        } catch (NullPointerException ignored) {}
 
         // Clear Table and Hide, Revert to search state
         resultsTable.getItems().clear();
@@ -923,9 +927,13 @@ public class View implements EventHandler<KeyEvent>
         settingsLinkButton.setVisible(true);
         settingsLink.setVisible(true);
 
+        downloadButton.setDisable(false);
+
     }
 
     public synchronized void initializeDownload() throws IOException {
+
+        downloadButton.setDisable(true);
 
         // Results table contains images and text, this will never error but it thinks it could
         ArrayList<String> request = searchResults.get(
@@ -941,8 +949,6 @@ public class View implements EventHandler<KeyEvent>
         );
 
         loading.setVisible(true);
-
-
 
         songsData = new ArrayList<>();
         metaData = new HashMap<>();
@@ -1039,7 +1045,7 @@ public class View implements EventHandler<KeyEvent>
         downloadSpeedLabel.setVisible(true);
 
         // Make Progress Bar Visible
-        new downloadHandler();
+        handleDownload = new downloadHandler();
 
         cancelButton.setText("Cancel");
         searchesProgressText.setText("0% Complete");
@@ -1578,10 +1584,20 @@ public class View implements EventHandler<KeyEvent>
     class downloadHandler implements Runnable {
 
         Thread t;
+        private boolean kill = false;
+        private boolean completed = false;
 
         downloadHandler() {
-            t = new Thread(this, "downloader");
+            t = new Thread(this, "download-handler");
             t.start();
+        }
+
+        private void kill() {
+            kill = true;
+        }
+
+        private boolean isDead() {
+            return completed;
         }
 
         public void run() {
@@ -1644,8 +1660,8 @@ public class View implements EventHandler<KeyEvent>
 
                 }
 
-                if (quitDownloadThread) {
-                    Debug.trace(t, "Quit signal received before downloading song " + songsData.indexOf(song) + " of " + songsData.size());
+                if (kill) {
+                    Debug.trace(t, "Quit signal received before downloading song " + (songsData.indexOf(song)+1) + " of " + songsData.size());
                     break;
                 }
 
@@ -1769,8 +1785,19 @@ public class View implements EventHandler<KeyEvent>
 
             Platform.runLater(() -> cancelButton.setText("Back"));
 
-            if (quitDownloadThread) {
-                quitDownloadThread = false;
+            if (kill) {
+
+                // Delete Partial Download
+
+                // Album
+                // All Files In Album Folder: (mp3s, bat and jpg)
+                // All Temporary Songs in CWD
+
+                // Song
+                // Delete Temporary Songs in CWD
+                // Delete target song and album art
+
+
 
                 if (metaData.containsKey("positionInAlbum")) {
                     // Deleting a song, just name and album art
@@ -1783,6 +1810,7 @@ public class View implements EventHandler<KeyEvent>
                         e.printStackTrace();
                     }
                 } else {
+
                     // Deleting an album
                     File albumFolder = new File(metaData.get("directory"));
                     String[] files = albumFolder.list();
@@ -1794,9 +1822,13 @@ public class View implements EventHandler<KeyEvent>
                     }
                     if (!albumFolder.delete())
                         System.out.println("Failed to delete: " + albumFolder.getAbsolutePath());
+
                 }
 
             }
+
+            Platform.runLater(() -> downloadButton.setDisable(false));
+            completed = true;
 
         }
     }
@@ -1934,14 +1966,20 @@ public class View implements EventHandler<KeyEvent>
             Debug.trace(t,"Window closed detected, killing threads.");
 
             // Quit running threads, download is important query is mostly for performance
-            quitDownloadThread = true;
-            quitQueryThread = true;
+            try {
+                handleDownload.kill();
+                quitQueryThread = true;
+
+                // while (!handleDownload.isDead() && true);
+
+            } catch (NullPointerException ignored) {}
 
 
         }
     }
 
     class youtubeDlVerification implements Runnable {
+
         Thread t;
 
         youtubeDlVerification () {
@@ -1950,6 +1988,8 @@ public class View implements EventHandler<KeyEvent>
         }
 
         public void run() {
+
+            Debug.trace(t, "Initialized");
 
             boolean youtubeDlStatus = Settings.checkYouTubeDl();
             double originalWidth = youtubeDlVerificationResult.getWidth();
@@ -1967,6 +2007,8 @@ public class View implements EventHandler<KeyEvent>
             while (youtubeDlVerificationResult.getWidth() == originalWidth) {}
             Platform.runLater(() -> youtubeDlVerificationResultContainer.setPadding(new Insets(90, 0, 0, -youtubeDlVerificationResult.getWidth())));
 
+            Debug.trace(t, "Completed");
+
         }
     }
 
@@ -1981,7 +2023,8 @@ public class View implements EventHandler<KeyEvent>
 
         public void run() {
 
-            Debug.trace(t, "Started");
+            Debug.trace(t, "Initialized");
+
             boolean ffmpegStatus = Settings.checkFFMPEG();
             double originalWidth = ffmpegVerificationResult.getWidth();
 
@@ -2028,16 +2071,21 @@ public class View implements EventHandler<KeyEvent>
         }
 
         public void kill() {
+            Debug.trace(t, "Kill signal received");
             killSignal = true;
         }
 
         public void run(){
 
+            Debug.trace(t, "Initialized");
+
             // Count down from time remaining
             for (; timeRemaining > 0; timeRemaining--) {
 
-                if (killSignal)
+                if (killSignal) {
+                    Debug.trace(t, String.format("Executing kill signal, with %d second(s) remaining.", timeRemaining));
                     break;
+                }
 
                 try {
                     Thread.sleep(1000);
@@ -2058,12 +2106,15 @@ public class View implements EventHandler<KeyEvent>
             }
 
             dead = true;
+            Debug.trace(t, "Completed");
 
         }
 
     }
 
     static class download implements Runnable {
+
+        Thread t;
 
         private String url;
         private String directory;
@@ -2074,14 +2125,13 @@ public class View implements EventHandler<KeyEvent>
         private double percentComplete = 0;
         private boolean complete = false;
 
-        Thread t;
-
         public download() {
             t = new Thread(this, "download");
             t.start();
         }
 
         public void initialize(String dir, String urlRequest, String form) {
+            Debug.trace(t, "Initialization data received");
             directory = dir;
             url = urlRequest;
             format = form;
@@ -2106,10 +2156,15 @@ public class View implements EventHandler<KeyEvent>
         public void run() {
 
             try {
+
+                Debug.trace(t, "Starting");
+
                 // Making the bat to execute
                 FileWriter batCreator = new FileWriter(directory + "\\exec.bat");
                 batCreator.write("youtube-dl " + url + " --extract-audio --audio-format " + format + " --ignore-errors --retries 10");
                 batCreator.close();
+
+                Debug.trace(t, "Successfully generated bat file with command.");
 
                 // Sending the Youtube-DL Request
                 ProcessBuilder builder = new ProcessBuilder(directory + "\\exec.bat");
@@ -2117,6 +2172,8 @@ public class View implements EventHandler<KeyEvent>
                 Process process = builder.start();
                 InputStream is = process.getInputStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
+                Debug.trace(t, "Execution of bat request sent.");
 
                 String line = null;
                 while ((line = reader.readLine()) != null) {
@@ -2140,10 +2197,12 @@ public class View implements EventHandler<KeyEvent>
                 }
 
             } catch (IOException e) {
-                e.printStackTrace();
+                Debug.error(t, "Error in youtube-dl wrapper execution", e.getStackTrace());
             }
 
             complete = true;
+
+            Debug.trace(t, "Completed");
 
         }
 
