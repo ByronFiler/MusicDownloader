@@ -62,7 +62,6 @@ import java.util.stream.IntStream;
  TODO: Cancel should kill youtube-dl listener threads
  TODO: Sometimes searching takes far longer than it should, should be fixed with a timeout
  TODO: Estimated timer is far greater than it should be
- TODO: Buttons appear to overlap in settings
  TODO: Add error handling when the request directory no longer exists for downloads, default to standard
  TODO: Check handling when json directory doesn't exist
  TODO: Check program can handle making new default settings files on the fly
@@ -135,10 +134,13 @@ public class View implements EventHandler<KeyEvent>
     VBox youtubeDlVerificationResultContainer;
     VBox ffmpegVerificationResultContainer;
 
+    VBox outputDirectoryContainer;
     VBox outputDirectoryResultContainer;
     VBox outputDirectoryButtonContainer;
     VBox songDownloadFormatResultContainer;
+    VBox songDownloadFormatContainer;
     VBox saveAlbumArtResultContainer;
+    VBox saveAlbumArtContainer;
 
     VBox metaDataInfoContainer;
     VBox albumArtSettingResultContainer;
@@ -607,13 +609,27 @@ public class View implements EventHandler<KeyEvent>
         fileSettingNameContainer.getChildren().addAll(fileSettingsTitle, fileSettingsTitleLine);
         fileSettingNameContainer.setPadding(new Insets(150, 0, 0, 0));
 
-        VBox fileSettingInfoContainer = new VBox(7.5);
+        /*
+        VBox fileSettingInfoContainer = new VBox(15);
         fileSettingInfoContainer.getChildren().addAll(
                 outputDirectory,
                 songDownloadFormat,
                 saveAlbumArt
         );
         fileSettingInfoContainer.setPadding(new Insets(180, 0, 0, 0));
+        */
+
+        outputDirectoryContainer = new VBox();
+        outputDirectoryContainer.getChildren().add(outputDirectory);
+        outputDirectoryContainer.setPadding(new Insets(180, 0, 0, 0));
+
+        songDownloadFormatContainer = new VBox();
+        songDownloadFormatContainer.getChildren().add(songDownloadFormat);
+        songDownloadFormatContainer.setPadding(new Insets(210, 0, 0, 0));
+
+        saveAlbumArtContainer = new VBox();
+        saveAlbumArtContainer.getChildren().add(saveAlbumArt);
+        saveAlbumArtContainer.setPadding(new Insets(240, 0, 0, 0));
 
         outputDirectoryResultContainer = new VBox();
         outputDirectoryResultContainer.getChildren().add(outputDirectoryResult);
@@ -629,7 +645,7 @@ public class View implements EventHandler<KeyEvent>
 
         VBox metaDataNameContainer = new VBox();
         metaDataNameContainer.getChildren().addAll(metaDataTitle, metaDataTitleLine);
-        metaDataNameContainer.setPadding(new Insets(270, 0, 0, 0));
+        metaDataNameContainer.setPadding(new Insets(280, 0, 0, 0));
 
         metaDataInfoContainer = new VBox();
         metaDataInfoContainer.getChildren().addAll(
@@ -640,8 +656,8 @@ public class View implements EventHandler<KeyEvent>
                 yearSetting,
                 trackNumberSetting
         );
-        metaDataInfoContainer.setSpacing(7.5);
-        metaDataInfoContainer.setPadding(new Insets(300, 0, 0, 0));
+        metaDataInfoContainer.setSpacing(12.5);
+        metaDataInfoContainer.setPadding(new Insets(310, 0, 0, 0));
 
         albumArtSettingResultContainer = new VBox();
         albumArtSettingResultContainer.getChildren().add(albumArtSettingResult);
@@ -663,11 +679,11 @@ public class View implements EventHandler<KeyEvent>
 
         VBox applicationSettingNameContainer = new VBox();
         applicationSettingNameContainer.getChildren().addAll(applicationSettingTitle, applicationSettingTitleLine);
-        applicationSettingNameContainer.setPadding(new Insets(470, 0, 0, 0));
+        applicationSettingNameContainer.setPadding(new Insets(510, 0, 0, 0));
 
         VBox applicationSettingsInfoContainer = new VBox(7.5);
         applicationSettingsInfoContainer.getChildren().addAll(darkModeSetting, dataSaverSetting);
-        applicationSettingsInfoContainer.setPadding(new Insets(500, 0, 0, 0));
+        applicationSettingsInfoContainer.setPadding(new Insets(540, 0, 0, 0));
 
         darkModeSettingResultContainer = new VBox();
         darkModeSettingResultContainer.getChildren().add(darkModeSettingResult);
@@ -681,7 +697,9 @@ public class View implements EventHandler<KeyEvent>
                 programSettingNameContainer,
                 programSettingInfoContainer,
                 fileSettingNameContainer,
-                fileSettingInfoContainer,
+                outputDirectoryContainer,
+                songDownloadFormatContainer,
+                saveAlbumArtContainer,
                 metaDataNameContainer,
                 metaDataInfoContainer,
                 applicationSettingNameContainer,
@@ -793,18 +811,18 @@ public class View implements EventHandler<KeyEvent>
 
         outputDirectoryResultContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth()));
         outputDirectoryButtonContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth()));
-        songDownloadFormatResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(205, 0, 0, -songDownloadFormatResult.getWidth())));
-        saveAlbumArtResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(230, 0, 0, -saveAlbumArtResult.getWidth())));
+        songDownloadFormatResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(210, 0, 0, -songDownloadFormatResult.getWidth())));
+        saveAlbumArtResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(240, 0, 0, -saveAlbumArtResult.getWidth())));
 
-        albumArtSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(300, 0, 0, -albumArtSettingResult.getWidth())));
-        albumTitleSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(325, 0, 0, -albumTitleSettingResult.getWidth())));
-        songTitleSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(350, 0, 0, -songTitleSettingResult.getWidth())));
-        artistSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(375, 0, 0, -artistSettingResult.getWidth())));
-        yearSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(400, 0, 0, -yearSettingResult.getWidth())));
-        trackNumberSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(-55, 0, 0, -trackNumberSettingResult.getWidth())));
+        albumArtSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(310, 0, 0, -albumArtSettingResult.getWidth())));
+        albumTitleSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(340, 0, 0, -albumTitleSettingResult.getWidth())));
+        songTitleSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(370, 0, 0, -songTitleSettingResult.getWidth())));
+        artistSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(400, 0, 0, -artistSettingResult.getWidth())));
+        yearSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(430, 0, 0, -yearSettingResult.getWidth())));
+        trackNumberSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(-20, 0, 0, -trackNumberSettingResult.getWidth())));
 
-        darkModeSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(500, 0, 0, -darkModeSettingResult.getWidth())));
-        dataSaverSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(525, 0, 0, -dataSaverSettingResult.getWidth())));
+        darkModeSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(540, 0, 0, -darkModeSettingResult.getWidth())));
+        dataSaverSettingResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(570, 0, 0, -dataSaverSettingResult.getWidth())));
 
         settingTitleLine.endXProperty().bind(mainWindow.widthProperty().subtract(99.5));
         programSettingsTitleLine.endXProperty().bind(mainWindow.widthProperty().subtract(99.5));

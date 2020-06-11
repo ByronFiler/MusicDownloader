@@ -26,8 +26,8 @@ public class Debug {
             entry("getLatestVersion", true),
             entry("selectFolder", true),
             entry("smart-quit", true),
-            entry("youtubeDlVerification", true),
-            entry("ffmpegVerificationThread", true),
+            entry("youtube-dl-verification", true),
+            entry("ffmpeg-verification", true),
             entry("timerCountdown", true),
             entry("download", true)
     );
