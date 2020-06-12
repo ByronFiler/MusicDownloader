@@ -28,7 +28,7 @@ public class Debug {
             entry("smart-quit", true),
             entry("youtube-dl-verification", true),
             entry("ffmpeg-verification", true),
-            entry("timerCountdown", true),
+            entry("timer-countdown", true),
             entry("download", true)
     );
 

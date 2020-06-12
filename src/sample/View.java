@@ -32,10 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.IntStream;
 
 /*
@@ -59,6 +56,7 @@ import java.util.stream.IntStream;
  TODO: Go through each function and optimise
 
  Known Bugs
+ TODO: Switching to night theme and then exiting and reentering settings won't colour the text properly, also throws a lot of errors when night theme is set
  TODO: Cancel should kill youtube-dl listener threads
  TODO: Sometimes searching takes far longer than it should, should be fixed with a timeout
  TODO: Estimated timer is far greater than it should be
@@ -1539,7 +1537,7 @@ public class View implements EventHandler<KeyEvent>
                 Document songDataPage;
 
                 // Determining the album art to use, and the year
-                ImageView selectedImage;
+                ImageView selectedImage = null;
                 String year = searchResult.get(2);
                 String genre = searchResult.get(3);
                 if (searchResult.get(4).equals("Album")) {
@@ -1557,24 +1555,29 @@ public class View implements EventHandler<KeyEvent>
                 } else {
 
                     if (dataSaver) {
+
                         selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
+
                     } else {
-                        songDataPage = Jsoup.connect(searchResult.get(6)).get();
-
-                        if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https")) {
-                            selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
-                        } else {
-                            selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
-                        }
-
-
-                        if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4 && year.length() == 0) {
-                            year = songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear");
-                        }
-
                         try {
-                            genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length() - 1);
-                        } catch (NullPointerException ignored) {
+                            songDataPage = Jsoup.connect(searchResult.get(6)).get();
+
+                            if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https")) {
+                                selectedImage = new ImageView(new Image(songDataPage.selectFirst("td.cover").selectFirst("img").attr("src")));
+                            } else {
+                                selectedImage = new ImageView(new Image(new File("resources/song_default.png").toURI().toString()));
+                            }
+
+
+                            if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4 && year.length() == 0) {
+                                year = songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear");
+                            }
+
+                            try {
+                                genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length() - 1);
+                            } catch (NullPointerException ignored) {}
+                        } catch (IllegalArgumentException e) {
+                            Debug.error(t, "Invalid search request", e.getStackTrace());
                         }
                     }
 
@@ -1621,6 +1624,10 @@ public class View implements EventHandler<KeyEvent>
         public void run() {
 
             // Await for the change and reposition download speed and time remaining
+
+            // Determining existing files for reference for deletion
+            File albumFolder = new File(System.getProperty("user.dir"));
+            List<String> originalFiles = Arrays.asList(Objects.requireNonNull(albumFolder.list()));
 
             int totalPlayTime = 0;
             for (ArrayList<String> song: songsData) {
@@ -1806,7 +1813,6 @@ public class View implements EventHandler<KeyEvent>
             if (kill) {
 
                 // Delete Partial Download
-
                 // Album
                 // All Files In Album Folder: (mp3s, bat and jpg)
                 // All Temporary Songs in CWD
@@ -1815,6 +1821,20 @@ public class View implements EventHandler<KeyEvent>
                 // Delete Temporary Songs in CWD
                 // Delete target song and album art
 
+                // Delete files the download has created
+                albumFolder = new File(System.getProperty("user.dir"));
+                String[] currentFiles = albumFolder.list();
+
+                for (String file: currentFiles) {
+
+                    if (!originalFiles.contains(file)) {
+                        File deleteFile = new File(file);
+                        if (!deleteFile.delete()) {
+                            Debug.error(t, "Failed to delete file: " + deleteFile.getAbsolutePath(), new IOException().getStackTrace());
+                        }
+                    }
+
+                }
 
 
                 if (metaData.containsKey("positionInAlbum")) {
@@ -1830,7 +1850,7 @@ public class View implements EventHandler<KeyEvent>
                 } else {
 
                     // Deleting an album
-                    File albumFolder = new File(metaData.get("directory"));
+                    albumFolder = new File(metaData.get("directory"));
                     String[] files = albumFolder.list();
                     for (String file : Objects.requireNonNull(files)) {
                         File current = new File(albumFolder.getPath(), file);
