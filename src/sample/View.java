@@ -40,7 +40,6 @@ import java.util.stream.IntStream;
  TODO: Add a README
 
  Optimisations
- TODO: If a particular request is taking too long, let's say >2 seconds, just use default data to save query time
  TODO: Move CSS Files somewhere else
  TODO: Rewrite Main.css and redesign general look of the application
  TODO: Fix warnings
@@ -774,7 +773,7 @@ public class View implements EventHandler<KeyEvent>
         );
 
         scene = new Scene(pane);
-        scene.getStylesheets().add(getClass().getResource("main.css").toExternalForm());
+        scene.getStylesheets().add("file:///" + new File("resources/css/main.css").getAbsolutePath().replace("\\", "/"));
         switchTheme(darkTheme);
         scene.setOnKeyPressed(this);
 
@@ -1289,11 +1288,11 @@ public class View implements EventHandler<KeyEvent>
 
         try {
             if (nightMode) {
-                scene.getStylesheets().add(getClass().getResource("night_theme.css").toExternalForm());
-                scene.getStylesheets().remove(getClass().getResource("normal_theme.css").toExternalForm());
+                scene.getStylesheets().add("file:///" + new File("resources/css/night_theme.css").getAbsolutePath().replace("\\", "/"));
+                scene.getStylesheets().remove("file:///" + new File("resources/css/normal_theme.css").getAbsolutePath().replace("\\", "/"));
             } else {
-                scene.getStylesheets().add(getClass().getResource("normal_theme.css").toExternalForm());
-                scene.getStylesheets().remove(getClass().getResource("night_theme.css").toExternalForm());
+                scene.getStylesheets().add("file:///" + new File("resources/css/normal_theme.css").getAbsolutePath().replace("\\", "/"));
+                scene.getStylesheets().remove("file:///" + new File("resources/css/night_theme.css").getAbsolutePath().replace("\\", "/"));
             }
         } catch (Exception e) {
             e.printStackTrace();
