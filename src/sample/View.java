@@ -66,7 +66,7 @@ import java.util.stream.IntStream;
  TODO: Get reu to try and break this
 
  Features
- TODO: Have concise debugging give relevant files
+ TODO: Have concise debugging give relevant files / fix concise mode
  TODO: Add download speed as web requests are sent by calculating size
  TODO: Have greater threading data available and perhaps create a thread arraylist to view management and have an option to debug threads
  TODO: Recalculate the estimated time based off of youtube-dl's estimates
@@ -76,7 +76,6 @@ import java.util.stream.IntStream;
 
  Misc
  TODO: Add testing
- TODO: Remove JARs and use Gradle
  TODO: Use debugging and error classes properly
  TODO: Increase use of debugging and logging of errors
 
@@ -240,8 +239,8 @@ public class View implements EventHandler<KeyEvent>
     }
 
     public void start(Stage window) {
-        /* JAVA-FX INITIALISATION */
 
+        /* JAVA-FX INITIALISATION */
         pane = new Pane();
         pane.setId("initial");
 
