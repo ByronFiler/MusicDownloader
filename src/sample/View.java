@@ -52,7 +52,6 @@ import java.util.stream.IntStream;
  TODO: Look at how global variables are used
  TODO: Change a lot of start content of a java-fx page thing
  TODO: Windows file explorer would preferable to JavaFX one
- TODO: Change youtube-dl wrapper to my own wrapper where I can get progress as it downloads and report that
  TODO: Go through each function and optimise
 
  Known Bugs
@@ -67,9 +66,12 @@ import java.util.stream.IntStream;
  TODO: Get reu to try and break this
 
  Features
+ TODO: Have concise debugging give relevant files
+ TODO: Add download speed as web requests are sent by calculating size
  TODO: Have greater threading data available and perhaps create a thread arraylist to view management and have an option to debug threads
  TODO: Recalculate the estimated time based off of youtube-dl's estimates
  TODO: Add button to install and configure youtube-dl & ffmpeg
+ TODO: Add a button to debug all relevant threads ever run
  TODO: Look into macOS and Linux compatibility
 
  Misc
@@ -247,7 +249,6 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(canvas);
 
         /* LOADING DATA */
-
         new smartQuitDownload();
 
         mainWindow = window;

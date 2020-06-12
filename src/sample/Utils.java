@@ -1,6 +1,7 @@
 package sample;
 
 import javafx.scene.image.ImageView;
+import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -311,5 +312,67 @@ public class Utils {
         return fullData.get(indexOfBest).get(0);
 
     }
+
+    public static synchronized boolean downloadYoutubedl(Thread t) {
+
+        boolean needsDownload = true;
+
+        String latestVersionSource = "";
+        String latestVersion = "";
+
+        // Locating the latest version
+        try {
+            Document githubPageSrc = Jsoup.connect("https://ytdl-org.github.io/youtube-dl/download.html").get();
+            latestVersionSource = githubPageSrc.select("a").get(2).attr("href");
+            latestVersion = latestVersionSource.split("/")[4];
+
+        } catch (IOException e) {
+            Debug.error(t, "Error sending web request: https://ytdl-org.github.io/youtube-dl/download.html", e.getStackTrace());
+            return false;
+        }
+
+        // Check if the folder to be stored in already exists
+        if (!Files.exists(Paths.get("C:\\Program Files (x86)\\youtube-dl\\"))) {
+            new File("C:\\Program Files (x86)\\youtube-dl\\");
+        }
+
+        // Checking if the folder already exists
+        if (Files.exists(Paths.get("C:\\Program Files (x86)\\youtube-dl\\youtube-dl.exe"))) {
+
+            try {
+                // Check the file is operational, if it is, no need to download
+                ProcessBuilder builder = new ProcessBuilder("C:\\Program Files (x86)\\youtube-dl\\youtube-dl.exe", "--version");
+                builder.redirectErrorStream(true);
+                Process p = builder.start();
+
+                BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+                if (r.readLine().equals(latestVersion)) {
+                    // User has the latest version
+                    needsDownload = false;
+                }
+
+            } catch (IOException ignored) {} // Cannot happen
+        }
+
+        // Downloading latest version
+        if (needsDownload) {
+
+            // Completing the download
+            try {
+                URL url = new URL(latestVersionSource);
+                File youtubeDlExe = new File("C:\\Program Files (x86)\\youtube-dl\\youtube-dl.exe"); // Overwrite previous if needed
+                FileUtils.copyURLToFile(url, youtubeDlExe);
+            } catch (IOException e) {
+                Debug.error(t, "Invalid Permissions, run as administrator" + latestVersionSource, e.getStackTrace());
+                return false;
+            }
+        }
+
+        // Must now bind to path so youtube-dl called executes that
+
+        return true;
+    }
+
 
 }
