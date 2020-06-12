@@ -113,6 +113,7 @@ public class View implements EventHandler<KeyEvent>
     public String programVersion;
     public TextField searchRequest;
     public ImageView loadingIcon;
+    public Label searchErrorMessage;
     public TableView resultsTable;
     public Label searchResultsTitle;
     public Label title;
@@ -283,6 +284,10 @@ public class View implements EventHandler<KeyEvent>
 
         loadingIcon = new ImageView(new Image((new File("resources/loading.png").toURI().toString())));
         loadingIcon.setVisible(false);
+
+        searchErrorMessage = new Label();
+        searchErrorMessage.setVisible(false);
+        searchErrorMessage.setId("searchError");
 
         footerMarker = new Line(0, 0, 0, 0);
         footerMarker.setId("line");
@@ -742,6 +747,7 @@ public class View implements EventHandler<KeyEvent>
                 title,
                 searchRequest,
                 loadingIcon,
+                searchErrorMessage,
                 autocompleteResultsTable,
                 footerMarker,
                 settingsLink,
@@ -789,6 +795,8 @@ public class View implements EventHandler<KeyEvent>
         loadingIcon.fitWidthProperty().bind(searchRequest.heightProperty());
         loadingIcon.layoutXProperty().bind(mainWindow.widthProperty().divide(2).add(searchRequest.widthProperty().divide(2).add(5)));
         loadingIcon.layoutYProperty().bind(mainWindow.heightProperty().divide(2).subtract(79.5));
+        searchErrorMessage.layoutXProperty().bind(mainWindow.widthProperty().divide(2).subtract(searchErrorMessage.widthProperty().divide(2)));
+        searchErrorMessage.layoutYProperty().bind(mainWindow.heightProperty().divide(2).subtract(50));
         autocompleteResultsTable.layoutXProperty().bind(mainWindow.widthProperty().divide(2).add(- searchRequest.getWidth() / 2));
         autocompleteResultsTable.layoutYProperty().bind(mainWindow.heightProperty().divide(2).add(-56));
         autocompleteResultsTable.maxHeightProperty().bind(mainWindow.heightProperty().divide(2).subtract(185));
@@ -858,6 +866,16 @@ public class View implements EventHandler<KeyEvent>
     }
 
     public synchronized void handleSearch() {
+
+        // Check if a search is already in progress, fine to search if first search or search isn't in progress
+        try {
+            if (searchQuery.inProgress()) {
+                Debug.trace(null, "Failed to search, search already in progress");
+                searchErrorMessage.setText("Already searching, please wait...");
+                searchErrorMessage.setVisible(true);
+                return;
+            }
+        } catch (NullPointerException ignored) {}
 
         // Could look at changing how vars are passed, less global ideally
         searchQuery = new allMusicQuery();
@@ -1419,6 +1437,11 @@ public class View implements EventHandler<KeyEvent>
     class allMusicQuery implements Runnable {
 
         Thread t;
+        private volatile boolean working = true;
+
+        public boolean inProgress() {
+            return working;
+        }
 
         allMusicQuery (){
             t = new Thread(this, "query");
@@ -1433,7 +1456,16 @@ public class View implements EventHandler<KeyEvent>
                 searchResults = Utils.allmusicQuery(doc);
 
             } catch (IOException e) {
+
+                Platform.runLater(() -> {
+                    loadingAnimator.kill();
+                    loadingIcon.setVisible(false);
+                    searchErrorMessage.setText("Invalid Search");
+                    searchErrorMessage.setVisible(true);
+                });
                 Debug.error(t, "Error connecting to allmusic", e.getStackTrace());
+                return;
+
             }
 
             if (searchResults.size() > 0) {
@@ -1491,11 +1523,16 @@ public class View implements EventHandler<KeyEvent>
 
             } else {
 
-                System.out.println("Invalid Search");
+                Debug.trace(t, "No search results found for query: " + searchRequest.getText());
 
-                // Display a info bit to the user here
+                Platform.runLater(() -> {
+                    loadingAnimator.kill();
+                    loadingIcon.setVisible(false);
+                    searchErrorMessage.setText("No Search Results Found");
+                    searchErrorMessage.setVisible(true);
+                });
 
-                // Cannot just cancel or it will error due to thread differences
+                return;
 
             }
 
@@ -1515,7 +1552,10 @@ public class View implements EventHandler<KeyEvent>
                 footerMarker.setVisible(false);
                 settingsLinkButton.setVisible(false);
                 settingsLink.setVisible(false);
+                searchErrorMessage.setVisible(false);
             });
+
+            working = false;
 
         }
 

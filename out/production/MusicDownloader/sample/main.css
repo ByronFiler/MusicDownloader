@@ -63,3 +63,7 @@
     -fx-pref-height: 0;
     -fx-max-height: 0;
 }
+
+#searchError {
+    -fx-font: 14 arial;
+}

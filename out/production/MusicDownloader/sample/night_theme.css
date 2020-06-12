@@ -47,3 +47,7 @@
 #column {
     -fx-my-cell-background: "#121212";
 }
+
+#searchError {
+    -fx-text-fill: red;
+}

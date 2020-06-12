@@ -42,3 +42,7 @@
 #autocompleteTable .table-row-cell {
     -fx-background: white;
 }
+
+#searchError {
+    -fx-text-fill: red;
+}
