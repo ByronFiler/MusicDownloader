@@ -65,10 +65,10 @@ import java.util.stream.IntStream;
  TODO: Check program can handle making new default settings files on the fly
  TODO: Don't add elements with no name to search results table on either
  TODO: Get reu to try and break this
- TODO: Album art name should be a random hash until download is over then should have a specific name to avoid conflicts
 
  Features
- TODO: Add a spinning loading bar on search until the search results table is populated
+ TODO: Have greater threading data available and perhaps create a thread arraylist to view management and have an option to debug threads
+ TODO: Recalculate the estimated time based off of youtube-dl's estimates
  TODO: Add button to install and configure youtube-dl & ffmpeg
  TODO: Look into macOS and Linux compatibility
 
@@ -112,6 +112,7 @@ public class View implements EventHandler<KeyEvent>
     // Search & Download
     public String programVersion;
     public TextField searchRequest;
+    public ImageView loadingIcon;
     public TableView resultsTable;
     public Label searchResultsTitle;
     public Label title;
@@ -224,6 +225,8 @@ public class View implements EventHandler<KeyEvent>
     generateAutocomplete autocompleteGenerator;
     timerCountdown countDown;
     downloadHandler handleDownload;
+    animateLoadingIcon loadingAnimator;
+    allMusicQuery searchQuery;
 
     public boolean quitQueryThread = false;
 
@@ -277,6 +280,9 @@ public class View implements EventHandler<KeyEvent>
         searchRequest.setId("search");
         searchRequest.setPrefSize(400, 20);
         searchRequest.textProperty().addListener((observableValue, s, t1) -> generateQueryAutocomplete(t1));
+
+        loadingIcon = new ImageView(new Image((new File("resources/loading.png").toURI().toString())));
+        loadingIcon.setVisible(false);
 
         footerMarker = new Line(0, 0, 0, 0);
         footerMarker.setId("line");
@@ -607,16 +613,6 @@ public class View implements EventHandler<KeyEvent>
         fileSettingNameContainer.getChildren().addAll(fileSettingsTitle, fileSettingsTitleLine);
         fileSettingNameContainer.setPadding(new Insets(150, 0, 0, 0));
 
-        /*
-        VBox fileSettingInfoContainer = new VBox(15);
-        fileSettingInfoContainer.getChildren().addAll(
-                outputDirectory,
-                songDownloadFormat,
-                saveAlbumArt
-        );
-        fileSettingInfoContainer.setPadding(new Insets(180, 0, 0, 0));
-        */
-
         outputDirectoryContainer = new VBox();
         outputDirectoryContainer.getChildren().add(outputDirectory);
         outputDirectoryContainer.setPadding(new Insets(180, 0, 0, 0));
@@ -745,6 +741,7 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().addAll(
                 title,
                 searchRequest,
+                loadingIcon,
                 autocompleteResultsTable,
                 footerMarker,
                 settingsLink,
@@ -788,6 +785,10 @@ public class View implements EventHandler<KeyEvent>
         title.layoutXProperty().bind(mainWindow.widthProperty().divide(2).add(-title.getWidth() / 2));
         searchRequest.layoutXProperty().bind(mainWindow.widthProperty().divide(2).add(- searchRequest.getWidth() / 2));
         searchRequest.layoutYProperty().bind(mainWindow.heightProperty().divide(2).add(-79.5));
+        loadingIcon.fitHeightProperty().bind(searchRequest.heightProperty());
+        loadingIcon.fitWidthProperty().bind(searchRequest.heightProperty());
+        loadingIcon.layoutXProperty().bind(mainWindow.widthProperty().divide(2).add(searchRequest.widthProperty().divide(2).add(5)));
+        loadingIcon.layoutYProperty().bind(mainWindow.heightProperty().divide(2).subtract(79.5));
         autocompleteResultsTable.layoutXProperty().bind(mainWindow.widthProperty().divide(2).add(- searchRequest.getWidth() / 2));
         autocompleteResultsTable.layoutYProperty().bind(mainWindow.heightProperty().divide(2).add(-56));
         autocompleteResultsTable.maxHeightProperty().bind(mainWindow.heightProperty().divide(2).subtract(185));
@@ -846,7 +847,6 @@ public class View implements EventHandler<KeyEvent>
         downloadSpeedLabel.layoutYProperty().bind(mainWindow.heightProperty().subtract(115));
         loading.prefWidthProperty().bind(resultsTable.widthProperty());
         loading.layoutYProperty().bind(mainWindow.heightProperty().subtract(95));
-
     }
 
     public void handle(KeyEvent event) {
@@ -857,27 +857,16 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
-    public synchronized ArrayList<ArrayList<String>> handleSearch() {
+    public synchronized void handleSearch() {
 
         // Could look at changing how vars are passed, less global ideally
-        new allMusicQuery();
-        try { autocompleteGenerator.kill(); } catch (Exception ignored) {}
+        searchQuery = new allMusicQuery();
 
-        downloadButton.setDisable(true);
-        resultsTable.setVisible(true);
-        searchResultsTitle.setVisible(true);
-        downloadButton.setVisible(true);
-        cancelButton.setVisible(true);
+        try { autocompleteGenerator.kill(); } catch (NullPointerException ignored) {}
 
-        autocompleteResultsTable.setVisible(false);
-        autocompleteResultsTable.getItems().clear();
-        searchRequest.setVisible(false);
-        title.setVisible(false);
-        footerMarker.setVisible(false);
-        settingsLinkButton.setVisible(false);
-        settingsLink.setVisible(false);
-
-        return searchResults;
+        // Make the loading bar spin for a little bit till the thread reports the table as populated then transition to TableView smoothly
+        loadingIcon.setVisible(true);
+        loadingAnimator = new animateLoadingIcon();
 
     }
 
@@ -1070,8 +1059,6 @@ public class View implements EventHandler<KeyEvent>
         timeRemainingLabel.setTranslateX( (mainWindow.getWidth()/2) - (timeRemainingLabel.getWidth()/2) - 19.5);
         loading.setVisible(true);
         loading.setProgress(0);
-
-
     }
 
     public synchronized void selectNewFolder() {
@@ -1432,6 +1419,7 @@ public class View implements EventHandler<KeyEvent>
     class allMusicQuery implements Runnable {
 
         Thread t;
+
         allMusicQuery (){
             t = new Thread(this, "query");
             t.start();
@@ -1442,10 +1430,10 @@ public class View implements EventHandler<KeyEvent>
             try {
 
                 Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + searchRequest.getText()).get();
-                searchResults =  Utils.allmusicQuery(doc);
+                searchResults = Utils.allmusicQuery(doc);
 
             } catch (IOException e) {
-                e.printStackTrace();
+                Debug.error(t, "Error connecting to allmusic", e.getStackTrace());
             }
 
             if (searchResults.size() > 0) {
@@ -1498,7 +1486,7 @@ public class View implements EventHandler<KeyEvent>
                     }
 
                 } catch (NullPointerException e) {
-                    e.printStackTrace();
+                    Debug.error(t, "Invalid search error", e.getStackTrace());
                 }
 
             } else {
@@ -1510,6 +1498,24 @@ public class View implements EventHandler<KeyEvent>
                 // Cannot just cancel or it will error due to thread differences
 
             }
+
+            Platform.runLater(() -> {
+                loadingAnimator.kill();
+                loadingIcon.setVisible(false);
+                downloadButton.setDisable(true);
+                resultsTable.setVisible(true);
+                searchResultsTitle.setVisible(true);
+                downloadButton.setVisible(true);
+                cancelButton.setVisible(true);
+
+                autocompleteResultsTable.setVisible(false);
+                autocompleteResultsTable.getItems().clear();
+                searchRequest.setVisible(false);
+                title.setVisible(false);
+                footerMarker.setVisible(false);
+                settingsLinkButton.setVisible(false);
+                settingsLink.setVisible(false);
+            });
 
         }
 
@@ -2006,12 +2012,14 @@ public class View implements EventHandler<KeyEvent>
             // Quit running threads, download is important query is mostly for performance
             try {
                 handleDownload.kill();
+                loadingAnimator.kill();
                 quitQueryThread = true;
 
-                // while (!handleDownload.isDead() && true);
+                while (!handleDownload.isDead() && !loadingAnimator.isDead());
 
             } catch (NullPointerException ignored) {}
 
+            Debug.trace(t, "All threads reporting dead, program should safely exit.");
 
         }
     }
@@ -2241,6 +2249,52 @@ public class View implements EventHandler<KeyEvent>
             complete = true;
 
             Debug.trace(t, "Completed");
+
+        }
+
+    }
+
+    class animateLoadingIcon implements Runnable {
+
+        Thread t;
+        private volatile boolean kill = false;
+        private boolean completed = false;
+
+        animateLoadingIcon() {
+            t = new Thread(this, "loading-icon-animator");
+            t.start();
+        }
+
+        public void kill() {
+            kill = true;
+        }
+
+        public boolean isDead() {
+            return completed;
+        }
+
+        public void run() {
+
+            int rotation = 0;
+
+            while (!kill) {
+
+                try {
+
+                    loadingIcon.setRotate(rotation);
+                    rotation += 18;
+
+                    if (rotation == 360) {
+                        rotation = 0;
+                    }
+
+                    Thread.sleep(100);
+                } catch (InterruptedException ignored) {}
+
+            }
+
+            loadingIcon.setRotate(0);
+            completed = true;
 
         }
 

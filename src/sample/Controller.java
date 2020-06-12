@@ -37,14 +37,13 @@ public class Controller {
             case ENTER:
 
                 if (view.searchRequest.isVisible()) {
-                    view.searchResults = view.handleSearch();
+                    view.handleSearch();
                     break;
                 }
 
             case ESCAPE:
                 view.searchRequest.setText("The Dark Side of the Moon");
                 break;
-
 
         }
 
