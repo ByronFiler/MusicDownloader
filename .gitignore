@@ -1,6 +1,5 @@
-out/production/MusicDownloader/sample
+/out
 /downloads
-/traget
-
+/target
 *.class
 *.DS_Store
