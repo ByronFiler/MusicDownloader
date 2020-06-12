@@ -38,9 +38,6 @@ import java.util.stream.IntStream;
 /*
  Git
  TODO: Add a README
- TODO: Add a license
- TODO: Add a gitignore: music files, art.jpg, possible class files?
- TODO: Tidy up repo, remove unnecessary files
 
  Optimisations
  TODO: If a particular request is taking too long, let's say >2 seconds, just use default data to save query time
