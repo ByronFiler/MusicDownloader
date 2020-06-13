@@ -30,51 +30,54 @@ import javax.swing.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.IntStream;
 
 /*
- Git
- TODO: Add a README
+Optimisations
+TODO: Windows file explorer would preferable to JavaFX one
 
- Optimisations
- TODO: Move CSS Files somewhere else
- TODO: Rewrite Main.css and redesign general look of the application
- TODO: Fix warnings
- TODO: Improve thread handling and debugging
- TODO: Try to use better objects for transmissions
- TODO: Look at how global variables are used
- TODO: Change a lot of start content of a java-fx page thing
- TODO: Windows file explorer would preferable to JavaFX one
- TODO: Go through each function and optimise
+Known Bugs
+TODO: Switching to night theme and then exiting and reentering settings won't colour the text properly, also throws a lot of errors when night theme is set
+TODO: Cancel should kill youtube-dl listener threads
+TODO: Estimated timer is far greater than it should be
+TODO: Add error handling when the request directory no longer exists for downloads, default to standard
+TODO: Check handling when json directory doesn't exist
+TODO: Check program can handle making new default settings files on the fly
+TODO: Don't add elements with no name to search results table on either
 
- Known Bugs
- TODO: Switching to night theme and then exiting and reentering settings won't colour the text properly, also throws a lot of errors when night theme is set
- TODO: Cancel should kill youtube-dl listener threads
- TODO: Sometimes searching takes far longer than it should, should be fixed with a timeout
- TODO: Estimated timer is far greater than it should be
- TODO: Add error handling when the request directory no longer exists for downloads, default to standard
- TODO: Check handling when json directory doesn't exist
- TODO: Check program can handle making new default settings files on the fly
- TODO: Don't add elements with no name to search results table on either
- TODO: Get reu to try and break this
+Features
+TODO: Have concise debugging give relevant files / fix concise mode
+TODO: Add download speed as web requests are sent by calculating size
+TODO: Recalculate the estimated time based off of youtube-dl's estimates
+TODO: Add button to install and configure youtube-dl & ffmpeg
 
- Features
- TODO: Have concise debugging give relevant files / fix concise mode
- TODO: Add download speed as web requests are sent by calculating size
- TODO: Have greater threading data available and perhaps create a thread arraylist to view management and have an option to debug threads
- TODO: Recalculate the estimated time based off of youtube-dl's estimates
- TODO: Add button to install and configure youtube-dl & ffmpeg
- TODO: Add a button to debug all relevant threads ever run
- TODO: Look into macOS and Linux compatibility
+Future, for when the application is effectively done
+    Git
+    TODO: Add a README
 
- Misc
- TODO: Add testing
- TODO: Use debugging and error classes properly
- TODO: Increase use of debugging and logging of errors
+    Optimisations
+    TODO: Rewrite Main.css and redesign general look of the application
+    TODO: Fix warnings
+    TODO: Improve thread handling and debugging
+    TODO: Try to use better objects for transmissions
+    TODO: Look at how global variables are used
+    TODO: Change a lot of start content of a java-fx page view
+    TODO: Go through each function and optimise
 
+    Known Bugs
+    TODO: Get reu to try and break this
+
+    Features
+    TODO: Look into macOS and Linux compatibility
+
+    Misc
+    TODO: Add testing
+    TODO: Use debugging and error classes properly
+    TODO: Increase use of debugging and logging of errors
 */
 
 public class View implements EventHandler<KeyEvent>
@@ -220,13 +223,13 @@ public class View implements EventHandler<KeyEvent>
     public double loadingPercent;
     public double percentIncrease;
 
+    List<Object> threadManagement = new ArrayList<>();
+
     generateAutocomplete autocompleteGenerator;
     timerCountdown countDown;
     downloadHandler handleDownload;
     animateLoadingIcon loadingAnimator;
     allMusicQuery searchQuery;
-
-    public boolean quitQueryThread = false;
 
     public View(int w, int h) {
         Debug.trace(null, "View::<constructor>");
@@ -244,7 +247,7 @@ public class View implements EventHandler<KeyEvent>
         pane.getChildren().add(canvas);
 
         /* LOADING DATA */
-        new smartQuitDownload();
+        threadManagement.add(new ArrayList<>(Arrays.asList("smartQuitDownload", new smartQuitDownload())));
 
         mainWindow = window;
         settings = new Settings();
@@ -435,7 +438,7 @@ public class View implements EventHandler<KeyEvent>
         latestVersionResult = new Label("Locating...");
         latestVersionResult.setId("settingInfo");
         if (dataSaver) {
-            new getLatestVersion();
+            threadManagement.add(new ArrayList<>(Arrays.asList("getLatestVersion",new getLatestVersion())));
         }
 
         youtubeDlVerification = new Label("YouTube-DL Status: ");
@@ -463,7 +466,7 @@ public class View implements EventHandler<KeyEvent>
         outputDirectoryButton.setId("button");
         outputDirectoryButton.setOpacity(0);
         outputDirectoryButton.setPrefHeight(25);
-        outputDirectoryButton.setOnAction(e -> new selectFolder());
+        outputDirectoryButton.setOnAction(e -> threadManagement.add(new ArrayList<>(Arrays.asList("selectFolder",new selectFolder()))));
 
         songDownloadFormat = new Label("Music format: ");
         songDownloadFormat.setId("settingInfo");
@@ -875,12 +878,14 @@ public class View implements EventHandler<KeyEvent>
 
         // Could look at changing how vars are passed, less global ideally
         searchQuery = new allMusicQuery();
+        threadManagement.add(new ArrayList<>(Arrays.asList("allMusicQuery", searchQuery)));
 
         try { autocompleteGenerator.kill(); } catch (NullPointerException ignored) {}
 
         // Make the loading bar spin for a little bit till the thread reports the table as populated then transition to TableView smoothly
         loadingIcon.setVisible(true);
         loadingAnimator = new animateLoadingIcon();
+        threadManagement.add(new ArrayList<>(Arrays.asList("animateLoadingIcon", loadingAnimator)));
 
     }
 
@@ -917,7 +922,7 @@ public class View implements EventHandler<KeyEvent>
         // Stops the search thread from running
         try {
 
-            quitQueryThread = true;
+            searchQuery.kill();
             handleDownload.kill();
 
         } catch (NullPointerException ignored) {}
@@ -1065,6 +1070,7 @@ public class View implements EventHandler<KeyEvent>
 
         // Make Progress Bar Visible
         handleDownload = new downloadHandler();
+        threadManagement.add(new ArrayList<>(Arrays.asList("downloadHandler", handleDownload)));
 
         cancelButton.setText("Cancel");
         searchesProgressText.setText("0% Complete");
@@ -1132,10 +1138,10 @@ public class View implements EventHandler<KeyEvent>
 
         // Scheduling getting latest version, if data saver disabled
         if (!dataSaver) {
-            new getLatestVersion();
+            threadManagement.add(new ArrayList<>(Arrays.asList("getLatestVersion", new getLatestVersion())));
         }
-        new youtubeDlVerification();
-        new ffmpegVerificationThread();
+        threadManagement.add(new ArrayList<>(Arrays.asList("youtubeDlVerification", new youtubeDlVerification())));
+        threadManagement.add(new ArrayList<>(Arrays.asList("ffmpegVerificationThread", new ffmpegVerificationThread())));
 
     }
 
@@ -1308,6 +1314,7 @@ public class View implements EventHandler<KeyEvent>
 
                 try { autocompleteGenerator.kill(); } catch (Exception ignored) {}
                 autocompleteGenerator = new generateAutocomplete();
+                threadManagement.add(new ArrayList<>(Arrays.asList("generateAutocomplete", autocompleteGenerator)));
                 autocompleteGenerator.setAutocompleteQuery(searchQuery);
 
             } else {
@@ -1321,11 +1328,107 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    public synchronized String dumpThreadData() {
+
+        ArrayList<String> dumpedData = new ArrayList<>();
+
+        for (Object threadDetails: threadManagement) {
+
+            ArrayList<Object> convertedThreadDetails = (ArrayList<Object>) threadDetails;
+            ArrayList<String> threadData = new ArrayList<>();
+
+            if ("generateAutocomplete".equals(convertedThreadDetails.get(0))) {
+                generateAutocomplete thread = (generateAutocomplete) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("autoCompleteWeb".equals(convertedThreadDetails.get(0))) {
+                autoCompleteWeb thread = (autoCompleteWeb) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("allMusicQuery".equals(convertedThreadDetails.get(0))) {
+                allMusicQuery thread = (allMusicQuery) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("addToTable".equals(convertedThreadDetails.get(0))) {
+                addToTable thread = (addToTable) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("downloadHandler".equals(convertedThreadDetails.get(0))) {
+                downloadHandler thread = (downloadHandler) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("youtubeQueryThread".equals(convertedThreadDetails.get(0))) {
+                youtubeQueryThread thread = (youtubeQueryThread) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("getLatestVersion".equals(convertedThreadDetails.get(0))) {
+                getLatestVersion thread = (getLatestVersion) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("selectFolder".equals(convertedThreadDetails.get(0))) {
+                selectFolder thread = (selectFolder) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("smartQuitDownload".equals(convertedThreadDetails.get(0))) {
+                smartQuitDownload thread = (smartQuitDownload) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("youtubeDlVerification".equals(convertedThreadDetails.get(0))) {
+                youtubeDlVerification thread = (youtubeDlVerification) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("ffmpegVerificationThread".equals(convertedThreadDetails.get(0))) {
+                ffmpegVerificationThread thread = (ffmpegVerificationThread) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("timerCountdown".equals(convertedThreadDetails.get(0))) {
+                timerCountdown thread = (timerCountdown) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("download".equals(convertedThreadDetails.get(0))) {
+                download thread = (download) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            } else if ("animateLoadingIcon".equals(convertedThreadDetails.get(0))) {
+                animateLoadingIcon thread = (animateLoadingIcon) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
+            }
+
+            // Can now extract the data about the thread
+
+            StringBuilder threadStatusReport = new StringBuilder();
+
+            threadStatusReport.append(
+                    String.format(
+                            "Thread Name: %s\nThread ID: %s\nStart Time: %s",
+                            threadData.get(0),
+                            threadData.get(1),
+                            new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date(Long.parseLong(threadData.get(2))))
+                    )
+            );
+
+            // Check if the thread is completed
+            if (Boolean.parseBoolean(threadData.get(5))) {
+                threadStatusReport.append(
+                        String.format(
+                                "\nEnd Time: %s\nExecution Time: %s",
+                                new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date(Long.parseLong(threadData.get(3)))),
+                                (double) Math.round(((double) Long.parseLong(threadData.get(3)) - Long.parseLong(threadData.get(2))) / 100) / 100
+                        )
+                );
+            } else {
+                threadStatusReport.append(
+                        String.format(
+                                "\nStatus: " + threadData.get(4)
+                        )
+                );
+            }
+
+            dumpedData.add(threadStatusReport.toString());
+
+        }
+
+        return String.join("\n\n", dumpedData);
+
+
+    }
+
     class generateAutocomplete implements Runnable {
 
         Thread t;
         String autocompleteQuery;
-        boolean killRequest = false;
+        private volatile boolean killRequest = false;
+        private volatile String status = "Initializing";
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
+        private volatile boolean completed = false;
 
         generateAutocomplete (){
             t = new Thread(this, "autocomplete");
@@ -1340,13 +1443,29 @@ public class View implements EventHandler<KeyEvent>
             killRequest = true;
         }
 
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            status,
+                            Boolean.toString(completed)
+                    )
+            );
+        }
+
         public void run() {
 
             // Wait for either the thread kill signal or the web request to be completed
             autoCompleteWeb requestThread = new autoCompleteWeb();
+            threadManagement.add(new ArrayList<>(Arrays.asList("autoCompleteWeb", requestThread)));
             requestThread.setSearchQuery(autocompleteQuery);
 
             while (true) {
+
+                status = "In loop waiting...";
 
                 // Calling this too rapidly without delay eats up performance and won't work
                 try {
@@ -1375,11 +1494,13 @@ public class View implements EventHandler<KeyEvent>
 
                     autocompleteResultsTable.setPrefHeight(autocompleteResultsTable.getItems().size() * 31);
                     break;
+
                 }
 
             }
 
-
+            endTime = Instant.now().toEpochMilli();
+            completed = true;
 
         }
 
@@ -1390,6 +1511,10 @@ public class View implements EventHandler<KeyEvent>
         Thread t;
         String searchQuery;
         ArrayList<ArrayList<String>> autocompleteResults = new ArrayList<>();
+        private volatile String status = "Initializing";
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
+        private volatile boolean completed = false;
 
         autoCompleteWeb (){
             t = new Thread(this, "autocomplete-web");
@@ -1404,11 +1529,29 @@ public class View implements EventHandler<KeyEvent>
             return autocompleteResults;
         }
 
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            status,
+                            Boolean.toString(completed)
+                    )
+            );
+        }
+
         public void run() {
 
             try {
 
+                status = "Waiting on web request...";
+
                 Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + searchQuery).get();
+
+                status = "Web data finished, processing data...";
+
                 for (ArrayList<String> searchResult: Utils.allmusicQuery(doc)) {
 
                     ArrayList<String> resultsData = new ArrayList<>();
@@ -1422,9 +1565,13 @@ public class View implements EventHandler<KeyEvent>
 
                     }
                 }
+
             } catch (IOException e) {
-                e.printStackTrace();
+                Debug.error(t, "Error sending web request: https://www.allmusic.com/search/all/" + searchQuery, e.getStackTrace());
             }
+
+            endTime = Instant.now().toEpochMilli();
+            completed = true;
 
         }
 
@@ -1434,9 +1581,17 @@ public class View implements EventHandler<KeyEvent>
 
         Thread t;
         private volatile boolean working = true;
+        private volatile boolean kill = false;
+        private volatile String status = "Initializing";
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
 
         public boolean inProgress() {
             return working;
+        }
+
+        public void kill() {
+            kill = true;
         }
 
         allMusicQuery (){
@@ -1444,10 +1599,24 @@ public class View implements EventHandler<KeyEvent>
             t.start();
         }
 
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            status,
+                            Boolean.toString(!working)
+                    )
+            );
+        }
+
         public void run() {
 
             try {
 
+                status = "Sending web request to search...";
                 Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + searchRequest.getText()).get();
                 searchResults = Utils.allmusicQuery(doc);
 
@@ -1468,10 +1637,10 @@ public class View implements EventHandler<KeyEvent>
 
                 try {
 
-                    // Signal is always sent immediately when running, only want to kill other threads that are in loop, not this one
+                    status = "Processing search results";
 
+                    // Signal is always sent immediately when running, only want to kill other threads that are in loop, not this one
                     // Needs to check this won't result in future threads being killed
-                    quitQueryThread = false;
                     resultsData = new ArrayList<>();
                     IntStream.range(0, searchResults.size()).forEach(i -> resultsData.add(null));
 
@@ -1480,13 +1649,13 @@ public class View implements EventHandler<KeyEvent>
                     for (ArrayList<String> searchResult : searchResults) {
 
                         // Sending a new query requires quitting the old
-                        if (quitQueryThread) {
-                            quitQueryThread = false;
+                        if (kill) {
                             resultsTable.getItems().clear();
                             break;
                         }
 
                         addToTable tableAdder = new addToTable();
+                        threadManagement.add(new ArrayList<>(Arrays.asList("addToTable", tableAdder)));
                         tableAdder.setSearchResult(searchResult);
                     }
 
@@ -1507,6 +1676,8 @@ public class View implements EventHandler<KeyEvent>
                         if (completedThreads == totalThreads) {
                             break;
                         }
+
+                        status = "Awaitng detail threads to complete, " + completedThreads + " out of " + totalThreads + " so far.";
                     }
 
                     for (Utils.resultsSet result: searchResultFullData) {
@@ -1551,6 +1722,7 @@ public class View implements EventHandler<KeyEvent>
                 searchErrorMessage.setVisible(false);
             });
 
+            endTime = Instant.now().toEpochMilli();
             working = false;
 
         }
@@ -1561,6 +1733,10 @@ public class View implements EventHandler<KeyEvent>
 
         Thread t;
         ArrayList<String> searchResult;
+        private volatile String status = "Processing...";
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
+        private volatile boolean completed = false;
 
         addToTable() {
             t = new Thread(this, "table-adder");
@@ -1569,6 +1745,19 @@ public class View implements EventHandler<KeyEvent>
 
         public void setSearchResult(ArrayList<String> searchResultSet) {
             searchResult = searchResultSet;
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            status,
+                            Boolean.toString(completed)
+                    )
+            );
         }
 
         public void run() {
@@ -1637,8 +1826,11 @@ public class View implements EventHandler<KeyEvent>
                 resultsData.set(searchResults.indexOf(searchResult), results);
 
             } catch (IOException e) {
-                e.printStackTrace();
+                Debug.error(t, "Error adding to table", e.getStackTrace());
             }
+
+            endTime = Instant.now().toEpochMilli();
+            completed = true;
 
         }
 
@@ -1648,7 +1840,10 @@ public class View implements EventHandler<KeyEvent>
 
         Thread t;
         private boolean kill = false;
-        private boolean completed = false;
+        private volatile boolean completed = false;
+        private volatile String status = "Initializing...";
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
 
         downloadHandler() {
             t = new Thread(this, "download-handler");
@@ -1663,10 +1858,22 @@ public class View implements EventHandler<KeyEvent>
             return completed;
         }
 
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            status,
+                            Boolean.toString(completed)
+                    )
+            );
+        }
+
         public void run() {
 
             // Await for the change and reposition download speed and time remaining
-
             // Determining existing files for reference for deletion
             File albumFolder = new File(System.getProperty("user.dir"));
             List<String> originalFiles = Arrays.asList(Objects.requireNonNull(albumFolder.list()));
@@ -1683,6 +1890,7 @@ public class View implements EventHandler<KeyEvent>
             for (ArrayList<String> songsDatum : songsData) {
 
                 youtubeQueryThread searchThread = new youtubeQueryThread();
+                threadManagement.add(new ArrayList<>(Arrays.asList("youtubeQueryThread", searchThread)));
                 searchThread.setSongsDatum(songsDatum);
 
             }
@@ -1704,15 +1912,20 @@ public class View implements EventHandler<KeyEvent>
                 if (completedThreads == songsData.size()) {
                     break;
                 }
+
+                status = "Searching youtube " + Math.round((double)completedThreads / songsData.size()*100) + "% completed";
             }
 
             loadingPercent = (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
-
             // Going to send all requests simultaneously and take collective
 
             for (ArrayList<String> song: songsData)
             {
+
+                status = String.format("Processing & Downloading Song %d of %d", songsData.indexOf(song)+1, songsData.size());
+
                 download downloader = new download();
+                threadManagement.add(new ArrayList<>(Arrays.asList("download",downloader)));
                 downloader.initialize(metaData.get("directory"), song.get(2), formatReferences.get(musicFormatSetting));
                 while (!downloader.isComplete()) {
 
@@ -1821,6 +2034,7 @@ public class View implements EventHandler<KeyEvent>
                     } catch (NullPointerException ignored) {} // On first execution
 
                     countDown = new timerCountdown();
+                    threadManagement.add(new ArrayList<>(Arrays.asList("timerCountdown",countDown)));
                     countDown.setTimeRemaining((int) Math.round(finalTotalPlayTimeRemaining / (Integer.parseInt(song.get(1)) / ((double)(Instant.now().toEpochMilli() - initialTime) / 1000))));
 
                     Platform.runLater(() -> timeRemainingLabel.setTranslateX( (mainWindow.getWidth()/2) - (timeRemainingLabel.getWidth()/2) -19.5));
@@ -1838,7 +2052,7 @@ public class View implements EventHandler<KeyEvent>
                 downloadSpeedLabel.setVisible(false);
             });
 
-            if (! new File(metaData.get("directory") + "\\exec.bat").delete()) {
+            if (!new File(metaData.get("directory") + "\\exec.bat").delete()) {
                 Debug.error(t, "Failed to delete: " + metaData.get("directory") + "\\exec.bat", new IOException().getStackTrace());
             }
 
@@ -1908,6 +2122,7 @@ public class View implements EventHandler<KeyEvent>
             }
 
             Platform.runLater(() -> downloadButton.setDisable(false));
+            endTime = Instant.now().toEpochMilli();
             completed = true;
 
         }
@@ -1917,6 +2132,9 @@ public class View implements EventHandler<KeyEvent>
 
         Thread t;
         ArrayList<String> songsDatum;
+        private volatile boolean completed = false;
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
 
         youtubeQueryThread() {
             t = new Thread(this, "youtube-query");
@@ -1925,6 +2143,19 @@ public class View implements EventHandler<KeyEvent>
 
         public void setSongsDatum(ArrayList<String> set) {
             songsDatum = set;
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            "Processing...",
+                            Boolean.toString(completed)
+                    )
+            );
         }
 
         public void run() {
@@ -1945,6 +2176,10 @@ public class View implements EventHandler<KeyEvent>
             double tempLoadingPercent = loadingPercent;
             Platform.runLater(() -> searchesProgressText.setText(Math.round(tempLoadingPercent*10000)/100 + "% Complete"));
             Platform.runLater(() -> loading.setProgress(tempLoadingPercent));
+
+            endTime = Instant.now().toEpochMilli();
+            completed = true;
+
         }
 
     }
@@ -1952,9 +2187,26 @@ public class View implements EventHandler<KeyEvent>
     class getLatestVersion implements Runnable {
 
         Thread t;
+        private volatile boolean completed = false;
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
+
         getLatestVersion (){
             t = new Thread(this, "get-latest-version");
             t.start();
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            "Processing...",
+                            Boolean.toString(completed)
+                    )
+            );
         }
 
         public void run() {
@@ -1966,15 +2218,35 @@ public class View implements EventHandler<KeyEvent>
             while (latestVersionResult.getWidth() == originalWidth) { try {Thread.sleep(10);} catch (InterruptedException ignored) {} }
             Platform.runLater(() -> latestVersionResultContainer.setPadding(new Insets(70, 0, 0, -latestVersionResult.getWidth())));
 
+            endTime = Instant.now().toEpochMilli();
+            completed = true;
         }
 
     }
 
     class selectFolder implements  Runnable {
+
         Thread t;
+        private volatile boolean completed = false;
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
+
         selectFolder (){
             t = new Thread(this, "folder-selection");
             t.start();
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            "In progress of selecting...",
+                            Boolean.toString(completed)
+                    )
+            );
         }
 
         public void run() {
@@ -2007,22 +2279,43 @@ public class View implements EventHandler<KeyEvent>
 
             } catch (Exception ignored) {}
 
+            endTime = Instant.now().toEpochMilli();
+            completed = true;
+
         }
     }
 
     class smartQuitDownload implements  Runnable {
+
         Thread t;
         private volatile boolean windowIsShowing;
+        private volatile boolean completed = false;
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
+        private volatile String status = "Initializing...";
 
         smartQuitDownload () {
             t = new Thread(this, "smart-quit");
             t.start();
         }
 
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            status,
+                            Boolean.toString(completed)
+                    )
+            );
+        }
+
         public void run() {
 
             Debug.trace(t, "Started");
-
+            status = "Current loading, window not yet loaded.";
             // Initial where window doesn't exist
             while (true) {
 
@@ -2037,6 +2330,7 @@ public class View implements EventHandler<KeyEvent>
             }
 
             Debug.trace(t, "Detected window is now open.");
+            status = "Detected window as open, waiting for it to be closed.";
 
             // Keep in background until the window is closed
             while (windowIsShowing){
@@ -2044,29 +2338,47 @@ public class View implements EventHandler<KeyEvent>
             };
 
             Debug.trace(t,"Window closed detected, killing threads.");
+            status = "Killing threads.";
 
             // Quit running threads, download is important query is mostly for performance
             try {
                 handleDownload.kill();
                 loadingAnimator.kill();
-                quitQueryThread = true;
+                searchQuery.kill();
 
                 while (!handleDownload.isDead() && !loadingAnimator.isDead());
 
             } catch (NullPointerException ignored) {}
 
             Debug.trace(t, "All threads reporting dead, program should safely exit.");
-
+            endTime = Instant.now().toEpochMilli();
+            completed = true;
         }
     }
 
     class youtubeDlVerification implements Runnable {
 
         Thread t;
+        private volatile boolean completed = false;
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
 
         youtubeDlVerification () {
             t = new Thread(this, "youtube-dl-verification");
             t.start();
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            "Checking...",
+                            Boolean.toString(completed)
+                    )
+            );
         }
 
         public void run() {
@@ -2090,6 +2402,8 @@ public class View implements EventHandler<KeyEvent>
             Platform.runLater(() -> youtubeDlVerificationResultContainer.setPadding(new Insets(90, 0, 0, -youtubeDlVerificationResult.getWidth())));
 
             Debug.trace(t, "Completed");
+            endTime = Instant.now().toEpochMilli();
+            completed = true;
 
         }
     }
@@ -2097,10 +2411,26 @@ public class View implements EventHandler<KeyEvent>
     class ffmpegVerificationThread implements Runnable {
 
         Thread t;
+        private volatile boolean completed = false;
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
 
         ffmpegVerificationThread () {
             t = new Thread(this, "ffmpeg-verification");
             t.start();
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            "Checking...",
+                            Boolean.toString(completed)
+                    )
+            );
         }
 
         public void run() {
@@ -2111,19 +2441,17 @@ public class View implements EventHandler<KeyEvent>
             double originalWidth = ffmpegVerificationResult.getWidth();
 
             if (ffmpegStatus) {
-
                 Platform.runLater(() -> ffmpegVerificationResult.setText("Fully Operational"));
-
             } else {
-
                 Platform.runLater(() -> ffmpegVerificationResult.setText("FFMPEG: Not Configured"));
-
             }
 
             while (ffmpegVerificationResult.getWidth() == originalWidth);
             Platform.runLater(() -> ffmpegVerificationResultContainer.setPadding(new Insets(110, 0, 0, -ffmpegVerificationResult.getWidth())));
 
             Debug.trace(t, "Completed");
+            endTime = Instant.now().toEpochMilli();
+            completed = true;
 
         }
 
@@ -2138,6 +2466,9 @@ public class View implements EventHandler<KeyEvent>
         private int timeRemaining;
         private boolean killSignal = false;
         private boolean dead = false;
+        private String status = "Initializing...";
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
 
         timerCountdown (){
             t = new Thread(this, "timer-countdown");
@@ -2155,6 +2486,19 @@ public class View implements EventHandler<KeyEvent>
         public void kill() {
             Debug.trace(t, "Kill signal received");
             killSignal = true;
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            status,
+                            Boolean.toString(dead)
+                    )
+            );
         }
 
         public void run(){
@@ -2187,8 +2531,9 @@ public class View implements EventHandler<KeyEvent>
 
             }
 
-            dead = true;
             Debug.trace(t, "Completed");
+            endTime = Instant.now().toEpochMilli();
+            dead = true;
 
         }
 
@@ -2197,15 +2542,15 @@ public class View implements EventHandler<KeyEvent>
     static class download implements Runnable {
 
         Thread t;
-
         private String url;
         private String directory;
         private String format;
         private String downloadSpeed;
         private String eta;
-
         private double percentComplete = 0;
-        private boolean complete = false;
+        private volatile boolean complete = false;
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
 
         public download() {
             t = new Thread(this, "download");
@@ -2233,6 +2578,19 @@ public class View implements EventHandler<KeyEvent>
 
         public boolean isComplete() {
             return complete;
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            "Executing...",
+                            Boolean.toString(complete)
+                    )
+            );
         }
 
         public void run() {
@@ -2282,9 +2640,9 @@ public class View implements EventHandler<KeyEvent>
                 Debug.error(t, "Error in youtube-dl wrapper execution", e.getStackTrace());
             }
 
-            complete = true;
-
             Debug.trace(t, "Completed");
+            endTime = Instant.now().toEpochMilli();
+            complete = true;
 
         }
 
@@ -2295,6 +2653,9 @@ public class View implements EventHandler<KeyEvent>
         Thread t;
         private volatile boolean kill = false;
         private boolean completed = false;
+        private volatile boolean complete = false;
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
 
         animateLoadingIcon() {
             t = new Thread(this, "loading-icon-animator");
@@ -2307,6 +2668,19 @@ public class View implements EventHandler<KeyEvent>
 
         public boolean isDead() {
             return completed;
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            "Rotating & Waiting...",
+                            Boolean.toString(complete)
+                    )
+            );
         }
 
         public void run() {
@@ -2330,6 +2704,7 @@ public class View implements EventHandler<KeyEvent>
             }
 
             loadingIcon.setRotate(0);
+            endTime = Instant.now().toEpochMilli();
             completed = true;
 
         }

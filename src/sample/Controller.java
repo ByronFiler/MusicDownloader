@@ -1,7 +1,10 @@
 package sample;
 
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+
+import java.io.FileWriter;
+import java.io.IOException;
 
 
 public class Controller {
@@ -35,11 +38,24 @@ public class Controller {
         switch (event.getCode()) {
 
             case ENTER:
-
                 if (view.searchRequest.isVisible()) {
                     view.handleSearch();
                     break;
                 }
+
+            case F1:
+                System.out.println(view.dumpThreadData());
+                break;
+
+            case F2:
+                try {
+                    FileWriter dumpFile = new FileWriter("dump.txt");
+                    dumpFile.write(view.dumpThreadData());
+                    dumpFile.close();
+                } catch (IOException ignored) {}
+                Debug.trace(null, "Dumped threads data to: dump.exe");
+
+
 
             case ESCAPE:
                 view.searchRequest.setText("The Dark Side of the Moon");
