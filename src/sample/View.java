@@ -36,18 +36,21 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Timer;
 import java.util.*;
 import java.util.stream.IntStream;
 
 /*
 Optimisations
 TODO: Windows file explorer would preferable to JavaFX one
+TODO: Added to table is a spam thread based way isn't particularly efficient, I'd switch back to the old method and allow for easier killing
 
 Known Bugs
 TODO: Switching to night theme and then exiting and reentering settings won't colour the text properly, also throws a lot of errors when night theme is set
 TODO: Cancel should kill youtube-dl listener threads
 TODO: Estimated timer is far greater than it should be
 TODO: Don't add elements with no name to search results table on either
+TODO: Table adder will mess with the exiting, try to deal with that
 
 Features
 TODO: Recalculate the estimated time based off of youtube-dl's estimates
@@ -211,6 +214,7 @@ public class View implements EventHandler<KeyEvent>
     public ArrayList<ArrayList<String>> songsData;
     public ArrayList<Utils.resultsSet> resultsData;
     public HashMap<String, String> metaData;
+    public Timer timerRotate;
 
     public ArrayList<String> formatReferences = new ArrayList<>(Arrays.asList("mp3", "wav", "ogg", "aac"));
 
@@ -222,7 +226,6 @@ public class View implements EventHandler<KeyEvent>
     generateAutocomplete autocompleteGenerator;
     timerCountdown countDown;
     downloadHandler handleDownload;
-    animateLoadingIcon loadingAnimator;
     allMusicQuery searchQuery;
     outputDirectoryVerification directoryVerify;
     outputDirectoryListener directoryListener;
@@ -234,7 +237,6 @@ public class View implements EventHandler<KeyEvent>
     }
 
     public void start(Stage window) {
-
         /* Checking Resources Exist, Will Delay Main Thread but this is the intentional, as can't continue without these resources */
         ArrayList<String> reacquire = new ArrayList<>();
         String[] targetCSSFiles = new String[]{"main.css", "night_theme.css", "normal_theme.css"};
@@ -924,8 +926,13 @@ public class View implements EventHandler<KeyEvent>
 
         // Make the loading bar spin for a little bit till the thread reports the table as populated then transition to TableView smoothly
         loadingIcon.setVisible(true);
-        loadingAnimator = new animateLoadingIcon();
-        threadManagement.add(new ArrayList<>(Arrays.asList("animateLoadingIcon", loadingAnimator)));
+        timerRotate = new Timer();
+        timerRotate.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                loadingIcon.setRotate(loadingIcon.getRotate() + 18);
+            }
+        }, 0, 100);
 
     }
 
@@ -1417,9 +1424,6 @@ public class View implements EventHandler<KeyEvent>
             } else if ("download".equals(convertedThreadDetails.get(0))) {
                 download thread = (download) convertedThreadDetails.get(1);
                 threadData = thread.getInfo();
-            } else if ("animateLoadingIcon".equals(convertedThreadDetails.get(0))) {
-                animateLoadingIcon thread = (animateLoadingIcon) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
             } else if ("outputDirectoryVerification".equals(convertedThreadDetails.get(0))) {
                 outputDirectoryVerification thread = (outputDirectoryVerification) convertedThreadDetails.get(1);
                 threadData = thread.getInfo();
@@ -1664,7 +1668,7 @@ public class View implements EventHandler<KeyEvent>
             } catch (IOException e) {
 
                 Platform.runLater(() -> {
-                    loadingAnimator.kill();
+                    timerRotate.cancel();
                     loadingIcon.setVisible(false);
                     searchErrorMessage.setText("Invalid Search");
                     searchErrorMessage.setVisible(true);
@@ -1734,7 +1738,7 @@ public class View implements EventHandler<KeyEvent>
                 Debug.trace(t, "No search results found for query: " + searchRequest.getText());
 
                 Platform.runLater(() -> {
-                    loadingAnimator.kill();
+                    timerRotate.cancel();
                     loadingIcon.setVisible(false);
                     searchErrorMessage.setText("No Search Results Found");
                     searchErrorMessage.setVisible(true);
@@ -1745,7 +1749,7 @@ public class View implements EventHandler<KeyEvent>
             }
 
             Platform.runLater(() -> {
-                loadingAnimator.kill();
+                timerRotate.cancel();
                 loadingIcon.setVisible(false);
                 downloadButton.setDisable(true);
                 resultsTable.setVisible(true);
@@ -1855,6 +1859,7 @@ public class View implements EventHandler<KeyEvent>
 
                 }
 
+
                 Utils.resultsSet results = new Utils.resultsSet(
                         selectedImage,
                         searchResult.get(0),
@@ -1863,8 +1868,10 @@ public class View implements EventHandler<KeyEvent>
                         genre,
                         searchResult.get(4)
                 );
+
                 searchResultFullData[searchResults.indexOf(searchResult)] = results;
                 resultsData.set(searchResults.indexOf(searchResult), results);
+
 
             } catch (IOException e) {
                 Debug.error(t, "Error adding to table", e.getStackTrace());
@@ -2388,14 +2395,15 @@ public class View implements EventHandler<KeyEvent>
             try {
 
                 handleDownload.kill();
-                loadingAnimator.kill();
+                timerRotate.cancel();
                 searchQuery.kill();
 
-                while (!handleDownload.isDead() && !loadingAnimator.isDead());
+                while (!handleDownload.isDead());
 
             } catch (NullPointerException ignored) {}
 
             Debug.trace(t, "All threads reporting dead, program should safely exit.");
+            // System.out.println(dumpThreadData());
             endTime = Instant.now().toEpochMilli();
             completed = true;
         }
@@ -2688,68 +2696,6 @@ public class View implements EventHandler<KeyEvent>
             Debug.trace(t, "Completed");
             endTime = Instant.now().toEpochMilli();
             complete = true;
-
-        }
-
-    }
-
-    class animateLoadingIcon implements Runnable {
-
-        Thread t;
-        private volatile boolean kill = false;
-        private volatile boolean completed = false;
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
-
-        animateLoadingIcon() {
-            t = new Thread(this, "loading-icon-animator");
-            t.start();
-        }
-
-        public void kill() {
-            kill = true;
-        }
-
-        public boolean isDead() {
-            return completed;
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            "Rotating & Waiting...",
-                            Boolean.toString(completed)
-                    )
-            );
-        }
-
-        public void run() {
-
-            int rotation = 0;
-
-            while (!kill) {
-
-                try {
-
-                    loadingIcon.setRotate(rotation);
-                    rotation += 18;
-
-                    if (rotation == 360) {
-                        rotation = 0;
-                    }
-
-                    Thread.sleep(100);
-                } catch (InterruptedException ignored) {}
-
-            }
-
-            loadingIcon.setRotate(0);
-            endTime = Instant.now().toEpochMilli();
-            completed = true;
 
         }
 
