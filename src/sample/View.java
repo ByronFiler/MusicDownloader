@@ -19,6 +19,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
+import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.jsoup.Jsoup;
@@ -26,8 +27,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.io.*;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -47,7 +50,6 @@ TODO: Estimated timer is far greater than it should be
 TODO: Don't add elements with no name to search results table on either
 
 Features
-TODO: Add download speed as web requests are sent by calculating size
 TODO: Recalculate the estimated time based off of youtube-dl's estimates
 TODO: Add button to install and configure youtube-dl & ffmpeg
 
@@ -76,7 +78,6 @@ Future, for when the application is effectively done
 public class View implements EventHandler<KeyEvent>
 {
     public Controller controller;
-    public Settings settings;
 
     public int width;
     public int height;
@@ -234,6 +235,45 @@ public class View implements EventHandler<KeyEvent>
 
     public void start(Stage window) {
 
+        /* Checking Resources Exist, Will Delay Main Thread but this is the intentional, as can't continue without these resources */
+        ArrayList<String> reacquire = new ArrayList<>();
+        String[] targetCSSFiles = new String[]{"main.css", "night_theme.css", "normal_theme.css"};
+        String[] targetIMGFiles = new String[]{"album_default.jpg", "loading.png", "song_default.png"};
+
+        // CSS can be whatever, they just need to exist
+        for (String file: targetCSSFiles) {
+            if (!Files.exists(Paths.get("resources\\css\\" + file)))
+                reacquire.add("css/" + file);
+        }
+        for (String file: targetIMGFiles) {
+            try {
+                if (!Files.exists(Paths.get("resources\\" + file)) || ImageIO.read(new File("resources/" + file)) == null)
+                    reacquire.add(file);
+            } catch (IOException ignored) {
+                ignored.printStackTrace();
+                System.out.println("IO: " + file);
+                reacquire.add(file);
+            }
+        }
+
+        for (String downloadFile: reacquire) {
+
+            try {
+
+                FileUtils.copyURLToFile(
+                        new URL("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/resources/" + downloadFile),
+                        new File("resources/" + downloadFile)
+                );
+
+                Debug.trace(null, "Reaquired resource: " + downloadFile);
+
+            } catch (IOException e) {
+                Debug.error(null, "Failed to reacquire resource: " + downloadFile, e.getStackTrace());
+                System.exit(-1);
+            }
+
+        }
+
         /* JAVA-FX INITIALISATION */
         pane = new Pane();
         pane.setId("initial");
@@ -245,8 +285,7 @@ public class View implements EventHandler<KeyEvent>
         threadManagement.add(new ArrayList<>(Arrays.asList("smartQuitDownload", new smartQuitDownload())));
 
         mainWindow = window;
-        settings = new Settings();
-        JSONObject config = settings.getSettings();
+        JSONObject config = Settings.getSettings();
 
         outputDirectorySetting = (String) config.get("output_directory");
         OutputDirectorySettingNew = outputDirectorySetting;
@@ -265,7 +304,7 @@ public class View implements EventHandler<KeyEvent>
         darkTheme = (Long) config.get("theme") != 0;
         dataSaver = (Long) config.get("data_saver") != 0;
 
-        programVersion = settings.getVersion();
+        programVersion = Settings.getVersion();
 
 
         /* JAVA-FX DESIGN */
@@ -379,7 +418,10 @@ public class View implements EventHandler<KeyEvent>
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         nameColumn.prefWidthProperty().bind(autocompleteResultsTable.widthProperty().add(-25));
 
-        autocompleteResultsTable.getColumns().addAll(iconColumn, nameColumn);
+        autocompleteResultsTable.getColumns().addAll(
+                iconColumn,
+                nameColumn
+        );
 
         downloadButton = new Button("Download");
         downloadButton.setPrefSize(120, 40);
@@ -954,7 +996,6 @@ public class View implements EventHandler<KeyEvent>
     }
 
     public synchronized void initializeDownload() throws IOException {
-
         downloadButton.setDisable(true);
 
         // Results table contains images and text, this will never error but it thinks it could
@@ -1153,7 +1194,7 @@ public class View implements EventHandler<KeyEvent>
     public synchronized void submit() {
 
         // Saving to file
-        settings.saveSettings(
+        Settings.saveSettings(
                 OutputDirectorySettingNew,
                 songDownloadFormatResult
                         .getSelectionModel()
@@ -1407,9 +1448,7 @@ public class View implements EventHandler<KeyEvent>
                 );
             } else {
                 threadStatusReport.append(
-                        String.format(
-                                "\nStatus: " + threadData.get(4)
-                        )
+                        "\nStatus: " + threadData.get(4)
                 );
             }
 
@@ -2083,7 +2122,7 @@ public class View implements EventHandler<KeyEvent>
                 albumFolder = new File(System.getProperty("user.dir"));
                 String[] currentFiles = albumFolder.list();
 
-                for (String file: currentFiles) {
+                for (String file: Objects.requireNonNull(currentFiles)) {
 
                     if (!originalFiles.contains(file)) {
                         File deleteFile = new File(file);
@@ -2337,16 +2376,17 @@ public class View implements EventHandler<KeyEvent>
             Debug.trace(t, "Detected window is now open.");
             status = "Detected window as open, waiting for it to be closed.";
 
-            // Keep in background until the window is closed
+            // Keep in background until the window is closed, does need to be a variable
             while (windowIsShowing){
                 windowIsShowing = mainWindow.isShowing();
-            };
+            }
 
             Debug.trace(t,"Window closed detected, killing threads.");
             status = "Killing threads.";
 
             // Quit running threads, download is important query is mostly for performance
             try {
+
                 handleDownload.kill();
                 loadingAnimator.kill();
                 searchQuery.kill();
@@ -2620,7 +2660,7 @@ public class View implements EventHandler<KeyEvent>
 
                 Debug.trace(t, "Execution of bat request sent.");
 
-                String line = null;
+                String line;
                 while ((line = reader.readLine()) != null) {
 
                     try {
