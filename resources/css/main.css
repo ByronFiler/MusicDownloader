@@ -18,6 +18,11 @@
     -fx-font: 16 arial;
 }
 
+#settingInfoError {
+    -fx-font: 16 arial;
+    -fx-fill: red;
+}
+
 #button {
     -fx-cursor: hand;
 }

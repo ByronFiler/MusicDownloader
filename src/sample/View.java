@@ -267,6 +267,7 @@ public class View implements EventHandler<KeyEvent>
 
         programVersion = settings.getVersion();
 
+
         /* JAVA-FX DESIGN */
 
         /* Search Page */
@@ -426,7 +427,7 @@ public class View implements EventHandler<KeyEvent>
         version = new Label("Version: ");
         version.setId("settingInfo");
 
-        versionResult = new Label(programVersion);
+        versionResult = new Label(programVersion == null ? "Unknown" : programVersion);
         versionResult.setId("settingInfo");
 
         latestVersion = new Label("Latest Version: ");
@@ -2215,10 +2216,10 @@ public class View implements EventHandler<KeyEvent>
 
         public void run() {
 
-            Settings settings = new Settings();
             double originalWidth = latestVersionResult.getWidth();
+            String latestVersion = Settings.getLatestVersion();
 
-            Platform.runLater(() -> latestVersionResult.setText(settings.getLatestVersion()));
+            Platform.runLater(() -> latestVersionResult.setText(latestVersion == null ? "Unknown" : latestVersion));
             while (latestVersionResult.getWidth() == originalWidth) { try {Thread.sleep(10);} catch (InterruptedException ignored) {} }
             Platform.runLater(() -> latestVersionResultContainer.setPadding(new Insets(70, 0, 0, -latestVersionResult.getWidth())));
 

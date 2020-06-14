@@ -52,17 +52,9 @@ public class Settings {
 
             return (String) jo.get("version");
 
-        } catch (IOException e) {
-            // Verify hash to versions and calculate that
-            System.exit(-1);
-
-            return "-1";
-
-        } catch (ParseException e) {
-            e.printStackTrace();
-            System.exit(-1);
-
-            return "-1";
+        } catch (IOException | ParseException e) {
+            Debug.trace(null, "Error getting version, appears user has deleted version file.");
+            return null;
         }
 
     }
@@ -95,7 +87,8 @@ public class Settings {
             return (String) jsonData.get("version");
 
         } catch (IOException | ParseException e) {
-            return "-1";
+            Debug.trace(null, "Failed to get latest version");
+            return null;
         }
 
     }
