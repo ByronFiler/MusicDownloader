@@ -14,19 +14,29 @@ public class Settings {
 
     public Settings() {}
 
-    public synchronized JSONObject getSettings() {
+    public synchronized static JSONObject getSettings() {
 
         try {
+
             JSONParser parser = new JSONParser();
             return (JSONObject) parser.parse(new FileReader("resources\\json\\config.json"));
 
         } catch (IOException | ParseException e) {
-            // Generate the file with default datasets
 
-            if (!resetSettings()) {
-                e.printStackTrace();
+            // Generate the file with default datasets
+            Debug.trace(null, "Error loading settings, resetting.");
+
+            if (resetSettings()) {
+
+                return getSettings();
+
+            } else {
+
+                Debug.error(null, "Error resetting settings", new IOException().getStackTrace());
                 System.exit(-1);
+
             }
+
 
         }
 
@@ -34,7 +44,7 @@ public class Settings {
 
     }
 
-    public synchronized String getVersion() {
+    public synchronized static String getVersion() {
 
         try {
             JSONParser parser = new JSONParser();
@@ -57,7 +67,7 @@ public class Settings {
 
     }
 
-    public synchronized boolean resetSettings() {
+    public synchronized static boolean resetSettings() {
 
         try {
             FileWriter newConfig = new FileWriter("resources\\json\\config.json");
@@ -75,7 +85,7 @@ public class Settings {
 
     }
 
-    public synchronized String getLatestVersion() {
+    public synchronized static String getLatestVersion() {
 
         try {
             JSONParser parser = new JSONParser();
@@ -90,7 +100,7 @@ public class Settings {
 
     }
 
-    public static boolean checkYouTubeDl() {
+    public synchronized static boolean checkYouTubeDl() {
 
         try {
 
@@ -104,7 +114,7 @@ public class Settings {
 
     }
 
-    public static boolean checkFFMPEG() {
+    public synchronized static boolean checkFFMPEG() {
 
         try {
 
@@ -120,7 +130,7 @@ public class Settings {
 
     }
 
-    public synchronized void saveSettings(String output_directory, int music_format, int save_album_art, int album_art, int album_title, int song_title, int artist, int year, int track, int theme, int data_saver) {
+    public synchronized static void saveSettings(String output_directory, int music_format, int save_album_art, int album_art, int album_title, int song_title, int artist, int year, int track, int theme, int data_saver) {
         JSONObject newSettings = new JSONObject();
         newSettings.put("output_directory", output_directory);
         newSettings.put("music_format", music_format);

@@ -44,9 +44,6 @@ Known Bugs
 TODO: Switching to night theme and then exiting and reentering settings won't colour the text properly, also throws a lot of errors when night theme is set
 TODO: Cancel should kill youtube-dl listener threads
 TODO: Estimated timer is far greater than it should be
-TODO: Add error handling when the request directory no longer exists for downloads, default to standard
-TODO: Check handling when json directory doesn't exist
-TODO: Check program can handle making new default settings files on the fly
 TODO: Don't add elements with no name to search results table on either
 
 Features
@@ -61,9 +58,6 @@ Future, for when the application is effectively done
     Optimisations
     TODO: Rewrite Main.css and redesign general look of the application
     TODO: Fix warnings
-    TODO: Improve thread handling and debugging
-    TODO: Try to use better objects for transmissions
-    TODO: Look at how global variables are used
     TODO: Change a lot of start content of a java-fx page view
     TODO: Go through each function and optimise
 
@@ -229,6 +223,8 @@ public class View implements EventHandler<KeyEvent>
     downloadHandler handleDownload;
     animateLoadingIcon loadingAnimator;
     allMusicQuery searchQuery;
+    outputDirectoryVerification directoryVerify;
+    outputDirectoryListener directoryListener;
 
     public View(int w, int h) {
         Debug.trace(null, "View::<constructor>");
@@ -256,6 +252,8 @@ public class View implements EventHandler<KeyEvent>
         OutputDirectorySettingNew = outputDirectorySetting;
         musicFormatSetting = Integer.parseInt(Long.toString((Long) config.get("music_format")));
         saveAlbumArtSetting = Integer.parseInt(Long.toString((Long) config.get("save_album_art")));
+
+        threadManagement.add(new ArrayList<>(Arrays.asList("outputDirectoryVerification", new outputDirectoryVerification())));
 
         applyAlbumArt = (Long) config.get("album_art") != 0;
         applyAlbumTitle = (Long) config.get("album_title") != 0;
@@ -1133,19 +1131,20 @@ public class View implements EventHandler<KeyEvent>
         setMetaDataVisibility();
         evaluateSettingsChanges();
 
-
-
         // Scheduling getting latest version, if data saver disabled
         if (!dataSaver) {
             threadManagement.add(new ArrayList<>(Arrays.asList("getLatestVersion", new getLatestVersion())));
         }
+
+        directoryListener = new outputDirectoryListener();
         threadManagement.add(new ArrayList<>(Arrays.asList("youtubeDlVerification", new youtubeDlVerification())));
         threadManagement.add(new ArrayList<>(Arrays.asList("ffmpegVerificationThread", new ffmpegVerificationThread())));
-
+        threadManagement.add(new ArrayList<>(Arrays.asList("outputDirectoryListener", directoryListener)));
     }
 
     public synchronized void searchMode() {
 
+        directoryListener.kill();
         switchSettingVisibility(false);
         switchTheme(darkTheme);
     }
@@ -1329,6 +1328,7 @@ public class View implements EventHandler<KeyEvent>
 
     public synchronized String dumpThreadData() {
 
+        // Please don't look at this, I'll find a better way to do it soon
         ArrayList<String> dumpedData = new ArrayList<>();
 
         for (Object threadDetails: threadManagement) {
@@ -1378,10 +1378,12 @@ public class View implements EventHandler<KeyEvent>
             } else if ("animateLoadingIcon".equals(convertedThreadDetails.get(0))) {
                 animateLoadingIcon thread = (animateLoadingIcon) convertedThreadDetails.get(1);
                 threadData = thread.getInfo();
+            } else if ("outputDirectoryVerification".equals(convertedThreadDetails.get(0))) {
+                outputDirectoryVerification thread = (outputDirectoryVerification) convertedThreadDetails.get(1);
+                threadData = thread.getInfo();
             }
 
             // Can now extract the data about the thread
-
             StringBuilder threadStatusReport = new StringBuilder();
 
             threadStatusReport.append(
@@ -2099,8 +2101,7 @@ public class View implements EventHandler<KeyEvent>
                     try {
                         Files.delete(Paths.get(outputDirectorySetting.equals("") ? metaData.get("directory") + "/art.jpg" : outputDirectorySetting + "/art.jpg"));
                     } catch (IOException e) {
-                        System.out.println(outputDirectorySetting.equals("") ? metaData.get("directory") + "/art.jpg" : outputDirectorySetting + "/art.jpg");
-                        e.printStackTrace();
+                        Debug.error(t, "Failed to delete: " + (outputDirectorySetting.equals("") ? metaData.get("directory") + "/art.jpg" : outputDirectorySetting + "/art.jpg"), e.getStackTrace());
                     }
                 } else {
 
@@ -2108,14 +2109,16 @@ public class View implements EventHandler<KeyEvent>
                     albumFolder = new File(metaData.get("directory"));
                     String[] files = albumFolder.list();
                     for (String file : Objects.requireNonNull(files)) {
+
                         File current = new File(albumFolder.getPath(), file);
+
                         if (!current.delete()) {
-                            System.out.println("Failed to delete: " + current.getAbsolutePath());
+                            Debug.error(t, "Failed to delete: " + current.getAbsolutePath(), new IOException().getStackTrace());
                         }
                     }
-                    if (!albumFolder.delete())
-                        System.out.println("Failed to delete: " + albumFolder.getAbsolutePath());
 
+                    if (!albumFolder.delete())
+                        Debug.error(t, "Failed to delete: " + albumFolder.getAbsolutePath(), new IOException().getStackTrace());
                 }
 
             }
@@ -2175,6 +2178,8 @@ public class View implements EventHandler<KeyEvent>
             double tempLoadingPercent = loadingPercent;
             Platform.runLater(() -> searchesProgressText.setText(Math.round(tempLoadingPercent*10000)/100 + "% Complete"));
             Platform.runLater(() -> loading.setProgress(tempLoadingPercent));
+
+
 
             endTime = Instant.now().toEpochMilli();
             completed = true;
@@ -2651,8 +2656,7 @@ public class View implements EventHandler<KeyEvent>
 
         Thread t;
         private volatile boolean kill = false;
-        private boolean completed = false;
-        private volatile boolean complete = false;
+        private volatile boolean completed = false;
         private final long startTime = Instant.now().toEpochMilli();
         private volatile long endTime = Long.MIN_VALUE;
 
@@ -2677,7 +2681,7 @@ public class View implements EventHandler<KeyEvent>
                             Long.toString(startTime),
                             Long.toString(endTime),
                             "Rotating & Waiting...",
-                            Boolean.toString(complete)
+                            Boolean.toString(completed)
                     )
             );
         }
@@ -2710,4 +2714,151 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    class outputDirectoryVerification implements Runnable {
+
+        Thread t;
+        private volatile boolean complete = false;
+        private boolean resetDirectory = false;
+        private volatile String status = "Checking files...";
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
+
+        outputDirectoryVerification() {
+            t = new Thread(this, "output-directory-verification");
+            t.start();
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            status,
+                            Boolean.toString(complete)
+                    )
+            );
+        }
+
+        public boolean changed() {
+            return resetDirectory;
+        }
+
+        public boolean isComplete() {
+            return complete;
+        }
+
+        public void run() {
+
+            if (!Files.exists(Paths.get(outputDirectorySetting))) {
+
+                // User specified directory no longer exists, hence return to default directory
+                outputDirectorySetting = System.getProperty("user.dir");
+
+                status = "Getting latest settings...";
+
+                JSONObject savedSettings = Settings.getSettings();
+
+                status = "Writing new settings...";
+
+                Settings.saveSettings(
+                        outputDirectorySetting,
+                        Math.toIntExact((long) savedSettings.get("music_format")),
+                        Math.toIntExact((long) savedSettings.get("save_album_art")),
+                        Math.toIntExact((long) savedSettings.get("album_art")),
+                        Math.toIntExact((long) savedSettings.get("album_title")),
+                        Math.toIntExact((long) savedSettings.get("song_title")),
+                        Math.toIntExact((long) savedSettings.get("artist")),
+                        Math.toIntExact((long) savedSettings.get("year")),
+                        Math.toIntExact((long) savedSettings.get("track")),
+                        Math.toIntExact((long) savedSettings.get("theme")),
+                        Math.toIntExact((long) savedSettings.get("data_saver"))
+                );
+
+                resetDirectory = true;
+
+            }
+
+            endTime = Instant.now().toEpochMilli();
+            complete = true;
+
+
+        }
+
+    }
+
+    class outputDirectoryListener implements Runnable {
+
+        Thread t;
+        private volatile boolean kill = false;
+        private volatile boolean complete = false;
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
+
+        public outputDirectoryListener() {
+
+            t = new Thread(this, "output-directory-listener");
+            t.start();
+
+        }
+
+        public void kill() {
+            kill = true;
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            "Waiting in loop...",
+                            Boolean.toString(complete)
+                    )
+            );
+        }
+
+        public void run() {
+
+            while (!kill) {
+
+                try {
+
+                    Thread.sleep(100);
+
+                    directoryVerify = new outputDirectoryVerification();
+                    // Add to thread debugger but implement specific thread debugging instead of everything, lest be spammed
+                    while (!directoryVerify.isComplete());
+
+                    if (directoryVerify.changed()) {
+
+                        Debug.trace(t, "Detected directory changed, updating settings.");
+
+                        double originalWidth = outputDirectoryResult.getWidth();
+                        Platform.runLater(() -> outputDirectoryResult.setText(outputDirectorySetting));
+
+                        // Wait for the text to to be set, then update the rest
+                        while (originalWidth == outputDirectoryResult.getWidth());
+                        Platform.runLater(() -> outputDirectoryResultContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth())));
+
+                        // Update the button click
+                        originalWidth = outputDirectoryButton.getWidth();
+                        Platform.runLater(() -> outputDirectoryButton.setPrefWidth(outputDirectoryResult.getWidth()));
+                        while (originalWidth == outputDirectoryButton.getWidth());
+                        Platform.runLater(() -> outputDirectoryButtonContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth())));
+
+                    }
+
+                } catch (InterruptedException ignored) {}
+
+            }
+
+            complete = true;
+            endTime = Instant.now().toEpochMilli();
+
+        }
+
+    }
 }

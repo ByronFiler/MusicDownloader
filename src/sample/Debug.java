@@ -29,7 +29,9 @@ public class Debug {
             entry("youtube-dl-verification", true),
             entry("ffmpeg-verification", true),
             entry("timer-countdown", true),
-            entry("download", true)
+            entry("download", true),
+            entry("output-directory-verification", true),
+            entry("output-directory-listener", true)
     );
 
     public synchronized void set(boolean state)
