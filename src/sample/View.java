@@ -50,7 +50,6 @@ TODO: Check program can handle making new default settings files on the fly
 TODO: Don't add elements with no name to search results table on either
 
 Features
-TODO: Have concise debugging give relevant files / fix concise mode
 TODO: Add download speed as web requests are sent by calculating size
 TODO: Recalculate the estimated time based off of youtube-dl's estimates
 TODO: Add button to install and configure youtube-dl & ffmpeg

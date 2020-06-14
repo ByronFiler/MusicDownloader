@@ -122,31 +122,24 @@ public class Debug {
         //Advanced Debugs, Gets Where the Debug is called from, expensive
         ArrayList<String> advancedDebugData = new ArrayList<>();
         StackTraceElement[] executionDetails = new Throwable().getStackTrace();
+        String[] debugFiles = new String[]{"Controller.java", "Settings.java", "Utils.java", "View.java", "Main.java"};
 
-        if (advancedDebugConcise) {
-
-            StackTraceElement executionDetail = executionDetails[3];
-
+        for (StackTraceElement executionDetail: executionDetails) {
             String processedDetail = executionDetail.toString();
             processedDetail = processedDetail.substring(processedDetail.indexOf("(") + 1);
             processedDetail = processedDetail.substring(0, processedDetail.indexOf(")"));
+            if (Arrays.asList(debugFiles).contains(processedDetail.split(":")[0])){
+                advancedDebugData.add(processedDetail);
+            }
+        }
 
-            return " [" + processedDetail + "] ";
+        if (advancedDebugConcise) {
+
+            return String.format(" [%s] ", advancedDebugData.get(advancedDebugData.size()-1));
 
         } else {
 
-            executionDetails = Arrays.copyOfRange(executionDetails, 2, executionDetails.length - 1);
-
-            for (StackTraceElement detail : executionDetails) {
-
-                String processedDetail = detail.toString();
-                processedDetail = processedDetail.substring(processedDetail.indexOf("(") + 1);
-                processedDetail = processedDetail.substring(0, processedDetail.indexOf(")"));
-
-                advancedDebugData.add(processedDetail);
-            }
-
-            return " [" + String.join(" in ", advancedDebugData) + "] ";
+            return String.format(" [%s] ", String.join(" from ", advancedDebugData));
 
         }
 
