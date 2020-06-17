@@ -237,6 +237,7 @@ public class View implements EventHandler<KeyEvent>
     }
 
     public void start(Stage window) {
+
         /* Checking Resources Exist, Will Delay Main Thread but this is the intentional, as can't continue without these resources */
         ArrayList<String> reacquire = new ArrayList<>();
         String[] targetCSSFiles = new String[]{"main.css", "night_theme.css", "normal_theme.css"};
@@ -402,11 +403,11 @@ public class View implements EventHandler<KeyEvent>
                         ) -> {
                             try {
                                 searchRequest.setText(
-                                    (
-                                        (Utils.autocompleteResultsSet) autocompleteResultsTable
-                                                .getItems()
-                                                .get((Integer) newSelection)
-                                    ).getName()
+                                        (
+                                                (Utils.autocompleteResultsSet) autocompleteResultsTable
+                                                        .getItems()
+                                                        .get((Integer) newSelection)
+                                        ).getName()
                                 );
                             } catch (IndexOutOfBoundsException ignored) {}
                         }
@@ -990,6 +991,7 @@ public class View implements EventHandler<KeyEvent>
 
         searchesProgressText.setVisible(false);
         searchesProgressText.setText("Search Songs: 0%");
+        searchesProgressText.setTextFill(Color.BLACK);
 
         downloadSpeedLabel.setVisible(false);
         timeRemainingLabel.setVisible(false);
@@ -1213,10 +1215,10 @@ public class View implements EventHandler<KeyEvent>
                         .getValue(),
                 Math.abs(
                         albumArtSettingResult
-                            .getSelectionModel()
-                            .selectedIndexProperty()
-                            .getValue()
-                        - 1
+                                .getSelectionModel()
+                                .selectedIndexProperty()
+                                .getValue()
+                                - 1
                 ),
                 Math.abs(
                         albumTitleSettingResult
@@ -1315,16 +1317,16 @@ public class View implements EventHandler<KeyEvent>
     public synchronized void evaluateSettingsChanges() {
 
         if (
-            musicFormatSetting != songDownloadFormatResult.getSelectionModel().getSelectedIndex() ||
-            saveAlbumArtSetting != saveAlbumArtResult.getSelectionModel().getSelectedIndex() ||
-            ((applyAlbumArt && albumArtSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyAlbumArt && albumArtSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
-            ((applyAlbumTitle && albumTitleSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyAlbumTitle && albumTitleSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
-            ((applyArtist && artistSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyArtist && artistSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
-            ((applySongTitle && songTitleSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applySongTitle && songTitleSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
-            ((applyYear && yearSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyYear && yearSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
-            ((applyTrack && trackNumberSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyTrack && trackNumberSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
-            ((darkTheme && darkModeSettingResult.getSelectionModel().getSelectedIndex() != 1) || (!darkTheme && darkModeSettingResult.getSelectionModel().getSelectedIndex() == 1)) ||
-            ((dataSaver && dataSaverSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!dataSaver && dataSaverSettingResult.getSelectionModel().getSelectedIndex() == 0))
+                musicFormatSetting != songDownloadFormatResult.getSelectionModel().getSelectedIndex() ||
+                        saveAlbumArtSetting != saveAlbumArtResult.getSelectionModel().getSelectedIndex() ||
+                        ((applyAlbumArt && albumArtSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyAlbumArt && albumArtSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+                        ((applyAlbumTitle && albumTitleSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyAlbumTitle && albumTitleSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+                        ((applyArtist && artistSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyArtist && artistSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+                        ((applySongTitle && songTitleSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applySongTitle && songTitleSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+                        ((applyYear && yearSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyYear && yearSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+                        ((applyTrack && trackNumberSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyTrack && trackNumberSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+                        ((darkTheme && darkModeSettingResult.getSelectionModel().getSelectedIndex() != 1) || (!darkTheme && darkModeSettingResult.getSelectionModel().getSelectedIndex() == 1)) ||
+                        ((dataSaver && dataSaverSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!dataSaver && dataSaverSettingResult.getSelectionModel().getSelectedIndex() == 0))
         ) {
             confirmChanges.setDisable(false);
             cancelBackButton.setText("Cancel");
@@ -1542,77 +1544,6 @@ public class View implements EventHandler<KeyEvent>
 
                 }
 
-            }
-
-            endTime = Instant.now().toEpochMilli();
-            completed = true;
-
-        }
-
-    }
-
-    static class autoCompleteWeb implements Runnable {
-
-        Thread t;
-        String searchQuery;
-        ArrayList<ArrayList<String>> autocompleteResults = new ArrayList<>();
-        private volatile String status = "Initializing";
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
-        private volatile boolean completed = false;
-
-        autoCompleteWeb (){
-            t = new Thread(this, "autocomplete-web");
-            t.start();
-        }
-
-        public void setSearchQuery(String setRequest) {
-            searchQuery = setRequest;
-        }
-
-        public ArrayList<ArrayList<String>> getAutocompleteResults() {
-            return autocompleteResults;
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            status,
-                            Boolean.toString(completed)
-                    )
-            );
-        }
-
-        public void run() {
-
-            try {
-
-                status = "Waiting on web request...";
-
-                Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + searchQuery).get();
-
-                status = "Web data finished, processing data...";
-
-                for (ArrayList<String> searchResult: Utils.allmusicQuery(doc)) {
-
-                    ArrayList<String> resultsData = new ArrayList<>();
-                    resultsData.add(searchResult.get(4));
-                    resultsData.add(searchResult.get(0));
-
-                    // Prevents duplicated results
-                    if (!autocompleteResults.contains(resultsData)) {
-
-                        autocompleteResults.add(resultsData); // Song or Album and Name
-
-                    }
-                }
-
-            } catch (IOException e) {
-                Debug.error(t, "Error sending web request: https://www.allmusic.com/search/all/" + searchQuery, e.getStackTrace());
             }
 
             endTime = Instant.now().toEpochMilli();
@@ -1970,6 +1901,8 @@ public class View implements EventHandler<KeyEvent>
             for (ArrayList<String> song: songsData)
             {
 
+                Debug.trace(t, String.format("Processing & Downloading Song %d of %d", songsData.indexOf(song)+1, songsData.size()));
+
                 status = String.format("Processing & Downloading Song %d of %d", songsData.indexOf(song)+1, songsData.size());
 
                 download downloader = new download();
@@ -2000,7 +1933,7 @@ public class View implements EventHandler<KeyEvent>
 
                     for (File file : Objects.requireNonNull(folderContents)) {
                         if (file.isFile()) {
-                            if (file.getName().endsWith("-" + song.get(2).substring(32) + "." + formatReferences.get(musicFormatSetting))) {
+                            if (file.getName().endsWith(song.get(2).substring(32) + "." + formatReferences.get(musicFormatSetting))) {
                                 targetFileName = file.getAbsolutePath();
                             }
                         }
@@ -2096,6 +2029,7 @@ public class View implements EventHandler<KeyEvent>
             Platform.runLater(() -> {
                 searchesProgressText.setText("Completed");
                 searchesProgressText.setTextFill(Color.GREEN);
+                loading.setProgress(1);
                 timeRemainingLabel.setVisible(false);
                 downloadSpeedLabel.setVisible(false);
             });
@@ -2214,7 +2148,7 @@ public class View implements EventHandler<KeyEvent>
                         Utils.evaluateBestLink(
                                 Utils.youtubeQuery(
                                         metaData.get("artist") + " " + songsDatum.get(0)),
-                                        Integer.parseInt(songsDatum.get(1))
+                                Integer.parseInt(songsDatum.get(1))
                         )
                 );
             } catch (IOException | ParseException e) {
@@ -2234,7 +2168,7 @@ public class View implements EventHandler<KeyEvent>
         }
 
     }
-    
+
     class getLatestVersion implements Runnable {
 
         Thread t;
@@ -2572,11 +2506,11 @@ public class View implements EventHandler<KeyEvent>
                     Platform.runLater(
                             () -> timeRemainingLabel.setText(
                                     Duration.ofSeconds(timeRemaining)
-                                    .toString()
+                                            .toString()
                                             .substring(2)
                                             .replaceAll("(\\d[HMS])(?!$)", "$1 ")
                                             .toLowerCase()
-                                    + " Remaining"
+                                            + " Remaining"
                             )
                     );
 
@@ -2587,115 +2521,6 @@ public class View implements EventHandler<KeyEvent>
             Debug.trace(t, "Completed");
             endTime = Instant.now().toEpochMilli();
             dead = true;
-
-        }
-
-    }
-
-    static class download implements Runnable {
-
-        Thread t;
-        private String url;
-        private String directory;
-        private String format;
-        private String downloadSpeed;
-        private String eta;
-        private double percentComplete = 0;
-        private volatile boolean complete = false;
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
-
-        public download() {
-            t = new Thread(this, "download");
-            t.start();
-        }
-
-        public void initialize(String dir, String urlRequest, String form) {
-            Debug.trace(t, "Initialization data received");
-            directory = dir;
-            url = urlRequest;
-            format = form;
-        }
-
-        public String getDownloadSpeed() {
-            return downloadSpeed;
-        }
-
-        public double getPercentComplete() {
-            return percentComplete;
-        }
-
-        public String getEta() {
-            return eta;
-        }
-
-        public boolean isComplete() {
-            return complete;
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            "Executing...",
-                            Boolean.toString(complete)
-                    )
-            );
-        }
-
-        public void run() {
-
-            try {
-
-                Debug.trace(t, "Starting");
-
-                // Making the bat to execute
-                FileWriter batCreator = new FileWriter(directory + "\\exec.bat");
-                batCreator.write("youtube-dl " + url + " --extract-audio --audio-format " + format + " --ignore-errors --retries 10");
-                batCreator.close();
-
-                Debug.trace(t, "Successfully generated bat file with command.");
-
-                // Sending the Youtube-DL Request
-                ProcessBuilder builder = new ProcessBuilder(directory + "\\exec.bat");
-                builder.redirectErrorStream(true);
-                Process process = builder.start();
-                InputStream is = process.getInputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-
-                Debug.trace(t, "Execution of bat request sent.");
-
-                String line;
-                while ((line = reader.readLine()) != null) {
-
-                    try {
-
-                        if (line.contains("[download]") && !line.contains("Destination")) {
-
-                            // Parse Percent Complete
-                            percentComplete = Double.parseDouble(line.split("%")[0].split("]")[1].split("\\.")[0].replaceAll("\\D+", "").replaceAll("\\s",""));
-
-                            // Parse Download Speed
-                            downloadSpeed = line.split("at")[1].split("ETA")[0].replaceAll("\\s","");
-
-                            // Parse ETA
-                            eta = Integer.parseInt(line.split("ETA")[1].replaceAll("\\s","").split(":")[0]) *60 + line.split("ETA")[1].replaceAll("\\s","").split(":")[1];
-
-                        }
-
-                    } catch (ArrayIndexOutOfBoundsException | NumberFormatException ignored) {}
-                }
-
-            } catch (IOException e) {
-                Debug.error(t, "Error in youtube-dl wrapper execution", e.getStackTrace());
-            }
-
-            Debug.trace(t, "Completed");
-            endTime = Instant.now().toEpochMilli();
-            complete = true;
 
         }
 
@@ -2844,6 +2669,186 @@ public class View implements EventHandler<KeyEvent>
 
             complete = true;
             endTime = Instant.now().toEpochMilli();
+
+        }
+
+    }
+
+    static class autoCompleteWeb implements Runnable {
+
+        Thread t;
+        String searchQuery;
+        ArrayList<ArrayList<String>> autocompleteResults = new ArrayList<>();
+        private volatile String status = "Initializing";
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
+        private volatile boolean completed = false;
+
+        autoCompleteWeb (){
+            t = new Thread(this, "autocomplete-web");
+            t.start();
+        }
+
+        public void setSearchQuery(String setRequest) {
+            searchQuery = setRequest;
+        }
+
+        public ArrayList<ArrayList<String>> getAutocompleteResults() {
+            return autocompleteResults;
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            status,
+                            Boolean.toString(completed)
+                    )
+            );
+        }
+
+        public void run() {
+
+            try {
+
+                status = "Waiting on web request...";
+
+                Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + searchQuery).get();
+
+                status = "Web data finished, processing data...";
+
+                for (ArrayList<String> searchResult: Utils.allmusicQuery(doc)) {
+
+                    ArrayList<String> resultsData = new ArrayList<>();
+                    resultsData.add(searchResult.get(4));
+                    resultsData.add(searchResult.get(0));
+
+                    // Prevents duplicated results
+                    if (!autocompleteResults.contains(resultsData)) {
+
+                        autocompleteResults.add(resultsData); // Song or Album and Name
+
+                    }
+                }
+
+            } catch (IOException e) {
+                Debug.error(t, "Error sending web request: https://www.allmusic.com/search/all/" + searchQuery, e.getStackTrace());
+            }
+
+            endTime = Instant.now().toEpochMilli();
+            completed = true;
+
+        }
+
+    }
+
+    static class download implements Runnable {
+
+        Thread t;
+        private String url;
+        private String directory;
+        private String format;
+        private String downloadSpeed;
+        private String eta;
+        private double percentComplete = 0;
+        private volatile boolean complete = false;
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
+
+        public download() {
+            t = new Thread(this, "download");
+            t.start();
+        }
+
+        public void initialize(String dir, String urlRequest, String form) {
+            Debug.trace(t, "Initialization data received");
+            directory = dir;
+            url = urlRequest;
+            format = form;
+        }
+
+        public String getDownloadSpeed() {
+            return downloadSpeed;
+        }
+
+        public double getPercentComplete() {
+            return percentComplete;
+        }
+
+        public String getEta() {
+            return eta;
+        }
+
+        public boolean isComplete() {
+            return complete;
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            "Executing...",
+                            Boolean.toString(complete)
+                    )
+            );
+        }
+
+        public void run() {
+
+            try {
+
+                Debug.trace(t, "Starting");
+
+                // Making the bat to execute
+                FileWriter batCreator = new FileWriter(directory + "\\exec.bat");
+                batCreator.write("youtube-dl " + url + " --extract-audio --audio-format " + format + " --ignore-errors --retries 10");
+                batCreator.close();
+
+                Debug.trace(t, "Successfully generated bat file with command.");
+
+                // Sending the Youtube-DL Request
+                ProcessBuilder builder = new ProcessBuilder(directory + "\\exec.bat");
+                builder.redirectErrorStream(true);
+                Process process = builder.start();
+                InputStream is = process.getInputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
+                Debug.trace(t, "Execution of bat request sent.");
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+
+                    try {
+
+                        if (line.contains("[download]") && !line.contains("Destination")) {
+
+                            // Parse Percent Complete
+                            percentComplete = Double.parseDouble(line.split("%")[0].split("]")[1].split("\\.")[0].replaceAll("\\D+", "").replaceAll("\\s",""));
+
+                            // Parse Download Speed
+                            downloadSpeed = line.split("at")[1].split("ETA")[0].replaceAll("\\s","");
+
+                            // Parse ETA
+                            eta = Integer.parseInt(line.split("ETA")[1].replaceAll("\\s","").split(":")[0]) *60 + line.split("ETA")[1].replaceAll("\\s","").split(":")[1];
+
+                        }
+
+                    } catch (ArrayIndexOutOfBoundsException | NumberFormatException ignored) {}
+                }
+
+            } catch (IOException e) {
+                Debug.error(t, "Error in youtube-dl wrapper execution", e.getStackTrace());
+            }
+
+            Debug.trace(t, "Completed");
+            endTime = Instant.now().toEpochMilli();
+            complete = true;
 
         }
 

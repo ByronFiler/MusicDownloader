@@ -129,7 +129,7 @@ public class Utils {
         return songLenSec;
     }
 
-    public static synchronized ArrayList<ArrayList<String>> allmusicQuery(Document doc) throws IOException {
+    public static synchronized ArrayList<ArrayList<String>> allmusicQuery(Document doc) {
 
         ArrayList<ArrayList<String>> songsData = new ArrayList<>();
         ArrayList<String> resultData;
@@ -187,56 +187,75 @@ public class Utils {
     }
 
     public static synchronized ArrayList<ArrayList<String>> youtubeQuery(String query) throws IOException, ParseException {
+
         // [Web Data] -> JavaScript -> String -> Json -> Data
         Document youtubeSearch = Jsoup.connect("https://www.youtube.com/results?search_query=" + query).get();
-
-        // Web Data -> [JavaScript] -> String -> Json -> Data
-        Element jsData = youtubeSearch.select("script").get(25);
-
-        // Web Data -> JavaScript -> [String] -> Json -> Data
-        String jsonConversion = jsData.toString();
-        jsonConversion = jsonConversion.substring(39, jsonConversion.length()-119);
-
-        // Web Data -> JavaScript -> String -> [Json] -> Data
-        JSONParser queryData = new JSONParser();
-        JSONObject json = (JSONObject) queryData.parse(jsonConversion);
-
-        // contents -> twoColumnSearchResultsRenderer -> primaryContents -> sectionListRenderer
-        JSONObject contents = (JSONObject)(
-                (JSONObject)(
-                        (JSONObject)(
-                                (JSONObject)json.get("contents")
-                        ).get("twoColumnSearchResultsRenderer")
-                ).get("primaryContents")
-        ).get("sectionListRenderer");
-
-        JSONArray contents1 = (JSONArray)contents.get("contents");
-        JSONObject contents2 = (JSONObject)(
-                (JSONObject)contents1.get(0)
-        ).get("itemSectionRenderer");
-
-        JSONArray contents3 = (JSONArray)contents2.get("contents");
-
         ArrayList<ArrayList<String>> searchDataExtracted = new ArrayList<>();
         ArrayList<String> searchDataTemp;
 
-        for (Object videoData: contents3)
-        {
-            searchDataTemp = new ArrayList<>();
-            JSONObject jsonVideoData = (JSONObject)videoData;
-            try {
-                // Extract the playtime and the link to the video
-                String lengthData = (String)((JSONObject)((JSONObject)jsonVideoData.get("videoRenderer")).get("lengthText")).get("simpleText");
-                String watchLink = "https://www.youtube.com/watch?v=" + ((JSONObject)jsonVideoData.get("videoRenderer")).get("videoId");
+        if (youtubeSearch.select("script").size() == 17) {
+            // Youtube has given us the data we require embedded in the HTML and must be parsed from the HTML
 
-                //String title = (String)((JSONObject)((JSONObject)((JSONObject)jsonVideoData.get("videoRenderer")).get("title")).get("runs")).get("text");
+            // Video Times: youtubeSearch.select("ol.item-section").get(0).select("span.video-time").get(selection)
+            // Video Link: youtubeSearch.select("ol.item-section").get(0).select("a[href][aria-hidden]").get(selection).attr("href")
 
-                searchDataTemp.add(watchLink);
-                searchDataTemp.add(Integer.toString(timeConversion(lengthData)));
+            for (int i = 0; i < youtubeSearch.select("ol.item-section").get(0).select("span.video-time").size(); i++) {
 
-
+                searchDataTemp = new ArrayList<>();
+                searchDataTemp.add("https://youtube.com" + youtubeSearch.select("ol.item-section").get(0).select("a[href][aria-hidden]").get(i).attr("href"));
+                searchDataTemp.add(Integer.toString(timeConversion(youtubeSearch.select("ol.item-section").get(0).select("span.video-time").get(i).text())));
                 searchDataExtracted.add(searchDataTemp);
-            } catch (Exception ignored) {}
+            }
+
+        } else {
+            // YouTube has given us the data stored in json stored script tags which be parsed
+
+            // Web Data -> [JavaScript] -> String -> Json -> Data
+            Element jsData = youtubeSearch.select("script").get(24);
+
+            // Web Data -> JavaScript -> [String] -> Json -> Data
+            String jsonConversion = jsData.toString();
+            jsonConversion = jsonConversion.substring(39, jsonConversion.length()-119);
+
+            // Web Data -> JavaScript -> String -> [Json] -> Data
+            JSONParser queryData = new JSONParser();
+            JSONObject json = (JSONObject) queryData.parse(jsonConversion);
+
+            // contents -> twoColumnSearchResultsRenderer -> primaryContents -> sectionListRenderer
+            JSONObject contents = (JSONObject)(
+                    (JSONObject)(
+                            (JSONObject)(
+                                    (JSONObject)json.get("contents")
+                            ).get("twoColumnSearchResultsRenderer")
+                    ).get("primaryContents")
+            ).get("sectionListRenderer");
+
+            JSONArray contents1 = (JSONArray)contents.get("contents");
+            JSONObject contents2 = (JSONObject)(
+                    (JSONObject)contents1.get(0)
+            ).get("itemSectionRenderer");
+
+            JSONArray contents3 = (JSONArray)contents2.get("contents");
+
+            for (Object videoData: contents3)
+            {
+                searchDataTemp = new ArrayList<>();
+                JSONObject jsonVideoData = (JSONObject)videoData;
+                try {
+                    // Extract the playtime and the link to the video
+                    String lengthData = (String)((JSONObject)((JSONObject)jsonVideoData.get("videoRenderer")).get("lengthText")).get("simpleText");
+                    String watchLink = "https://www.youtube.com/watch?v=" + ((JSONObject)jsonVideoData.get("videoRenderer")).get("videoId");
+
+                    //String title = (String)((JSONObject)((JSONObject)((JSONObject)jsonVideoData.get("videoRenderer")).get("title")).get("runs")).get("text");
+
+                    searchDataTemp.add(watchLink);
+                    searchDataTemp.add(Integer.toString(timeConversion(lengthData)));
+
+
+                    searchDataExtracted.add(searchDataTemp);
+                } catch (Exception ignored) {}
+            }
+
         }
 
         return searchDataExtracted;
@@ -371,7 +390,11 @@ public class Utils {
 
         // Must now bind to path so youtube-dl called executes that
 
-        return true;
+        return false;
+    }
+
+    public static synchronized boolean downloadFFMPEG(Thread t) {
+        return false;
     }
 
 
