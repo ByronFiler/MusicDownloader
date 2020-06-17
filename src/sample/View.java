@@ -9,6 +9,10 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -18,6 +22,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import javafx.scene.Cursor;
 import javafx.stage.Stage;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
@@ -36,6 +41,7 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Timer;
 import java.util.*;
 import java.util.stream.IntStream;
@@ -45,6 +51,8 @@ Optimisations
 TODO: Windows file explorer would preferable to JavaFX one
 TODO: Added to table is a spam thread based way isn't particularly efficient, I'd switch back to the old method and allow for easier killing
 TODO: Don't have white space on the search page before a download is started, have it taken up by the table and then repositioned later
+TODO: Break bulky threads into functions internally
+TODO: Don't need buttons overlaying text, just create click event surely?
 
 Known Bugs
 TODO: Interruption in downloading such as internet or file-io should be accounted for
@@ -53,6 +61,7 @@ TODO: Cancel should kill youtube-dl listener threads
 TODO: Estimated timer is far greater than it should be
 TODO: Don't add elements with no name to search results table on either
 TODO: Table adder will mess with the exiting, try to deal with that
+TODO: Downloading twice appears to cause issues
 
 Features
 TODO: Recalculate the estimated time based off of youtube-dl's estimates
@@ -124,10 +133,11 @@ public class View implements EventHandler<KeyEvent>
     public Label searchesProgressText;
     public Line footerMarker;
     public Label settingsLink;
-    public Button settingsLinkButton;
     public TableView autocompleteResultsTable;
     public Label downloadSpeedLabel;
     public Label timeRemainingLabel;
+    public Label backgroundDownload;
+    public Label downloadsViewLink;
 
     // Settings
     VBox versionResultContainer;
@@ -137,7 +147,6 @@ public class View implements EventHandler<KeyEvent>
 
     VBox outputDirectoryContainer;
     VBox outputDirectoryResultContainer;
-    VBox outputDirectoryButtonContainer;
     VBox songDownloadFormatResultContainer;
     VBox songDownloadFormatContainer;
     VBox saveAlbumArtResultContainer;
@@ -173,7 +182,6 @@ public class View implements EventHandler<KeyEvent>
     public Label fileSettingsTitle;
     public Label outputDirectory;
     public Label outputDirectoryResult;
-    public Button outputDirectoryButton;
     public Label songDownloadFormat;
     public ComboBox<String> songDownloadFormatResult;
     public Label saveAlbumArt;
@@ -211,6 +219,8 @@ public class View implements EventHandler<KeyEvent>
     public Line fileSettingsTitleLine;
     public Line metaDataTitleLine;
     public Line applicationSettingTitleLine;
+
+    // Downloads View
 
     // Data
     public ArrayList<ArrayList<String>> searchResults;
@@ -338,13 +348,8 @@ public class View implements EventHandler<KeyEvent>
         settingsLink = new Label("Settings");
         settingsLink.setTranslateX(10);
         settingsLink.setId("subTitle2");
-
-        settingsLinkButton = new Button();
-        settingsLinkButton.setPrefSize(100, 25);
-        settingsLinkButton.setId("button");
-        settingsLinkButton.setOpacity(0);
-        settingsLinkButton.setOnAction(e -> settingsMode());
-        settingsLinkButton.setTranslateX(10);
+        settingsLink.setCursor(Cursor.HAND);
+        settingsLink.setOnMouseClicked(e -> settingsMode());
 
         /* Search Results Page */
         searchResultsTitle = new Label("Search Results");
@@ -507,13 +512,18 @@ public class View implements EventHandler<KeyEvent>
         outputDirectory.setId("settingInfo");
 
         outputDirectoryResult = new Label(outputDirectorySetting.equals("") ? System.getProperty("user.dir") : outputDirectorySetting);
+        outputDirectoryResult.setOnMouseClicked(
+                e -> threadManagement.add(
+                        new ArrayList<>(
+                                Arrays.asList(
+                                        "selectFolder",
+                                        new selectFolder()
+                                )
+                        )
+                )
+        );
+        outputDirectoryResult.setCursor(Cursor.HAND);
         outputDirectoryResult.setId("settingInfo");
-
-        outputDirectoryButton = new Button();
-        outputDirectoryButton.setId("button");
-        outputDirectoryButton.setOpacity(0);
-        outputDirectoryButton.setPrefHeight(25);
-        outputDirectoryButton.setOnAction(e -> threadManagement.add(new ArrayList<>(Arrays.asList("selectFolder",new selectFolder()))));
 
         songDownloadFormat = new Label("Music format: ");
         songDownloadFormat.setId("settingInfo");
@@ -679,9 +689,6 @@ public class View implements EventHandler<KeyEvent>
         outputDirectoryResultContainer = new VBox();
         outputDirectoryResultContainer.getChildren().add(outputDirectoryResult);
 
-        outputDirectoryButtonContainer = new VBox();
-        outputDirectoryButtonContainer.getChildren().add(outputDirectoryButton);
-
         songDownloadFormatResultContainer = new VBox();
         songDownloadFormatResultContainer.getChildren().add(songDownloadFormatResult);
 
@@ -765,7 +772,6 @@ public class View implements EventHandler<KeyEvent>
                 saveAlbumArtResultContainer,
                 songDownloadFormatResultContainer,
                 outputDirectoryResultContainer,
-                outputDirectoryButtonContainer,
                 ffmpegVerificationResultContainer,
                 youtubeDlVerificationResultContainer,
                 latestVersionResultContainer,
@@ -796,8 +802,7 @@ public class View implements EventHandler<KeyEvent>
                 searchErrorMessage,
                 autocompleteResultsTable,
                 footerMarker,
-                settingsLink,
-                settingsLinkButton
+                settingsLink
         );
 
         // Search Page
@@ -851,7 +856,6 @@ public class View implements EventHandler<KeyEvent>
         footerMarker.startYProperty().bind(mainWindow.heightProperty().add(-89));
         footerMarker.endYProperty().bind(mainWindow.heightProperty().add(-89));
         settingsLink.layoutYProperty().bind(mainWindow.heightProperty().add(-79));
-        settingsLinkButton.layoutYProperty().bind(mainWindow.heightProperty().add(-79));
 
         // Bindings: Settings
         settingsContainer.prefWidthProperty().bind(mainWindow.widthProperty().subtract(73));
@@ -863,7 +867,6 @@ public class View implements EventHandler<KeyEvent>
         ffmpegVerificationResultContainer.setPadding(new Insets(110, 0, 0, -ffmpegVerificationResult.getWidth()));
 
         outputDirectoryResultContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth()));
-        outputDirectoryButtonContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth()));
         songDownloadFormatResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(210, 0, 0, -songDownloadFormatResult.getWidth())));
         saveAlbumArtResultContainer.paddingProperty().bind(Bindings.createObjectBinding(() -> new Insets(240, 0, 0, -saveAlbumArtResult.getWidth())));
 
@@ -886,7 +889,6 @@ public class View implements EventHandler<KeyEvent>
         confirmChanges.layoutYProperty().bind(mainWindow.heightProperty().subtract( 64 + confirmChanges.getHeight()));
         cancelBackButton.layoutXProperty().bind(mainWindow.widthProperty().subtract(44 + cancelBackButton.getWidth()));
         cancelBackButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(64 + cancelBackButton.getHeight()));
-        outputDirectoryButton.setPrefWidth(outputDirectoryResult.getWidth());
 
         // Bindings: Search Results
         resultsTable.prefWidthProperty().bind(mainWindow.widthProperty().subtract(119.5));
@@ -1008,7 +1010,6 @@ public class View implements EventHandler<KeyEvent>
         timeRemainingLabel.setVisible(false);
 
         footerMarker.setVisible(true);
-        settingsLinkButton.setVisible(true);
         settingsLink.setVisible(true);
 
         downloadButton.setDisable(false);
@@ -1169,13 +1170,11 @@ public class View implements EventHandler<KeyEvent>
         // Setting settings link footer to invisible
         footerMarker.setVisible(!settingVisibility);
         settingsLink.setVisible(!settingVisibility);
-        settingsLinkButton.setVisible(!settingVisibility);
 
         // Set setting elements visible
         settingsContainer.setVisible(settingVisibility);
 
         // Buttons
-        outputDirectoryButton.setVisible(settingVisibility);
         confirmChanges.setVisible(settingVisibility);
         cancelBackButton.setVisible(settingVisibility);
 
@@ -1486,6 +1485,12 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    public synchronized void downloadView() {
+
+
+
+    }
+
     class generateAutocomplete implements Runnable {
 
         Thread t;
@@ -1712,7 +1717,6 @@ public class View implements EventHandler<KeyEvent>
                 searchRequest.setVisible(false);
                 title.setVisible(false);
                 footerMarker.setVisible(false);
-                settingsLinkButton.setVisible(false);
                 settingsLink.setVisible(false);
                 searchErrorMessage.setVisible(false);
             });
@@ -2271,12 +2275,6 @@ public class View implements EventHandler<KeyEvent>
                 while (originalWidth == outputDirectoryResult.getWidth());
                 Platform.runLater(() -> outputDirectoryResultContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth())));
 
-                // Update the button click
-                originalWidth = outputDirectoryButton.getWidth();
-                Platform.runLater(() -> outputDirectoryButton.setPrefWidth(outputDirectoryResult.getWidth()));
-                while (originalWidth == outputDirectoryButton.getWidth());
-                Platform.runLater(() -> outputDirectoryButtonContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth())));
-
                 // Save the settings
                 outputDirectorySetting = OutputDirectorySettingNew;
                 submit();
@@ -2673,12 +2671,6 @@ public class View implements EventHandler<KeyEvent>
                         // Wait for the text to to be set, then update the rest
                         while (originalWidth == outputDirectoryResult.getWidth());
                         Platform.runLater(() -> outputDirectoryResultContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth())));
-
-                        // Update the button click
-                        originalWidth = outputDirectoryButton.getWidth();
-                        Platform.runLater(() -> outputDirectoryButton.setPrefWidth(outputDirectoryResult.getWidth()));
-                        while (originalWidth == outputDirectoryButton.getWidth());
-                        Platform.runLater(() -> outputDirectoryButtonContainer.setPadding(new Insets(180, 0, 0, -outputDirectoryResult.getWidth())));
 
                     }
 
