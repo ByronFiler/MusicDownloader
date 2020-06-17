@@ -44,8 +44,10 @@ import java.util.stream.IntStream;
 Optimisations
 TODO: Windows file explorer would preferable to JavaFX one
 TODO: Added to table is a spam thread based way isn't particularly efficient, I'd switch back to the old method and allow for easier killing
+TODO: Don't have white space on the search page before a download is started, have it taken up by the table and then repositioned later
 
 Known Bugs
+TODO: Interruption in downloading such as internet or file-io should be accounted for
 TODO: Switching to night theme and then exiting and reentering settings won't colour the text properly, also throws a lot of errors when night theme is set
 TODO: Cancel should kill youtube-dl listener threads
 TODO: Estimated timer is far greater than it should be
@@ -55,6 +57,8 @@ TODO: Table adder will mess with the exiting, try to deal with that
 Features
 TODO: Recalculate the estimated time based off of youtube-dl's estimates
 TODO: Add button to install and configure youtube-dl & ffmpeg
+TODO: Have a download progress view a bit similar to steam, downloaded songs and such like
+TODO: Once that page is implemented add a download queue system for multiple albums and such
 
 Future, for when the application is effectively done
     Git
@@ -886,10 +890,10 @@ public class View implements EventHandler<KeyEvent>
 
         // Bindings: Search Results
         resultsTable.prefWidthProperty().bind(mainWindow.widthProperty().subtract(119.5));
-        resultsTable.prefHeightProperty().bind(mainWindow.heightProperty().subtract(230));
-        downloadButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(170));
+        resultsTable.prefHeightProperty().bind(mainWindow.heightProperty().subtract(180));
+        downloadButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(120));
         cancelButton.layoutXProperty().bind(mainWindow.widthProperty().subtract(69.5 + cancelButton.getWidth()));
-        cancelButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(170));
+        cancelButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(120));
         searchesProgressText.layoutYProperty().bind(mainWindow.heightProperty().subtract(115));
         timeRemainingLabel.setTranslateX( (loading.getWidth() / 2) + (timeRemainingLabel.getWidth()/2) - 19.5 );
         timeRemainingLabel.layoutYProperty().bind(mainWindow.heightProperty().subtract(115));
@@ -988,6 +992,13 @@ public class View implements EventHandler<KeyEvent>
 
         loading.setVisible(false);
         loading.setProgress(0);
+
+        resultsTable.prefHeightProperty().unbind();
+        resultsTable.prefHeightProperty().bind(mainWindow.heightProperty().subtract(180));
+        cancelButton.layoutYProperty().unbind();
+        cancelButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(120));
+        downloadButton.layoutYProperty().unbind();
+        downloadButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(120));
 
         searchesProgressText.setVisible(false);
         searchesProgressText.setText("Search Songs: 0%");
@@ -1120,7 +1131,15 @@ public class View implements EventHandler<KeyEvent>
         handleDownload = new downloadHandler();
         threadManagement.add(new ArrayList<>(Arrays.asList("downloadHandler", handleDownload)));
 
+        /* Reposition the table and buttons */
+
         cancelButton.setText("Cancel");
+        cancelButton.layoutYProperty().unbind();
+        cancelButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(170));
+        downloadButton.layoutYProperty().unbind();
+        downloadButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(170));
+        resultsTable.prefHeightProperty().unbind();
+        resultsTable.prefHeightProperty().bind(mainWindow.heightProperty().subtract(230));
         searchesProgressText.setText("0% Complete");
         downloadSpeedLabel.setText("Calculating...");
         timeRemainingLabel.setText("Calculating...");
