@@ -15,6 +15,12 @@ public class Debug {
     private static boolean debugThreads = true;
     private static boolean advancedDebug = true;
     private static boolean advancedDebugConcise = true;
+    private static boolean stackTrace = false;
+
+    // Console colours
+    private static final String ANSI_RED = "\u001B[31m";
+    private static final String ANSI_RESET = "\u001B[0m";
+    private static final String ANSI_GREEN = "\u001B[32m";
 
     private static final Map<String, Boolean> threadDebugging = Map.ofEntries(
             entry("generateAutocomplete", true),
@@ -31,7 +37,8 @@ public class Debug {
             entry("timer-countdown", true),
             entry("download", true),
             entry("output-directory-verification", true),
-            entry("output-directory-listener", true)
+            entry("output-directory-listener", true),
+            entry("downloads-listener", true)
     );
 
     public synchronized void set(boolean state)
@@ -92,11 +99,11 @@ public class Debug {
 
             System.out.println(
                     String.format(
-                            "ERROR%s[%s: %d] @ %s: %s",
+                            ANSI_RED + "ERROR%s[%s: %d] @ %s: %s" + ANSI_RESET,
                             advancedDebug ? prettyExecutionTrace() : " ",
                             t.getName(),
                             t.getId(),
-                            formatter,
+                            formatter.format(new Date()),
                             msg
                     )
             );
@@ -105,18 +112,17 @@ public class Debug {
 
             System.out.println(
                     String.format(
-                            "ERROR%s[MAIN] @ %s: %s",
+                            ANSI_RED + "ERROR%s[MAIN] @ %s: %s" + ANSI_RESET,
                             advancedDebug ? prettyExecutionTrace() : " ",
-                            formatter,
+                            formatter.format(new Date()),
                             msg
                     )
             );
 
         }
 
-        for (StackTraceElement error: errorMessage) {
-            System.out.println(error);
-        }
+        if (stackTrace)
+            Arrays.stream(errorMessage).forEachOrdered(System.out::println);
     }
 
     private static synchronized String prettyExecutionTrace() {
