@@ -1,6 +1,7 @@
 /out
 /downloads
 /target
+/resources/cache
 *.class
 *.DS_Store
 *.txt

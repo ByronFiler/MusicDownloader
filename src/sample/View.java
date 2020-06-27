@@ -30,6 +30,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -50,6 +51,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Timer;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /*
@@ -274,6 +278,10 @@ public class View implements EventHandler<KeyEvent>
     }
 
     public void start(Stage window) {
+
+        // Continually check every 5 minutes to optimise the cache
+        ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
+        exec.scheduleAtFixedRate(optimiseCache::new, 0, 300, TimeUnit.SECONDS);
 
         /* Checking Resources Exist, Will Delay Main Thread but this is the intentional, as can't continue without these resources */
         ArrayList<String> reacquire = new ArrayList<>();
@@ -3388,9 +3396,6 @@ public class View implements EventHandler<KeyEvent>
                             // Continuously update the UI with the progress, when any values change
                             try {
                                 if (!referenceEta.equals(songDownload.getEta()) || percentComplete != songDownload.getPercentComplete()) {
-
-                                    Debug.trace(t, "Should be updating the ui now?");
-
                                     // Updating the variables for reference
                                     referenceEta = songDownload.getEta();
                                     percentComplete = songDownload.getPercentComplete();
@@ -3530,7 +3535,6 @@ public class View implements EventHandler<KeyEvent>
                         Platform.runLater(() -> {
 
                             try {
-
                                 // Appears to be adding one ahead from what it should
                                 downloadEventsView.getItems().add(
                                         generateResult(
@@ -3788,6 +3792,153 @@ public class View implements EventHandler<KeyEvent>
             }
 
             complete = true;
+
+        }
+
+    }
+
+
+    static class optimiseCache implements Runnable {
+
+        Thread t;
+
+        public optimiseCache() {
+            t = new Thread(this, "cache-optimisation");
+            t.start();
+        }
+
+        public void run() {
+
+            // List all files
+            File[] cachedFiles = new File("resources\\cached").listFiles();
+            ArrayList<String> imgData = new ArrayList<>();
+            ArrayList<ArrayList<String>> rename = new ArrayList<>();
+
+            // File sizes at different times
+            int deleteNonJpgFiles = 0;
+            int duplicatedDeletedFiles = 0;
+            int preOptimisationDirectorySize = 0;
+            int preNonJpgRemoval = 0;
+            int directoryOptimisedSize = 0;
+
+            if (cachedFiles == null | Objects.requireNonNull(cachedFiles).length == 0)
+                return;
+
+            for (File checkFile: Objects.requireNonNull(new File("resources\\cached\\").listFiles()))
+                preNonJpgRemoval += checkFile.length();
+
+            // Load binary data, md5 hashes instead of keeping full file in memory
+            for (File workFile : cachedFiles) {
+                if (workFile.getName().split("\\.")[1].equals("jpg")) {
+
+                    try {
+                        String hash = DigestUtils.md5Hex(
+                                Files.newInputStream(
+                                        Paths.get(
+                                                workFile.getAbsolutePath()
+                                        )
+                                )
+                        );
+
+                        if (imgData.contains(hash)) {
+
+                            // Exists in data hence to setup a rename reference
+                            rename.add(
+                                    new ArrayList<>(
+                                            Arrays.asList(
+                                                    workFile.getName(),
+                                                    cachedFiles[imgData.indexOf(hash)].getName()
+                                            )
+                                    )
+                            );
+
+                        } else {
+                            imgData.add(hash);
+                        }
+
+
+                    } catch (IOException ignored) {}
+
+                } else {
+
+                    if (!workFile.delete())
+                        Debug.warn(t, "Failed to delete non jpeg file in cache: " + workFile.getAbsolutePath());
+                    else
+                        deleteNonJpgFiles++;
+
+                }
+
+            }
+
+            // Getting the size of the cache before the operation and after
+            for (File existingFile: Objects.requireNonNull(new File("resources\\cached\\").listFiles())) {
+                preOptimisationDirectorySize += existingFile.length();
+            }
+
+            // Inform user is non-jpg files were deleted and how much of a reduction that was
+            if (deleteNonJpgFiles > 0)
+                Debug.trace(t, "Deleted " + deleteNonJpgFiles + " non jpg files from cache, reduction of " + Math.round(((double)(preNonJpgRemoval - preOptimisationDirectorySize) / preNonJpgRemoval)*100) + "%");
+
+            // If there are no files to rename just end this now
+            if (rename.size() == 0)
+                return;
+
+            // Begin the process of deleting files and renaming references
+            for (ArrayList<String> fileNames: rename) {
+
+                // Delete the old no longer relevant file
+                if (!new File("resources/cached/" + fileNames.get(0)).delete())
+                    Debug.warn(t, "Failed to delete file: " + new File("resources\\cached\\" + fileNames.get(0)).getAbsolutePath());
+                else
+                    duplicatedDeletedFiles++;
+
+                // Delete all references to the file in the downloads history
+                try {
+
+                    // Can cause an error if the file is blank, but will load the jsonarray
+                    JSONArray downloadsHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+
+                    // Iterate through downloads history, replacing the old references with the new
+                    for (int i = 0; i < downloadsHistory.length(); i++) {
+
+                        try {
+                            if (downloadsHistory.getJSONObject(i).get("cached").toString().equals("resources/cached/" + fileNames.get(1)))
+                                downloadsHistory.getJSONObject(i).put("cached", "resources/cached/" + fileNames.get(0));
+                        } catch (JSONException ignored) {}
+
+                    }
+
+                    // Writing changes
+                    try {
+                        FileWriter updateDownloads = new FileWriter("resources\\json\\downloads.json");
+                        updateDownloads.write(downloadsHistory.toString());
+                        updateDownloads.close();
+
+                    } catch (IOException e) {
+                        // Likely file deleted, adjust to handle, for now just error
+                        Debug.error(t, "Error writing to downloads file", e.getStackTrace());
+                    }
+
+                } catch (JSONException e) {
+
+                    // There is no download history and no use of the cached files, hence delete them
+                    for (File deleteFile: cachedFiles) {
+                        if (!deleteFile.delete()) {
+                            Debug.warn(t, "Failed to delete file: " + deleteFile.getAbsolutePath());
+                        }
+                    }
+                    return;
+
+                } catch (FileNotFoundException ignored) {
+                    // Generate a new downloads folder
+                }
+
+            }
+
+            for (File existingFile: Objects.requireNonNull(new File("resources/cached/").listFiles()))
+                directoryOptimisedSize += existingFile.length();
+
+            Debug.trace(t, "Deleted " + duplicatedDeletedFiles + " duplicate files from the cache, size reduction of " + Math.round(((double) (preOptimisationDirectorySize - directoryOptimisedSize) / preOptimisationDirectorySize)*100) + "%");
 
         }
 

@@ -39,7 +39,8 @@ public class Debug {
             entry("download", true),
             entry("output-directory-verification", true),
             entry("output-directory-listener", true),
-            entry("downloads-listener", true)
+            entry("downloads-listener", true),
+            entry("cache-optimisation", true)
     );
 
     public synchronized void set(boolean state)

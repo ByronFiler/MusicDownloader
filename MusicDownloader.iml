@@ -15,5 +15,6 @@
     <orderEntry type="library" name="Gradle: org.jsoup:jsoup:1.11.3" level="project" />
     <orderEntry type="library" name="Gradle: com.googlecode.json-simple:json-simple:1.1" level="project" />
     <orderEntry type="library" name="Gradle: org.json:json:20090211" level="project" />
+    <orderEntry type="library" name="Gradle: commons-codec:commons-codec:1.9" level="project" />
   </component>
 </module>
