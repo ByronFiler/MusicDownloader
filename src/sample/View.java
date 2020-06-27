@@ -58,19 +58,22 @@ import java.util.stream.IntStream;
 
 /*
 Optimisations
+TODO: Redesign with FXGL pages and a main controller instead of everything in one file
 TODO: Switch to CountDownLatch instead of while (x); to wait for threads [https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/CountDownLatch.html]
 TODO: Settings view should just use smoother yes no buttons instead of ComboBoxes
 TODO: Windows file explorer would preferable to JavaFX one
 TODO: Added to table is a spam thread based way isn't particularly efficient, I'd switch back to the old method and allow for easier killing
 TODO: Don't have white space on the search page before a download is started, have it taken up by the table and then repositioned later
 TODO: Break bulky threads into functions internally
+TODO: Remove utils into their respective threads
+TODO: Where files cannot be access handle and regnerate respectively
+TODO: Switch to using warnings where relevant
 
 Known Bugs
 TODO: Adding to table thread appears to cause lots of internal errors at times, no actual debugging information given, perhaps calling too fast?
 TODO: Interruption in downloading such as internet or file-io should be accounted for
 TODO: Switching to night theme and then exiting and reentering settings won't colour the text properly, also throws a lot of errors when night theme is set
 TODO: Cancel should kill youtube-dl listener threads
-TODO: Estimated timer is far greater than it should be
 TODO: Don't add elements with no name to search results table on either
 TODO: Table adder will mess with the exiting, try to deal with that
 TODO: Downloading twice appears to cause issues
@@ -894,7 +897,7 @@ public class View implements EventHandler<KeyEvent>
         downloadGraph.setTranslateY(60);
         downloadGraph.setVisible(false);
 
-        downloadEventsView = new ListView<>();
+        downloadEventsView = new ListView<BorderPane>();
         downloadEventsView.setTranslateX(20);
         downloadEventsView.setVisible(false);
         downloadEventsView.setId("downloadHistory");
@@ -1732,10 +1735,6 @@ public class View implements EventHandler<KeyEvent>
         Thread t;
         String autocompleteQuery;
         private volatile boolean killRequest = false;
-        private volatile String status = "Initializing";
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
-        private volatile boolean completed = false;
 
         generateAutocomplete (){
             t = new Thread(this, "autocomplete");
@@ -1750,19 +1749,6 @@ public class View implements EventHandler<KeyEvent>
             killRequest = true;
         }
 
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            status,
-                            Boolean.toString(completed)
-                    )
-            );
-        }
-
         public void run() {
 
             // Wait for either the thread kill signal or the web request to be completed
@@ -1772,13 +1758,10 @@ public class View implements EventHandler<KeyEvent>
 
             while (true) {
 
-                status = "In loop waiting...";
-
                 // Calling this too rapidly without delay eats up performance and won't work
                 try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ignored) {
-                }
+                    Thread.sleep(100); // TODO: Switch with a timer task
+                } catch (InterruptedException ignored) {}
 
                 // Not being found, ideally need to kill the web request
                 if (killRequest) {
@@ -1805,9 +1788,6 @@ public class View implements EventHandler<KeyEvent>
                 }
 
             }
-
-            endTime = Instant.now().toEpochMilli();
-            completed = true;
 
         }
 
@@ -1916,9 +1896,8 @@ public class View implements EventHandler<KeyEvent>
                         status = "Awaitng detail threads to complete, " + completedThreads + " out of " + totalThreads + " so far.";
                     }
 
-                    for (Utils.resultsSet result: searchResultFullData) {
+                    for (Utils.resultsSet result: searchResultFullData)
                         resultsTable.getItems().add(result);
-                    }
 
                 } catch (NullPointerException e) {
                     Debug.error(t, "Invalid search error", e.getStackTrace());
@@ -1969,7 +1948,6 @@ public class View implements EventHandler<KeyEvent>
 
         Thread t;
         ArrayList<String> searchResult;
-        private volatile String status = "Processing...";
 
         addToTable() {
             t = new Thread(this, "table-adder");
@@ -2055,412 +2033,13 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    /*
-    class downloadHandler implements Runnable {
-
-        Thread t;
-        private boolean kill = false;
-        private volatile boolean completed = false;
-        private volatile String status = "Initializing...";
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
-
-        downloadHandler() {
-            t = new Thread(this, "download-handler");
-            t.start();
-        }
-
-        private void kill() {
-            kill = true;
-        }
-
-        private boolean isDead() {
-            return completed;
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            status,
-                            Boolean.toString(completed)
-                    )
-            );
-        }
-
-        public void run() {
-
-            // Await for the change and reposition download speed and time remaining
-            // Determining existing files for reference for deletion
-            File albumFolder = new File(System.getProperty("user.dir"));
-            List<String> originalFiles = Arrays.asList(Objects.requireNonNull(albumFolder.list()));
-
-            int totalPlayTime = 0;
-            for (ArrayList<String> song: songsData) {
-                totalPlayTime += Integer.parseInt(song.get(1));
-            }
-            int totalPlayTimeRemaining = totalPlayTime;
-
-            loadingPercent = 0;
-            percentIncrease = ((double)1 / (double)songsData.size()) * (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
-
-            for (ArrayList<String> songsDatum : songsData) {
-
-                youtubeQueryThread searchThread = new youtubeQueryThread();
-                threadManagement.add(new ArrayList<>(Arrays.asList("youtubeQueryThread", searchThread)));
-                searchThread.setSongsDatum(songsDatum);
-
-            }
-
-            long initialTime = Instant.now().toEpochMilli();
-
-            while (true) {
-
-                int completedThreads = 0;
-
-                for (ArrayList<String> lengthCheck : songsData) {
-
-                    if (lengthCheck.size() == 3) {
-                        completedThreads++;
-                    }
-
-                }
-
-                if (completedThreads == songsData.size()) {
-                    break;
-                }
-
-                status = "Searching youtube " + Math.round((double)completedThreads / songsData.size()*100) + "% completed";
-            }
-
-            loadingPercent = (0.5518 * songsData.size() / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
-            // Going to send all requests simultaneously and take collective
-
-            for (ArrayList<String> song: songsData)
-            {
-
-                Debug.trace(t, String.format("Processing & Downloading Song %d of %d", songsData.indexOf(song)+1, songsData.size()));
-
-                status = String.format("Processing & Downloading Song %d of %d", songsData.indexOf(song)+1, songsData.size());
-
-                download downloader = new download();
-                threadManagement.add(new ArrayList<>(Arrays.asList("download",downloader)));
-                downloader.initialize(metaData.get("directory"), song.get(2), formatReferences.get(musicFormatSetting));
-                while (!downloader.isComplete()) {
-
-                    int finalTotalPlayTime = totalPlayTime;
-                    Platform.runLater(() -> loading.setProgress(loadingPercent + (((double)Integer.parseInt(song.get(1)) / (double) finalTotalPlayTime) * (finalTotalPlayTime * 0.02313 / (0.5518 * songsData.size() + finalTotalPlayTime * 0.02313)) * (downloader.getPercentComplete()/100) )));
-
-                    if (downloader.getDownloadSpeed() != null)
-                        Platform.runLater(() -> downloadSpeedLabel.setText(downloader.getDownloadSpeed()));
-
-                    try {Thread.sleep(50);} catch (InterruptedException ignored) {}
-                    Platform.runLater(() -> downloadSpeedLabel.setTranslateX(loading.getTranslateX() + 19.5 - downloadSpeedLabel.getWidth()));
-
-                }
-
-                if (kill) {
-                    Debug.trace(t, "Quit signal received before downloading song " + (songsData.indexOf(song)+1) + " of " + songsData.size());
-                    break;
-                }
-
-                try {
-                    File folder = new File(System.getProperty("user.dir"));
-                    File[] folderContents = folder.listFiles();
-                    String targetFileName = "";
-
-                    for (File file : Objects.requireNonNull(folderContents)) {
-                        if (file.isFile()) {
-                            if (file.getName().endsWith(song.get(2).substring(32) + "." + formatReferences.get(musicFormatSetting))) {
-                                targetFileName = file.getAbsolutePath();
-                            }
-                        }
-                    }
-
-                    // Now to apply the metadata
-                    if (formatReferences.get(musicFormatSetting).equals("mp3")) {
-                        Mp3File mp3Applicator = new Mp3File(targetFileName);
-
-                        ID3v2 id3v2tag = new ID3v24Tag();
-                        mp3Applicator.setId3v2Tag(id3v2tag);
-
-                        if (applyAlbumArt) {
-
-                            // Album Art Application
-                            RandomAccessFile albumArtImg = new RandomAccessFile(metaData.get("directory") + "art.jpg", "r");
-
-                            // Could break this up into mb loads
-                            byte[] bytes;
-                            bytes = new byte[(int) albumArtImg.length()];
-                            albumArtImg.read(bytes);
-                            albumArtImg.close();
-
-                            id3v2tag.setAlbumImage(bytes, "image/jpg");
-                        }
-
-                        // Applying remaining data
-                        if (applySongTitle)
-                            id3v2tag.setTitle(song.get(0));
-
-                        if (applyAlbumTitle)
-                            id3v2tag.setAlbum(metaData.get("albumTitle"));
-
-                        if (applyArtist) {
-                            id3v2tag.setArtist(metaData.get("artist"));
-                            id3v2tag.setAlbumArtist(metaData.get("artist"));
-                        }
-
-                        if (applyYear)
-                            id3v2tag.setYear(metaData.get("year"));
-
-                        if (metaData.containsKey("positionInAlbum")) {
-                            id3v2tag.setTrack(metaData.get("positionInAlbum"));
-                        } else {
-                            id3v2tag.setTrack(Integer.toString(songsData.indexOf(song)));
-                        }
-
-                        try {
-                            mp3Applicator.save(metaData.get("directory") + song.get(0) + ".mp3");
-
-                            // Delete old file
-
-                            if ( !new File(targetFileName).delete()) {
-                                Debug.error(t, "Failed to delete file: " + targetFileName, new IOException().getStackTrace());
-                            }
-
-                        } catch (IOException | NotSupportedException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-
-                    percentIncrease = ((double)Integer.parseInt(song.get(1)) / (double)totalPlayTime) * (totalPlayTime * 0.02313 / (0.5518 * songsData.size() + totalPlayTime * 0.02313));
-                    loadingPercent += percentIncrease;
-                    double tempLoadingPercent = loadingPercent;
-
-                    Platform.runLater(() -> loading.setProgress(tempLoadingPercent));
-                    Platform.runLater(() -> searchesProgressText.setText(Math.round(tempLoadingPercent*10000)/100 + "% Complete"));
-
-                    // Remaining Playtime / Time Taken Per second to download last song = Estimated Time Remaining <variance for smaller songs
-                    totalPlayTimeRemaining -= Integer.parseInt(song.get(1));
-
-                    int finalTotalPlayTimeRemaining = totalPlayTimeRemaining;
-
-                    try {
-                        // Kill the existing timer and wait until it's dead before continuing
-                        countDown.kill();
-                        while (!countDown.isDead());
-                    } catch (NullPointerException ignored) {} // On first execution
-
-                    countDown = new timerCountdown();
-                    threadManagement.add(new ArrayList<>(Arrays.asList("timerCountdown",countDown)));
-                    countDown.setTimeRemaining((int) Math.round(finalTotalPlayTimeRemaining / (Integer.parseInt(song.get(1)) / ((double)(Instant.now().toEpochMilli() - initialTime) / 1000))));
-
-                    Platform.runLater(() -> timeRemainingLabel.setTranslateX( (mainWindow.getWidth()/2) - (timeRemainingLabel.getWidth()/2) -19.5));
-
-                } catch (IOException | InvalidDataException | UnsupportedTagException  e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-            Platform.runLater(() -> {
-                searchesProgressText.setText("Completed");
-                searchesProgressText.setTextFill(Color.GREEN);
-                loading.setProgress(1);
-                timeRemainingLabel.setVisible(false);
-                downloadSpeedLabel.setVisible(false);
-            });
-
-            if (!new File(metaData.get("directory") + "\\exec.bat").delete()) {
-                Debug.error(t, "Failed to delete: " + metaData.get("directory") + "\\exec.bat", new IOException().getStackTrace());
-            }
-
-            if (saveAlbumArtSetting == 0 || (saveAlbumArtSetting == 1 && metaData.containsKey("positionInAlbum")) || (saveAlbumArtSetting == 2 && !metaData.containsKey("positionInAlbum"))) {
-                try {
-                    Files.delete(Paths.get(metaData.get("directory") + "\\art.jpg"));
-                } catch (IOException e) {
-                    Debug.error(t, "Failed to delete file: " + metaData.get("directory") + "\\art.jpg", new IOException().getStackTrace());
-                }
-            }
-
-            Platform.runLater(() -> cancelButton.setText("Back"));
-
-            if (kill) {
-
-                // Delete Partial Download
-                // Album
-                // All Files In Album Folder: (mp3s, bat and jpg)
-                // All Temporary Songs in CWD
-
-                // Song
-                // Delete Temporary Songs in CWD
-                // Delete target song and album art
-
-                // Delete files the download has created
-                albumFolder = new File(System.getProperty("user.dir"));
-                String[] currentFiles = albumFolder.list();
-
-                for (String file: Objects.requireNonNull(currentFiles)) {
-
-                    if (!originalFiles.contains(file)) {
-                        File deleteFile = new File(file);
-                        if (!deleteFile.delete()) {
-                            Debug.error(t, "Failed to delete file: " + deleteFile.getAbsolutePath(), new IOException().getStackTrace());
-                        }
-                    }
-
-                }
-
-
-                if (metaData.containsKey("positionInAlbum")) {
-                    // Deleting a song, just name and album art
-
-                    // Delete album art, can't delete song
-                    try {
-                        Files.delete(Paths.get(outputDirectorySetting.equals("") ? metaData.get("directory") + "/art.jpg" : outputDirectorySetting + "/art.jpg"));
-                    } catch (IOException e) {
-                        Debug.error(t, "Failed to delete: " + (outputDirectorySetting.equals("") ? metaData.get("directory") + "/art.jpg" : outputDirectorySetting + "/art.jpg"), e.getStackTrace());
-                    }
-                } else {
-
-                    // Deleting an album
-                    albumFolder = new File(metaData.get("directory"));
-                    String[] files = albumFolder.list();
-                    for (String file : Objects.requireNonNull(files)) {
-
-                        File current = new File(albumFolder.getPath(), file);
-
-                        if (!current.delete()) {
-                            Debug.error(t, "Failed to delete: " + current.getAbsolutePath(), new IOException().getStackTrace());
-                        }
-                    }
-
-                    if (!albumFolder.delete())
-                        Debug.error(t, "Failed to delete: " + albumFolder.getAbsolutePath(), new IOException().getStackTrace());
-                }
-
-            }
-
-            Platform.runLater(() -> downloadButton.setDisable(false));
-            endTime = Instant.now().toEpochMilli();
-            completed = true;
-
-        }
-    }
-
-     */
-
-    /*class timerCountdown implements Runnable {
-
-        // Consider looking into moving into ScheduledExecutorService
-        // https://stackoverflow.com/questions/54394042/java-how-to-avoid-using-thread-sleep-in-a-loop
-
-        Thread t;
-        private int timeRemaining;
-        private boolean killSignal = false;
-        private boolean dead = false;
-        private String status = "Initializing...";
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
-
-        timerCountdown (){
-            t = new Thread(this, "timer-countdown");
-            t.start();
-        }
-
-        public void setTimeRemaining(int newTime) {
-            timeRemaining = newTime;
-        }
-
-        public boolean isDead() {
-            return dead;
-        }
-
-        public void kill() {
-            Debug.trace(t, "Kill signal received");
-            killSignal = true;
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            status,
-                            Boolean.toString(dead)
-                    )
-            );
-        }
-
-        public void run(){
-
-            Debug.trace(t, "Initialized");
-
-            // Count down from time remaining
-            for (; timeRemaining > 0; timeRemaining--) {
-
-                if (killSignal) {
-                    Debug.trace(t, String.format("Executing kill signal, with %d second(s) remaining.", timeRemaining));
-                    break;
-                }
-
-                try {
-                    Thread.sleep(1000);
-
-                    Platform.runLater(
-                            () -> timeRemainingLabel.setText(
-                                    Duration.ofSeconds(timeRemaining)
-                                            .toString()
-                                            .substring(2)
-                                            .replaceAll("(\\d[HMS])(?!$)", "$1 ")
-                                            .toLowerCase()
-                                            + " Remaining"
-                            )
-                    );
-
-                } catch (InterruptedException ignored) {}
-
-            }
-
-            Debug.trace(t, "Completed");
-            endTime = Instant.now().toEpochMilli();
-            dead = true;
-
-        }
-
-    }
-
-     */
-
     class getLatestVersion implements Runnable {
 
         Thread t;
-        private volatile boolean completed = false;
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
 
         getLatestVersion (){
             t = new Thread(this, "get-latest-version");
             t.start();
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            "Processing...",
-                            Boolean.toString(completed)
-                    )
-            );
         }
 
         public void run() {
@@ -2471,9 +2050,6 @@ public class View implements EventHandler<KeyEvent>
             Platform.runLater(() -> latestVersionResult.setText(latestVersion == null ? "Unknown" : latestVersion));
             while (latestVersionResult.getWidth() == originalWidth) { try {Thread.sleep(10);} catch (InterruptedException ignored) {} }
             Platform.runLater(() -> latestVersionResultContainer.setPadding(new Insets(70, 0, 0, -latestVersionResult.getWidth())));
-
-            endTime = Instant.now().toEpochMilli();
-            completed = true;
         }
 
     }
@@ -2481,26 +2057,10 @@ public class View implements EventHandler<KeyEvent>
     class selectFolder implements  Runnable {
 
         Thread t;
-        private volatile boolean completed = false;
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
 
         selectFolder (){
             t = new Thread(this, "folder-selection");
             t.start();
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            "In progress of selecting...",
-                            Boolean.toString(completed)
-                    )
-            );
         }
 
         public void run() {
@@ -2526,9 +2086,6 @@ public class View implements EventHandler<KeyEvent>
                 submit();
 
             } catch (Exception ignored) {}
-
-            endTime = Instant.now().toEpochMilli();
-            completed = true;
 
         }
     }
@@ -2606,31 +2163,13 @@ public class View implements EventHandler<KeyEvent>
     class youtubeDlVerification implements Runnable {
 
         Thread t;
-        private volatile boolean completed = false;
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
 
         youtubeDlVerification () {
             t = new Thread(this, "youtube-dl-verification");
             t.start();
         }
 
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            "Checking...",
-                            Boolean.toString(completed)
-                    )
-            );
-        }
-
         public void run() {
-
-            Debug.trace(t, "Initialized");
 
             boolean youtubeDlStatus = Settings.checkYouTubeDl();
             double originalWidth = youtubeDlVerificationResult.getWidth();
@@ -2648,36 +2187,16 @@ public class View implements EventHandler<KeyEvent>
             while (youtubeDlVerificationResult.getWidth() == originalWidth) {}
             Platform.runLater(() -> youtubeDlVerificationResultContainer.setPadding(new Insets(90, 0, 0, -youtubeDlVerificationResult.getWidth())));
 
-            Debug.trace(t, "Completed");
-            endTime = Instant.now().toEpochMilli();
-            completed = true;
-
         }
     }
 
     class ffmpegVerificationThread implements Runnable {
 
         Thread t;
-        private volatile boolean completed = false;
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
 
         ffmpegVerificationThread () {
             t = new Thread(this, "ffmpeg-verification");
             t.start();
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            "Checking...",
-                            Boolean.toString(completed)
-                    )
-            );
         }
 
         public void run() {
@@ -2696,10 +2215,6 @@ public class View implements EventHandler<KeyEvent>
             while (ffmpegVerificationResult.getWidth() == originalWidth);
             Platform.runLater(() -> ffmpegVerificationResultContainer.setPadding(new Insets(110, 0, 0, -ffmpegVerificationResult.getWidth())));
 
-            Debug.trace(t, "Completed");
-            endTime = Instant.now().toEpochMilli();
-            completed = true;
-
         }
 
     }
@@ -2709,26 +2224,10 @@ public class View implements EventHandler<KeyEvent>
         Thread t;
         private volatile boolean complete = false;
         private boolean resetDirectory = false;
-        private volatile String status = "Checking files...";
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
 
         outputDirectoryVerification() {
             t = new Thread(this, "output-directory-verification");
             t.start();
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            status,
-                            Boolean.toString(complete)
-                    )
-            );
         }
 
         public boolean changed() {
@@ -2746,11 +2245,7 @@ public class View implements EventHandler<KeyEvent>
                 // User specified directory no longer exists, hence return to default directory
                 outputDirectorySetting = System.getProperty("user.dir");
 
-                status = "Getting latest settings...";
-
                 JSONObject savedSettings = Settings.getSettings();
-
-                status = "Writing new settings...";
 
                 try {
                     Settings.saveSettings(
@@ -2774,7 +2269,6 @@ public class View implements EventHandler<KeyEvent>
 
             }
 
-            endTime = Instant.now().toEpochMilli();
             complete = true;
 
 
@@ -2786,9 +2280,6 @@ public class View implements EventHandler<KeyEvent>
 
         Thread t;
         private volatile boolean kill = false;
-        private volatile boolean complete = false;
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
 
         public outputDirectoryListener() {
 
@@ -2799,19 +2290,6 @@ public class View implements EventHandler<KeyEvent>
 
         public void kill() {
             kill = true;
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            "Waiting in loop...",
-                            Boolean.toString(complete)
-                    )
-            );
         }
 
         public void run() {
@@ -2842,9 +2320,6 @@ public class View implements EventHandler<KeyEvent>
                 } catch (InterruptedException ignored) {}
 
             }
-
-            complete = true;
-            endTime = Instant.now().toEpochMilli();
 
         }
 
@@ -3796,7 +3271,6 @@ public class View implements EventHandler<KeyEvent>
         }
 
     }
-
 
     static class optimiseCache implements Runnable {
 
