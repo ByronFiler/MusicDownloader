@@ -46,3 +46,15 @@
 #searchError {
     -fx-text-fill: red;
 }
+
+#downloadHistoryResultTitle {
+    -fx-text-fill: black;
+}
+
+#downloadHistoryArtistTitle {
+    -fx-text-fill: "#363434";
+}
+
+#downloadStatus {
+    -fx-text-fill: "#363434";
+}

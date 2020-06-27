@@ -6,27 +6,34 @@ import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Cursor;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.*;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
-import javafx.scene.Cursor;
 import javafx.stage.Stage;
 import org.apache.commons.io.FileUtils;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -34,12 +41,11 @@ import org.jsoup.select.Elements;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Timer;
@@ -48,13 +54,15 @@ import java.util.stream.IntStream;
 
 /*
 Optimisations
+TODO: Switch to CountDownLatch instead of while (x); to wait for threads [https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/CountDownLatch.html]
+TODO: Settings view should just use smoother yes no buttons instead of ComboBoxes
 TODO: Windows file explorer would preferable to JavaFX one
 TODO: Added to table is a spam thread based way isn't particularly efficient, I'd switch back to the old method and allow for easier killing
 TODO: Don't have white space on the search page before a download is started, have it taken up by the table and then repositioned later
 TODO: Break bulky threads into functions internally
-TODO: Don't need buttons overlaying text, just create click event surely?
 
 Known Bugs
+TODO: Adding to table thread appears to cause lots of internal errors at times, no actual debugging information given, perhaps calling too fast?
 TODO: Interruption in downloading such as internet or file-io should be accounted for
 TODO: Switching to night theme and then exiting and reentering settings won't colour the text properly, also throws a lot of errors when night theme is set
 TODO: Cancel should kill youtube-dl listener threads
@@ -62,8 +70,11 @@ TODO: Estimated timer is far greater than it should be
 TODO: Don't add elements with no name to search results table on either
 TODO: Table adder will mess with the exiting, try to deal with that
 TODO: Downloading twice appears to cause issues
+TODO: Error message can be hidden under autocomplete results, also invalid search seems to not let me search again
 
 Features
+TODO: Duplicate album arts could be checked for and replaced to use the same ID if the art is identical
+TODO: Escape key should cancel search in case of lag or anything
 TODO: Recalculate the estimated time based off of youtube-dl's estimates
 TODO: Add button to install and configure youtube-dl & ffmpeg
 TODO: Have a download progress view a bit similar to steam, downloaded songs and such like
@@ -133,11 +144,13 @@ public class View implements EventHandler<KeyEvent>
     public Label searchesProgressText;
     public Line footerMarker;
     public Label settingsLink;
+    public Label downloadsLink;
     public TableView autocompleteResultsTable;
     public Label downloadSpeedLabel;
     public Label timeRemainingLabel;
     public Label backgroundDownload;
     public Label downloadsViewLink;
+    public ProgressIndicator queueAdditionProgress;
 
     // Settings
     VBox versionResultContainer;
@@ -221,6 +234,14 @@ public class View implements EventHandler<KeyEvent>
     public Line applicationSettingTitleLine;
 
     // Downloads View
+    public Label downloadsTitle;
+    public ScrollPane downloadsInfoScrollPane;
+    public VBox downloadsInfo;
+    public Label downloadSpeed;
+    public Label downloadTotal;
+    public LineChart downloadGraph;
+    public ListView downloadEventsView;
+    public Button downloadBack;
 
     // Data
     public ArrayList<ArrayList<String>> searchResults;
@@ -229,6 +250,8 @@ public class View implements EventHandler<KeyEvent>
     public ArrayList<Utils.resultsSet> resultsData;
     public HashMap<String, String> metaData;
     public Timer timerRotate;
+    public ArrayList<Long> lastClicked = new ArrayList<>();
+    public JSONArray downloadQueue = new JSONArray();
 
     public ArrayList<String> formatReferences = new ArrayList<>(Arrays.asList("mp3", "wav", "ogg", "aac"));
 
@@ -238,8 +261,8 @@ public class View implements EventHandler<KeyEvent>
     List<Object> threadManagement = new ArrayList<>();
 
     generateAutocomplete autocompleteGenerator;
-    timerCountdown countDown;
-    downloadHandler handleDownload;
+    downloadsListener downloader;
+    addToQueue queueHandler;
     allMusicQuery searchQuery;
     outputDirectoryVerification directoryVerify;
     outputDirectoryListener directoryListener;
@@ -304,25 +327,35 @@ public class View implements EventHandler<KeyEvent>
         mainWindow = window;
         JSONObject config = Settings.getSettings();
 
-        outputDirectorySetting = (String) config.get("output_directory");
-        OutputDirectorySettingNew = outputDirectorySetting;
-        musicFormatSetting = Integer.parseInt(Long.toString((Long) config.get("music_format")));
-        saveAlbumArtSetting = Integer.parseInt(Long.toString((Long) config.get("save_album_art")));
+        try {
+            outputDirectorySetting = config.get("output_directory").toString();
+            OutputDirectorySettingNew = outputDirectorySetting;
+            musicFormatSetting = (int) config.get("music_format");
+            saveAlbumArtSetting = (int) config.get("save_album_art");
 
-        threadManagement.add(new ArrayList<>(Arrays.asList("outputDirectoryVerification", new outputDirectoryVerification())));
+            threadManagement.add(new ArrayList<>(Arrays.asList("outputDirectoryVerification", new outputDirectoryVerification())));
 
-        applyAlbumArt = (Long) config.get("album_art") != 0;
-        applyAlbumTitle = (Long) config.get("album_title") != 0;
-        applySongTitle = (Long) config.get("song_title") != 0;
-        applyArtist = (Long) config.get("artist") != 0;
-        applyYear = (Long) config.get("year") != 0;
-        applyTrack = (Long) config.get("track") != 0;
+            applyAlbumArt = (int) config.get("album_art") != 0;
+            applyAlbumTitle = (int) config.get("album_title") != 0;
+            applySongTitle = (int) config.get("song_title") != 0;
+            applyArtist = (int) config.get("artist") != 0;
+            applyYear = (int) config.get("year") != 0;
+            applyTrack = (int) config.get("track") != 0;
 
-        darkTheme = (Long) config.get("theme") != 0;
-        dataSaver = (Long) config.get("data_saver") != 0;
+            darkTheme = (int) config.get("theme") != 0;
+            dataSaver = (int) config.get("data_saver") != 0;
+
+        } catch (JSONException e) {
+
+            // Should really regenerate all files, although this shouldn't happen
+            Debug.error(null, "Failed to find valid settings to load, even after files should have been checked.", e.getStackTrace());
+            System.exit(-1);
+
+        }
 
         programVersion = Settings.getVersion();
 
+        downloader = new downloadsListener();
 
         /* JAVA-FX DESIGN */
 
@@ -350,6 +383,11 @@ public class View implements EventHandler<KeyEvent>
         settingsLink.setId("subTitle2");
         settingsLink.setCursor(Cursor.HAND);
         settingsLink.setOnMouseClicked(e -> settingsMode());
+
+        downloadsLink = new Label("Downloads");
+        downloadsLink.setId("subTitle2");
+        downloadsLink.setCursor(Cursor.HAND);
+        downloadsLink.setOnMouseClicked(e -> downloadMode());
 
         /* Search Results Page */
         searchResultsTitle = new Label("Search Results");
@@ -440,18 +478,35 @@ public class View implements EventHandler<KeyEvent>
         downloadButton.setTranslateX(50);
         downloadButton.setOnAction(
                 e -> {
-                    try {
-                        initializeDownload();
-                    } catch (IOException ioException) {
-                        ioException.printStackTrace();
-                    }
+                    downloadButton.setText("Adding to queue...");
+                    queueAdditionProgress.setVisible(true);
+                    downloadButton.setDisable(true);
+                    cancelButton.setText("Cancel");
+
+                    queueHandler = new addToQueue(
+                            searchResults.get(
+                                    resultsData.indexOf(
+                                            resultsTable
+                                                    .getItems()
+                                                    .get(
+                                                            resultsTable
+                                                                    .getSelectionModel()
+                                                                    .getSelectedIndex()
+                                                    )
+                                    )
+                            )
+                    );
+                    cancelButton.setOnMouseClicked(f -> queueHandler.kill());
+
+                    // Once the thread has finished, should restore to previous states
+                    // If the cancel button is clicked should kill the thread and restore to previous states
                 }
         );
         downloadButton.setVisible(false);
 
         cancelButton = new Button("Back");
         cancelButton.setPrefSize(120, 40);
-        cancelButton.setOnAction(e -> cancel());
+        cancelButton.setOnMouseClicked(e -> cancel(true));
         cancelButton.setVisible(false);
 
         /* Search Results Page: Downloads */
@@ -471,6 +526,24 @@ public class View implements EventHandler<KeyEvent>
         loading.setPrefHeight(20);
         loading.setVisible(false);
 
+        downloadsViewLink = new Label("View Downloads");
+        downloadsViewLink.setUnderline(true);
+        downloadsViewLink.setOnMouseClicked(e -> downloadMode());
+        downloadsViewLink.setCursor(Cursor.HAND);
+        downloadsViewLink.setTranslateX(50);
+        downloadsViewLink.setVisible(false);
+
+        backgroundDownload = new Label("Minimize Download");
+        backgroundDownload.setOnMouseClicked(e -> cancel(false));
+        backgroundDownload.setCursor(Cursor.HAND);
+        backgroundDownload.setUnderline(true);
+        backgroundDownload.setVisible(false);
+
+        queueAdditionProgress = new ProgressIndicator(0);
+        queueAdditionProgress.setMinSize(50, 50);
+        queueAdditionProgress.setId("progressIndicator");
+        queueAdditionProgress.setVisible(false);
+
         /* Settings Page */
         settingsTitle = new Label("Settings");
         settingsTitle.setId("subTitle");
@@ -489,9 +562,8 @@ public class View implements EventHandler<KeyEvent>
 
         latestVersionResult = new Label("Locating...");
         latestVersionResult.setId("settingInfo");
-        if (dataSaver) {
+        if (dataSaver)
             threadManagement.add(new ArrayList<>(Arrays.asList("getLatestVersion",new getLatestVersion())));
-        }
 
         youtubeDlVerification = new Label("YouTube-DL Status: ");
         youtubeDlVerification.setId("settingInfo");
@@ -637,10 +709,7 @@ public class View implements EventHandler<KeyEvent>
 
         // Program Settings Title & Line
         VBox programSettingNameContainer = new VBox();
-        programSettingNameContainer.getChildren().addAll(
-                programSettingsTitle,
-                programSettingsTitleLine
-        );
+        programSettingNameContainer.getChildren().addAll(programSettingsTitle, programSettingsTitleLine);
         programSettingNameContainer.setPadding(new Insets(20, 0, 0, 0));
 
         // Program Settings Information
@@ -794,6 +863,55 @@ public class View implements EventHandler<KeyEvent>
 
         settingsContainer.setVisible(false);
 
+        // Downloads Page Vars
+        downloadsTitle = new Label("Downloads");
+        downloadsTitle.setTranslateX(20);
+        downloadsTitle.setTranslateY(20);
+        downloadsTitle.setVisible(false);
+        downloadsTitle.setId("title");
+
+        downloadSpeedLabel = new Label();
+        downloadTotal = new Label();
+
+        downloadsInfo = new VBox();
+        downloadsInfo.getChildren().addAll(downloadSpeedLabel, downloadTotal);
+
+        downloadsInfoScrollPane = new ScrollPane();
+        downloadsInfoScrollPane.setContent(downloadsInfo);
+        downloadsInfoScrollPane.setTranslateX(20);
+        downloadsInfoScrollPane.setTranslateY(60);
+        downloadsInfoScrollPane.setVisible(false);
+
+        downloadGraph = new LineChart<>(new NumberAxis(), new NumberAxis());
+        downloadGraph.setTranslateY(60);
+        downloadGraph.setVisible(false);
+
+        downloadEventsView = new ListView<>();
+        downloadEventsView.setTranslateX(20);
+        downloadEventsView.setVisible(false);
+        downloadEventsView.setId("downloadHistory");
+
+        downloadBack = new Button("Back");
+        downloadBack.setPrefSize(120, 40);
+        downloadBack.setOnMouseClicked(e -> {
+
+            // Should clear table, hide download contents and show search contents
+            downloadsTitle.setVisible(false);
+            downloadsInfoScrollPane.setVisible(false);
+            downloadGraph.setVisible(false);
+            downloadEventsView.setVisible(false);
+            downloadBack.setVisible(false);
+            downloadEventsView.getItems().clear();
+
+            title.setVisible(true);
+            searchRequest.setVisible(true);
+            footerMarker.setVisible(true);
+            settingsLink.setVisible(true);
+            downloadsLink.setVisible(true);
+
+        });
+        downloadBack.setVisible(false);
+
         // Search Page
         pane.getChildren().addAll(
                 title,
@@ -802,7 +920,8 @@ public class View implements EventHandler<KeyEvent>
                 searchErrorMessage,
                 autocompleteResultsTable,
                 footerMarker,
-                settingsLink
+                settingsLink,
+                downloadsLink
         );
 
         // Search Page
@@ -817,7 +936,10 @@ public class View implements EventHandler<KeyEvent>
                 loading,
                 searchesProgressText,
                 timeRemainingLabel,
-                downloadSpeedLabel
+                downloadSpeedLabel,
+                downloadsViewLink,
+                backgroundDownload,
+                queueAdditionProgress
         );
 
         // Settings Page
@@ -825,6 +947,15 @@ public class View implements EventHandler<KeyEvent>
                 settingsContainer,
                 confirmChanges,
                 cancelBackButton
+        );
+
+        // Downloads Page
+        pane.getChildren().addAll(
+                downloadsTitle,
+                downloadsInfoScrollPane,
+                downloadGraph,
+                downloadEventsView,
+                downloadBack
         );
 
         scene = new Scene(pane);
@@ -853,9 +984,11 @@ public class View implements EventHandler<KeyEvent>
         autocompleteResultsTable.maxHeightProperty().bind(mainWindow.heightProperty().divide(2).subtract(185));
 
         footerMarker.endXProperty().bind(mainWindow.widthProperty());
-        footerMarker.startYProperty().bind(mainWindow.heightProperty().add(-89));
-        footerMarker.endYProperty().bind(mainWindow.heightProperty().add(-89));
-        settingsLink.layoutYProperty().bind(mainWindow.heightProperty().add(-79));
+        footerMarker.startYProperty().bind(mainWindow.heightProperty().subtract(89));
+        footerMarker.endYProperty().bind(mainWindow.heightProperty().subtract(89));
+        settingsLink.layoutYProperty().bind(mainWindow.heightProperty().subtract(79));
+        downloadsLink.layoutYProperty().bind(mainWindow.heightProperty().subtract(79));
+        downloadsLink.layoutXProperty().bind(mainWindow.widthProperty().subtract(downloadsLink.widthProperty().add(19.5 + 10)));
 
         // Bindings: Settings
         settingsContainer.prefWidthProperty().bind(mainWindow.widthProperty().subtract(73));
@@ -903,6 +1036,26 @@ public class View implements EventHandler<KeyEvent>
         downloadSpeedLabel.layoutYProperty().bind(mainWindow.heightProperty().subtract(115));
         loading.prefWidthProperty().bind(resultsTable.widthProperty());
         loading.layoutYProperty().bind(mainWindow.heightProperty().subtract(95));
+        downloadsViewLink.layoutYProperty().bind(loading.layoutYProperty().add(30));
+        backgroundDownload.layoutYProperty().bind(loading.layoutYProperty().add(30));
+        backgroundDownload.layoutXProperty().bind(loading.layoutXProperty().add(loading.widthProperty().subtract(57)));
+        queueAdditionProgress.layoutXProperty().bind(downloadButton.layoutXProperty().add(downloadButton.widthProperty()).add(49.5));
+        queueAdditionProgress.layoutYProperty().bind(mainWindow.heightProperty().subtract(117));
+
+        // Bindings: Downloads
+        downloadsInfoScrollPane.prefWidthProperty().bind(mainWindow.widthProperty().divide(4));
+        downloadsInfoScrollPane.prefHeightProperty().bind(mainWindow.heightProperty().divide(6));
+
+        downloadGraph.layoutXProperty().bind(downloadsInfoScrollPane.layoutXProperty().add(downloadsInfoScrollPane.widthProperty()).add(mainWindow.widthProperty().divide(10)));
+        downloadGraph.prefWidthProperty().bind(mainWindow.widthProperty().subtract(downloadsInfoScrollPane.widthProperty().add(mainWindow.widthProperty().divide(10).add(20+19.5))));
+        downloadGraph.prefHeightProperty().bind(mainWindow.heightProperty().divide(6));
+
+        downloadEventsView.layoutYProperty().bind(downloadsInfoScrollPane.layoutXProperty().add(downloadsInfoScrollPane.heightProperty()).add(mainWindow.heightProperty().divide(10)));
+        downloadEventsView.prefWidthProperty().bind(mainWindow.widthProperty().subtract(40+19.5));
+        downloadEventsView.prefHeightProperty().bind(mainWindow.heightProperty().subtract(160).subtract(downloadsInfoScrollPane.layoutXProperty().add(downloadsInfoScrollPane.heightProperty()).add(mainWindow.heightProperty().divide(10))));
+
+        downloadBack.layoutXProperty().bind(downloadEventsView.layoutXProperty().add(downloadEventsView.widthProperty()).subtract(downloadBack.widthProperty().subtract(9)));
+        downloadBack.layoutYProperty().bind(mainWindow.heightProperty().subtract(120));
     }
 
     public void handle(KeyEvent event) {
@@ -971,15 +1124,17 @@ public class View implements EventHandler<KeyEvent>
         trackNumberSetting.setTextFill(colour);
     }
 
-    public synchronized void cancel() {
+    public synchronized void cancel(boolean cancelDownload) {
 
         // Stops the search thread from running
-        try {
+        if (cancelDownload) {
+            try {
 
-            searchQuery.kill();
-            handleDownload.kill();
+                searchQuery.kill();
+                //handleDownload.kill();
 
-        } catch (NullPointerException ignored) {}
+            } catch (NullPointerException ignored) {}
+        }
 
         // Clear Table and Hide, Revert to search state
         resultsTable.getItems().clear();
@@ -991,6 +1146,8 @@ public class View implements EventHandler<KeyEvent>
         downloadButton.setDisable(true);
         downloadButton.setVisible(false);
         cancelButton.setVisible(false);
+        downloadsViewLink.setVisible(false);
+        backgroundDownload.setVisible(false);
 
         loading.setVisible(false);
         loading.setProgress(0);
@@ -1011,142 +1168,10 @@ public class View implements EventHandler<KeyEvent>
 
         footerMarker.setVisible(true);
         settingsLink.setVisible(true);
+        downloadsLink.setVisible(true);
 
         downloadButton.setDisable(false);
 
-    }
-
-    public synchronized void initializeDownload() throws IOException {
-        downloadButton.setDisable(true);
-
-        // Results table contains images and text, this will never error but it thinks it could
-        ArrayList<String> request = searchResults.get(
-                resultsData.indexOf(
-                        resultsTable
-                                .getItems()
-                                .get(
-                                        resultsTable
-                                                .getSelectionModel()
-                                                .getSelectedIndex()
-                                )
-                )
-        );
-
-        loading.setVisible(true);
-
-        songsData = new ArrayList<>();
-        metaData = new HashMap<>();
-        String directoryName;
-
-        if (request.get(4).equals("Album")) {
-            // Prepare all songs
-
-            // Producing the folder to save the data to
-            directoryName = Utils.generateFolder(outputDirectorySetting + "\\" + request.get(0)); // Create new unique directory with album name
-
-            // Meta data required is found in the search
-            metaData.put("albumTitle", request.get(0));
-            metaData.put("artist", request.get(1));
-            metaData.put("year", request.get(2));
-            metaData.put("genre", request.get(3));
-            metaData.put("downloadRequestType", "album");
-            metaData.put("directory", directoryName + "\\");
-
-            // Downloading the album art
-            Utils.downloadAlbumArt(directoryName + "\\", request.get(5));
-
-            // Extracting all songs from album name & playtime
-            Document albumData = Jsoup.connect(request.get(6)).get();
-            Elements tracks = albumData.select("tr.track");
-
-            for (Element track: tracks)
-            {
-                ArrayList<String> songDataToAdd = new ArrayList<>();
-                songDataToAdd.add(track.select("div.title").text());
-                songDataToAdd.add(Integer.toString(Utils.timeConversion(track.select("td.time").text())));
-                songsData.add(songDataToAdd);
-            }
-
-
-        } else {
-            // Prepare all songs and meta-data
-
-            // Meta data must be extracted
-
-            Document songDataRequest = Jsoup.connect(request.get(6)).get();
-
-            String genre = "";
-
-            try {
-                genre = songDataRequest.selectFirst("div.song_genres").selectFirst("div.middle").select("a").text();
-                genre = genre.split("\\(")[0];
-                genre = genre.substring(0, genre.length() - 1);
-            } catch (NullPointerException ignored) {}
-
-            Document albumDataRequest = Jsoup.connect(songDataRequest.selectFirst("div.title").selectFirst("a").attr("href")).get();
-
-            Elements tracks0 = albumDataRequest.select("tr.track");
-            Elements tracks1 = albumDataRequest.select("tr.track pick");
-            String positionInAlbum = "-1";
-
-            for (Element track: tracks0)
-            {
-                if (track.selectFirst("div.title").selectFirst("a").text().equals(request.get(0)))
-                {
-                    positionInAlbum = track.selectFirst("td.tracknum").text();
-                }
-            }
-            if (positionInAlbum.equals("-1")){
-                for (Element track: tracks1)
-                {
-                    if (track.selectFirst("div.title").selectFirst("a").text().equals(request.get(0)))
-                    {
-                        positionInAlbum = track.selectFirst("td.tracknum").text();
-                    }
-                }
-            }
-
-            metaData.put("albumTitle", songDataRequest.selectFirst("div.title").select("a").text());
-            metaData.put("artist", request.get(1));
-            metaData.put("year", songDataRequest.selectFirst("td.year").text());
-            metaData.put("genre", genre);
-            metaData.put("positionInAlbum", positionInAlbum);
-            metaData.put("directory", outputDirectorySetting + "\\");
-
-            // Download album art
-            Utils.downloadAlbumArt(outputDirectorySetting + "\\", songDataRequest.selectFirst("td.cover").select("img").attr("src"));
-
-            // Generate song length and playtime
-            ArrayList<String> songDataToAdd = new ArrayList<>();
-            songDataToAdd.add(request.get(0));
-            songDataToAdd.add(Integer.toString(Utils.timeConversion(songDataRequest.select("td.time").text())));
-            songsData.add(songDataToAdd);
-
-        }
-
-        searchesProgressText.setVisible(true);
-        timeRemainingLabel.setVisible(true);
-        downloadSpeedLabel.setVisible(true);
-
-        // Make Progress Bar Visible
-        handleDownload = new downloadHandler();
-        threadManagement.add(new ArrayList<>(Arrays.asList("downloadHandler", handleDownload)));
-
-        /* Reposition the table and buttons */
-
-        cancelButton.setText("Cancel");
-        cancelButton.layoutYProperty().unbind();
-        cancelButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(170));
-        downloadButton.layoutYProperty().unbind();
-        downloadButton.layoutYProperty().bind(mainWindow.heightProperty().subtract(170));
-        resultsTable.prefHeightProperty().unbind();
-        resultsTable.prefHeightProperty().bind(mainWindow.heightProperty().subtract(230));
-        searchesProgressText.setText("0% Complete");
-        downloadSpeedLabel.setText("Calculating...");
-        timeRemainingLabel.setText("Calculating...");
-        timeRemainingLabel.setTranslateX( (mainWindow.getWidth()/2) - (timeRemainingLabel.getWidth()/2) - 19.5);
-        loading.setVisible(true);
-        loading.setProgress(0);
     }
 
     public synchronized void selectNewFolder() {
@@ -1170,6 +1195,7 @@ public class View implements EventHandler<KeyEvent>
         // Setting settings link footer to invisible
         footerMarker.setVisible(!settingVisibility);
         settingsLink.setVisible(!settingVisibility);
+        downloadsLink.setVisible(!settingVisibility);
 
         // Set setting elements visible
         settingsContainer.setVisible(settingVisibility);
@@ -1221,115 +1247,120 @@ public class View implements EventHandler<KeyEvent>
     public synchronized void submit() {
 
         // Saving to file
-        Settings.saveSettings(
-                OutputDirectorySettingNew,
-                songDownloadFormatResult
-                        .getSelectionModel()
-                        .selectedIndexProperty()
-                        .getValue(),
-                saveAlbumArtResult
-                        .getSelectionModel()
-                        .selectedIndexProperty()
-                        .getValue(),
-                Math.abs(
-                        albumArtSettingResult
-                                .getSelectionModel()
-                                .selectedIndexProperty()
-                                .getValue()
-                                - 1
-                ),
-                Math.abs(
-                        albumTitleSettingResult
-                                .getSelectionModel()
-                                .selectedIndexProperty()
-                                .getValue()
-                                - 1
-                ),
-                Math.abs(
-                        songTitleSettingResult
-                                .getSelectionModel()
-                                .selectedIndexProperty()
-                                .getValue()
-                                - 1
-                ),
-                Math.abs(
-                        artistSettingResult
-                                .getSelectionModel()
-                                .selectedIndexProperty()
-                                .getValue()
-                                - 1
-                ),
-                Math.abs(
-                        yearSettingResult
-                                .getSelectionModel()
-                                .selectedIndexProperty()
-                                .getValue()
-                                - 1
-                ),
-                Math.abs(
-                        trackNumberSettingResult
-                                .getSelectionModel()
-                                .selectedIndexProperty()
-                                .getValue()
-                                - 1
-                ),
-                darkModeSettingResult
-                        .getSelectionModel()
-                        .selectedIndexProperty()
-                        .getValue(),
-                Math.abs(
-                        dataSaverSettingResult
-                                .getSelectionModel()
-                                .selectedIndexProperty()
-                                .getValue()
-                                - 1
-                )
-        );
+        try {
+            Settings.saveSettings(
+                    OutputDirectorySettingNew,
+                    songDownloadFormatResult
+                            .getSelectionModel()
+                            .selectedIndexProperty()
+                            .getValue(),
+                    saveAlbumArtResult
+                            .getSelectionModel()
+                            .selectedIndexProperty()
+                            .getValue(),
+                    Math.abs(
+                            albumArtSettingResult
+                                    .getSelectionModel()
+                                    .selectedIndexProperty()
+                                    .getValue()
+                                    - 1
+                    ),
+                    Math.abs(
+                            albumTitleSettingResult
+                                    .getSelectionModel()
+                                    .selectedIndexProperty()
+                                    .getValue()
+                                    - 1
+                    ),
+                    Math.abs(
+                            songTitleSettingResult
+                                    .getSelectionModel()
+                                    .selectedIndexProperty()
+                                    .getValue()
+                                    - 1
+                    ),
+                    Math.abs(
+                            artistSettingResult
+                                    .getSelectionModel()
+                                    .selectedIndexProperty()
+                                    .getValue()
+                                    - 1
+                    ),
+                    Math.abs(
+                            yearSettingResult
+                                    .getSelectionModel()
+                                    .selectedIndexProperty()
+                                    .getValue()
+                                    - 1
+                    ),
+                    Math.abs(
+                            trackNumberSettingResult
+                                    .getSelectionModel()
+                                    .selectedIndexProperty()
+                                    .getValue()
+                                    - 1
+                    ),
+                    darkModeSettingResult
+                            .getSelectionModel()
+                            .selectedIndexProperty()
+                            .getValue(),
+                    Math.abs(
+                            dataSaverSettingResult
+                                    .getSelectionModel()
+                                    .selectedIndexProperty()
+                                    .getValue()
+                                    - 1
+                    )
+            );
 
-        // Setting the vars
-        outputDirectorySetting = OutputDirectorySettingNew;
-        musicFormatSetting = songDownloadFormatResult
-                .getSelectionModel()
-                .selectedIndexProperty()
-                .getValue();
-        saveAlbumArtSetting = saveAlbumArtResult
-                .getSelectionModel()
-                .selectedIndexProperty()
-                .getValue();
-        applyAlbumArt = albumArtSettingResult
-                .getSelectionModel()
-                .selectedIndexProperty()
-                .getValue() == 0;
-        applyAlbumTitle = albumTitleSettingResult
-                .getSelectionModel()
-                .selectedIndexProperty()
-                .getValue() == 0;
-        applySongTitle = songTitleSettingResult
-                .getSelectionModel()
-                .selectedIndexProperty()
-                .getValue() == 0;
-        applyArtist = artistSettingResult
-                .getSelectionModel()
-                .selectedIndexProperty()
-                .getValue() == 0;
-        applyYear = yearSettingResult
-                .getSelectionModel()
-                .selectedIndexProperty()
-                .getValue() == 0;
-        applyTrack = trackNumberSettingResult
-                .getSelectionModel()
-                .selectedIndexProperty()
-                .getValue() == 0;
-        darkTheme = darkModeSettingResult
-                .getSelectionModel()
-                .selectedIndexProperty()
-                .getValue() != 0;
-        dataSaver = dataSaverSettingResult
-                .getSelectionModel()
-                .selectedIndexProperty()
-                .getValue() == 0;
+            // Setting the vars
+            outputDirectorySetting = OutputDirectorySettingNew;
+            musicFormatSetting = songDownloadFormatResult
+                    .getSelectionModel()
+                    .selectedIndexProperty()
+                    .getValue();
+            saveAlbumArtSetting = saveAlbumArtResult
+                    .getSelectionModel()
+                    .selectedIndexProperty()
+                    .getValue();
+            applyAlbumArt = albumArtSettingResult
+                    .getSelectionModel()
+                    .selectedIndexProperty()
+                    .getValue() == 0;
+            applyAlbumTitle = albumTitleSettingResult
+                    .getSelectionModel()
+                    .selectedIndexProperty()
+                    .getValue() == 0;
+            applySongTitle = songTitleSettingResult
+                    .getSelectionModel()
+                    .selectedIndexProperty()
+                    .getValue() == 0;
+            applyArtist = artistSettingResult
+                    .getSelectionModel()
+                    .selectedIndexProperty()
+                    .getValue() == 0;
+            applyYear = yearSettingResult
+                    .getSelectionModel()
+                    .selectedIndexProperty()
+                    .getValue() == 0;
+            applyTrack = trackNumberSettingResult
+                    .getSelectionModel()
+                    .selectedIndexProperty()
+                    .getValue() == 0;
+            darkTheme = darkModeSettingResult
+                    .getSelectionModel()
+                    .selectedIndexProperty()
+                    .getValue() != 0;
+            dataSaver = dataSaverSettingResult
+                    .getSelectionModel()
+                    .selectedIndexProperty()
+                    .getValue() == 0;
 
-        evaluateSettingsChanges();
+            evaluateSettingsChanges();
+
+        } catch (JSONException e) {
+            Debug.error(null, "Error saving settings", e.getStackTrace());
+        }
     }
 
     public synchronized void evaluateSettingsChanges() {
@@ -1395,99 +1426,296 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    public synchronized String dumpThreadData() {
+    public synchronized void downloadMode() {
 
-        // Please don't look at this, I'll find a better way to do it soon
-        ArrayList<String> dumpedData = new ArrayList<>();
+        // Hiding Search
+        title.setVisible(false);
+        searchRequest.setVisible(false);
+        footerMarker.setVisible(false);
+        settingsLink.setVisible(false);
+        downloadsLink.setVisible(false);
 
-        for (Object threadDetails: threadManagement) {
+        // Hiding Downloads
+        searchResultsTitle.setVisible(false);
+        resultsTable.setVisible(false);
+        downloadButton.setVisible(false);
+        cancelButton.setVisible(false);
+        loading.setVisible(false);
+        searchesProgressText.setVisible(false);
+        timeRemainingLabel.setVisible(false);
+        downloadSpeedLabel.setVisible(false);
+        downloadsViewLink.setVisible(false);
+        backgroundDownload.setVisible(false);
 
-            ArrayList<Object> convertedThreadDetails = (ArrayList<Object>) threadDetails;
-            ArrayList<String> threadData = new ArrayList<>();
+        // Showing Downloads
+        downloadsTitle.setVisible(true);
+        downloadsInfoScrollPane.setVisible(true);
+        downloadGraph.setVisible(true);
+        downloadEventsView.setVisible(true);
+        downloadBack.setVisible(true);
 
-            if ("generateAutocomplete".equals(convertedThreadDetails.get(0))) {
-                generateAutocomplete thread = (generateAutocomplete) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("autoCompleteWeb".equals(convertedThreadDetails.get(0))) {
-                autoCompleteWeb thread = (autoCompleteWeb) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("allMusicQuery".equals(convertedThreadDetails.get(0))) {
-                allMusicQuery thread = (allMusicQuery) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("addToTable".equals(convertedThreadDetails.get(0))) {
-                addToTable thread = (addToTable) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("downloadHandler".equals(convertedThreadDetails.get(0))) {
-                downloadHandler thread = (downloadHandler) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("youtubeQueryThread".equals(convertedThreadDetails.get(0))) {
-                youtubeQueryThread thread = (youtubeQueryThread) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("getLatestVersion".equals(convertedThreadDetails.get(0))) {
-                getLatestVersion thread = (getLatestVersion) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("selectFolder".equals(convertedThreadDetails.get(0))) {
-                selectFolder thread = (selectFolder) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("smartQuitDownload".equals(convertedThreadDetails.get(0))) {
-                smartQuitDownload thread = (smartQuitDownload) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("youtubeDlVerification".equals(convertedThreadDetails.get(0))) {
-                youtubeDlVerification thread = (youtubeDlVerification) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("ffmpegVerificationThread".equals(convertedThreadDetails.get(0))) {
-                ffmpegVerificationThread thread = (ffmpegVerificationThread) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("timerCountdown".equals(convertedThreadDetails.get(0))) {
-                timerCountdown thread = (timerCountdown) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("download".equals(convertedThreadDetails.get(0))) {
-                download thread = (download) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            } else if ("outputDirectoryVerification".equals(convertedThreadDetails.get(0))) {
-                outputDirectoryVerification thread = (outputDirectoryVerification) convertedThreadDetails.get(1);
-                threadData = thread.getInfo();
-            }
-
-            // Can now extract the data about the thread
-            StringBuilder threadStatusReport = new StringBuilder();
-
-            threadStatusReport.append(
-                    String.format(
-                            "Thread Name: %s\nThread ID: %s\nStart Time: %s",
-                            threadData.get(0),
-                            threadData.get(1),
-                            new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date(Long.parseLong(threadData.get(2))))
-                    )
-            );
-
-            // Check if the thread is completed
-            if (Boolean.parseBoolean(threadData.get(5))) {
-                threadStatusReport.append(
-                        String.format(
-                                "\nEnd Time: %s\nExecution Time: %s",
-                                new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date(Long.parseLong(threadData.get(3)))),
-                                (double) Math.round(((double) Long.parseLong(threadData.get(3)) - Long.parseLong(threadData.get(2))) / 100) / 100
-                        )
-                );
-            } else {
-                threadStatusReport.append(
-                        "\nStatus: " + threadData.get(4)
-                );
-            }
-
-            dumpedData.add(threadStatusReport.toString());
-
-        }
-
-        return String.join("\n\n", dumpedData);
-
+        // Drawing the listview history
+        new generateDownloadHistory();
 
     }
 
-    public synchronized void downloadView() {
+    public BorderPane generateResult(ImageView art, String title, String artistName, String statusMessage, String id, String dir, Double loaderProgress, boolean crossToDelete, boolean useLoader, boolean clickable, boolean greyScale) {
+
+        BorderPane result = new BorderPane();
+
+        if (greyScale) {
+            // Greyscale the album art
+            ColorAdjust desaturate = new ColorAdjust();
+            desaturate.setSaturation(-1);
+            art.setEffect(desaturate);
+        }
+
+        Label songTitle = new Label(title);
+        Label artist = new Label(artistName);
+        artist.setId("downloadHistoryArtistTitle");
+        songTitle.setId("downloadHistoryResultTitle");
+
+        VBox songInfoContainer = new VBox(songTitle, artist);
+        songInfoContainer.setPadding(new Insets(0, 0, 0, 5));
+
+        Label status = new Label(statusMessage);
+        status.setId("downloadStatus");
+        HBox statusInfo = new HBox(status);
+
+        VBox statusAndLoading = new VBox(statusInfo);
+
+        if (useLoader) {
+
+            ProgressBar downloadProgress = new ProgressBar(loaderProgress);
+            Label percentMessage = new Label(Math.round(loaderProgress * 100) + "%");
+            percentMessage.setTextFill(darkTheme ? Color.WHITE : Color.BLACK);
+
+            HBox downloadInfo = new HBox(downloadProgress, percentMessage);
+            downloadInfo.setSpacing(5);
+
+            downloadProgress.prefWidthProperty().bind( (result.widthProperty().subtract(85 + 60).subtract(percentMessage.widthProperty())).divide(2) );
+
+            statusAndLoading.getChildren().setAll(
+                    downloadInfo,
+                    statusInfo
+            );
+        }
+
+        statusAndLoading.setPadding(new Insets(0, 0, 0, 5));
+
+        BorderPane textInfoContainer = new BorderPane();
+        textInfoContainer.setTop(songInfoContainer);
+        textInfoContainer.setBottom(statusAndLoading);
+
+        Line crossLine0 = new Line(20, 0, 0, 20);
+        Line crossLine1 = new Line(20, 20, 0, 0);
+        crossLine0.setStrokeWidth(2);
+        crossLine0.setStroke(Color.GRAY);
+        crossLine1.setStrokeWidth(2);
+        crossLine1.setStroke(Color.GRAY);
+
+        Group cross = new Group(crossLine0, crossLine1);
+        HBox crossBox = new HBox(cross);
+        crossBox.setAlignment(Pos.CENTER_RIGHT);
+        Tooltip.install(crossBox, new Tooltip("Delete record."));
+        crossBox.setOnMouseEntered(e -> { crossLine0.setStroke(darkTheme ? Color.WHITE : Color.BLACK); crossLine1.setStroke(darkTheme ? Color.WHITE : Color.BLACK); });
+        crossBox.setOnMouseExited(e -> {crossLine0.setStroke(Color.GRAY);crossLine1.setStroke(Color.GRAY); });
+        crossBox.setOnMouseClicked(
+                crossToDelete ? (
+                        e -> deleteDownloadHistory(id)
+                ) : (
+                        e -> cancelDownload(id)
+                )
+        );
+        HBox historyItem = new HBox(art, textInfoContainer);
+
+        result.setLeft(historyItem);
+        result.setRight(crossBox);
+        result.setPadding(new Insets(0, 10, 0, 0));
+        result.setId(id);
+
+        result.setOnMouseEntered(e -> result.setStyle("-fx-background-color: WHITE;"));
+        result.setOnMouseExited(e -> result.setStyle("-fx-background-color: transparent;"));
+
+        if (clickable) {
+
+            Tooltip.install(result, new Tooltip("View in explorer"));
+            result.setCursor(Cursor.HAND);
+
+            result.setOnMouseClicked(e -> {
+                int targetId = -1;
+                for (Object downloadEvent: downloadEventsView.getItems()) {
+
+                    if ( ((BorderPane) downloadEvent).getId().equals(result.getId()) ) {
+                        targetId = downloadEventsView.getItems().indexOf(downloadEvent);
+                    }
+
+                }
+                if (lastClicked.get(targetId) + 400 > Instant.now().toEpochMilli()) {
+                    try {
+                        Desktop.getDesktop().open(new File(dir));
+                    } catch (IOException ignored) {}
+                } else {
+                    lastClicked.set(targetId, Instant.now().toEpochMilli());
+                }
+
+            });
+        }
+
+        return result;
+
+    }
+
+    public void deleteDownloadHistory(String id) {
+
+        try {
+            // Remove from table
+            for (Object resultObj : downloadEventsView.getItems()) {
+                BorderPane result = (BorderPane) resultObj;
+                if (result.getId().equals(id)) {
+                    downloadEventsView.getItems().remove(resultObj);
+                }
+            }
+
+            // Delete in file
+            JSONArray histories = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+            JSONArray newHistories = new JSONArray();
+
+            for (int i = 0; i < histories.length(); i++) {
+
+                if (!histories.getJSONObject(i).get("id").toString().equals(id)) {
+                    newHistories.put(histories.getJSONObject(i));
+                }
+            }
+
+            FileWriter updateRecords = new FileWriter("resources\\json\\downloads.json");
+            updateRecords.write(newHistories.toString());
+            updateRecords.close();
 
 
+        } catch (ConcurrentModificationException ignored) {
+            deleteDownloadHistory(id);
+        } catch (IOException | JSONException e) {
+            Debug.error(null, "Failed to delete record with id: " + id, e.getStackTrace());
+        }
+
+    }
+
+    public void cancelDownload(String id) {
+
+        // Removing item from the table
+        try {
+            for (Object resultObj : downloadEventsView.getItems()) {
+                BorderPane result = (BorderPane) resultObj;
+                if (result.getId().equals(id)) {
+                    downloadEventsView.getItems().remove(resultObj);
+                }
+            }
+        } catch (ConcurrentModificationException ignored) {}
+
+        // Removing item from the downloads queue
+        try {
+            for (int i = 0; i < downloadQueue.length(); i++) {
+                for (int j = 0; j < downloadQueue.getJSONObject(i).getJSONArray("songs").length(); j++) {
+
+                    if (downloadQueue.getJSONObject(i).getJSONArray("songs").getJSONObject(j).get("id").equals(id)) {
+                        // Located the element we're interested in
+
+                        String directory = downloadQueue.getJSONObject(i).getJSONObject("meta").get("directory").toString();
+                        String cached = System.getProperty("user.dir") + "\\" + "resources\\cache\\" + "no.jpg";
+
+                        directory = directory.replaceAll("\\\\", "/");
+                        cached = cached.replaceAll("\\\\", "/");
+
+                        // Format the structure to be saved in downloads
+                        JSONObject downloadRecord = new JSONObject(
+                                String.format(
+                                        "{\"downloadFolder\": \"%s\", \"art\": \"%s\", \"artist\": \"%s\", \"cached\": \"%s\", \"playtime\": %s, \"id\": %s, \"title\": \"%s\", \"timestamp\": %s, \"cancelled\": 1}",
+                                        directory,
+                                        downloadQueue.getJSONObject(i).getJSONObject("meta").get("art").toString(),
+                                        downloadQueue.getJSONObject(i).getJSONObject("meta").get("artist").toString(),
+                                        cached,
+                                        downloadQueue.getJSONObject(i).getJSONArray("songs").getJSONObject(j).get("playtime").toString(),
+                                        downloadQueue.getJSONObject(i).getJSONArray("songs").getJSONObject(j).get("id").toString(),
+                                        downloadQueue.getJSONObject(i).getJSONArray("songs").getJSONObject(j).get("title"),
+                                        Instant.now().toEpochMilli()
+                                )
+                        );
+
+                        System.out.println(downloadRecord);
+
+                        // Tell the download handler to skip this if the ID matches what it's downloading by checking the data
+                        if (i == 0 && j == 0) {
+                            downloader.skip();
+                        }
+
+                        // Add record to the downloads history
+                        try {
+                            Utils.updateDownloads(downloadRecord);
+                        } catch (IOException | JSONException e) {
+                            Debug.error(null, "Error adding to download history for cancelled.", e.getStackTrace());
+                        }
+
+                        // Add the cancelled song as a new element to the table
+                        String finalCached = cached;
+                        int finalI = i;
+                        int finalJ = j;
+                        Platform.runLater(() ->
+                                {
+                                    try {
+                                        downloadEventsView.getItems().add(
+                                                generateResult(
+                                                        Files.exists(
+                                                                Paths.get(finalCached)
+                                                        ) ? new ImageView(
+                                                                new Image(
+                                                                        finalCached,
+                                                                        85,
+                                                                        85,
+                                                                        false,
+                                                                        true
+                                                                )
+                                                        ) : new ImageView(
+                                                                new Image(
+                                                                        downloadQueue.getJSONObject(finalI).getJSONObject("meta").get("art").toString(),
+                                                                        85,
+                                                                        85,
+                                                                        false,
+                                                                        true
+                                                                )
+                                                        ),
+                                                        downloadQueue.getJSONObject(finalI).getJSONArray("songs").getJSONObject(finalJ).get("title").toString(),
+                                                        downloadQueue.getJSONObject(finalI).getJSONObject("meta").get("artist").toString(),
+                                                        "Cancelled",
+                                                        downloadQueue.getJSONObject(finalI).getJSONArray("songs").getJSONObject(finalJ).get("id").toString(),
+                                                        downloadQueue.getJSONObject(finalI).getJSONObject("meta").get("directory").toString(),
+                                                        null,
+                                                        true,
+                                                        false,
+                                                        false,
+                                                        true
+                                                )
+                                        );
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                        );
+
+                    }
+
+                }
+            }
+        } catch (JSONException e) {
+            Debug.error(null, "Failed to remove element from downloads queue.", e.getStackTrace());
+        }
+
+
+        // Creating the object to be saved in downloads history as cancelled
+
+        // Removing the item from the downloads queue
+
+        // Adding the item to the downloads history
 
     }
 
@@ -1718,6 +1946,7 @@ public class View implements EventHandler<KeyEvent>
                 title.setVisible(false);
                 footerMarker.setVisible(false);
                 settingsLink.setVisible(false);
+                downloadsLink.setVisible(false);
                 searchErrorMessage.setVisible(false);
             });
 
@@ -1733,9 +1962,6 @@ public class View implements EventHandler<KeyEvent>
         Thread t;
         ArrayList<String> searchResult;
         private volatile String status = "Processing...";
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
-        private volatile boolean completed = false;
 
         addToTable() {
             t = new Thread(this, "table-adder");
@@ -1744,19 +1970,6 @@ public class View implements EventHandler<KeyEvent>
 
         public void setSearchResult(ArrayList<String> searchResultSet) {
             searchResult = searchResultSet;
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            status,
-                            Boolean.toString(completed)
-                    )
-            );
         }
 
         public void run() {
@@ -1813,7 +2026,6 @@ public class View implements EventHandler<KeyEvent>
 
                 }
 
-
                 Utils.resultsSet results = new Utils.resultsSet(
                         selectedImage,
                         searchResult.get(0),
@@ -1831,13 +2043,11 @@ public class View implements EventHandler<KeyEvent>
                 Debug.error(t, "Error adding to table", e.getStackTrace());
             }
 
-            endTime = Instant.now().toEpochMilli();
-            completed = true;
-
         }
 
     }
 
+    /*
     class downloadHandler implements Runnable {
 
         Thread t;
@@ -2134,21 +2344,37 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
-    class youtubeQueryThread implements Runnable {
+     */
+
+    /*class timerCountdown implements Runnable {
+
+        // Consider looking into moving into ScheduledExecutorService
+        // https://stackoverflow.com/questions/54394042/java-how-to-avoid-using-thread-sleep-in-a-loop
 
         Thread t;
-        ArrayList<String> songsDatum;
-        private volatile boolean completed = false;
+        private int timeRemaining;
+        private boolean killSignal = false;
+        private boolean dead = false;
+        private String status = "Initializing...";
         private final long startTime = Instant.now().toEpochMilli();
         private volatile long endTime = Long.MIN_VALUE;
 
-        youtubeQueryThread() {
-            t = new Thread(this, "youtube-query");
+        timerCountdown (){
+            t = new Thread(this, "timer-countdown");
             t.start();
         }
 
-        public void setSongsDatum(ArrayList<String> set) {
-            songsDatum = set;
+        public void setTimeRemaining(int newTime) {
+            timeRemaining = newTime;
+        }
+
+        public boolean isDead() {
+            return dead;
+        }
+
+        public void kill() {
+            Debug.trace(t, "Kill signal received");
+            killSignal = true;
         }
 
         public ArrayList<String> getInfo() {
@@ -2158,39 +2384,51 @@ public class View implements EventHandler<KeyEvent>
                             Long.toString(t.getId()),
                             Long.toString(startTime),
                             Long.toString(endTime),
-                            "Processing...",
-                            Boolean.toString(completed)
+                            status,
+                            Boolean.toString(dead)
                     )
             );
         }
 
-        public void run() {
+        public void run(){
 
-            try {
-                songsDatum.add(
-                        Utils.evaluateBestLink(
-                                Utils.youtubeQuery(
-                                        metaData.get("artist") + " " + songsDatum.get(0)),
-                                Integer.parseInt(songsDatum.get(1))
-                        )
-                );
-            } catch (IOException | ParseException e) {
-                e.printStackTrace();
+            Debug.trace(t, "Initialized");
+
+            // Count down from time remaining
+            for (; timeRemaining > 0; timeRemaining--) {
+
+                if (killSignal) {
+                    Debug.trace(t, String.format("Executing kill signal, with %d second(s) remaining.", timeRemaining));
+                    break;
+                }
+
+                try {
+                    Thread.sleep(1000);
+
+                    Platform.runLater(
+                            () -> timeRemainingLabel.setText(
+                                    Duration.ofSeconds(timeRemaining)
+                                            .toString()
+                                            .substring(2)
+                                            .replaceAll("(\\d[HMS])(?!$)", "$1 ")
+                                            .toLowerCase()
+                                            + " Remaining"
+                            )
+                    );
+
+                } catch (InterruptedException ignored) {}
+
             }
 
-            loadingPercent += percentIncrease;
-            double tempLoadingPercent = loadingPercent;
-            Platform.runLater(() -> searchesProgressText.setText(Math.round(tempLoadingPercent*10000)/100 + "% Complete"));
-            Platform.runLater(() -> loading.setProgress(tempLoadingPercent));
-
-
-
+            Debug.trace(t, "Completed");
             endTime = Instant.now().toEpochMilli();
-            completed = true;
+            dead = true;
 
         }
 
     }
+
+     */
 
     class getLatestVersion implements Runnable {
 
@@ -2343,20 +2581,17 @@ public class View implements EventHandler<KeyEvent>
             status = "Killing threads.";
 
             // Quit running threads, download is important query is mostly for performance
+            /*
             try {
-
                 handleDownload.kill();
-                timerRotate.cancel();
-                searchQuery.kill();
-
                 while (!handleDownload.isDead());
-
             } catch (NullPointerException ignored) {}
+             */
 
             Debug.trace(t, "All threads reporting dead, program should safely exit.");
-            // System.out.println(dumpThreadData());
             endTime = Instant.now().toEpochMilli();
             completed = true;
+            System.exit(0);
         }
     }
 
@@ -2461,88 +2696,6 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    class timerCountdown implements Runnable {
-
-        // Consider looking into moving into ScheduledExecutorService
-        // https://stackoverflow.com/questions/54394042/java-how-to-avoid-using-thread-sleep-in-a-loop
-
-        Thread t;
-        private int timeRemaining;
-        private boolean killSignal = false;
-        private boolean dead = false;
-        private String status = "Initializing...";
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
-
-        timerCountdown (){
-            t = new Thread(this, "timer-countdown");
-            t.start();
-        }
-
-        public void setTimeRemaining(int newTime) {
-            timeRemaining = newTime;
-        }
-
-        public boolean isDead() {
-            return dead;
-        }
-
-        public void kill() {
-            Debug.trace(t, "Kill signal received");
-            killSignal = true;
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            status,
-                            Boolean.toString(dead)
-                    )
-            );
-        }
-
-        public void run(){
-
-            Debug.trace(t, "Initialized");
-
-            // Count down from time remaining
-            for (; timeRemaining > 0; timeRemaining--) {
-
-                if (killSignal) {
-                    Debug.trace(t, String.format("Executing kill signal, with %d second(s) remaining.", timeRemaining));
-                    break;
-                }
-
-                try {
-                    Thread.sleep(1000);
-
-                    Platform.runLater(
-                            () -> timeRemainingLabel.setText(
-                                    Duration.ofSeconds(timeRemaining)
-                                            .toString()
-                                            .substring(2)
-                                            .replaceAll("(\\d[HMS])(?!$)", "$1 ")
-                                            .toLowerCase()
-                                            + " Remaining"
-                            )
-                    );
-
-                } catch (InterruptedException ignored) {}
-
-            }
-
-            Debug.trace(t, "Completed");
-            endTime = Instant.now().toEpochMilli();
-            dead = true;
-
-        }
-
-    }
-
     class outputDirectoryVerification implements Runnable {
 
         Thread t;
@@ -2591,19 +2744,23 @@ public class View implements EventHandler<KeyEvent>
 
                 status = "Writing new settings...";
 
-                Settings.saveSettings(
-                        outputDirectorySetting,
-                        Math.toIntExact((long) savedSettings.get("music_format")),
-                        Math.toIntExact((long) savedSettings.get("save_album_art")),
-                        Math.toIntExact((long) savedSettings.get("album_art")),
-                        Math.toIntExact((long) savedSettings.get("album_title")),
-                        Math.toIntExact((long) savedSettings.get("song_title")),
-                        Math.toIntExact((long) savedSettings.get("artist")),
-                        Math.toIntExact((long) savedSettings.get("year")),
-                        Math.toIntExact((long) savedSettings.get("track")),
-                        Math.toIntExact((long) savedSettings.get("theme")),
-                        Math.toIntExact((long) savedSettings.get("data_saver"))
-                );
+                try {
+                    Settings.saveSettings(
+                            outputDirectorySetting,
+                            Math.toIntExact((long) savedSettings.get("music_format")),
+                            Math.toIntExact((long) savedSettings.get("save_album_art")),
+                            Math.toIntExact((long) savedSettings.get("album_art")),
+                            Math.toIntExact((long) savedSettings.get("album_title")),
+                            Math.toIntExact((long) savedSettings.get("song_title")),
+                            Math.toIntExact((long) savedSettings.get("artist")),
+                            Math.toIntExact((long) savedSettings.get("year")),
+                            Math.toIntExact((long) savedSettings.get("track")),
+                            Math.toIntExact((long) savedSettings.get("theme")),
+                            Math.toIntExact((long) savedSettings.get("data_saver"))
+                    );
+                } catch (JSONException e) {
+                    Debug.error(t, "Error saving new settings.", e.getStackTrace());
+                }
 
                 resetDirectory = true;
 
@@ -2680,6 +2837,781 @@ public class View implements EventHandler<KeyEvent>
 
             complete = true;
             endTime = Instant.now().toEpochMilli();
+
+        }
+
+    }
+
+    class generateDownloadHistory implements Runnable {
+
+        private Thread t;
+
+        public generateDownloadHistory() {
+            t = new Thread(this, "download-history");
+            t.start();
+        }
+
+        public void run() {
+
+            // Drawing download queue
+            try {
+                for (int i = 0; i < downloadQueue.length(); i++) {
+                    for (int j = 0; j < (downloadQueue.getJSONObject(i)).getJSONArray("songs").length(); j++) {
+                        JSONObject jSong = ((downloadQueue.getJSONObject(i)).getJSONArray("songs")).getJSONObject(j);
+                        lastClicked.add(Long.MIN_VALUE);
+
+                        int finalI = i;
+                        int finalJ = j;
+                        Platform.runLater(() -> {
+                            try {
+                                downloadEventsView.getItems().add(
+                                        generateResult(
+                                                Files.exists(
+                                                        Paths.get(
+                                                                ((downloadQueue.getJSONObject(0)).getJSONObject("meta")).get("directory") + "art.jpg"
+                                                        )
+                                                ) ? new ImageView(
+                                                        new Image(
+                                                                new File((downloadQueue.getJSONObject(0)).getJSONObject("meta").get("directory") + "art.jpg").toURI().toString(),
+                                                                85,
+                                                                85,
+                                                                false,
+                                                                true
+                                                        )
+                                                ) : new ImageView(
+                                                        new Image(
+                                                                ((JSONObject) ((JSONObject) downloadQueue.get(0)).get("meta")).get("art").toString(),
+                                                                85,
+                                                                85,
+                                                                false,
+                                                                true
+                                                        )
+                                                ),
+                                                jSong.get("title").toString(),
+                                                ((JSONObject) ((JSONObject) downloadQueue.get(0)).get("meta")).get("artist").toString(),
+                                                downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).has("eta") ? downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("eta") + " Remaining" : finalI == 0 ? "Downloading..." : "Scheduled",
+                                                (String) jSong.get("id"),
+                                                ((JSONObject) ((JSONObject) downloadQueue.get(0)).get("meta")).get("directory").toString(),
+                                                downloadQueue.getJSONObject(finalI).getJSONArray("songs").getJSONObject(finalJ).has("percentComplete") ? Double.parseDouble(downloadQueue.getJSONObject(finalI).getJSONArray("songs").getJSONObject(finalJ).get("percentComplete").toString()) : null,
+                                                false,
+                                                downloadQueue.getJSONObject(finalI).getJSONArray("songs").getJSONObject(finalJ).has("percentComplete"),
+                                                false,
+                                                false
+                                        )
+                                );
+                            } catch (JSONException e) {
+                                Debug.error(t, "Failed to form new record from download queue.", e.getStackTrace());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                System.exit(0);
+                            }
+                        });
+                    }
+
+                }
+            } catch (IndexOutOfBoundsException | JSONException ignored) {}
+
+            // Drawing download history
+            try {
+                JSONArray downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+
+                if (downloadHistory.length() > 0) {
+                    for (int i = 0; i < downloadHistory.length(); i++) {
+
+                        lastClicked.add(Long.MIN_VALUE);
+
+                        int finalI = i;
+                        Platform.runLater(() -> {
+                            try {
+                                downloadEventsView.getItems().add(
+                                        generateResult(
+                                                new ImageView(
+                                                        new Image(
+                                                                Files.exists(
+                                                                        Paths.get(
+                                                                                downloadHistory.getJSONObject(finalI).get("cached").toString()
+                                                                        )
+                                                                ) ? new File(downloadHistory
+                                                                            .getJSONObject(finalI)
+                                                                            .get("cached")
+                                                                            .toString())
+                                                                                .toURI()
+                                                                                .toString()
+                                                                : downloadHistory
+                                                                        .getJSONObject(finalI)
+                                                                        .get("art")
+                                                                        .toString(),
+                                                                85,
+                                                                85,
+                                                                false,
+                                                                true
+                                                        )
+                                                ),
+                                                downloadHistory.getJSONObject(finalI).get("title").toString(),
+                                                downloadHistory.getJSONObject(finalI).get("artist").toString(),
+                                                downloadHistory.getJSONObject(finalI).get("cancelled").toString().equals("0") ? Files.exists(Paths.get(downloadHistory.getJSONObject(finalI).get("downloadFolder").toString())) ? "Downloaded" : "Moved" : "Cancelled",
+                                                downloadHistory.getJSONObject(finalI).get("id").toString(),
+                                                downloadHistory.getJSONObject(finalI).get("downloadFolder").toString(),
+                                                null,
+                                                true,
+                                                false,
+                                                downloadHistory.getJSONObject(finalI).get("cancelled").toString().equals("0") && Files.exists(Paths.get(downloadHistory.getJSONObject(finalI).get("downloadFolder").toString())),
+                                                !Files.exists(Paths.get(downloadHistory.getJSONObject(finalI).get("downloadFolder").toString()))
+                                        )
+                                );
+                            } catch (JSONException e) {
+                                Debug.error(t, "Failed to form new record from history.", e.getStackTrace());
+                            }
+                        });
+
+                    }
+                } else {
+                    // No download history found
+                    Debug.trace(null, "didn't find anything");
+                }
+
+            } catch (IOException | JSONException e) {
+
+                Debug.error(t, "Error drawing downloads in queue.", e.getStackTrace());
+
+                try {
+
+                    if (Files.exists(Paths.get("resources\\json\\downloads.json")))
+                        Files.delete(Paths.get("resources\\json\\downloads.json"));
+
+                    File regenerateFile = new File("resources\\json\\downloads.json");
+
+                    if (!regenerateFile.createNewFile())
+                        Debug.error(t, "Failed to regenerate the downloads file.", new IOException().getStackTrace());
+                    else
+                        Debug.warn(t, "Generated a new downloads folder");
+                } catch (IOException ignored1) {}
+
+            } catch (NoSuchElementException ignored) {}
+        }
+    }
+
+    class addToQueue implements Runnable {
+
+        private Thread t;
+        private ArrayList<String> givenData;
+        private volatile boolean killRequest = false;
+
+        public addToQueue(ArrayList<String> givenData) {
+            this.givenData = givenData;
+            t = new Thread(this, "add-to-queue");
+            t.start();
+        }
+
+        public void kill() {
+            killRequest = true;
+        }
+
+        public void restoreButtons() {
+
+            Platform.runLater(() -> {
+                cancelButton.setText("Back");
+                cancelButton.setOnMouseClicked(g -> cancel(false));
+                downloadButton.setText("Download");
+                downloadButton.setDisable(false);
+                queueAdditionProgress.setVisible(false);
+                queueAdditionProgress.setProgress(0);
+            });
+
+        }
+
+        public void run() {
+
+            // Attempting to build full object
+            JSONObject newQueueItem = new JSONObject();
+            JSONObject metaData = new JSONObject();
+            JSONArray songsData = new JSONArray();
+            Timer timer = new Timer();
+
+            try {
+
+                metaData.put("artist", givenData.get(1));
+
+                if (givenData.get(4).equals("Album")) {
+
+                    metaData.put("albumTitle", givenData.get(0));
+                    metaData.put("year", givenData.get(2));
+                    metaData.put("genre", givenData.get(3));
+                    metaData.put("directory", outputDirectorySetting + "\\" + givenData.get(0) + "\\");
+                    metaData.put("art", givenData.get(5));
+                    metaData.put("artId", Utils.generateNewCacheArtId(downloadQueue));
+                    metaData.put("playtime", 0);
+
+                    // Process songs data
+                    long startTime = Instant.now().toEpochMilli();
+                    Document albumData = Jsoup.connect(givenData.get(6)).get();
+                    Elements tracks = albumData.select("tr.track");
+
+                    for (Element track : tracks) {
+
+                        timer.cancel();
+                        timer = new Timer();
+                        long finalStartTime = startTime;
+                        timer.schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                double newProgress = (double) tracks.indexOf(track) / (tracks.size()-1) + (((double) (Instant.now().toEpochMilli() - finalStartTime) / 1000) / (tracks.size()-1));
+                                if (newProgress <= (double) (tracks.indexOf(track)+1) / (tracks.size()-1) )
+                                    queueAdditionProgress.setProgress((double) tracks.indexOf(track) / (tracks.size()-1) + (((double) (Instant.now().toEpochMilli() - finalStartTime) / 1000) / (tracks.size()-1)));
+                            }
+                        }, 0, (int) (((double) (Instant.now().toEpochMilli() - startTime) / 1000) / (tracks.size()-1)*1000) );
+                        Platform.runLater(() -> queueAdditionProgress.setProgress((double) tracks.indexOf(track) / (tracks.size()-1) ));
+
+                        startTime = Instant.now().toEpochMilli();
+
+                        if (killRequest) {restoreButtons(); return;}
+                        try {
+                            JSONObject trackDetails = new JSONObject();
+                            trackDetails.put("title", track.select("div.title").text());
+                            trackDetails.put("playtime", Integer.toString(Utils.timeConversion(track.select("td.time").text())));
+                            trackDetails.put(
+                                    "source",
+                                    Utils.evaluateBestLink(
+                                            Utils.youtubeQuery(
+                                                    metaData.get("artist") + " " + track.select("div.title").text()
+                                            ),
+                                            Integer.parseInt(
+                                                    Integer.toString(
+                                                            Utils.timeConversion(
+                                                                    track.select("td.time")
+                                                                            .text()
+                                                            )
+                                                    )
+                                            )
+                                    ));
+                            trackDetails.put("position", tracks.indexOf(track)+1);
+                            trackDetails.put("id", Utils.generateNewId(songsData, downloadQueue));
+
+                            metaData.put("playtime", Integer.parseInt(metaData.get("playtime").toString()) + Utils.timeConversion(track.select("td.time").text()));
+                            songsData.put(trackDetails);
+
+                        } catch (IndexOutOfBoundsException ignored) {
+                            ignored.printStackTrace();
+                            System.exit(0);
+                            // Should check here if youtube queries are failing, but likely only occurs because the operation has been cancelled
+                        }
+
+                    }
+
+                } else if (givenData.get(4).equals("Song")) {
+
+                    // Three web requests
+                    if (killRequest) {restoreButtons(); return;}
+                    Document songDataRequest = Jsoup.connect(givenData.get(6)).get();
+                    Platform.runLater(() -> queueAdditionProgress.setProgress((double) 1/3));
+                    String genre = "";
+                    JSONObject songData = new JSONObject();
+
+                    try {
+                        genre = songDataRequest.selectFirst("div.song_genres").selectFirst("div.middle").select("a").text();
+                        genre = genre.split("\\(")[0];
+                        genre = genre.substring(0, genre.length() - 1);
+                    } catch (NullPointerException ignored) {}
+
+                    if (killRequest) {restoreButtons(); return;}
+                    Document albumDataRequest = Jsoup.connect(songDataRequest.selectFirst("div.title").selectFirst("a").attr("href")).get();
+                    Platform.runLater(() -> queueAdditionProgress.setProgress((double) 2/3));
+
+                    Elements tracks0 = albumDataRequest.select("tr.track");
+                    Elements tracks1 = albumDataRequest.select("tr.track pick");
+                    String positionInAlbum = "-1";
+
+                    for (Element track: tracks0)
+                    {
+                        if (track.selectFirst("div.title").selectFirst("a").text().equals(givenData.get(0)))
+                        {
+                            positionInAlbum = track.selectFirst("td.tracknum").text();
+                            metaData.put("playtime", Integer.toString(Utils.timeConversion(track.select("td.time").text())));
+                            songData.put("playtime", Integer.toString(Utils.timeConversion(track.select("td.time").text())));
+                        }
+                    }
+                    if (positionInAlbum.equals("-1")){
+                        for (Element track: tracks1)
+                        {
+                            if (track.selectFirst("div.title").selectFirst("a").text().equals(givenData.get(0)))
+                            {
+                                positionInAlbum = track.selectFirst("td.tracknum").text();
+                            }
+                        }
+                    }
+
+                    metaData.put("art", songDataRequest.selectFirst("td.cover").select("img").attr("src"));
+                    metaData.put("albumTitle", songDataRequest.selectFirst("div.title").select("a").text());
+                    metaData.put("year", songDataRequest.selectFirst("td.year").text());
+                    metaData.put("genre", genre);
+                    metaData.put("directory", outputDirectorySetting + "\\");
+                    metaData.put("artId", Utils.generateNewCacheArtId(downloadQueue));
+
+                    // Add songs data
+                    System.out.println(Utils.timeConversion(
+                            albumDataRequest.select("tr.track").get(Integer.parseInt(positionInAlbum)).select("td.time")
+                                    .text()
+                            ));
+                    Platform.runLater(() -> queueAdditionProgress.setProgress(1));
+                    songData.put("title", givenData.get(0));
+                    songData.put("source", Utils.evaluateBestLink(
+                                Utils.youtubeQuery(
+                                        metaData.get("artist") + " " + givenData.get(0)
+                                ),
+                                Utils.timeConversion(
+                                        songDataRequest.select("td.time").text()
+                                )
+                            )
+                    );
+                    songData.put("id", Utils.generateNewId(songsData, downloadQueue));
+                    songData.put("position", positionInAlbum);
+                    songsData.put(songData);
+
+                } else {
+                    Debug.error(t, "Unknown type given: " + givenData.get(4), new Exception().getStackTrace());
+                }
+
+            } catch (IOException | JSONException e) {
+                Debug.error(t, "Error fetching from url: " + givenData.get(6), e.getStackTrace());
+                System.exit(0);
+            }
+
+            timer.cancel();
+
+            // Now to piece together
+            if (killRequest) {restoreButtons(); return;}
+
+            try {
+                newQueueItem.put("meta", metaData);
+                newQueueItem.put("songs", songsData);
+            } catch (JSONException e) {
+                Debug.error(t, "Error piecing together new queue result.", e.getStackTrace());
+            }
+            Platform.runLater(() -> {
+                downloadQueue.put(newQueueItem);
+
+                System.out.println(downloadQueue);
+
+                downloadButton.setText("Download");
+                downloadButton.setDisable(false);
+                cancelButton.setText("Back");
+                cancelButton.setOnMouseClicked(e -> cancel(false));
+                queueAdditionProgress.setVisible(false);
+                queueAdditionProgress.setProgress(0);
+            });
+        }
+
+    }
+
+    class downloadsListener implements Runnable {
+
+        Thread t;
+        private volatile boolean kill = false;
+
+        public downloadsListener() {
+            t = new Thread(this, "downloads-listener");
+            t.start();
+        }
+
+        // Must use when exiting
+        public void kill() {
+            kill = true;
+        }
+
+        // Add functionality
+        public void skip() {
+
+            // Skip the downloading of the current song
+
+        }
+
+        // Could switch to passing a JSONObject
+        private void applyMetaData(String targetFile, String newFile, RandomAccessFile art, String title, String albumTitle, String artist, String year, String albumPosition) throws IOException, InvalidDataException, UnsupportedTagException {
+
+            Mp3File mp3Applicator = new Mp3File(targetFile);
+
+            ID3v2 id3v2tag = new ID3v24Tag();
+            mp3Applicator.setId3v2Tag(id3v2tag);
+
+            if (applyAlbumArt) {
+
+                // Could break this up into mb loads
+                byte[] bytes;
+                bytes = new byte[(int) art.length()]; // Maybe make this 1024
+                art.read(bytes);
+                art.close();
+
+                id3v2tag.setAlbumImage(bytes, "image/jpg");
+            }
+
+            // Applying remaining data
+            if (applySongTitle)
+                id3v2tag.setTitle(title);
+
+            if (applyAlbumTitle)
+                id3v2tag.setAlbum(albumTitle);
+
+            if (applyArtist) {
+                id3v2tag.setArtist(artist);
+                id3v2tag.setAlbumArtist(artist);
+            }
+
+            if (applyYear)
+                id3v2tag.setYear(year);
+
+            // Add this as a possible setting, also contain
+            id3v2tag.setTrack(albumPosition);
+
+            try {
+                mp3Applicator.save(newFile);
+
+                // Delete old file
+                if ( !new File(targetFile).delete()) {
+                    Debug.error(t, "Failed to delete file: " + targetFile, new IOException().getStackTrace());
+                }
+
+            } catch (IOException | NotSupportedException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        public void run() {
+
+            while (!kill) {
+
+                // Done like this to allow the data to be modified and downloads easily cancelled or added
+                while (downloadQueue.length() > 0) {
+
+                    try {
+
+                        // Updating the downloads queue to inform of the progress
+                        downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).put("percentComplete", 0);
+
+                        // Checking the folder and album art, creating is necessary
+                        if (!Files.exists(Paths.get(downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory") + "art.jpg"))) {
+
+                            // Creating the folder if necessary
+                            if (!Files.exists(Paths.get(downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory").toString())))
+                                downloadQueue.getJSONObject(0).getJSONObject("meta").put("directory", Utils.generateFolder(downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory").toString()));
+
+                            // Album art
+                            try {
+                                // Downloading album art and saving to target directory
+                                FileUtils.copyURLToFile(new URL(downloadQueue.getJSONObject(0).getJSONObject("meta").get("art").toString()), new File(downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory").toString() + "\\art.jpg"));
+
+                                // Clone the album art to the cache
+                                Files.copy(
+                                        Paths.get(downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory").toString() + "\\art.jpg"),
+                                        Paths.get("resources\\cache\\" + downloadQueue.getJSONObject(0).getJSONObject("meta").get("artId").toString() + ".jpg")
+                                );
+                            }
+                            catch (IOException ignored) {}
+
+                        }
+
+                        // Updating the table if possible
+                        /*
+                        try {
+
+                            // Determining the target row ID based off of songId
+                            for (Object result: downloadEventsView.getItems()) {
+
+                                if (((BorderPane) result).getId().equals(downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("id"))) {
+
+                                    // Update the table
+                                    Platform.runLater(() -> {
+                                                try {
+
+                                                    downloadEventsView.getItems().set(
+                                                            downloadEventsView.getItems().indexOf(result),
+                                                            generateResult(
+                                                                    Files.exists(
+                                                                            Paths.get(
+                                                                                    downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory") + "art.jpg"
+                                                                            )
+                                                                    ) ? new ImageView(
+                                                                            new Image(
+                                                                                    new File(downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory") + "art.jpg")
+                                                                                            .toURI()
+                                                                                            .toString(),
+                                                                                    85,
+                                                                                    85,
+                                                                                    false,
+                                                                                    true
+                                                                            )
+                                                                    ) : new ImageView(
+                                                                            new Image(
+                                                                                    ((downloadQueue.getJSONObject(0)).getJSONObject("meta")).get("art").toString(),
+                                                                                    85,
+                                                                                    85,
+                                                                                    false,
+                                                                                    true
+                                                                            )
+                                                                    ),
+                                                                    downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("title").toString(),
+                                                                    ((downloadQueue.getJSONObject(0)).getJSONObject("meta")).get("artist").toString(),
+                                                                    "0% Complete | ETA: Calculating...",
+                                                                    downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("id").toString(),
+                                                                    ((downloadQueue.getJSONObject(0)).getJSONObject("meta")).get("directory").toString(),
+                                                                    (double) 0,
+                                                                    false,
+                                                                    true,
+                                                                    false,
+                                                                    false
+                                                            )
+                                                    );
+                                                } catch (JSONException ignored) {
+                                                }
+                                            }
+                                    );
+                                }
+                            }
+
+                        } catch (ConcurrentModificationException ignored) {}
+
+                         */
+                        // Now begin the download and update the record as it downloads
+                        download songDownload = new download(
+                                downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory").toString(),
+                                downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("source").toString(),
+                                formatReferences.get(musicFormatSetting)
+                        );
+
+                        // Update the UI as the download progresses
+                        String referenceEta = "";
+                        double percentComplete = 0;
+
+                        // Could switch to a timer and run every 50ms to avoid excess work for the cpu
+                        while (!songDownload.isComplete()) {
+
+                            // Continuously update the UI with the progress, when any values change
+                            try {
+                                if (!referenceEta.equals(songDownload.getEta()) || percentComplete != songDownload.getPercentComplete()) {
+
+                                    Debug.trace(t, "Should be updating the ui now?");
+
+                                    // Updating the variables for reference
+                                    referenceEta = songDownload.getEta();
+                                    percentComplete = songDownload.getPercentComplete();
+
+                                    // Updating the downloads queue data
+                                    downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).put("percentComplete", songDownload.getPercentComplete() / 100);
+                                    downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).put("eta", songDownload.getEta());
+
+                                    // Update the UI, seems to fail
+                                    /*
+                                    Platform.runLater(() -> {
+
+                                        // Update the UI
+                                        for (Object result : downloadEventsView.getItems()) {
+
+                                            try {
+
+                                                if (((BorderPane) result).getId().equals(downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("id"))) {
+
+                                                    System.out.println(downloadEventsView.getItems().indexOf(result));
+
+                                                    BorderPane updatedItem = generateResult(
+                                                            new ImageView(
+                                                                    new Image(
+                                                                            new File(downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory") + "art.jpg")
+                                                                                    .toURI()
+                                                                                    .toString(),
+                                                                            85,
+                                                                            85,
+                                                                            true,
+                                                                            true
+                                                                    )
+                                                            ),
+                                                            downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("title").toString(),
+                                                            downloadQueue.getJSONObject(0).getJSONObject("meta").get("artist").toString(),
+                                                            songDownload.getEta(),
+                                                            ((BorderPane) result).getId(),
+                                                            downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("directory").toString().replace("\\", "/"),
+                                                            songDownload.getPercentComplete() / 100,
+                                                            false,
+                                                            true,
+                                                            true,
+                                                            false
+                                                    );
+                                                    updatedItem.setId(((BorderPane) downloadEventsView.getItems().get(downloadEventsView.getItems().indexOf(result))).getId());
+
+                                                    downloadEventsView.getItems().set(
+                                                            downloadEventsView.getItems().indexOf(result),
+                                                            updatedItem
+                                                    );
+
+                                                }
+
+                                            } catch (JSONException e) {
+
+                                                Debug.error(t, "Error updating the table with new downloads information", e.getStackTrace());
+
+                                            } catch (ConcurrentModificationException ignored) {}
+                                        }
+
+                                    });
+
+                                     */
+
+                                }
+                            } catch (NullPointerException ignored) {}
+
+                        }
+
+                        // Apply meta-data and move the file
+                        if (formatReferences.get(musicFormatSetting).equals("mp3")) {
+
+                            // Waiting for ffmpeg processing
+                            while (!new File(System.getProperty("user.dir") + "\\" + songDownload.getFileName() + ".mp3").renameTo(new File(System.getProperty("user.dir") + "\\" + songDownload.getFileName() + ".mp3")));
+
+                            try {
+                                applyMetaData(
+                                        System.getProperty("user.dir") + "\\" + songDownload.getFileName() + ".mp3",
+                                        downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory").toString() + downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("title").toString() + ".mp3",
+                                        new RandomAccessFile(downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory").toString() + "art.jpg", "r"),
+                                        downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("title").toString(),
+                                        downloadQueue.getJSONObject(0).getJSONObject("meta").get("albumTitle").toString(),
+                                        downloadQueue.getJSONObject(0).getJSONObject("meta").get("artist").toString(),
+                                        downloadQueue.getJSONObject(0).getJSONObject("meta").get("year").toString(),
+                                        downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("position").toString()
+                                );
+                            } catch (IOException | InvalidDataException | UnsupportedTagException e) {
+                                Debug.error(t, "Error applying meta data & creating new file.", e.getStackTrace());
+                            }
+
+                        }
+
+                        // Add to downloads history
+                        try {
+                            Utils.updateDownloads(
+                                    new JSONObject(
+                                            String.format(
+                                                    "{\"downloadFolder\": \"%s\", \"art\": \"%s\", \"artist\": \"%s\", \"cached\": \"%s\", \"cancelled\": 0, \"playtime\": %d, \"id\": %.0f, \"title\": \"%s\", \"timestamp\": %d}",
+                                                    downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory").toString().replace("\\", "/"),
+                                                    downloadQueue.getJSONObject(0).getJSONObject("meta").get("art"),
+                                                    downloadQueue.getJSONObject(0).getJSONObject("meta").get("artist"),
+                                                    "resources/cached/" + downloadQueue.getJSONObject(0).getJSONObject("meta").get("artId") + ".jpg",
+                                                    Integer.parseInt(downloadQueue.getJSONObject(0).getJSONObject("meta").get("playtime").toString()),
+                                                    Double.parseDouble(downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("id").toString()),
+                                                    downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("title"),
+                                                    Instant.now().toEpochMilli()
+                                            )
+                                    )
+                            );
+                        } catch (JSONException | IOException e) {
+                            Debug.error(t, "Failed to update downloads", e.getStackTrace());
+                        }
+
+                        // Deleting the current downloaded song
+                        int eventsViewEntityCheck = downloadEventsView.getItems().size();
+                        Platform.runLater(() -> {
+
+                                try {
+
+                                    for (Object result : downloadEventsView.getItems()) {
+
+                                        if (((BorderPane) result).getId().equals(downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("id"))) {
+
+                                            downloadEventsView.getItems().remove(result);
+
+                                        }
+                                    }
+
+                                } catch (Exception e) {
+                                }
+                            });
+
+                        // Now add to the table as a completed element & remove existing
+                        while (downloadEventsView.getItems().size() == eventsViewEntityCheck);
+
+                        eventsViewEntityCheck = downloadEventsView.getItems().size();
+                        Platform.runLater(() -> {
+
+                            try {
+
+                                // Appears to be adding one ahead from what it should
+                                downloadEventsView.getItems().add(
+                                        generateResult(
+                                                new ImageView(
+                                                        new Image(
+                                                                new File(downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory") + "art.jpg")
+                                                                        .toURI()
+                                                                        .toString(),
+                                                                85,
+                                                                85,
+                                                                false,
+                                                                true
+                                                        )
+                                                ),
+                                                downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("title").toString(),
+                                                downloadQueue.getJSONObject(0).getJSONObject("meta").get("artist").toString(),
+                                                "Downloaded",
+                                                downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("id").toString(),
+                                                downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory").toString(),
+                                                songDownload.getPercentComplete() / 100,
+                                                false,
+                                                false,
+                                                true,
+                                                false
+                                        )
+                                );
+
+                            } catch (JSONException e) {
+                                Debug.error(t, "Error updating the table.", e.getStackTrace());
+                            } catch (ConcurrentModificationException ignored) {}
+
+                        });
+
+                        // Not waiting for the previous code to execute in theory
+                        while (downloadEventsView.getItems().size() == eventsViewEntityCheck);// {System.out.println("This is where I think we are stuck");};
+
+                        // Now to update the downloads queue and remove the object
+                        if (downloadQueue.getJSONObject(0).getJSONArray("songs").length() == 1) {
+
+                            Debug.trace(t, "Removing download request 0 of " + downloadQueue.length());
+
+                            // Check if we should now delete the album art file if that was the last song in the request to download
+                            if (downloadQueue.getJSONObject(0).getJSONArray("songs").length() == 1) {
+
+                                // Check the users setting here against meta and settings
+                                File albumArt = new File(downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory") + "art.jpg");
+                                if (!albumArt.delete()) {
+                                    Debug.error(t, "Failed to delete file: " + albumArt.getAbsolutePath(), new IOException().getStackTrace());
+                                }
+
+                                // Remove the entire thing from the downloads queue
+                                JSONArray newQueue = new JSONArray();
+                                for (int i = 1; i < downloadQueue.length(); i++)
+                                    newQueue.put(downloadQueue.getJSONObject(i));
+                                downloadQueue = newQueue;
+
+                            }
+
+                        } else {
+
+                            Debug.trace(t, "Removing element 0 of " + downloadQueue.getJSONObject(0).getJSONArray("songs").length());
+
+                            // Simply remove the element
+                            JSONArray newSongs = new JSONArray();
+                            for (int i = 1; i < downloadQueue.getJSONObject(0).getJSONArray("songs").length(); i++)
+                                newSongs.put(downloadQueue.getJSONObject(0).getJSONArray("songs").get(i));
+
+                            downloadQueue.getJSONObject(0).put("songs", newSongs);
+
+
+                        }
+
+                    } catch (JSONException e) {
+                        Debug.error(t, "Error while downloading...", e.getStackTrace());
+                    }
+
+                }
+
+            }
+
+            Debug.trace(null, "Download listener finished, program should now be safe to exit.");
 
         }
 
@@ -2762,23 +3694,19 @@ public class View implements EventHandler<KeyEvent>
         private String url;
         private String directory;
         private String format;
-        private String downloadSpeed;
-        private String eta;
+        private volatile String downloadSpeed;
+        private volatile String eta;
+        private volatile String targetFileName;
         private double percentComplete = 0;
         private volatile boolean complete = false;
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
 
-        public download() {
-            t = new Thread(this, "download");
-            t.start();
-        }
-
-        public void initialize(String dir, String urlRequest, String form) {
-            Debug.trace(t, "Initialization data received");
+        public download(String dir, String urlRequest, String form) {
             directory = dir;
             url = urlRequest;
             format = form;
+
+            t = new Thread(this, "download");
+            t.start();
         }
 
         public String getDownloadSpeed() {
@@ -2797,31 +3725,21 @@ public class View implements EventHandler<KeyEvent>
             return complete;
         }
 
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            "Executing...",
-                            Boolean.toString(complete)
-                    )
-            );
+        public String getFileName() {
+
+            return targetFileName;
+
         }
 
         public void run() {
 
             try {
 
-                Debug.trace(t, "Starting");
-
                 // Making the bat to execute
                 FileWriter batCreator = new FileWriter(directory + "\\exec.bat");
+
                 batCreator.write("youtube-dl " + url + " --extract-audio --audio-format " + format + " --ignore-errors --retries 10");
                 batCreator.close();
-
-                Debug.trace(t, "Successfully generated bat file with command.");
 
                 // Sending the Youtube-DL Request
                 ProcessBuilder builder = new ProcessBuilder(directory + "\\exec.bat");
@@ -2830,12 +3748,16 @@ public class View implements EventHandler<KeyEvent>
                 InputStream is = process.getInputStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
 
-                Debug.trace(t, "Execution of bat request sent.");
-
                 String line;
                 while ((line = reader.readLine()) != null) {
 
                     try {
+
+                        if (line.contains("Destination")) {
+
+                            targetFileName = line.split(":")[1].split("\\.")[0].strip();
+
+                        }
 
                         if (line.contains("[download]") && !line.contains("Destination")) {
 
@@ -2848,20 +3770,27 @@ public class View implements EventHandler<KeyEvent>
                             // Parse ETA
                             eta = Integer.parseInt(line.split("ETA")[1].replaceAll("\\s","").split(":")[0]) *60 + line.split("ETA")[1].replaceAll("\\s","").split(":")[1];
 
+                            // Seems to hang without this
+                            if (percentComplete == (double) 100)
+                                break;
+
                         }
 
                     } catch (ArrayIndexOutOfBoundsException | NumberFormatException ignored) {}
                 }
 
+                File deleteBat = new File(directory + "\\exec.bat");
+                if (!deleteBat.delete())
+                    Debug.error(t, "Failed to delete bat file: " + deleteBat.getAbsolutePath(), new IOException().getStackTrace());
+
             } catch (IOException e) {
                 Debug.error(t, "Error in youtube-dl wrapper execution", e.getStackTrace());
             }
 
-            Debug.trace(t, "Completed");
-            endTime = Instant.now().toEpochMilli();
             complete = true;
 
         }
 
     }
+
 }

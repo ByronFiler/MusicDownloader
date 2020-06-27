@@ -2,10 +2,9 @@ package sample;
 
 import javafx.scene.image.ImageView;
 import org.apache.commons.io.FileUtils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -16,6 +15,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 
 public class Utils {
 
@@ -186,7 +187,7 @@ public class Utils {
         return songsData;
     }
 
-    public static synchronized ArrayList<ArrayList<String>> youtubeQuery(String query) throws IOException, ParseException {
+    public static synchronized ArrayList<ArrayList<String>> youtubeQuery(String query) throws IOException, JSONException {
 
         // [Web Data] -> JavaScript -> String -> Json -> Data
         Document youtubeSearch = Jsoup.connect("https://www.youtube.com/results?search_query=" + query).get();
@@ -218,8 +219,7 @@ public class Utils {
             jsonConversion = jsonConversion.substring(39, jsonConversion.length()-119);
 
             // Web Data -> JavaScript -> String -> [Json] -> Data
-            JSONParser queryData = new JSONParser();
-            JSONObject json = (JSONObject) queryData.parse(jsonConversion);
+            JSONObject json = new JSONObject(jsonConversion);
 
             // contents -> twoColumnSearchResultsRenderer -> primaryContents -> sectionListRenderer
             JSONObject contents = (JSONObject)(
@@ -237,10 +237,11 @@ public class Utils {
 
             JSONArray contents3 = (JSONArray)contents2.get("contents");
 
-            for (Object videoData: contents3)
+            //for (Object videoData: contents3)
+            for (int i = 0; i < contents3.length(); i++)
             {
                 searchDataTemp = new ArrayList<>();
-                JSONObject jsonVideoData = (JSONObject)videoData;
+                JSONObject jsonVideoData = contents3.getJSONObject(i);
                 try {
                     // Extract the playtime and the link to the video
                     String lengthData = (String)((JSONObject)((JSONObject)jsonVideoData.get("videoRenderer")).get("lengthText")).get("simpleText");
@@ -397,5 +398,112 @@ public class Utils {
         return false;
     }
 
+    public static synchronized String generateNewId(JSONArray temporaryData, JSONArray downloadsQueue) throws IOException, JSONException {
+
+        String id = Double.toString(Math.random()).split("\\.")[1];
+
+        // Checking in temporary data
+        if (idExistsInData(temporaryData, id)) {
+            return generateNewId(temporaryData, downloadsQueue);
+        }
+
+        // Checking in actual downloads queue
+        for (int i = 0; i < downloadsQueue.length(); i++) {
+
+            if (idExistsInData( (JSONArray) ((JSONObject) downloadsQueue.get(i)).get("songs"), id )) {
+                return generateNewId(temporaryData, downloadsQueue);
+            }
+
+        }
+
+        // Checking in downloads history
+        try {
+            JSONArray fileData = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+            if (idExistsInData(fileData, id)) {
+                return generateNewId(temporaryData, downloadsQueue);
+            }
+        } catch (NoSuchElementException ignored) {}
+
+        // Did not match existing records, return generated ID
+        return id;
+    }
+
+    public static synchronized String generateNewCacheArtId(JSONArray downloadsQueue) {
+
+        // Generating the potential ID
+        String id = Double.toString(Math.random()).split("\\.")[1];
+
+        // Checking if it exists in the downloads queue
+        try {
+            for (int i = 0; i < downloadsQueue.length(); i++) {
+
+                if (downloadsQueue.getJSONObject(i).getJSONObject("meta").get("artId").equals(id)) {
+                    // Our generated ID already exists in the queue, generate a new one
+                    return generateNewCacheArtId(downloadsQueue);
+                }
+
+            }
+        } catch (JSONException ignored) {}
+
+        // Checking if it exists in existing cached arts
+        File[] existingCache = new File("resources\\cache").listFiles();
+        for (File cachedArt: existingCache) {
+            if (cachedArt.isFile() && cachedArt.getName().split("\\.")[1].equals("jpg") && cachedArt.getName().split("\\.")[0].equals(id) ) {
+                // Our generated ID already exists in the files, generate a new one
+                return generateNewCacheArtId(downloadsQueue);
+            }
+        }
+
+        // Generated ID was not found to match any existing record, hence use this ID
+        return id;
+
+    }
+
+    public static synchronized JSONArray deleteFromJSONArray(JSONArray data, int target) {
+
+        try {
+            ArrayList<String> list = new ArrayList<>();
+
+            for (int j = 0; j < data.length(); j++) {
+                list.add(data.get(j).toString());
+            }
+
+            list.remove(target);
+            return new JSONArray(list);
+
+        } catch (JSONException e) {
+            Debug.error(null, "Error deleting from JSONArray.", e.getStackTrace());
+            return new JSONArray();
+        }
+
+    }
+
+    public static synchronized void updateDownloads(JSONObject addition) throws IOException, JSONException {
+
+        JSONArray downloadHistory = new JSONArray();
+        try {
+            downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+        } catch (NoSuchElementException ignored) { }
+
+        downloadHistory.put(downloadHistory.length(), addition);
+        FileWriter recordUpdater = new FileWriter("resources\\json\\downloads.json");
+        recordUpdater.write(downloadHistory.toString());
+        recordUpdater.close();
+
+    }
+
+    private static synchronized boolean idExistsInData(JSONArray songs, String id) throws NoSuchElementException{
+
+        try {
+            for (int i = 0; i < songs.length(); i++)
+            {
+                if ((songs.getJSONObject(0)).get("id").equals(id)) {
+                    return true;
+                }
+            }
+        } catch (JSONException | NoSuchElementException ignored) {}
+        return false;
+
+    }
 
 }

@@ -1,14 +1,14 @@
 package sample;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.io.FileReader;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Scanner;
 
 public class Settings {
 
@@ -18,10 +18,9 @@ public class Settings {
 
         try {
 
-            JSONParser parser = new JSONParser();
-            return (JSONObject) parser.parse(new FileReader("resources\\json\\config.json"));
+            return new JSONObject(new Scanner(new File("resources\\json\\config.json")).useDelimiter("\\Z").next());
 
-        } catch (IOException | ParseException e) {
+        } catch (IOException | JSONException e) {
 
             // Generate the file with default datasets
             Debug.trace(null, "Error loading settings, resetting.");
@@ -47,12 +46,9 @@ public class Settings {
     public synchronized static String getVersion() {
 
         try {
-            JSONParser parser = new JSONParser();
-            JSONObject jo = (JSONObject) parser.parse(new FileReader("resources\\json\\meta.json"));
+            return (String) new JSONObject(new Scanner(new File("resources\\json\\meta.json")).useDelimiter("\\Z").next()).get("version");
 
-            return (String) jo.get("version");
-
-        } catch (IOException | ParseException e) {
+        } catch (IOException | JSONException e) {
             Debug.trace(null, "Error getting version, appears user has deleted version file.");
             return null;
         }
@@ -80,13 +76,12 @@ public class Settings {
     public synchronized static String getLatestVersion() {
 
         try {
-            JSONParser parser = new JSONParser();
-            Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/resources/json/meta.json").get();
-            JSONObject jsonData = (JSONObject) parser.parse(githubRequestLatestVersion.text());
 
+            Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/resources/json/meta.json").get();
+            JSONObject jsonData = new JSONObject(githubRequestLatestVersion.text());
             return (String) jsonData.get("version");
 
-        } catch (IOException | ParseException e) {
+        } catch (IOException | JSONException e) {
             Debug.trace(null, "Failed to get latest version");
             return null;
         }
@@ -123,7 +118,9 @@ public class Settings {
 
     }
 
-    public synchronized static void saveSettings(String output_directory, int music_format, int save_album_art, int album_art, int album_title, int song_title, int artist, int year, int track, int theme, int data_saver) {
+    public synchronized static void saveSettings(String output_directory, int music_format, int save_album_art, int album_art, int album_title, int song_title, int artist, int year, int track, int theme, int data_saver) throws JSONException {
+
+        // Could move it to just formatting a string
         JSONObject newSettings = new JSONObject();
         newSettings.put("output_directory", output_directory);
         newSettings.put("music_format", music_format);
@@ -139,7 +136,7 @@ public class Settings {
 
         try {
             FileWriter configFile = new FileWriter("resources\\json\\config.json");
-            configFile.write(newSettings.toJSONString());
+            configFile.write(newSettings.toString());
             configFile.close();
         } catch (IOException e) {
             e.printStackTrace();

@@ -51,3 +51,15 @@
 #searchError {
     -fx-text-fill: red;
 }
+
+#downloadHistoryResultTitle {
+    -fx-text-fill: white;
+}
+
+#downloadHistoryArtistTitle {
+    -fx-text-fill: "#cfcfcf";
+}
+
+#downloadStatus {
+    -fx-text-fill: "#cfcfcf";
+}

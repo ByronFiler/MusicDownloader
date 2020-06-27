@@ -21,6 +21,7 @@ public class Debug {
     private static final String ANSI_RED = "\u001B[31m";
     private static final String ANSI_RESET = "\u001B[0m";
     private static final String ANSI_GREEN = "\u001B[32m";
+    private static final String ANSI_YELLOW = "\u001B[33m";
 
     private static final Map<String, Boolean> threadDebugging = Map.ofEntries(
             entry("generateAutocomplete", true),
@@ -123,6 +124,50 @@ public class Debug {
 
         if (stackTrace)
             Arrays.stream(errorMessage).forEachOrdered(System.out::println);
+    }
+
+    public static synchronized void warn(Thread t, String msg) {
+
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+
+        if (debug){
+            synchronized ( Debug.class )
+            {
+                if (t != null) {
+
+                    // Debugging a thread
+                    try {
+                        if (debugThreads && threadDebugging.get(t.getName())) {
+                            System.out.println(
+                                    String.format(
+                                            ANSI_YELLOW + "WARNING%s[%s: %d] @ %s: %s" + ANSI_RESET,
+                                            advancedDebug ? prettyExecutionTrace() : " ",
+                                            t.getName(),
+                                            t.getId(),
+                                            formatter.format(new Date()),
+                                            msg
+                                    )
+                            );
+                        }
+                    } catch (NullPointerException e) {
+                        error( t, "Failed to find known thread: " + t.getName(), e.getStackTrace());
+                    }
+
+                } else {
+
+                    // Debugging main thread
+                    System.out.println(
+                            String.format(
+                                    ANSI_YELLOW + "WARNING%s[MAIN] @ %s: %s" + ANSI_RESET,
+                                    advancedDebug ? prettyExecutionTrace() : " ",
+                                    formatter.format(new Date()),
+                                    msg
+                            )
+                    );
+                }
+            }
+        }
+
     }
 
     private static synchronized String prettyExecutionTrace() {
