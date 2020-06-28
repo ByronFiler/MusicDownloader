@@ -16,5 +16,7 @@
     <orderEntry type="library" name="Gradle: com.googlecode.json-simple:json-simple:1.1" level="project" />
     <orderEntry type="library" name="Gradle: org.json:json:20090211" level="project" />
     <orderEntry type="library" name="Gradle: commons-codec:commons-codec:1.9" level="project" />
+    <orderEntry type="library" name="Gradle: org.controlsfx:controlsfx:11.0.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.openjfx:javafx-graphics:linux:11.0.2" level="project" />
   </component>
 </module>

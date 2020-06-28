@@ -29,6 +29,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import org.controlsfx.control.ToggleSwitch;
 import javafx.stage.Stage;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -209,18 +210,20 @@ public class View implements EventHandler<KeyEvent>
 
     // Metadata
     public Label metaDataTitle;
+
+    public BorderPane albumArtLine;
     public Label albumArtSetting;
-    public ComboBox<String> albumArtSettingResult;
+    public ToggleSwitch albumArtSettingResult;
     public Label albumTitleSetting;
-    public ComboBox<String> albumTitleSettingResult;
+    public ToggleSwitch albumTitleSettingResult;
     public Label songTitleSetting;
-    public ComboBox<String> songTitleSettingResult;
+    public ToggleSwitch songTitleSettingResult;
     public Label artistSetting;
-    public ComboBox<String> artistSettingResult;
+    public ToggleSwitch artistSettingResult;
     public Label yearSetting;
-    public ComboBox<String> yearSettingResult;
+    public ToggleSwitch yearSettingResult;
     public Label trackNumberSetting;
-    public ComboBox<String> trackNumberSettingResult;
+    public ToggleSwitch trackNumberSettingResult;
 
     // Application
     public Label applicationSettingTitle;
@@ -244,7 +247,6 @@ public class View implements EventHandler<KeyEvent>
     public Label downloadsTitle;
     public ScrollPane downloadsInfoScrollPane;
     public VBox downloadsInfo;
-    public Label downloadSpeed;
     public Label downloadTotal;
     public LineChart downloadGraph;
     public ListView downloadEventsView;
@@ -253,17 +255,12 @@ public class View implements EventHandler<KeyEvent>
     // Data
     public ArrayList<ArrayList<String>> searchResults;
     public Utils.resultsSet[] searchResultFullData;
-    public ArrayList<ArrayList<String>> songsData;
     public ArrayList<Utils.resultsSet> resultsData;
-    public HashMap<String, String> metaData;
     public Timer timerRotate;
     public ArrayList<Long> lastClicked = new ArrayList<>();
     public JSONArray downloadQueue = new JSONArray();
 
     public ArrayList<String> formatReferences = new ArrayList<>(Arrays.asList("mp3", "wav", "ogg", "aac"));
-
-    public double loadingPercent;
-    public double percentIncrease;
 
     List<Object> threadManagement = new ArrayList<>();
 
@@ -625,48 +622,47 @@ public class View implements EventHandler<KeyEvent>
         metaDataTitle = new Label("Meta-Data Application");
         metaDataTitle.setId("settingsHeader");
 
+        // Album art design
         albumArtSetting = new Label("Album Art: ");
         albumArtSetting.setId("settingInfo");
 
-        albumArtSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
-        albumArtSettingResult.setOnAction(e -> evaluateSettingsChanges());
-        albumArtSettingResult.setId("combobox");
+        albumArtSettingResult = new ToggleSwitch();
+        albumArtSettingResult.setOnMouseClicked(e -> evaluateSettingsChanges());
+
+        albumArtLine = new BorderPane();
+        albumArtLine.setLeft(albumArtSetting);
+        albumArtLine.setRight(albumArtSettingResult);
 
         albumTitleSetting = new Label("Album Title: ");
         albumTitleSetting.setId("settingInfo");
 
-        albumTitleSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
-        albumTitleSettingResult.setOnAction(e -> evaluateSettingsChanges());
-        albumTitleSettingResult.setId("combobox");
+        albumTitleSettingResult = new ToggleSwitch();
+        albumTitleSettingResult.setOnMouseClicked(e -> evaluateSettingsChanges());
 
         songTitleSetting = new Label("Song Title: ");
         songTitleSetting.setId("settingInfo");
 
-        songTitleSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
-        songTitleSettingResult.setOnAction(e -> evaluateSettingsChanges());
-        songTitleSettingResult.setId("combobox");
+        songTitleSettingResult = new ToggleSwitch();
+        songTitleSettingResult.setOnMouseClicked(e -> evaluateSettingsChanges());
 
         artistSetting = new Label("Artist: ");
         artistSetting.setId("settingInfo");
 
-        artistSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
-        artistSettingResult.setOnAction(e -> evaluateSettingsChanges());
-        artistSettingResult.setId("combobox");
+        artistSettingResult = new ToggleSwitch();
+        artistSettingResult.setOnMouseClicked(e -> evaluateSettingsChanges());
 
         yearSetting = new Label("Year: ");
         yearSetting.setId("settingInfo");
 
-        yearSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
-        yearSettingResult.setOnAction(e -> evaluateSettingsChanges());
-        yearSettingResult.setId("combobox");
+        yearSettingResult = new ToggleSwitch();
+        yearSettingResult.setOnMouseClicked(e -> evaluateSettingsChanges());
 
         trackNumberSetting = new Label("Track Number: ");
         trackNumberSetting.setId("settingInfo");
 
-        trackNumberSettingResult = new ComboBox<>(FXCollections.observableArrayList("Enabled", "Disabled"));
-        trackNumberSettingResult.setOnAction(e -> evaluateSettingsChanges());
+        trackNumberSettingResult = new ToggleSwitch();
+        trackNumberSettingResult.setOnMouseClicked(e -> evaluateSettingsChanges());
         trackNumberSettingResult.setTranslateY(480);
-        trackNumberSettingResult.setId("combobox");
 
         applicationSettingTitle = new Label("Application Configuration");
         applicationSettingTitle.setId("settingsHeader");
@@ -1225,12 +1221,12 @@ public class View implements EventHandler<KeyEvent>
         songDownloadFormatResult.getSelectionModel().select(musicFormatSetting);
         saveAlbumArtResult.getSelectionModel().select(saveAlbumArtSetting);
 
-        albumArtSettingResult.getSelectionModel().select(applyAlbumArt ? 0 : 1);
-        albumTitleSettingResult.getSelectionModel().select(applyAlbumTitle ? 0 : 1);
-        songTitleSettingResult.getSelectionModel().select(applySongTitle ? 0 : 1);
-        artistSettingResult.getSelectionModel().select(applyArtist ? 0 : 1);
-        yearSettingResult.getSelectionModel().select(applyYear ? 0 : 1);
-        trackNumberSettingResult.getSelectionModel().select(applyTrack ? 0 : 1);
+        albumArtSettingResult.setSelected(applyAlbumArt);
+        albumTitleSettingResult.setSelected(applyAlbumTitle);
+        songTitleSettingResult.setSelected(applySongTitle);
+        artistSettingResult.setSelected(applyArtist);
+        yearSettingResult.setSelected(applyYear);
+        trackNumberSettingResult.setSelected(applyTrack);
         darkModeSettingResult.getSelectionModel().select(darkTheme ? 1 : 0);
         dataSaverSettingResult.getSelectionModel().select(dataSaver ? 0 : 1);
 
@@ -1269,48 +1265,12 @@ public class View implements EventHandler<KeyEvent>
                             .getSelectionModel()
                             .selectedIndexProperty()
                             .getValue(),
-                    Math.abs(
-                            albumArtSettingResult
-                                    .getSelectionModel()
-                                    .selectedIndexProperty()
-                                    .getValue()
-                                    - 1
-                    ),
-                    Math.abs(
-                            albumTitleSettingResult
-                                    .getSelectionModel()
-                                    .selectedIndexProperty()
-                                    .getValue()
-                                    - 1
-                    ),
-                    Math.abs(
-                            songTitleSettingResult
-                                    .getSelectionModel()
-                                    .selectedIndexProperty()
-                                    .getValue()
-                                    - 1
-                    ),
-                    Math.abs(
-                            artistSettingResult
-                                    .getSelectionModel()
-                                    .selectedIndexProperty()
-                                    .getValue()
-                                    - 1
-                    ),
-                    Math.abs(
-                            yearSettingResult
-                                    .getSelectionModel()
-                                    .selectedIndexProperty()
-                                    .getValue()
-                                    - 1
-                    ),
-                    Math.abs(
-                            trackNumberSettingResult
-                                    .getSelectionModel()
-                                    .selectedIndexProperty()
-                                    .getValue()
-                                    - 1
-                    ),
+                    albumArtSettingResult.isSelected() ? 1 : 0,
+                    albumTitleSettingResult.isSelected() ? 1 : 0,
+                    songTitleSettingResult.isSelected() ? 1 : 0,
+                    artistSettingResult.isSelected() ? 1 : 0,
+                    yearSettingResult.isSelected() ? 1 : 0,
+                    trackNumberSettingResult.isSelected() ? 1 : 0,
                     darkModeSettingResult
                             .getSelectionModel()
                             .selectedIndexProperty()
@@ -1334,30 +1294,12 @@ public class View implements EventHandler<KeyEvent>
                     .getSelectionModel()
                     .selectedIndexProperty()
                     .getValue();
-            applyAlbumArt = albumArtSettingResult
-                    .getSelectionModel()
-                    .selectedIndexProperty()
-                    .getValue() == 0;
-            applyAlbumTitle = albumTitleSettingResult
-                    .getSelectionModel()
-                    .selectedIndexProperty()
-                    .getValue() == 0;
-            applySongTitle = songTitleSettingResult
-                    .getSelectionModel()
-                    .selectedIndexProperty()
-                    .getValue() == 0;
-            applyArtist = artistSettingResult
-                    .getSelectionModel()
-                    .selectedIndexProperty()
-                    .getValue() == 0;
-            applyYear = yearSettingResult
-                    .getSelectionModel()
-                    .selectedIndexProperty()
-                    .getValue() == 0;
-            applyTrack = trackNumberSettingResult
-                    .getSelectionModel()
-                    .selectedIndexProperty()
-                    .getValue() == 0;
+            applyAlbumArt = albumArtSettingResult.isSelected();
+            applyAlbumTitle = albumTitleSettingResult.isSelected();
+            applySongTitle = songTitleSettingResult.isSelected();
+            applyArtist = artistSettingResult.isSelected();
+            applyYear = yearSettingResult.isSelected();
+            applyTrack = trackNumberSettingResult.isSelected();
             darkTheme = darkModeSettingResult
                     .getSelectionModel()
                     .selectedIndexProperty()
@@ -1379,12 +1321,12 @@ public class View implements EventHandler<KeyEvent>
         if (
                 musicFormatSetting != songDownloadFormatResult.getSelectionModel().getSelectedIndex() ||
                         saveAlbumArtSetting != saveAlbumArtResult.getSelectionModel().getSelectedIndex() ||
-                        ((applyAlbumArt && albumArtSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyAlbumArt && albumArtSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
-                        ((applyAlbumTitle && albumTitleSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyAlbumTitle && albumTitleSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
-                        ((applyArtist && artistSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyArtist && artistSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
-                        ((applySongTitle && songTitleSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applySongTitle && songTitleSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
-                        ((applyYear && yearSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyYear && yearSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
-                        ((applyTrack && trackNumberSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!applyTrack && trackNumberSettingResult.getSelectionModel().getSelectedIndex() == 0)) ||
+                        ((applyAlbumArt && !albumArtSettingResult.isSelected()) || (!applyAlbumArt && albumArtSettingResult.isSelected())) ||
+                        ((applyAlbumTitle && !albumTitleSettingResult.isSelected()) || (!applyAlbumTitle && albumTitleSettingResult.isSelected())) ||
+                        ((applyArtist && !artistSettingResult.isSelected()) || (!applyArtist && artistSettingResult.isSelected())) ||
+                        ((applySongTitle && !songTitleSettingResult.isSelected()) || (!applySongTitle && songTitleSettingResult.isSelected())) ||
+                        ((applyYear && !yearSettingResult.isSelected()) || (!applyYear && yearSettingResult.isSelected())) ||
+                        ((applyTrack && !trackNumberSettingResult.isSelected()) || (!applyTrack && trackNumberSettingResult.isSelected())) ||
                         ((darkTheme && darkModeSettingResult.getSelectionModel().getSelectedIndex() != 1) || (!darkTheme && darkModeSettingResult.getSelectionModel().getSelectedIndex() == 1)) ||
                         ((dataSaver && dataSaverSettingResult.getSelectionModel().getSelectedIndex() != 0) || (!dataSaver && dataSaverSettingResult.getSelectionModel().getSelectedIndex() == 0))
         ) {
@@ -1730,6 +1672,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    // Search: Added
     class generateAutocomplete implements Runnable {
 
         Thread t;
@@ -1793,6 +1736,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    // Search: Added
     class allMusicQuery implements Runnable {
 
         Thread t;
@@ -1944,6 +1888,79 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    // Search: Added
+    static class autoCompleteWeb implements Runnable {
+
+        Thread t;
+        String searchQuery;
+        ArrayList<ArrayList<String>> autocompleteResults = new ArrayList<>();
+        private volatile String status = "Initializing";
+        private final long startTime = Instant.now().toEpochMilli();
+        private volatile long endTime = Long.MIN_VALUE;
+        private volatile boolean completed = false;
+
+        autoCompleteWeb (){
+            t = new Thread(this, "autocomplete-web");
+            t.start();
+        }
+
+        public void setSearchQuery(String setRequest) {
+            searchQuery = setRequest;
+        }
+
+        public ArrayList<ArrayList<String>> getAutocompleteResults() {
+            return autocompleteResults;
+        }
+
+        public ArrayList<String> getInfo() {
+            return new ArrayList<>(
+                    Arrays.asList(
+                            t.getName(),
+                            Long.toString(t.getId()),
+                            Long.toString(startTime),
+                            Long.toString(endTime),
+                            status,
+                            Boolean.toString(completed)
+                    )
+            );
+        }
+
+        public void run() {
+
+            try {
+
+                status = "Waiting on web request...";
+
+                Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + searchQuery).get();
+
+                status = "Web data finished, processing data...";
+
+                for (ArrayList<String> searchResult: Utils.allmusicQuery(doc)) {
+
+                    ArrayList<String> resultsData = new ArrayList<>();
+                    resultsData.add(searchResult.get(4));
+                    resultsData.add(searchResult.get(0));
+
+                    // Prevents duplicated results
+                    if (!autocompleteResults.contains(resultsData)) {
+
+                        autocompleteResults.add(resultsData); // Song or Album and Name
+
+                    }
+                }
+
+            } catch (IOException e) {
+                Debug.error(t, "Error sending web request: https://www.allmusic.com/search/all/" + searchQuery, e.getStackTrace());
+            }
+
+            endTime = Instant.now().toEpochMilli();
+            completed = true;
+
+        }
+
+    }
+
+    // Results: Not Added
     class addToTable implements Runnable {
 
         Thread t;
@@ -2033,6 +2050,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    // Settings: Not Added
     class getLatestVersion implements Runnable {
 
         Thread t;
@@ -2054,6 +2072,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    // Settings: Not Added
     class selectFolder implements  Runnable {
 
         Thread t;
@@ -2090,6 +2109,7 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
+    // Main: Not Added
     class smartQuitDownload implements  Runnable {
 
         Thread t;
@@ -2160,6 +2180,7 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
+    // Settings: Not Added
     class youtubeDlVerification implements Runnable {
 
         Thread t;
@@ -2190,6 +2211,7 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
+    // Settings: Not Added
     class ffmpegVerificationThread implements Runnable {
 
         Thread t;
@@ -2219,6 +2241,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    // Settings: Not Added
     class outputDirectoryVerification implements Runnable {
 
         Thread t;
@@ -2276,6 +2299,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    // Settings: Not Added
     class outputDirectoryListener implements Runnable {
 
         Thread t;
@@ -2325,6 +2349,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    // Downloads: Not Added
     class generateDownloadHistory implements Runnable {
 
         private Thread t;
@@ -2474,6 +2499,7 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
+    // Results: Not Added
     class addToQueue implements Runnable {
 
         private Thread t;
@@ -2686,6 +2712,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    // Main: Not Added
     class downloadsListener implements Runnable {
 
         Thread t;
@@ -3096,77 +3123,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    static class autoCompleteWeb implements Runnable {
-
-        Thread t;
-        String searchQuery;
-        ArrayList<ArrayList<String>> autocompleteResults = new ArrayList<>();
-        private volatile String status = "Initializing";
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
-        private volatile boolean completed = false;
-
-        autoCompleteWeb (){
-            t = new Thread(this, "autocomplete-web");
-            t.start();
-        }
-
-        public void setSearchQuery(String setRequest) {
-            searchQuery = setRequest;
-        }
-
-        public ArrayList<ArrayList<String>> getAutocompleteResults() {
-            return autocompleteResults;
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            status,
-                            Boolean.toString(completed)
-                    )
-            );
-        }
-
-        public void run() {
-
-            try {
-
-                status = "Waiting on web request...";
-
-                Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + searchQuery).get();
-
-                status = "Web data finished, processing data...";
-
-                for (ArrayList<String> searchResult: Utils.allmusicQuery(doc)) {
-
-                    ArrayList<String> resultsData = new ArrayList<>();
-                    resultsData.add(searchResult.get(4));
-                    resultsData.add(searchResult.get(0));
-
-                    // Prevents duplicated results
-                    if (!autocompleteResults.contains(resultsData)) {
-
-                        autocompleteResults.add(resultsData); // Song or Album and Name
-
-                    }
-                }
-
-            } catch (IOException e) {
-                Debug.error(t, "Error sending web request: https://www.allmusic.com/search/all/" + searchQuery, e.getStackTrace());
-            }
-
-            endTime = Instant.now().toEpochMilli();
-            completed = true;
-
-        }
-
-    }
-
+    // Downloads: Not Added
     static class download implements Runnable {
 
         Thread t;
@@ -3272,6 +3229,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
+    // Main: Not Added
     static class optimiseCache implements Runnable {
 
         Thread t;
