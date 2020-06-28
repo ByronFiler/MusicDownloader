@@ -10,9 +10,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
 
-public class Settings {
+public class SettingsFunc {
 
-    public Settings() {}
+    public SettingsFunc() {}
 
     public synchronized static JSONObject getSettings() {
 
@@ -49,7 +49,6 @@ public class Settings {
             return (String) new JSONObject(new Scanner(new File("resources\\json\\meta.json")).useDelimiter("\\Z").next()).get("version");
 
         } catch (IOException | JSONException e) {
-            Debug.trace(null, "Error getting version, appears user has deleted version file.");
             return null;
         }
 
@@ -73,6 +72,7 @@ public class Settings {
 
     }
 
+    // TODO: Only used in old, new is built into thread class
     public synchronized static String getLatestVersion() {
 
         try {
@@ -88,10 +88,10 @@ public class Settings {
 
     }
 
+    // TODO: Only used in old, new is built into thread class
     public synchronized static boolean checkYouTubeDl() {
 
         try {
-
             // Will throw an error if not bound
             Runtime.getRuntime().exec(new String[]{"youtube-dl"});
             return true;
@@ -102,6 +102,7 @@ public class Settings {
 
     }
 
+    // TODO: Only used in old, new is built into thread class
     public synchronized static boolean checkFFMPEG() {
 
         try {

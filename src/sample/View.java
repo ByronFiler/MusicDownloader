@@ -333,7 +333,7 @@ public class View implements EventHandler<KeyEvent>
         threadManagement.add(new ArrayList<>(Arrays.asList("smartQuitDownload", new smartQuitDownload())));
 
         mainWindow = window;
-        JSONObject config = Settings.getSettings();
+        JSONObject config = SettingsFunc.getSettings();
 
         try {
             outputDirectorySetting = config.get("output_directory").toString();
@@ -361,7 +361,7 @@ public class View implements EventHandler<KeyEvent>
 
         }
 
-        programVersion = Settings.getVersion();
+        programVersion = SettingsFunc.getVersion();
 
         downloader = new downloadsListener();
 
@@ -1255,7 +1255,7 @@ public class View implements EventHandler<KeyEvent>
 
         // Saving to file
         try {
-            Settings.saveSettings(
+            SettingsFunc.saveSettings(
                     OutputDirectorySettingNew,
                     songDownloadFormatResult
                             .getSelectionModel()
@@ -2050,7 +2050,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    // Settings: Not Added
+    // Settings: Added
     class getLatestVersion implements Runnable {
 
         Thread t;
@@ -2063,7 +2063,7 @@ public class View implements EventHandler<KeyEvent>
         public void run() {
 
             double originalWidth = latestVersionResult.getWidth();
-            String latestVersion = Settings.getLatestVersion();
+            String latestVersion = SettingsFunc.getLatestVersion();
 
             Platform.runLater(() -> latestVersionResult.setText(latestVersion == null ? "Unknown" : latestVersion));
             while (latestVersionResult.getWidth() == originalWidth) { try {Thread.sleep(10);} catch (InterruptedException ignored) {} }
@@ -2109,7 +2109,7 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
-    // Main: Not Added
+    // Model: Not Added
     class smartQuitDownload implements  Runnable {
 
         Thread t;
@@ -2180,7 +2180,7 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
-    // Settings: Not Added
+    // Settings: Added
     class youtubeDlVerification implements Runnable {
 
         Thread t;
@@ -2192,7 +2192,7 @@ public class View implements EventHandler<KeyEvent>
 
         public void run() {
 
-            boolean youtubeDlStatus = Settings.checkYouTubeDl();
+            boolean youtubeDlStatus = SettingsFunc.checkYouTubeDl();
             double originalWidth = youtubeDlVerificationResult.getWidth();
 
             if (youtubeDlStatus) {
@@ -2211,7 +2211,7 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
-    // Settings: Not Added
+    // Settings: Added
     class ffmpegVerificationThread implements Runnable {
 
         Thread t;
@@ -2225,7 +2225,7 @@ public class View implements EventHandler<KeyEvent>
 
             Debug.trace(t, "Initialized");
 
-            boolean ffmpegStatus = Settings.checkFFMPEG();
+            boolean ffmpegStatus = SettingsFunc.checkFFMPEG();
             double originalWidth = ffmpegVerificationResult.getWidth();
 
             if (ffmpegStatus) {
@@ -2268,10 +2268,10 @@ public class View implements EventHandler<KeyEvent>
                 // User specified directory no longer exists, hence return to default directory
                 outputDirectorySetting = System.getProperty("user.dir");
 
-                JSONObject savedSettings = Settings.getSettings();
+                JSONObject savedSettings = SettingsFunc.getSettings();
 
                 try {
-                    Settings.saveSettings(
+                    SettingsFunc.saveSettings(
                             outputDirectorySetting,
                             Math.toIntExact((long) savedSettings.get("music_format")),
                             Math.toIntExact((long) savedSettings.get("save_album_art")),
@@ -2712,7 +2712,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    // Main: Not Added
+    // Model: Not Added
     class downloadsListener implements Runnable {
 
         Thread t;
@@ -3229,7 +3229,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    // Main: Not Added
+    // Model: Not Added
     static class optimiseCache implements Runnable {
 
         Thread t;

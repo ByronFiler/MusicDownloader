@@ -16,35 +16,38 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
 
+        boolean useBeta = true;
 
-        try {
-            FXMLLoader loader = new FXMLLoader(new File("C:\\Users\\byron\\Documents\\Dev\\MusicDownloader\\resources\\fxml\\search.fxml").toURI().toURL());
-            Parent root = loader.load();
+        if (useBeta) {
 
-            primaryStage.setScene(new Scene(root));
-            primaryStage.show();
+            try {
+                FXMLLoader loader = new FXMLLoader(new File("resources/fxml/search.fxml").toURI().toURL());
+                Parent root = loader.load();
 
-        } catch (IOException e) {
-            // Missing FXML file
-            System.exit(-1);
+                primaryStage.setScene(new Scene(root));
+                primaryStage.show();
+
+                Debug.trace(null, "Primary Stage Generated");
+
+            } catch (IOException e) {
+                // Missing FXML file
+                System.exit(-1);
+            }
+
+        } else {
+
+            View view = new View(600, 800);
+            Controller controller = new Controller();
+            Utils utils = new Utils();
+
+            view.controller = controller;
+            controller.view = view;
+
+            utils.view = view;
+
+            view.start(primaryStage);
+            Debug.trace(null, "Primary Stage Generated");
         }
-
-
-
-        /*
-        View view = new View(600, 800);
-        Controller controller = new Controller();
-        Utils utils = new Utils();
-
-        view.controller = controller;
-        controller.view = view;
-
-        utils.view = view;
-
-        view.start(primaryStage);
-        Debug.trace(null, "Primary Stage Generated");
-
-         */
 
     }
 

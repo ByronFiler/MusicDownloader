@@ -2,13 +2,16 @@ package sample;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -21,6 +24,7 @@ import java.util.TimerTask;
 
 public class search {
 
+    @FXML private AnchorPane root;
     @FXML private TextField search;
     @FXML private ImageView loadingIcon;
     @FXML private Text errorMessage;
@@ -43,11 +47,26 @@ public class search {
 
     @FXML
     private void settingsView() {
+
         Debug.trace(null, "Requested to switch to settings view.");
+
+        try {
+
+            AnchorPane settingsView = FXMLLoader.load(new File("resources/fxml/settings.fxml").toURI().toURL());
+            root.getChildren().setAll(settingsView.getChildren().get(0));
+
+        } catch(IOException e) {
+            e.printStackTrace();
+            Debug.error(null, "Missing FXML File: Settings.fxml", e.getStackTrace());
+        }
+
     }
 
     @FXML
     private void searchRequest(KeyEvent e) {
+
+        // Proof we can modify it?
+        root.setBackground(new Background(new BackgroundFill(Color.web("#C3C3C3"), CornerRadii.EMPTY, Insets.EMPTY)));
 
         char[] newCharacter = e.getText().toCharArray();
 
