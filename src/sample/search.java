@@ -1,8 +1,12 @@
 package sample;
 
 import javafx.application.Platform;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
@@ -14,6 +18,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 import org.json.JSONException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -26,8 +31,6 @@ import java.util.TimerTask;
 
 // TODO
 // Fix title isn't centered with the search bar due to the invisible loading icon
-// Fix settings doesn't actually replace the current AnchorPane with it's own
-
 public class search {
 
     @FXML private AnchorPane root;
@@ -45,7 +48,7 @@ public class search {
     allMusicQuery searchThread;
 
     @FXML
-    private void initialize() {
+    private void initialize(Event e) {
 
         // Theoretically no way this could change via normal use of the program, but if user starts a download, waits for it to finish and clears file, downloads page needs a check to prevent
         if (Model.getInstance().downloadsAccessible()) {
@@ -62,13 +65,15 @@ public class search {
     }
 
     @FXML
-    private void settingsView() {
+    private void settingsView(Event event) {
 
         try {
 
-            AnchorPane settingsView = FXMLLoader.load(new File("resources/fxml/settings.fxml").toURI().toURL());
+            Parent settingsView = FXMLLoader.load(new File("resources/fxml/settings.fxml").toURI().toURL());
 
-            // 
+            Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            mainWindow.setScene(new Scene(settingsView));
+
 
         } catch(IOException e) {
             e.printStackTrace();
@@ -79,7 +84,6 @@ public class search {
 
     @FXML
     private void searchRequest(KeyEvent e) {
-
         char[] newCharacter = e.getText().toCharArray();
 
         if (newCharacter.length > 0) {
@@ -114,7 +118,7 @@ public class search {
                     } catch (NullPointerException ignored) {
 
                         // Start a new search
-                        searchThread = new allMusicQuery(search.getText() + e.getText());
+                        searchThread = new allMusicQuery(e, search.getText() + e.getText());
 
                         // Animating the icon
                         loadingIcon.setVisible(true);
@@ -137,7 +141,8 @@ public class search {
                 } else {
 
                     // Warn user search is too short
-
+                    errorMessage.setText("Query is too short, no results.");
+                    hideErrorMessage();
 
                 }
 
@@ -172,9 +177,11 @@ public class search {
 
         private final Thread thread;
         private final String query;
+        private final KeyEvent event;
 
-        allMusicQuery (String query){
+        allMusicQuery (KeyEvent event, String query){
             this.query = query;
+            this.event = event;
 
             thread = new Thread(this, "query");
             thread.start();
@@ -309,8 +316,9 @@ public class search {
                 System.out.println("Switching to search view");
                 try {
 
-                    AnchorPane resultsView = FXMLLoader.load(new File("resources/fxml/results.fxml").toURI().toURL());
-                    Platform.runLater(() -> root.getChildren().setAll(resultsView));
+                    Parent resultsView = FXMLLoader.load(new File("resources/fxml/results.fxml").toURI().toURL());
+                    Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                    Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView)));
 
                 } catch(IOException e) {
                     e.printStackTrace();

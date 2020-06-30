@@ -1,12 +1,17 @@
 package sample;
 
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.AnchorPane;
+import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,12 +65,14 @@ public class results {
 
      */
     @FXML
-    public void searchView() {
+    public void searchView(Event event) {
 
         try {
 
-            AnchorPane searchView = FXMLLoader.load(new File("resources\\fxml\\search.fxml").toURI().toURL());
-            root.getChildren().setAll(searchView);
+            Parent searchView = FXMLLoader.load(new File("resources\\fxml\\search.fxml").toURI().toURL());
+            Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
+
+            mainWindow.setScene(new Scene(searchView));
 
         } catch (IOException e) {
             Debug.error(null, "FXML Error with search.fxml", e.getStackTrace());

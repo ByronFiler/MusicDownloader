@@ -1,14 +1,18 @@
 package sample;
 
 import javafx.application.Platform;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 import org.controlsfx.control.ToggleSwitch;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -97,11 +101,14 @@ public class settings {
     }
 
     @FXML
-    private void searchView() {
+    private void searchView(Event event) {
 
         try {
 
             AnchorPane searchView = FXMLLoader.load(new File("resources\\fxml\\search.fxml").toURI().toURL());
+            Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
+
+            mainWindow.setScene(new Scene(searchView));
 
         } catch (IOException e) {
             Debug.error(null, "Missing FXML File: Search.fxml", e.getStackTrace());
