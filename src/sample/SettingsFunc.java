@@ -14,6 +14,7 @@ public class SettingsFunc {
 
     public SettingsFunc() {}
 
+    // Not moved to latest, but should be?
     public synchronized static JSONObject getSettings() {
 
         try {
@@ -43,6 +44,7 @@ public class SettingsFunc {
 
     }
 
+    // Not moved to latest, but should be?
     public synchronized static String getVersion() {
 
         try {
@@ -54,6 +56,7 @@ public class SettingsFunc {
 
     }
 
+    // Not moved to latest, but should be?
     public synchronized static boolean resetSettings() {
 
         try {
@@ -119,6 +122,7 @@ public class SettingsFunc {
 
     }
 
+    // Not moved to latest, but should be?
     public synchronized static void saveSettings(String output_directory, int music_format, int save_album_art, int album_art, int album_title, int song_title, int artist, int year, int track, int theme, int data_saver) throws JSONException {
 
         // Could move it to just formatting a string

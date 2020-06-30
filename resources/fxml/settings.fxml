@@ -21,13 +21,13 @@
       <Insets />
    </opaqueInsets>
    <children>
-      <StackPane prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <StackPane fx:id="innerRoot" prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
             <BorderPane prefHeight="710.0" prefWidth="594.0" stylesheets="@../css/settings.css">
                <bottom>
                   <BorderPane prefHeight="40.0" BorderPane.alignment="CENTER">
                      <left>
-                        <Button mnemonicParsing="false" prefHeight="40.0" prefWidth="80.0" text="Confirm" textAlignment="CENTER" BorderPane.alignment="CENTER">
+                        <Button mnemonicParsing="false" style="-fx-background-color: green; -fx-text-fill: white;" prefHeight="40.0" prefWidth="80.0" text="Confirm" textAlignment="CENTER" BorderPane.alignment="CENTER" disable="true">
                            <BorderPane.margin>
                               <Insets left="10.0" />
                            </BorderPane.margin>

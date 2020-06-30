@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.Cursor?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
@@ -34,7 +35,7 @@
                            </cursor></Text>
                      </left>
                      <right>
-                        <Text onMouseClicked="#downloadsView" strokeType="OUTSIDE" strokeWidth="0.0" text="Downloads" BorderPane.alignment="CENTER">
+                        <Label fx:id="downloads" disable="true" onMouseClicked="#downloadsView" text="Downloads" BorderPane.alignment="CENTER">
                            <font>
                               <Font name="Arial" size="24.0" />
                            </font>
@@ -43,7 +44,7 @@
                            </BorderPane.margin>
                            <cursor>
                               <Cursor fx:constant="HAND" />
-                           </cursor></Text>
+                           </cursor></Label>
                      </right>
                      <BorderPane.margin>
                         <Insets />
@@ -56,7 +57,7 @@
                <center>
                   <VBox alignment="CENTER" maxHeight="200.0" maxWidth="580.0" prefHeight="179.0" prefWidth="450.0" BorderPane.alignment="CENTER">
                      <children>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Music Downloader">
+                        <Text fx:id="title" strokeType="OUTSIDE" strokeWidth="0.0" text="Music Downloader">
                            <font>
                               <Font name="Arial Black" size="32.0" />
                            </font>

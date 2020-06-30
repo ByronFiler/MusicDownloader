@@ -22,6 +22,7 @@ public class Utils {
 
     public View view;
 
+    // Moved to Model in latest
     public static class resultsSet {
         private ImageView albumArt;
         private String title;
@@ -89,6 +90,7 @@ public class Utils {
         }
     }
 
+    // Replaced TableView with ListView, outdated in latest
     public static class autocompleteResultsSet {
         private ImageView icon;
         private String name;

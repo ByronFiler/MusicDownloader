@@ -7,6 +7,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import org.controlsfx.control.ToggleSwitch;
 import org.json.JSONException;
@@ -20,6 +21,7 @@ import java.io.IOException;
 public class settings {
 
     @FXML AnchorPane root;
+    @FXML StackPane innerRoot;
 
     // Information
     @FXML Text version;
@@ -88,9 +90,7 @@ public class settings {
             Debug.warn(null, "Failed to load settings, generating new settings and retrying.");
             SettingsFunc.resetSettings();
             initialize();
-
         }
-        // Give content to the context boxes
 
         Debug.trace(null, "Initialized settings view.");
 
@@ -102,7 +102,6 @@ public class settings {
         try {
 
             AnchorPane searchView = FXMLLoader.load(new File("resources\\fxml\\search.fxml").toURI().toURL());
-            root.getChildren().setAll(searchView.getChildren().get(0));
 
         } catch (IOException e) {
             Debug.error(null, "Missing FXML File: Search.fxml", e.getStackTrace());

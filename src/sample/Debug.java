@@ -188,11 +188,9 @@ public class Debug {
         }
 
         if (advancedDebugConcise) {
-
             return String.format(" [%s] ", advancedDebugData.get(advancedDebugData.size()-1));
 
         } else {
-
             return String.format(" [%s] ", String.join(" from ", advancedDebugData));
 
         }

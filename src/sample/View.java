@@ -286,7 +286,7 @@ public class View implements EventHandler<KeyEvent>
         /* Checking Resources Exist, Will Delay Main Thread but this is the intentional, as can't continue without these resources */
         ArrayList<String> reacquire = new ArrayList<>();
         String[] targetCSSFiles = new String[]{"main.css", "night_theme.css", "normal_theme.css"};
-        String[] targetIMGFiles = new String[]{"album_default.jpg", "loading.png", "song_default.png"};
+        String[] targetIMGFiles = new String[]{"album_default.png", "loading.png", "song_default.png"};
 
         // CSS can be whatever, they just need to exist
         for (String file: targetCSSFiles) {
@@ -1719,7 +1719,7 @@ public class View implements EventHandler<KeyEvent>
                     for (ArrayList<String> queryResult : requestThread.getAutocompleteResults()) {
                         autocompleteResultsTable.getItems().add(
                                 new Utils.autocompleteResultsSet(
-                                        queryResult.get(0).equals("Album") ? new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString())) : new ImageView(new Image(new File("resources/song_default.png").toURI().toString())),
+                                        queryResult.get(0).equals("Album") ? new ImageView(new Image(new File("resources/album_default.png").toURI().toString())) : new ImageView(new Image(new File("resources/song_default.png").toURI().toString())),
                                         queryResult.get(1)
                                 )
                         );
@@ -1960,7 +1960,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    // Results: Not Added
+    // Search: Added
     class addToTable implements Runnable {
 
         Thread t;
@@ -1986,14 +1986,15 @@ public class View implements EventHandler<KeyEvent>
                 ImageView selectedImage = null;
                 String year = searchResult.get(2);
                 String genre = searchResult.get(3);
+
                 if (searchResult.get(4).equals("Album")) {
 
                     if (dataSaver) {
-                        selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
+                        selectedImage = new ImageView(new Image(new File("resources/album_default.png").toURI().toString()));
                     } else {
                         // This is an album request, year must be known or won't be found and hence doesn't require a check
                         if (searchResult.get(5).equals("")) {
-                            selectedImage = new ImageView(new Image(new File("resources/album_default.jpg").toURI().toString()));
+                            selectedImage = new ImageView(new Image(new File("resources/album_default.png").toURI().toString()));
                         } else {
                             selectedImage = new ImageView(new Image(searchResult.get(5)));
                         }
@@ -2022,6 +2023,7 @@ public class View implements EventHandler<KeyEvent>
                             try {
                                 genre = songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].substring(0, songDataPage.selectFirst("div.song_genres").selectFirst("div.middle").selectFirst("a").text().split("\\(")[0].length() - 1);
                             } catch (NullPointerException ignored) {}
+
                         } catch (IllegalArgumentException e) {
                             Debug.error(t, "Invalid search request", e.getStackTrace());
                         }

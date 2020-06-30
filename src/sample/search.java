@@ -3,16 +3,18 @@ package sample;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Insets;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import org.json.JSONException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -22,21 +24,35 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
+// TODO
+// Fix title isn't centered with the search bar due to the invisible loading icon
+// Fix settings doesn't actually replace the current AnchorPane with it's own
+
 public class search {
 
     @FXML private AnchorPane root;
+
     @FXML private TextField search;
     @FXML private ImageView loadingIcon;
     @FXML private Text errorMessage;
     @FXML private ListView<HBox> autocompleteResults;
+    @FXML private Label downloads;
 
     Timer timerRotate;
     Timer hideErrorMessage;
 
     generateAutocomplete autoCompleteThread;
+    allMusicQuery searchThread;
 
     @FXML
     private void initialize() {
+
+        // Theoretically no way this could change via normal use of the program, but if user starts a download, waits for it to finish and clears file, downloads page needs a check to prevent
+        if (Model.getInstance().downloadsAccessible()) {
+            downloads.setDisable(false);
+            downloads.setTextFill(Color.BLACK);
+        }
+
         Debug.trace(null, "Initialized search view.");
     }
 
@@ -48,12 +64,11 @@ public class search {
     @FXML
     private void settingsView() {
 
-        Debug.trace(null, "Requested to switch to settings view.");
-
         try {
 
             AnchorPane settingsView = FXMLLoader.load(new File("resources/fxml/settings.fxml").toURI().toURL());
-            root.getChildren().setAll(settingsView.getChildren().get(0));
+
+            // 
 
         } catch(IOException e) {
             e.printStackTrace();
@@ -64,9 +79,6 @@ public class search {
 
     @FXML
     private void searchRequest(KeyEvent e) {
-
-        // Proof we can modify it?
-        root.setBackground(new Background(new BackgroundFill(Color.web("#C3C3C3"), CornerRadii.EMPTY, Insets.EMPTY)));
 
         char[] newCharacter = e.getText().toCharArray();
 
@@ -83,9 +95,26 @@ public class search {
             } else if (e.getCode() == KeyCode.ENTER) {
 
                 if (search.getText().length() > 1) {
-                    // Starting the new search thread
 
-                    if (false) {
+                    // Starting the new search thread
+                    try {
+                        if (searchThread.working()) {
+
+                            // Search is already in progress, hence inform user
+                            errorMessage.setText("A Search is already in progress, please wait.");
+                            errorMessage.setVisible(true);
+                            hideErrorMessage();
+
+                        } else {
+
+                            // Search is not in progress, hence we can start a new one
+                            throw new NullPointerException();
+
+                        }
+                    } catch (NullPointerException ignored) {
+
+                        // Start a new search
+                        searchThread = new allMusicQuery(search.getText() + e.getText());
 
                         // Animating the icon
                         loadingIcon.setVisible(true);
@@ -93,15 +122,16 @@ public class search {
                         timerRotate.schedule(new TimerTask() {
                             @Override
                             public void run() {
-                                loadingIcon.setRotate(loadingIcon.getRotate() + 18);
+
+                                if (searchThread.working())
+                                    loadingIcon.setRotate(loadingIcon.getRotate() + 18);
+                                else {
+                                    loadingIcon.setVisible(false);
+                                    timerRotate.cancel();
+                                }
                             }
                         }, 0, 100);
 
-                    } else {
-
-                        errorMessage.setText("A Search is already in progress, please wait.");
-                        errorMessage.setVisible(true);
-                        hideErrorMessage();
                     }
 
                 } else {
@@ -116,7 +146,9 @@ public class search {
         } else if (e.getCode() == KeyCode.BACK_SPACE && search.getText().length() == 1) {
 
             // Kill all running autocomplete threads
-            System.out.println("Should be killing the autocomplete thread.");
+            autoCompleteThread.kill();
+            autocompleteResults.getItems().clear();
+            autocompleteResults.setVisible(false);
 
         }
     }
@@ -136,48 +168,30 @@ public class search {
     }
 
     // Generating the full data for the search data
-    /*
     class allMusicQuery implements Runnable {
 
-        Thread t;
-        private volatile boolean working = true;
-        private volatile boolean kill = false;
-        private volatile String status = "Initializing";
-        private final long startTime = Instant.now().toEpochMilli();
-        private volatile long endTime = Long.MIN_VALUE;
+        private final Thread thread;
+        private final String query;
 
-        public boolean inProgress() {
-            return working;
+        allMusicQuery (String query){
+            this.query = query;
+
+            thread = new Thread(this, "query");
+            thread.start();
         }
 
-        public void kill() {
-            kill = true;
-        }
-
-        allMusicQuery (){
-            t = new Thread(this, "query");
-            t.start();
-        }
-
-        public ArrayList<String> getInfo() {
-            return new ArrayList<>(
-                    Arrays.asList(
-                            t.getName(),
-                            Long.toString(t.getId()),
-                            Long.toString(startTime),
-                            Long.toString(endTime),
-                            status,
-                            Boolean.toString(!working)
-                    )
-            );
+        public boolean working() {
+            return thread.isAlive();
         }
 
         public void run() {
 
+            // Raw & Basic Data
+            ArrayList<ArrayList<String>> searchResults;
+
             try {
 
-                status = "Sending web request to search...";
-                Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + searchRequest.getText()).get();
+                Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + query).get();
                 searchResults = Utils.allmusicQuery(doc);
 
             } catch (IOException e) {
@@ -185,122 +199,151 @@ public class search {
                 Platform.runLater(() -> {
                     timerRotate.cancel();
                     loadingIcon.setVisible(false);
-                    searchErrorMessage.setText("Invalid Search");
-                    searchErrorMessage.setVisible(true);
+
+                    errorMessage.setText("Invalid Search");
+                    errorMessage.setVisible(true);
                 });
-                Debug.error(t, "Error connecting to allmusic", e.getStackTrace());
+                Debug.warn(thread, "Failed to connect to allmusic");
                 return;
 
+            }
+
+            // Populated & Table-Ready
+            Model.resultsSet[] tableData = new Model.resultsSet[searchResults.size()];
+
+            boolean dataSaver = false;
+            try {
+                dataSaver = Model.getInstance().getSettings().getInt("data_saver") != 0;
+            } catch (JSONException ignored) {
+                Debug.warn(thread, "Failed to get the data saver setting, resetting settings.");
             }
 
             if (searchResults.size() > 0) {
 
-                try {
+                for (ArrayList<String> searchResult: searchResults) {
 
-                    status = "Processing search results";
+                    /*
+                    [
+                        0: Title,
+                        1: Artist,
+                        2: Year,
+                        3: Genre,
+                        4: Type,
+                        5: Album Art URL,
+                        6: Information Page,
+                        7: ???
+                    ]
+                     */
 
-                    // Signal is always sent immediately when running, only want to kill other threads that are in loop, not this one
-                    // Needs to check this won't result in future threads being killed
-                    resultsData = new ArrayList<>();
-                    IntStream.range(0, searchResults.size()).forEach(i -> resultsData.add(null));
+                    // Data is missing and must be acquired
+                    if (searchResult.get(4).equals("Song") && !dataSaver) {
 
-                    searchResultFullData = new Utils.resultsSet[searchResults.size()];
+                        try {
+                            // Establishing connection and reading response
+                            Document songDataPage = Jsoup.connect(searchResult.get(6)).get();
 
-                    for (ArrayList<String> searchResult : searchResults) {
-
-                        // Sending a new query requires quitting the old
-                        if (kill) {
-                            resultsTable.getItems().clear();
-                            break;
-                        }
-
-                        View.addToTable tableAdder = new View.addToTable();
-                        threadManagement.add(new ArrayList<>(Arrays.asList("addToTable", tableAdder)));
-                        tableAdder.setSearchResult(searchResult);
-                    }
-
-                    while (true) {
-
-                        int completedThreads = 0;
-                        int totalThreads = searchResultFullData.length;
-
-                        for (Utils.resultsSet resultPending: searchResultFullData) {
-
-                            // Thread has completed when it is not null
-                            if (resultPending != null) {
-                                completedThreads++;
+                            // Locating the album art
+                            if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https") && !songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").equals("https://cdn-gce.allmusic.com/images/lazy.gif")) {
+                                searchResult.set(5, songDataPage.selectFirst("td.cover").selectFirst("img").attr("src"));
+                            } else {
+                                searchResult.set(5, new File("resources/song_default.png").toURI().toString());
                             }
 
+                            // Locating the year
+                            if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4)
+                                searchResult.set(2, songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear"));
+
+                            // Locating the genre
+                            try {
+                                searchResult.set(
+                                        3,
+                                        songDataPage
+                                                .selectFirst("div.song_genres")
+                                                .selectFirst("div.middle")
+                                                .selectFirst("a")
+                                                .text()
+                                                .split("\\(")[0]
+                                                .substring(
+                                                        0,
+                                                        songDataPage
+                                                                .selectFirst("div.song_genres")
+                                                                .selectFirst("div.middle")
+                                                                .selectFirst("a")
+                                                                .text()
+                                                                .split("\\(")[0]
+                                                                .length() - 1
+                                                )
+                                );
+                            } catch (NullPointerException ignored) {}
+
+
+                        } catch (IOException ignored) {
+                            Debug.warn(thread, "Failed to connect to: " + searchResult.get(6));
                         }
 
-                        if (completedThreads == totalThreads) {
-                            break;
-                        }
+                    } else {
 
-                        status = "Awaitng detail threads to complete, " + completedThreads + " out of " + totalThreads + " so far.";
+                        if (searchResult.get(5).isEmpty())
+                            searchResult.set(5, new File("resources/album_default.png").toURI().toString());
+
                     }
 
-                    for (Utils.resultsSet result: searchResultFullData)
-                        resultsTable.getItems().add(result);
+                    try {
+                        tableData[searchResults.indexOf(searchResult)] = new Model.resultsSet(
+                                new ImageView(new Image(searchResult.get(5))),
+                                searchResult.get(0),
+                                searchResult.get(1),
+                                searchResult.get(2),
+                                searchResult.get(3),
+                                searchResult.get(4)
+                        );
+                    } catch (IllegalArgumentException ignored) {
+                        Debug.warn(thread, "Error processing search result: " + searchResult.toString());
+                    }
+                }
 
-                } catch (NullPointerException e) {
-                    Debug.error(t, "Invalid search error", e.getStackTrace());
+                // Updating the model with the data
+                Model.getInstance().setSearchResults(tableData);
+
+                // Transitioning to results to show search results
+                System.out.println("Switching to search view");
+                try {
+
+                    AnchorPane resultsView = FXMLLoader.load(new File("resources/fxml/results.fxml").toURI().toURL());
+                    Platform.runLater(() -> root.getChildren().setAll(resultsView));
+
+                } catch(IOException e) {
+                    e.printStackTrace();
+                    // Debug.error(null, "Missing FXML File: Settings.fxml", e.getStackTrace());
                 }
 
             } else {
 
-                Debug.trace(t, "No search results found for query: " + searchRequest.getText());
-
+                Debug.warn(thread, "No search results found for query: " + query);
                 Platform.runLater(() -> {
                     timerRotate.cancel();
                     loadingIcon.setVisible(false);
-                    searchErrorMessage.setText("No Search Results Found");
-                    searchErrorMessage.setVisible(true);
+
+                    errorMessage.setText("No Search Results Found");
+                    errorMessage.setVisible(true);
                 });
 
-                return;
-
             }
-
-            Platform.runLater(() -> {
-                timerRotate.cancel();
-                loadingIcon.setVisible(false);
-                downloadButton.setDisable(true);
-                resultsTable.setVisible(true);
-                searchResultsTitle.setVisible(true);
-                downloadButton.setVisible(true);
-                cancelButton.setVisible(true);
-
-                autocompleteResultsTable.setVisible(false);
-                autocompleteResultsTable.getItems().clear();
-                searchRequest.setVisible(false);
-                title.setVisible(false);
-                footerMarker.setVisible(false);
-                settingsLink.setVisible(false);
-                downloadsLink.setVisible(false);
-                searchErrorMessage.setVisible(false);
-            });
-
-            endTime = Instant.now().toEpochMilli();
-            working = false;
 
         }
 
     }
 
-     */
-
     // Updating the UI with the autocomplete suggestions
     class generateAutocomplete implements Runnable {
 
-        private Thread thread;
-        private Timer webCheck = new Timer();
-        private autoCompleteWeb webThread;
+        private final Timer webCheck = new Timer();
+        private final autoCompleteWeb webThread;
         private volatile boolean killRequest = false;
 
         generateAutocomplete (String query){
             webThread = new autoCompleteWeb(query);
-            thread = new Thread(this, "autocomplete");
+            Thread thread = new Thread(this, "autocomplete");
             thread.start();
         }
 
@@ -328,7 +371,7 @@ public class search {
                                     10,
                                     new ImageView(
                                             new Image(
-                                                    new File(queryResult.get(0).equals("Album") ? "resources/album_default.jpg" : "resources/song_default.png").toURI().toString(),
+                                                    new File(queryResult.get(0).equals("Album") ? "resources/album_default.png" : "resources/song_default.png").toURI().toString(),
                                                     25,
                                                     25,
                                                     true,
