@@ -19,7 +19,6 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.io.File;
 import java.io.IOException;
 
 public class settings {
@@ -54,47 +53,33 @@ public class settings {
 
     @FXML
     private void initialize() {
-        JSONObject savedSettings = SettingsFunc.getSettings();
-        String versionData = SettingsFunc.getVersion();
 
-        // Update toggle switches based on settings
-        try {
+        // Prepare settings information from model data
 
-            // Information
-            if (versionData == null) {
-                version.setText("Unknown");
-                Debug.warn(null, "Failed to find the user version.");
-            } else {
-                version.setText(versionData);
-            }
-            new getLatestVersion();
-            new verifyExecutable("youtube-dl", youtubeDl);
-            new verifyExecutable("ffmpeg", ffmpeg);
+        // Information
+        version.setText(Model.getInstance().settings.getVersion() == null ? "Unknown" : Model.getInstance().settings.getVersion());
+        new getLatestVersion();
+        new verifyExecutable("youtube-dl", youtubeDl);
+        new verifyExecutable("ffmpeg", ffmpeg);
 
-            // Files
-            outputDirectory.setText(savedSettings.get("output_directory").equals("") ? System.getProperty("user.dir") : savedSettings.get("output_directory").toString());
-            outputDirectory.wrappingWidthProperty().bind(saveMusicLine.widthProperty().subtract(outputDirectoryInfo.widthProperty()).subtract(30));
-            musicFormat.getSelectionModel().select(savedSettings.getInt("music_format"));
-            saveAlbumArt.getSelectionModel().select(savedSettings.getInt("save_album_art"));
+        // Files
+        outputDirectory.setText(Model.getInstance().settings.getSetting("output_directory").equals("") ? System.getProperty("user.dir") : Model.getInstance().settings.getSetting("output_directory"));
+        outputDirectory.wrappingWidthProperty().bind(saveMusicLine.widthProperty().subtract(outputDirectoryInfo.widthProperty()).subtract(30));
+        musicFormat.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("music_format")));
+        saveAlbumArt.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("save_album_art")));
 
-            // Meta-Data
-            albumArtToggle.setSelected(savedSettings.getInt("album_art") != 0);
-            albumTitleToggle.setSelected(savedSettings.getInt("album_title") != 0);
-            songTitleToggle.setSelected(savedSettings.getInt("song_title") != 0);
-            artistToggle.setSelected(savedSettings.getInt("artist") != 0);
-            yearToggle.setSelected(savedSettings.getInt("year") != 0);
-            trackNumberToggle.setSelected(savedSettings.getInt("track") != 0);
+        // Meta-Data
+        albumArtToggle.setSelected(Model.getInstance().settings.getSettingBool("album_art"));
+        albumTitleToggle.setSelected(Model.getInstance().settings.getSettingBool("album_title"));
+        songTitleToggle.setSelected(Model.getInstance().settings.getSettingBool("song_title"));
+        artistToggle.setSelected(Model.getInstance().settings.getSettingBool("artist"));
+        yearToggle.setSelected(Model.getInstance().settings.getSettingBool("year"));
+        trackNumberToggle.setSelected(Model.getInstance().settings.getSettingBool("track"));
 
-            // Application
-            darkThemeToggle.setSelected(savedSettings.getInt("theme") != 0);
-            dataSaverToggle.setSelected(savedSettings.getInt("data_saver") != 0);
+        // Application
+        darkThemeToggle.setSelected(Model.getInstance().settings.getSettingBool("theme"));
+        dataSaverToggle.setSelected(Model.getInstance().settings.getSettingBool("data_saver"));
 
-
-        } catch (JSONException e) {
-            Debug.warn(null, "Failed to load settings, generating new settings and retrying.");
-            SettingsFunc.resetSettings();
-            initialize();
-        }
 
         Debug.trace(null, "Initialized settings view.");
 
@@ -105,7 +90,7 @@ public class settings {
 
         try {
 
-            AnchorPane searchView = FXMLLoader.load(new File("resources\\fxml\\search.fxml").toURI().toURL());
+            AnchorPane searchView = FXMLLoader.load(getClass().getResource("app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
             mainWindow.setScene(new Scene(searchView));
@@ -165,9 +150,9 @@ public class settings {
     // Attempts to test an execution
     static class verifyExecutable implements Runnable {
 
-        private Thread thread;
-        private String executable;
-        private Text element;
+        private final Thread thread;
+        private final String executable;
+        private final Text element;
 
         verifyExecutable(String executable, Text element) {
             this.executable = executable;
@@ -183,12 +168,12 @@ public class settings {
 
                 // Will throw an error if not setup
                 Runtime.getRuntime().exec(new String[]{executable});
-                Platform.runLater(() -> element.setText("Working"));
+                Platform.runLater(() -> element.setText("Configured"));
 
             } catch (IOException ignored) {
 
                 Debug.warn(thread, "Failed to verify executable: " + executable);
-                Platform.runLater(() -> element.setText("Not Setup"));
+                Platform.runLater(() -> element.setText("Not Configured"));
 
             }
 

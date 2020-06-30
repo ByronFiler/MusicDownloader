@@ -13,20 +13,19 @@ import javafx.scene.control.TableView;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
-import java.io.File;
 import java.io.IOException;
 
 public class results {
 
     @FXML public AnchorPane root;
 
-    @FXML public TableView results;
-    @FXML public TableColumn artColumn;
-    @FXML public TableColumn titleColumn;
-    @FXML public TableColumn artistColumn;
-    @FXML public TableColumn genreColumn;
-    @FXML public TableColumn yearColumn;
-    @FXML public TableColumn typeColumn;
+    @FXML public TableView<Model.resultsSet> results;
+    @FXML public TableColumn<String, Model.resultsSet> artColumn;
+    @FXML public TableColumn<String, Model.resultsSet> titleColumn;
+    @FXML public TableColumn<String, Model.resultsSet> artistColumn;
+    @FXML public TableColumn<String, Model.resultsSet> genreColumn;
+    @FXML public TableColumn<String, Model.resultsSet> yearColumn;
+    @FXML public TableColumn<String, Model.resultsSet> typeColumn;
 
     @FXML public ProgressIndicator queueAdditionProgress;
     @FXML public Button download;
@@ -45,7 +44,7 @@ public class results {
         // Set the table data
         results.getItems().setAll(Model.getInstance().getSearchResults());
 
-        System.out.println("Initialized search view");
+        Debug.trace(null, "Initialized results view");
 
     }
 
@@ -69,7 +68,7 @@ public class results {
 
         try {
 
-            Parent searchView = FXMLLoader.load(new File("resources\\fxml\\search.fxml").toURI().toURL());
+            Parent searchView = FXMLLoader.load(getClass().getResource("app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
             mainWindow.setScene(new Scene(searchView));

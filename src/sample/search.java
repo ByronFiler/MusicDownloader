@@ -19,12 +19,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import org.json.JSONException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -43,6 +43,7 @@ public class search {
 
     Timer timerRotate;
     Timer hideErrorMessage;
+    Timer networkCheck;
 
     generateAutocomplete autoCompleteThread;
     allMusicQuery searchThread;
@@ -69,14 +70,12 @@ public class search {
 
         try {
 
-            Parent settingsView = FXMLLoader.load(new File("resources/fxml/settings.fxml").toURI().toURL());
+            Parent settingsView = FXMLLoader.load(getClass().getResource("app/fxml/settings.fxml"));
 
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
             mainWindow.setScene(new Scene(settingsView));
 
-
         } catch(IOException e) {
-            e.printStackTrace();
             Debug.error(null, "Missing FXML File: Settings.fxml", e.getStackTrace());
         }
 
@@ -218,12 +217,7 @@ public class search {
             // Populated & Table-Ready
             Model.resultsSet[] tableData = new Model.resultsSet[searchResults.size()];
 
-            boolean dataSaver = false;
-            try {
-                dataSaver = Model.getInstance().getSettings().getInt("data_saver") != 0;
-            } catch (JSONException ignored) {
-                Debug.warn(thread, "Failed to get the data saver setting, resetting settings.");
-            }
+            boolean dataSaver = Model.getInstance().settings.getSettingBool("data_saver");
 
             if (searchResults.size() > 0) {
 
@@ -439,8 +433,16 @@ public class search {
                         }
                     }
 
-                } catch (IOException e) {
-                    Debug.error(thread, "Error sending web request: https://www.allmusic.com/search/all/" + searchQuery, e.getStackTrace());
+                } catch (IOException ignored) {
+                    Debug.warn(thread, "Error sending web request: https://www.allmusic.com/search/all/" + searchQuery);
+                    // Now we want to await for a connection to be reestablished
+
+                    Platform.runLater(() -> {
+                        search.setDisable(true);
+                        new awaitReconnection();
+                    });
+
+
                 }
 
             }
@@ -448,5 +450,60 @@ public class search {
         }
 
     }
+
+    public class awaitReconnection implements Runnable {
+
+        public awaitReconnection() {
+            Thread thread = new Thread(this, "reconnection");
+            thread.start();
+        }
+
+        public void run() {
+
+            Timer connectionAttempt = new Timer();
+            TimerTask webRequest = new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+
+                        Platform.runLater(() -> errorMessage.setText("Attempting to reconnect..."));
+
+                        if (InetAddress.getByName("https://www.allmusic.com/").isReachable(1000)) {
+                            // Connection reestablished
+                            Platform.runLater(() -> {
+                                search.setDisable(false);
+                                errorMessage.setVisible(false);
+                            });
+                        } else {
+                            System.out.println("We reached the else statement.");
+                        }
+
+                    } catch (IOException ignored) {
+                        // Connection still down
+                        System.out.println("We reached the error.");
+
+                    }
+                }
+            };
+            connectionAttempt.schedule(webRequest, 0, Model.getInstance().settings.getSettingBool("data_saver") ? 60 : 10 * 1000);
+
+            connectionAttempt.schedule(new TimerTask() {
+                @Override
+                public void run() {
+
+                    if (searchThread.working())
+                        loadingIcon.setRotate(loadingIcon.getRotate() + 18);
+                    else {
+                        loadingIcon.setVisible(false);
+                        timerRotate.cancel();
+                    }
+                }
+            }, 0, 100);
+
+        }
+
+    }
+
+
 
 }

@@ -7,15 +7,17 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Scanner;
 
 public class Model {
 
     private final static Model instance = new Model();
 
-    private JSONObject settings = SettingsFunc.getSettings();
-    private JSONArray downloadQueue = new JSONArray();
+    private final JSONArray downloadQueue = new JSONArray();
     private resultsSet[] searchResults;
+    public final settings settings = new settings();
 
     public static Model getInstance() {
         return instance;
@@ -47,14 +49,83 @@ public class Model {
 
     }
 
-    // Settings: Settings & Model
-    public JSONObject getSettings() {
-        return settings;
-    }
-    public void setSettings(JSONObject newSettings) {
-        settings = newSettings;
+    public static class settings {
+
+        private JSONObject settings;
+        private JSONObject defaultSettings;
+        private String version;
+
+        public settings() {
+
+            // Declare default settings for reference
+            try{
+                defaultSettings = new JSONObject("{\"output_directory\":\"\",\"save_album_art\":1,\"music_format\":0, \"album_art\":1, \"album_title\":1, \"song_title\":1, \"artist\":1, \"year\":1, \"track\":1,\"theme\":0, \"data_saver\":0}");
+            } catch (JSONException ignored) {}
+
+            // Load users actual settings
+            try {
+                settings = new JSONObject(new Scanner(new File("resources\\json\\config.json")).useDelimiter("\\Z").next());
+            } catch (FileNotFoundException | JSONException ignored) {
+                settings = defaultSettings;
+                resetSettings();
+            }
+
+            // Load the version
+            try {
+                version = new JSONObject(new Scanner(new File("resources\\json\\meta.json")).useDelimiter("\\Z").next()).get("version").toString();
+            } catch (FileNotFoundException | JSONException e) {
+                Debug.warn(null, "Failed to locate version.");
+                version = null;
+            }
+
+        }
+
+        private void resetSettings() {
+
+            try {
+
+                FileWriter newConfig = new FileWriter("resources\\json\\config.json");
+                newConfig.write(defaultSettings.toString());
+                newConfig.close();
+
+            } catch (IOException e) {
+                Debug.error(null, "Failed to reset settings.", e.getStackTrace());
+            }
+        }
+
+        public boolean getSettingBool(String key) {
+            return Integer.parseInt(getSetting(key)) != 0;
+        }
+
+        public String getSetting(String key) {
+
+            try {
+                return settings.get(key).toString();
+
+            } catch (JSONException e) {
+
+                // Determine if it was my fault for using a bad key or settings for having bad data
+                if (defaultSettings.has(key)) {
+                    Debug.warn(null, "Failed to load correct settings, resetting settings.");
+                    resetSettings();
+                } else {
+                    Debug.error(null, "Invalid key specified in settings: " + key, e.getStackTrace());
+                }
+
+                return null;
+
+            }
+
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
     }
 
+    // Search results table format
+    @SuppressWarnings("unused")
     public static class resultsSet {
         private ImageView albumArt;
         private String title;

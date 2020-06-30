@@ -14,7 +14,7 @@ public class SettingsFunc {
 
     public SettingsFunc() {}
 
-    // Not moved to latest, but should be?
+    // TODO: Only used in old, added to Model in new
     public synchronized static JSONObject getSettings() {
 
         try {
@@ -44,7 +44,7 @@ public class SettingsFunc {
 
     }
 
-    // Not moved to latest, but should be?
+    // TODO: Only used in latest, added to Model in New
     public synchronized static String getVersion() {
 
         try {
@@ -56,7 +56,7 @@ public class SettingsFunc {
 
     }
 
-    // Not moved to latest, but should be?
+    // TODO: Only used in old, added to Model in new
     public synchronized static boolean resetSettings() {
 
         try {

@@ -4,12 +4,10 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
-import java.io.File;
 import java.io.IOException;
-
-// TODO: Begin transitioning program into FXML files
 
 public class Main extends Application {
 
@@ -21,16 +19,18 @@ public class Main extends Application {
         if (useBeta) {
 
             try {
-                FXMLLoader loader = new FXMLLoader(new File("resources/fxml/search.fxml").toURI().toURL());
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("app/fxml/search.fxml"));
                 Parent root = loader.load();
 
                 primaryStage.setScene(new Scene(root));
+                primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("app/img/icon.png")));
+                primaryStage.setTitle("Music Downloader");
                 primaryStage.show();
 
                 Debug.trace(null, "Primary Stage Generated");
 
             } catch (IOException e) {
-                // Missing FXML file
+                // FXML File Error
                 System.exit(-1);
             }
 

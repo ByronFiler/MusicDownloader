@@ -173,15 +173,21 @@ public class Debug {
 
     private static synchronized String prettyExecutionTrace() {
 
+
         //Advanced Debugs, Gets Where the Debug is called from, expensive
         ArrayList<String> advancedDebugData = new ArrayList<>();
         StackTraceElement[] executionDetails = new Throwable().getStackTrace();
-        String[] debugFiles = new String[]{"Controller.java", "Settings.java", "Utils.java", "View.java", "Main.java"};
+
+
+        // String[] debugFiles = new String[]{"Controller.java", "Settings.java", "Utils.java", "View.java", "Main.java"};
+        String[] debugFiles = new String[]{"Main.java", "Model.java", "search.java", "settings.java", "results.java"};
 
         for (StackTraceElement executionDetail: executionDetails) {
+
             String processedDetail = executionDetail.toString();
             processedDetail = processedDetail.substring(processedDetail.indexOf("(") + 1);
             processedDetail = processedDetail.substring(0, processedDetail.indexOf(")"));
+
             if (Arrays.asList(debugFiles).contains(processedDetail.split(":")[0])){
                 advancedDebugData.add(processedDetail);
             }
@@ -189,10 +195,8 @@ public class Debug {
 
         if (advancedDebugConcise) {
             return String.format(" [%s] ", advancedDebugData.get(advancedDebugData.size()-1));
-
         } else {
             return String.format(" [%s] ", String.join(" from ", advancedDebugData));
-
         }
 
     }
