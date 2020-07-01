@@ -37,7 +37,6 @@ import java.util.TimerTask;
 
 // TODO
 // Switch settings and downloads to the icons and animate them depending on what is happening
-// Not showing loading icon, fix that
 // Error message is not centered and is out of place
 // Losing connection mid-search generates a partially completed results table, don't let this happen
 
@@ -50,7 +49,6 @@ public class search {
     @FXML private Text errorMessage;
     @FXML private ListView<HBox> autocompleteResults;
     @FXML private Label downloads;
-    @FXML private HBox searchContainer;
 
     // Timer timerRotate;
     Timer hideErrorMessage;
@@ -60,8 +58,6 @@ public class search {
 
     @FXML
     private void initialize() {
-
-        Debug.prettyExecutionTrace();
 
         // Theoretically no way this could change via normal use of the program, but if user starts a download, waits for it to finish and clears file, downloads page needs a check to prevent
         if (Model.getInstance().downloadsAccessible()) {
@@ -95,6 +91,8 @@ public class search {
 
     @FXML
     private void searchRequest(KeyEvent e) {
+
+        System.out.println(search.getLayoutY());
 
         char[] newCharacter = e.getText().toCharArray();
 
@@ -385,7 +383,6 @@ public class search {
     class generateAutocomplete implements Runnable {
 
         private final Thread thread;
-        private final Timer webCheck = new Timer();
         private volatile boolean killRequest = false;
         private final String query;
 
@@ -459,10 +456,8 @@ public class search {
     // Check that when internet connection is lost, they must reconnect before doing anything else
     public class awaitReconnection implements Runnable {
 
-        private Thread thread;
-
         public awaitReconnection() {
-            thread = new Thread(this, "reconnection");
+            Thread thread = new Thread(this, "reconnection");
             thread.start();
         }
 

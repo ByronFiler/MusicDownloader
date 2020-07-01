@@ -53,39 +53,42 @@
                <opaqueInsets>
                   <Insets />
                </opaqueInsets>
+               <StackPane.margin>
+                  <Insets />
+               </StackPane.margin>
                <center>
-                  <VBox alignment="CENTER" maxHeight="200.0" maxWidth="580.0" prefHeight="179.0" prefWidth="450.0" BorderPane.alignment="CENTER">
+                  <VBox alignment="CENTER" maxHeight="200.0" maxWidth="500.0" prefHeight="200.0" prefWidth="500.0" BorderPane.alignment="CENTER">
                      <children>
                         <Text fx:id="title" strokeType="OUTSIDE" strokeWidth="0.0" text="Music Downloader">
                            <font>
                               <Font name="Arial Black" size="32.0" />
                            </font>
                            <VBox.margin>
-                              <Insets right="53.0" />
+                              <Insets />
                            </VBox.margin>
                         </Text>
-                        <HBox fx:id="searchContainer" alignment="CENTER" prefHeight="30.0" prefWidth="450.0" spacing="5.0">
+                        <HBox prefHeight="33.0" prefWidth="412.0" spacing="5.0">
                            <children>
-                              <TextField fx:id="search" alignment="BASELINE_LEFT" nodeOrientation="LEFT_TO_RIGHT" onKeyPressed="#searchRequest" prefHeight="25.0" prefWidth="379.0">
+                              <TextField fx:id="search" alignment="BASELINE_LEFT" maxHeight="25.0" maxWidth="440.0" nodeOrientation="LEFT_TO_RIGHT" onKeyPressed="#searchRequest" prefHeight="25.0" prefWidth="440.0">
                                  <opaqueInsets>
                                     <Insets />
                                  </opaqueInsets>
+                                 <HBox.margin>
+                                    <Insets left="30.0" />
+                                 </HBox.margin>
                               </TextField>
-                              <ProgressIndicator fx:id="loadingIcon" minHeight="25.0" minWidth="25.0" visible="false" />
+                              <ProgressIndicator fx:id="loadingIcon" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" prefHeight="25.0" prefWidth="25.0" visible="false" />
                            </children>
-                           <VBox.margin>
-                              <Insets />
-                           </VBox.margin>
                         </HBox>
-                        <ListView fx:id="autocompleteResults" prefHeight="109.0" prefWidth="395.0" style="-fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-table-cell-border-color: transparent; -fx-background: transparent; -fx-background-color: transparent; -fx-background-insets: 0, 0 0 1 0; -fx-table-cell-border-color: derive(-fx-color, 5%);" stylesheets="@../css/search.css" visible="false">
+                        <ListView fx:id="autocompleteResults" maxWidth="400.0" prefHeight="150.0" prefWidth="400.0" style="-fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-table-cell-border-color: transparent; -fx-background: transparent; -fx-background-color: transparent; -fx-background-insets: 0, 0 0 1 0; -fx-table-cell-border-color: derive(-fx-color, 5%);" stylesheets="@../css/search.css" visible="false">
                            <opaqueInsets>
                               <Insets />
                            </opaqueInsets>
                            <VBox.margin>
-                              <Insets left="50.0" right="119.0" />
+                              <Insets />
                            </VBox.margin>
                         </ListView>
-                        <Text fx:id="errorMessage" fill="RED" strokeType="OUTSIDE" strokeWidth="0.0" text="Error Message" textAlignment="CENTER" visible="false" wrappingWidth="435.921875">
+                        <Text fx:id="errorMessage" fill="RED" strokeType="OUTSIDE" strokeWidth="0.0" text="Error Message" textAlignment="CENTER" visible="false" wrappingWidth="400.0">
                            <font>
                               <Font name="Arial" size="16.0" />
                            </font>
@@ -95,13 +98,10 @@
                         <Insets />
                      </opaqueInsets>
                      <BorderPane.margin>
-                        <Insets left="53.0" />
+                        <Insets />
                      </BorderPane.margin>
                   </VBox>
                </center>
-               <StackPane.margin>
-                  <Insets />
-               </StackPane.margin>
             </BorderPane>
          </children></StackPane>
 
