@@ -21,6 +21,8 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +51,7 @@ public class search {
     allMusicQuery searchThread;
 
     @FXML
-    private void initialize(Event e) {
+    private void initialize() {
 
         // Theoretically no way this could change via normal use of the program, but if user starts a download, waits for it to finish and clears file, downloads page needs a check to prevent
         if (Model.getInstance().downloadsAccessible()) {
@@ -73,7 +75,7 @@ public class search {
             Parent settingsView = FXMLLoader.load(getClass().getResource("app/fxml/settings.fxml"));
 
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            mainWindow.setScene(new Scene(settingsView));
+            mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch(IOException e) {
             Debug.error(null, "Missing FXML File: Settings.fxml", e.getStackTrace());
@@ -171,6 +173,64 @@ public class search {
         }, 2000);
     }
 
+    // TODO: Switch to a JSONArray
+    public static ArrayList<ArrayList<String>> allmusicQuery(Document doc) {
+
+        ArrayList<ArrayList<String>> songsData = new ArrayList<>();
+        ArrayList<String> resultData;
+
+        Elements mst = doc.select("ul.search-results");
+        Elements results = mst.select("li");
+
+        for (Element result: results)
+        {
+
+            // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
+            if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740) {
+                resultData = new ArrayList<>();
+
+                // Handling The Title, If it's a song it has "" surround it, which it to be removed
+                String dataRequest = result.select("div.title").text();
+                if (result.select("h4").text().hashCode() == 2582837)
+                    dataRequest = dataRequest.substring(1, dataRequest.length()-1);
+
+                resultData.add(dataRequest);
+
+                // Handling The Artist
+                if (result.select("h4").text().hashCode() == 2582837)
+                    resultData.add(result.select("div.performers").select("a").text());
+                else
+                    resultData.add(result.select("div.artist").text());
+
+                // Handling The Year (only for Albums)
+                resultData.add(result.select("div.year").text());
+
+                // Handing the Genre (only for Albums)
+                resultData.add(result.select("div.genres").text());
+
+                // Determining if it's an album or an image
+                try{
+                    result.select("div.cover").get(0); // Only exists for albums, hence will error on songs
+                    resultData.add("Album");
+                } catch (Exception e) {
+                    resultData.add("Song");
+                }
+
+                // Handling the image link (only for Albums)
+                resultData.add(result.select("img.lazy").attr("data-original"));
+
+                // Page Link for Albums
+                resultData.add(result.select("div.title").select("a").attr("href"));
+
+                resultData.add(Integer.toString(results.indexOf(result))); // Identifier
+
+                songsData.add(resultData);
+            }
+        }
+
+        return songsData;
+    }
+
     // Generating the full data for the search data
     class allMusicQuery implements Runnable {
 
@@ -198,7 +258,7 @@ public class search {
             try {
 
                 Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + query).get();
-                searchResults = Utils.allmusicQuery(doc);
+                searchResults = allmusicQuery(doc);
 
             } catch (IOException e) {
 
@@ -315,8 +375,7 @@ public class search {
                     Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView)));
 
                 } catch(IOException e) {
-                    e.printStackTrace();
-                    // Debug.error(null, "Missing FXML File: Settings.fxml", e.getStackTrace());
+                    Debug.error(null, "Missing FXML File: Settings.fxml", e.getStackTrace());
                 }
 
             } else {
@@ -339,13 +398,15 @@ public class search {
     // Updating the UI with the autocomplete suggestions
     class generateAutocomplete implements Runnable {
 
+        private final Thread thread;
         private final Timer webCheck = new Timer();
-        private final autoCompleteWeb webThread;
         private volatile boolean killRequest = false;
+        private String query;
 
         generateAutocomplete (String query){
-            webThread = new autoCompleteWeb(query);
-            Thread thread = new Thread(this, "autocomplete");
+            this.query = query;
+
+            thread = new Thread(this, "autocomplete");
             thread.start();
         }
 
@@ -355,96 +416,54 @@ public class search {
 
         public void run() {
 
-            webCheck.schedule(new TimerTask() {
-                @Override
-                public void run() {
+            try {
+                Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + query).get();
+                ArrayList<HBox> autocompleteResultsView = new ArrayList<>();
+                Elements results = doc.select("ul.search-results").select("li");
 
-                    if (killRequest)
-                        return;
+                for (Element result: results)
+                {
 
-                    if (!webThread.getAutocompleteResults().isEmpty()) {
+                    // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
+                    if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740) {
 
-                        // Add all the data at once to try and minimize excessive calls
-                        HBox[] autocompleteResultsDisplay = new HBox[webThread.getAutocompleteResults().size()];
-
-                        // Add the data as a viewable element
-                        for (ArrayList<String> queryResult : webThread.getAutocompleteResults()) {
-                            autocompleteResultsDisplay[webThread.getAutocompleteResults().indexOf(queryResult)] = new HBox(
-                                    10,
-                                    new ImageView(
-                                            new Image(
-                                                    new File(queryResult.get(0).equals("Album") ? "resources/album_default.png" : "resources/song_default.png").toURI().toString(),
-                                                    25,
-                                                    25,
-                                                    true,
-                                                    true
-                                            )
-                                    ),
-                                    new Text(queryResult.get(1))
-                            );
-                        }
-
-                        // Add generated data to the search query
-                        Platform.runLater(() -> {
-                            autocompleteResults.getItems().setAll(autocompleteResultsDisplay);
-                            autocompleteResults.setVisible(true);
-                        });
+                        autocompleteResultsView.add(
+                                new HBox(
+                                        10,
+                                        new ImageView(
+                                                new Image(
+                                                        new File(
+                                                                result.select("div.cover").size() > 0 ? "resources/album_default.png" : "resources/song_default.png"
+                                                        ).toURI().toString(),
+                                                        25,
+                                                        25,
+                                                        true,
+                                                        true
+                                                )
+                                        ),
+                                        new Text(result.select("div.title").text().replaceAll("\"", ""))
+                                )
+                        );
 
                     }
-
                 }
-            }, 0, 50);
 
-        }
-
-        // The web requests for the auto-complete functionality
-        class autoCompleteWeb implements Runnable {
-            private final Thread thread;
-            private final String searchQuery;
-            private final ArrayList<ArrayList<String>> autocompleteResults = new ArrayList<>();
-
-            autoCompleteWeb (String queryRequest){
-                searchQuery = queryRequest;
-                thread = new Thread(this, "autocomplete-web");
-                thread.start();
-            }
-
-            public ArrayList<ArrayList<String>> getAutocompleteResults() {
-                return autocompleteResults;
-            }
-
-            public void run() {
-
-                try {
-
-                    Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + searchQuery).get();
-
-                    for (ArrayList<String> searchResult: Utils.allmusicQuery(doc)) {
-
-                        ArrayList<String> resultsData = new ArrayList<>();
-                        resultsData.add(searchResult.get(4));
-                        resultsData.add(searchResult.get(0));
-
-                        // Prevents duplicated results
-                        if (!autocompleteResults.contains(resultsData)) {
-
-                            autocompleteResults.add(resultsData); // Song or Album and Name
-
-                        }
-                    }
-
-                } catch (IOException ignored) {
-                    Debug.warn(thread, "Error sending web request: https://www.allmusic.com/search/all/" + searchQuery);
-                    // Now we want to await for a connection to be reestablished
-
+                // Add generated data to the search query
+                if (!killRequest) {
                     Platform.runLater(() -> {
-                        search.setDisable(true);
-                        new awaitReconnection();
+                        autocompleteResults.getItems().setAll(autocompleteResultsView);
+                        autocompleteResults.setVisible(true);
                     });
-
-
                 }
 
+            } catch (IOException ignored) {
+
+                // Failed to connect, handling
+                Debug.warn(thread, "Error sending web request: https://www.allmusic.com/search/all/" + query);
+                Platform.runLater(() -> {
+                    search.setDisable(true);
+                    new awaitReconnection();
+                });
             }
 
         }

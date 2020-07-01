@@ -93,7 +93,7 @@ public class settings {
             AnchorPane searchView = FXMLLoader.load(getClass().getResource("app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
-            mainWindow.setScene(new Scene(searchView));
+            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch (IOException e) {
             Debug.error(null, "Missing FXML File: Search.fxml", e.getStackTrace());

@@ -22,7 +22,7 @@ public class Utils {
 
     public View view;
 
-    // Moved to Model in latest
+    // TODO: Implemented in latest
     public static class resultsSet {
         private ImageView albumArt;
         private String title;
@@ -90,7 +90,7 @@ public class Utils {
         }
     }
 
-    // Replaced TableView with ListView, outdated in latest
+    // TODO: Removed/Replaced in latest
     public static class autocompleteResultsSet {
         private ImageView icon;
         private String name;
@@ -132,6 +132,7 @@ public class Utils {
         return songLenSec;
     }
 
+    // TODO: Implemented in latest
     public static synchronized ArrayList<ArrayList<String>> allmusicQuery(Document doc) {
 
         ArrayList<ArrayList<String>> songsData = new ArrayList<>();
