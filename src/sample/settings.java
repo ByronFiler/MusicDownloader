@@ -23,6 +23,9 @@ import org.jsoup.nodes.Document;
 import javax.swing.*;
 import java.io.IOException;
 
+// TODO
+// Information & Files cutoff when resizing
+
 public class settings {
 
     @FXML AnchorPane root;

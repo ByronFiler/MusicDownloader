@@ -9,6 +9,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -44,12 +45,13 @@ public class search {
     @FXML private AnchorPane root;
 
     @FXML private TextField search;
-    @FXML private ImageView loadingIcon;
+    @FXML private ProgressIndicator loadingIcon;
     @FXML private Text errorMessage;
     @FXML private ListView<HBox> autocompleteResults;
     @FXML private Label downloads;
+    @FXML private HBox searchContainer;
 
-    Timer timerRotate;
+    // Timer timerRotate;
     Timer hideErrorMessage;
     Timer networkCheck;
 
@@ -91,6 +93,7 @@ public class search {
 
     @FXML
     private void searchRequest(KeyEvent e) {
+
         char[] newCharacter = e.getText().toCharArray();
 
         if (newCharacter.length > 0) {
@@ -129,6 +132,8 @@ public class search {
 
                         // Animating the icon
                         loadingIcon.setVisible(true);
+
+                        /*
                         timerRotate = new Timer();
                         timerRotate.schedule(new TimerTask() {
                             @Override
@@ -142,6 +147,8 @@ public class search {
                                 }
                             }
                         }, 0, 100);
+
+                         */
 
                     }
 
@@ -207,7 +214,7 @@ public class search {
             } catch (IOException e) {
 
                 Platform.runLater(() -> {
-                    timerRotate.cancel();
+                    // timerRotate.cancel();
                     loadingIcon.setVisible(false);
 
                     Debug.warn(thread, "Failed to connect to https://www.allmusic.com/search/all/" + query);
@@ -359,7 +366,7 @@ public class search {
 
                 Debug.trace(thread, "No search results found for query: " + query);
                 Platform.runLater(() -> {
-                    timerRotate.cancel();
+                    // timerRotate.cancel();
                     loadingIcon.setVisible(false);
 
                     errorMessage.setText("No Search Results Found");
@@ -378,7 +385,7 @@ public class search {
         private final Thread thread;
         private final Timer webCheck = new Timer();
         private volatile boolean killRequest = false;
-        private String query;
+        private final String query;
 
         generateAutocomplete (String query){
             this.query = query;
@@ -491,7 +498,7 @@ public class search {
                         loadingIcon.setRotate(loadingIcon.getRotate() + 18);
                     else {
                         loadingIcon.setVisible(false);
-                        timerRotate.cancel();
+                        // timerRotate.cancel();
                     }
                 }
             }, 0, 100);

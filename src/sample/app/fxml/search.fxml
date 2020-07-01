@@ -4,9 +4,8 @@
 <?import javafx.scene.Cursor?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -15,13 +14,13 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" stylesheets="@../css/search.css" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="sample.search">
+<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" stylesheets="@../css/search.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.search">
    <children>
       <StackPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <BorderPane prefHeight="200.0" prefWidth="200.0">
+            <BorderPane prefHeight="800.0" prefWidth="648.0">
                <bottom>
-                  <BorderPane id="footer" prefHeight="50.0" prefWidth="600.0" style="-fx-background-color: #C3C3C3;" BorderPane.alignment="CENTER">
+                  <BorderPane id="footer" prefHeight="50.0" prefWidth="606.0" style="-fx-background-color: #C3C3C3;" BorderPane.alignment="CENTER">
                      <left>
                         <Text onMouseClicked="#settingsView" strokeType="OUTSIDE" strokeWidth="0.0" text="Settings" BorderPane.alignment="CENTER">
                            <font>
@@ -62,25 +61,21 @@
                               <Font name="Arial Black" size="32.0" />
                            </font>
                            <VBox.margin>
-                              <Insets left="52.0" right="30.0" />
+                              <Insets right="53.0" />
                            </VBox.margin>
                         </Text>
-                        <HBox prefHeight="30.0" prefWidth="450.0" spacing="5.0">
+                        <HBox fx:id="searchContainer" alignment="CENTER" prefHeight="30.0" prefWidth="450.0" spacing="5.0">
                            <children>
-                              <TextField fx:id="search" onKeyPressed="#searchRequest" prefHeight="25.0" prefWidth="410.0">
+                              <TextField fx:id="search" alignment="BASELINE_LEFT" nodeOrientation="LEFT_TO_RIGHT" onKeyPressed="#searchRequest" prefHeight="25.0" prefWidth="379.0">
                                  <opaqueInsets>
                                     <Insets />
                                  </opaqueInsets>
-                                 <HBox.margin>
-                                    <Insets left="52.0" />
-                                 </HBox.margin>
                               </TextField>
-                              <ImageView fx:id="loadingIcon" fitHeight="25.0" fitWidth="25.0" pickOnBounds="true" preserveRatio="true" visible="false">
-                                 <image>
-                                    <Image url="@../loading.png" />
-                                 </image>
-                              </ImageView>
+                              <ProgressIndicator fx:id="loadingIcon" minHeight="25.0" minWidth="25.0" visible="false" />
                            </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
                         </HBox>
                         <ListView fx:id="autocompleteResults" prefHeight="111.0" prefWidth="400.0" style="-fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-table-cell-border-color: transparent; -fx-background: transparent; -fx-background-color: transparent; -fx-background-insets: 0, 0 0 1 0; -fx-table-cell-border-color: derive(-fx-color, 5%);" stylesheets="@../css/search.css" visible="false">
                            <opaqueInsets>
@@ -100,10 +95,13 @@
                         <Insets />
                      </opaqueInsets>
                      <BorderPane.margin>
-                        <Insets left="75.0" right="75.0" />
+                        <Insets left="53.0" />
                      </BorderPane.margin>
                   </VBox>
                </center>
+               <StackPane.margin>
+                  <Insets />
+               </StackPane.margin>
             </BorderPane>
          </children></StackPane>
 
