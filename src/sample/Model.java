@@ -18,6 +18,7 @@ public class Model {
     private final JSONArray downloadQueue = new JSONArray();
     private resultsSet[] searchResults;
     public final settings settings = new settings();
+    public final download download = new download();
 
     public static Model getInstance() {
         return instance;
@@ -46,6 +47,44 @@ public class Model {
         } catch (JSONException ignored) {}
 
         return downloadHistory.length() > 0 || downloadQueue.length() > 0;
+
+    }
+
+    public static class download {
+
+        private JSONArray downloadQueue = new JSONArray();
+        private JSONArray downloadHistory = new JSONArray();
+        private volatile JSONObject downloadObject = new JSONObject();
+
+        public download() {
+
+            try {
+                downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+                Debug.trace(null, String.format("Found a download history of %s item(s).", downloadHistory.length()));
+            } catch (FileNotFoundException | JSONException e) {
+                try {
+                    Debug.trace(null, "No download history found.");
+                    if (!new File("resources\\json\\downloads.json").createNewFile()) {
+                        throw new IOException();
+                    }
+                } catch (IOException ex) {
+                    Debug.error(null, "Failed to create downloads file.", ex.getCause());
+                }
+            }
+
+        }
+
+        public synchronized JSONArray getDownloadHistory() {
+            return downloadHistory;
+        }
+
+        public synchronized JSONArray getDownloadQueue() {
+            return downloadQueue;
+        }
+
+        public synchronized JSONObject getDownloadObject() {
+            return downloadObject;
+        }
 
     }
 

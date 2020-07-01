@@ -7,7 +7,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextField;
@@ -17,7 +16,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
@@ -48,7 +46,7 @@ public class search {
     @FXML private ProgressIndicator loadingIcon;
     @FXML private Text errorMessage;
     @FXML private ListView<HBox> autocompleteResults;
-    @FXML private Label downloads;
+    @FXML private ImageView downloads;
 
     // Timer timerRotate;
     Timer hideErrorMessage;
@@ -61,8 +59,7 @@ public class search {
 
         // Theoretically no way this could change via normal use of the program, but if user starts a download, waits for it to finish and clears file, downloads page needs a check to prevent
         if (Model.getInstance().downloadsAccessible()) {
-            downloads.setDisable(false);
-            downloads.setTextFill(Color.BLACK);
+            downloads.setVisible(true);
         }
 
         Debug.trace(null, "Initialized search view.");
@@ -91,8 +88,6 @@ public class search {
 
     @FXML
     private void searchRequest(KeyEvent e) {
-
-        System.out.println(search.getLayoutY());
 
         char[] newCharacter = e.getText().toCharArray();
 

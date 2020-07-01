@@ -10,6 +10,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
 
+// TODO: Safe to delete for beta
+
 public class SettingsFunc {
 
     public SettingsFunc() {}
