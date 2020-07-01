@@ -350,7 +350,7 @@ public class Utils {
             latestVersion = latestVersionSource.split("/")[4];
 
         } catch (IOException e) {
-            Debug.error(t, "Error sending web request: https://ytdl-org.github.io/youtube-dl/download.html", e.getStackTrace());
+            Debug.error(t, "Error sending web request: https://ytdl-org.github.io/youtube-dl/download.html", e.getCause());
             return false;
         }
 
@@ -387,7 +387,7 @@ public class Utils {
                 File youtubeDlExe = new File("C:\\Program Files (x86)\\youtube-dl\\youtube-dl.exe"); // Overwrite previous if needed
                 FileUtils.copyURLToFile(url, youtubeDlExe);
             } catch (IOException e) {
-                Debug.error(t, "Invalid Permissions, run as administrator" + latestVersionSource, e.getStackTrace());
+                Debug.error(t, "Invalid Permissions, run as administrator" + latestVersionSource, e.getCause());
                 return false;
             }
         }
@@ -475,7 +475,7 @@ public class Utils {
             return new JSONArray(list);
 
         } catch (JSONException e) {
-            Debug.error(null, "Error deleting from JSONArray.", e.getStackTrace());
+            Debug.error(null, "Error deleting from JSONArray.", e.getCause());
             return new JSONArray();
         }
 

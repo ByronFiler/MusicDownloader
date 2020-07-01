@@ -61,6 +61,8 @@ public class search {
     @FXML
     private void initialize() {
 
+        Debug.prettyExecutionTrace();
+
         // Theoretically no way this could change via normal use of the program, but if user starts a download, waits for it to finish and clears file, downloads page needs a check to prevent
         if (Model.getInstance().downloadsAccessible()) {
             downloads.setDisable(false);
@@ -86,7 +88,7 @@ public class search {
             mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch(IOException e) {
-            Debug.error(null, "Missing FXML File: Settings.fxml", e.getStackTrace());
+            Debug.error(null, "Missing FXML File: Settings.fxml", e.getCause());
         }
 
     }
@@ -262,7 +264,7 @@ public class search {
                         searchData.put(resultData);
 
                     } catch (JSONException e) {
-                        Debug.error(thread, "Failed to process search request JSON for https://www.allmusic.com/search/all/" + query, e.getStackTrace());
+                        Debug.error(thread, "Failed to process search request JSON for https://www.allmusic.com/search/all/" + query, e.getCause());
                     }
                 }
             }
@@ -318,12 +320,12 @@ public class search {
 
                         }
                     } catch (JSONException e) {
-                        Debug.error(thread, "Failed to process found search results.", e.getStackTrace());
+                        Debug.error(thread, "Failed to process found search results.", e.getCause());
                     } catch (IOException e) {
                         try {
                             Debug.warn(thread, "Connection error on connecting to: " + searchData.getJSONObject(i).getString("link"));
                         } catch (JSONException er) {
-                            Debug.error(thread, "Failed to process found search results.", e.getStackTrace());
+                            Debug.error(thread, "Failed to process found search results.", e.getCause());
                         }
                     }
 
@@ -343,7 +345,7 @@ public class search {
                         } catch (JSONException ignored) {
                             System.out.println("huh");
                         }
-                        Debug.error(thread, "Failed to generate table result", e.getStackTrace());
+                        Debug.error(thread, "Failed to generate table result", e.getCause());
                     }
 
                 }
@@ -359,7 +361,7 @@ public class search {
                     Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39)));
 
                 } catch (IOException e) {
-                    Debug.error(null, "FXML Error: Settings.fxml", e.getStackTrace());
+                    Debug.error(null, "FXML Error: Settings.fxml", e.getCause());
                 }
 
             } else {

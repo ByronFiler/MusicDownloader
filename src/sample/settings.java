@@ -106,7 +106,7 @@ public class settings {
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch (IOException e) {
-            Debug.error(null, "Missing FXML File: Search.fxml", e.getStackTrace());
+            Debug.error(null, "Missing FXML File: Search.fxml", e.getCause());
         }
 
     }
@@ -185,7 +185,7 @@ public class settings {
             settings.put("data_saver", dataSaverToggle.isSelected() ? 1 : 0);
 
         } catch (JSONException e) {
-            Debug.error(null, "Failed to generate new settings.", e.getStackTrace());
+            Debug.error(null, "Failed to generate new settings.", e.getCause());
         }
 
         return settings;

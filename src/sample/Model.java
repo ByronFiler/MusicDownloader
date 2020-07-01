@@ -89,7 +89,7 @@ public class Model {
                 newConfig.close();
 
             } catch (IOException e) {
-                Debug.error(null, "Failed to reset settings.", e.getStackTrace());
+                Debug.error(null, "Failed to reset settings.", e.getCause());
             }
         }
 
@@ -102,7 +102,7 @@ public class Model {
                 this.settings = settings;
 
             } catch (IOException e) {
-                Debug.error(null, "Failed to update settings file.", e.getStackTrace());
+                Debug.error(null, "Failed to update settings file.", e.getCause());
             }
         }
 
@@ -122,7 +122,7 @@ public class Model {
                     Debug.warn(null, "Failed to load correct settings, resetting settings.");
                     resetSettings();
                 } else {
-                    Debug.error(null, "Invalid key specified in settings: " + key, e.getStackTrace());
+                    Debug.error(null, "Invalid key specified in settings: " + key, e.getCause());
                 }
 
                 return null;

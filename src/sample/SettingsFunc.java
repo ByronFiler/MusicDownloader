@@ -32,7 +32,7 @@ public class SettingsFunc {
 
             } else {
 
-                Debug.error(null, "Error resetting settings", new IOException().getStackTrace());
+                Debug.error(null, "Error resetting settings", new IOException().getCause());
                 System.exit(-1);
 
             }

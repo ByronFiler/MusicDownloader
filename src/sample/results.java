@@ -74,7 +74,7 @@ public class results {
             mainWindow.setScene(new Scene(searchView));
 
         } catch (IOException e) {
-            Debug.error(null, "FXML Error with search.fxml", e.getStackTrace());
+            Debug.error(null, "FXML Error with search.fxml", e.getCause());
         }
 
     }

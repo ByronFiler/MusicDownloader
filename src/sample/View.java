@@ -316,7 +316,7 @@ public class View implements EventHandler<KeyEvent>
                 Debug.trace(null, "Reaquired resource: " + downloadFile);
 
             } catch (IOException e) {
-                Debug.error(null, "Failed to reacquire resource: " + downloadFile, e.getStackTrace());
+                Debug.error(null, "Failed to reacquire resource: " + downloadFile, e.getCause());
                 System.exit(-1);
             }
 
@@ -356,7 +356,7 @@ public class View implements EventHandler<KeyEvent>
         } catch (JSONException e) {
 
             // Should really regenerate all files, although this shouldn't happen
-            Debug.error(null, "Failed to find valid settings to load, even after files should have been checked.", e.getStackTrace());
+            Debug.error(null, "Failed to find valid settings to load, even after files should have been checked.", e.getCause());
             System.exit(-1);
 
         }
@@ -1312,7 +1312,7 @@ public class View implements EventHandler<KeyEvent>
             evaluateSettingsChanges();
 
         } catch (JSONException e) {
-            Debug.error(null, "Error saving settings", e.getStackTrace());
+            Debug.error(null, "Error saving settings", e.getCause());
         }
     }
 
@@ -1549,7 +1549,7 @@ public class View implements EventHandler<KeyEvent>
         } catch (ConcurrentModificationException ignored) {
             deleteDownloadHistory(id);
         } catch (IOException | JSONException e) {
-            Debug.error(null, "Failed to delete record with id: " + id, e.getStackTrace());
+            Debug.error(null, "Failed to delete record with id: " + id, e.getCause());
         }
 
     }
@@ -1606,7 +1606,7 @@ public class View implements EventHandler<KeyEvent>
                         try {
                             Utils.updateDownloads(downloadRecord);
                         } catch (IOException | JSONException e) {
-                            Debug.error(null, "Error adding to download history for cancelled.", e.getStackTrace());
+                            Debug.error(null, "Error adding to download history for cancelled.", e.getCause());
                         }
 
                         // Add the cancelled song as a new element to the table
@@ -1660,7 +1660,7 @@ public class View implements EventHandler<KeyEvent>
                 }
             }
         } catch (JSONException e) {
-            Debug.error(null, "Failed to remove element from downloads queue.", e.getStackTrace());
+            Debug.error(null, "Failed to remove element from downloads queue.", e.getCause());
         }
 
 
@@ -1788,7 +1788,7 @@ public class View implements EventHandler<KeyEvent>
                     searchErrorMessage.setText("Invalid Search");
                     searchErrorMessage.setVisible(true);
                 });
-                Debug.error(t, "Error connecting to allmusic", e.getStackTrace());
+                Debug.error(t, "Error connecting to allmusic", e.getCause());
                 return;
 
             }
@@ -1844,7 +1844,7 @@ public class View implements EventHandler<KeyEvent>
                         resultsTable.getItems().add(result);
 
                 } catch (NullPointerException e) {
-                    Debug.error(t, "Invalid search error", e.getStackTrace());
+                    Debug.error(t, "Invalid search error", e.getCause());
                 }
 
             } else {
@@ -1950,7 +1950,7 @@ public class View implements EventHandler<KeyEvent>
                 }
 
             } catch (IOException e) {
-                Debug.error(t, "Error sending web request: https://www.allmusic.com/search/all/" + searchQuery, e.getStackTrace());
+                Debug.error(t, "Error sending web request: https://www.allmusic.com/search/all/" + searchQuery, e.getCause());
             }
 
             endTime = Instant.now().toEpochMilli();
@@ -2025,7 +2025,7 @@ public class View implements EventHandler<KeyEvent>
                             } catch (NullPointerException ignored) {}
 
                         } catch (IllegalArgumentException e) {
-                            Debug.error(t, "Invalid search request", e.getStackTrace());
+                            Debug.error(t, "Invalid search request", e.getCause());
                         }
                     }
 
@@ -2045,7 +2045,7 @@ public class View implements EventHandler<KeyEvent>
 
 
             } catch (IOException e) {
-                Debug.error(t, "Error adding to table", e.getStackTrace());
+                Debug.error(t, "Error adding to table", e.getCause());
             }
 
         }
@@ -2287,7 +2287,7 @@ public class View implements EventHandler<KeyEvent>
                             Math.toIntExact((long) savedSettings.get("data_saver"))
                     );
                 } catch (JSONException e) {
-                    Debug.error(t, "Error saving new settings.", e.getStackTrace());
+                    Debug.error(t, "Error saving new settings.", e.getCause());
                 }
 
                 resetDirectory = true;
@@ -2410,7 +2410,7 @@ public class View implements EventHandler<KeyEvent>
                                         )
                                 );
                             } catch (JSONException e) {
-                                Debug.error(t, "Failed to form new record from download queue.", e.getStackTrace());
+                                Debug.error(t, "Failed to form new record from download queue.", e.getCause());
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 System.exit(0);
@@ -2470,7 +2470,7 @@ public class View implements EventHandler<KeyEvent>
                                         )
                                 );
                             } catch (JSONException e) {
-                                Debug.error(t, "Failed to form new record from history.", e.getStackTrace());
+                                Debug.error(t, "Failed to form new record from history.", e.getCause());
                             }
                         });
 
@@ -2482,7 +2482,7 @@ public class View implements EventHandler<KeyEvent>
 
             } catch (IOException | JSONException e) {
 
-                Debug.error(t, "Error drawing downloads in queue.", e.getStackTrace());
+                Debug.error(t, "Error drawing downloads in queue.", e.getCause());
 
                 try {
 
@@ -2492,7 +2492,7 @@ public class View implements EventHandler<KeyEvent>
                     File regenerateFile = new File("resources\\json\\downloads.json");
 
                     if (!regenerateFile.createNewFile())
-                        Debug.error(t, "Failed to regenerate the downloads file.", new IOException().getStackTrace());
+                        Debug.error(t, "Failed to regenerate the downloads file.", new IOException().getCause());
                     else
                         Debug.warn(t, "Generated a new downloads folder");
                 } catch (IOException ignored1) {}
@@ -2679,11 +2679,11 @@ public class View implements EventHandler<KeyEvent>
                     songsData.put(songData);
 
                 } else {
-                    Debug.error(t, "Unknown type given: " + givenData.get(4), new Exception().getStackTrace());
+                    Debug.error(t, "Unknown type given: " + givenData.get(4), new Exception().getCause());
                 }
 
             } catch (IOException | JSONException e) {
-                Debug.error(t, "Error fetching from url: " + givenData.get(6), e.getStackTrace());
+                Debug.error(t, "Error fetching from url: " + givenData.get(6), e.getCause());
                 System.exit(0);
             }
 
@@ -2696,7 +2696,7 @@ public class View implements EventHandler<KeyEvent>
                 newQueueItem.put("meta", metaData);
                 newQueueItem.put("songs", songsData);
             } catch (JSONException e) {
-                Debug.error(t, "Error piecing together new queue result.", e.getStackTrace());
+                Debug.error(t, "Error piecing together new queue result.", e.getCause());
             }
             Platform.runLater(() -> {
                 downloadQueue.put(newQueueItem);
@@ -2779,7 +2779,7 @@ public class View implements EventHandler<KeyEvent>
 
                 // Delete old file
                 if ( !new File(targetFile).delete()) {
-                    Debug.error(t, "Failed to delete file: " + targetFile, new IOException().getStackTrace());
+                    Debug.error(t, "Failed to delete file: " + targetFile, new IOException().getCause());
                 }
 
             } catch (IOException | NotSupportedException e) {
@@ -2955,7 +2955,7 @@ public class View implements EventHandler<KeyEvent>
 
                                             } catch (JSONException e) {
 
-                                                Debug.error(t, "Error updating the table with new downloads information", e.getStackTrace());
+                                                Debug.error(t, "Error updating the table with new downloads information", e.getCause());
 
                                             } catch (ConcurrentModificationException ignored) {}
                                         }
@@ -2987,7 +2987,7 @@ public class View implements EventHandler<KeyEvent>
                                         downloadQueue.getJSONObject(0).getJSONArray("songs").getJSONObject(0).get("position").toString()
                                 );
                             } catch (IOException | InvalidDataException | UnsupportedTagException e) {
-                                Debug.error(t, "Error applying meta data & creating new file.", e.getStackTrace());
+                                Debug.error(t, "Error applying meta data & creating new file.", e.getCause());
                             }
 
                         }
@@ -3010,7 +3010,7 @@ public class View implements EventHandler<KeyEvent>
                                     )
                             );
                         } catch (JSONException | IOException e) {
-                            Debug.error(t, "Failed to update downloads", e.getStackTrace());
+                            Debug.error(t, "Failed to update downloads", e.getCause());
                         }
 
                         // Deleting the current downloaded song
@@ -3067,7 +3067,7 @@ public class View implements EventHandler<KeyEvent>
                                 );
 
                             } catch (JSONException e) {
-                                Debug.error(t, "Error updating the table.", e.getStackTrace());
+                                Debug.error(t, "Error updating the table.", e.getCause());
                             } catch (ConcurrentModificationException ignored) {}
 
                         });
@@ -3086,7 +3086,7 @@ public class View implements EventHandler<KeyEvent>
                                 // Check the users setting here against meta and settings
                                 File albumArt = new File(downloadQueue.getJSONObject(0).getJSONObject("meta").get("directory") + "art.jpg");
                                 if (!albumArt.delete()) {
-                                    Debug.error(t, "Failed to delete file: " + albumArt.getAbsolutePath(), new IOException().getStackTrace());
+                                    Debug.error(t, "Failed to delete file: " + albumArt.getAbsolutePath(), new IOException().getCause());
                                 }
 
                                 // Remove the entire thing from the downloads queue
@@ -3112,7 +3112,7 @@ public class View implements EventHandler<KeyEvent>
                         }
 
                     } catch (JSONException e) {
-                        Debug.error(t, "Error while downloading...", e.getStackTrace());
+                        Debug.error(t, "Error while downloading...", e.getCause());
                     }
 
                 }
@@ -3219,10 +3219,10 @@ public class View implements EventHandler<KeyEvent>
 
                 File deleteBat = new File(directory + "\\exec.bat");
                 if (!deleteBat.delete())
-                    Debug.error(t, "Failed to delete bat file: " + deleteBat.getAbsolutePath(), new IOException().getStackTrace());
+                    Debug.error(t, "Failed to delete bat file: " + deleteBat.getAbsolutePath(), new IOException().getCause());
 
             } catch (IOException e) {
-                Debug.error(t, "Error in youtube-dl wrapper execution", e.getStackTrace());
+                Debug.error(t, "Error in youtube-dl wrapper execution", e.getCause());
             }
 
             complete = true;
@@ -3350,7 +3350,7 @@ public class View implements EventHandler<KeyEvent>
 
                     } catch (IOException e) {
                         // Likely file deleted, adjust to handle, for now just error
-                        Debug.error(t, "Error writing to downloads file", e.getStackTrace());
+                        Debug.error(t, "Error writing to downloads file", e.getCause());
                     }
 
                 } catch (JSONException e) {
