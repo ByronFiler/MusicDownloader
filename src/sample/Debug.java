@@ -45,7 +45,10 @@ public class Debug {
             entry("output-directory-verification", true),
             entry("output-directory-listener", true),
             entry("downloads-listener", true),
-            entry("cache-optimisation", true)
+            entry("cache-optimisation", true),
+            entry("reconnection", true),
+            entry("get-latest-version", true),
+            entry("auto-complete", true)
     );
 
     public synchronized void set(boolean state)

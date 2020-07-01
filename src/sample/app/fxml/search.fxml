@@ -77,12 +77,12 @@
                               <Insets />
                            </VBox.margin>
                         </HBox>
-                        <ListView fx:id="autocompleteResults" prefHeight="111.0" prefWidth="400.0" style="-fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-table-cell-border-color: transparent; -fx-background: transparent; -fx-background-color: transparent; -fx-background-insets: 0, 0 0 1 0; -fx-table-cell-border-color: derive(-fx-color, 5%);" stylesheets="@../css/search.css" visible="false">
+                        <ListView fx:id="autocompleteResults" prefHeight="109.0" prefWidth="395.0" style="-fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-table-cell-border-color: transparent; -fx-background: transparent; -fx-background-color: transparent; -fx-background-insets: 0, 0 0 1 0; -fx-table-cell-border-color: derive(-fx-color, 5%);" stylesheets="@../css/search.css" visible="false">
                            <opaqueInsets>
                               <Insets />
                            </opaqueInsets>
                            <VBox.margin>
-                              <Insets left="50.0" right="25.0" />
+                              <Insets left="50.0" right="119.0" />
                            </VBox.margin>
                         </ListView>
                         <Text fx:id="errorMessage" fill="RED" strokeType="OUTSIDE" strokeWidth="0.0" text="Error Message" textAlignment="CENTER" visible="false" wrappingWidth="435.921875">

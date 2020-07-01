@@ -38,8 +38,9 @@ import java.util.TimerTask;
 // TODO
 // Switch settings and downloads to the icons and animate them depending on what is happening
 // Not showing loading icon, fix that
-// The loading indicator png thing can be replaced with a ProgressIndicator
-// Fix title isn't centered with the search bar due to the invisible loading icon
+// Error message is not centered and is out of place
+// Losing connection mid-search generates a partially completed results table, don't let this happen
+
 public class search {
 
     @FXML private AnchorPane root;
@@ -53,7 +54,6 @@ public class search {
 
     // Timer timerRotate;
     Timer hideErrorMessage;
-    Timer networkCheck;
 
     generateAutocomplete autoCompleteThread;
     allMusicQuery searchThread;
@@ -454,10 +454,13 @@ public class search {
 
     }
 
+    // Check that when internet connection is lost, they must reconnect before doing anything else
     public class awaitReconnection implements Runnable {
 
+        private Thread thread;
+
         public awaitReconnection() {
-            Thread thread = new Thread(this, "reconnection");
+            thread = new Thread(this, "reconnection");
             thread.start();
         }
 
@@ -467,41 +470,45 @@ public class search {
             TimerTask webRequest = new TimerTask() {
                 @Override
                 public void run() {
+                    boolean reconnected = false;
                     try {
 
                         Platform.runLater(() -> errorMessage.setText("Attempting to reconnect..."));
 
-                        if (InetAddress.getByName("https://www.allmusic.com/").isReachable(1000)) {
+                        if (InetAddress.getByName("allmusic.com").isReachable(1000)) {
                             // Connection reestablished
                             Platform.runLater(() -> {
                                 search.setDisable(false);
                                 errorMessage.setVisible(false);
                             });
-                        } else {
-                            System.out.println("We reached the else statement.");
+                            Debug.trace(null, "Connection reestablished.");
+                            reconnected = true;
+                            connectionAttempt.cancel();
                         }
 
-                    } catch (IOException ignored) {
-                        // Connection still down
-                        System.out.println("We reached the error.");
+                    } catch (IOException ignored) {}
 
+                    if (!reconnected) {
+                        final int[] countDown = {Model.getInstance().settings.getSettingBool("data_saver") ? 60 : 10};
+                        Platform.runLater(() -> errorMessage.setVisible(true));
+                        Timer messageDisplay = new Timer();
+                        messageDisplay.schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                if (countDown[0] == 0) {
+                                    errorMessage.setText("Connection failed, attempting to reconnect...");
+                                    messageDisplay.cancel();
+                                } else {
+                                    errorMessage.setText(String.format("Connection failed, attempting to reconnect in %s second%s...", countDown[0], countDown[0] == 1 ? "" : "s"));
+                                    countDown[0]--;
+                                }
+                            }
+                        }, 0, 1000);
                     }
+
                 }
             };
             connectionAttempt.schedule(webRequest, 0, Model.getInstance().settings.getSettingBool("data_saver") ? 60 : 10 * 1000);
-
-            connectionAttempt.schedule(new TimerTask() {
-                @Override
-                public void run() {
-
-                    if (searchThread.working())
-                        loadingIcon.setRotate(loadingIcon.getRotate() + 18);
-                    else {
-                        loadingIcon.setVisible(false);
-                        // timerRotate.cancel();
-                    }
-                }
-            }, 0, 100);
 
         }
 

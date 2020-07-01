@@ -11,7 +11,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.controlsfx.control.ToggleSwitch;
@@ -22,15 +21,14 @@ import org.jsoup.nodes.Document;
 
 import javax.swing.*;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.util.Timer;
+import java.util.TimerTask;
 
 // TODO
 // Information & Files cutoff when resizing
 
 public class settings {
-
-    @FXML AnchorPane root;
-    @FXML StackPane innerRoot;
-
     // Information
     @FXML Text version;
     @FXML Text latestVersion;
@@ -56,6 +54,7 @@ public class settings {
     @FXML ToggleSwitch darkThemeToggle;
     @FXML ToggleSwitch dataSaverToggle;
 
+    // Confirm / Cancel
     @FXML Button saveSettings;
     @FXML Button cancel;
 
@@ -112,7 +111,8 @@ public class settings {
 
     }
 
-    @FXML private void selectNewFolder() {
+    @FXML
+    private void selectNewFolder() {
 
         try {
 
@@ -127,7 +127,8 @@ public class settings {
 
     }
 
-    @FXML private void validateConfirm() {
+    @FXML
+    private void validateConfirm() {
         // Check if settings have been adjusted from default
 
         if (settings.toString().equals(getNewSettings().toString())) {
@@ -148,7 +149,8 @@ public class settings {
 
     }
 
-    @FXML private void saveSettings() {
+    @FXML
+    private void saveSettings() {
         Model.getInstance().settings.saveSettings(getNewSettings());
         settings = Model.getInstance().settings.getSettings();
 
@@ -198,37 +200,58 @@ public class settings {
 
         getLatestVersion (){
             t = new Thread(this, "get-latest-version");
+            t.setDaemon(true);
             t.start();
         }
 
         public void run() {
 
             try {
-
                 Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/resources/json/meta.json").get();
                 JSONObject jsonData = new JSONObject(githubRequestLatestVersion.text());
                 Platform.runLater(() -> {
                     try {
                         latestVersion.setText(jsonData.get("version").toString());
                     } catch (JSONException e) {
-                        Debug.warn(t, "Failed to get latest version.");
+                        Debug.warn(t, "Failed to get latest version, due to it JSON Error, online file missing / damaged.");
                     }
                 });
 
             } catch (IOException | JSONException e) {
-                Debug.warn(t, "Failed to get latest version.");
+                Debug.warn(t, "Failed to get latest version, connection issue.");
+                new awaitReconnection();
                 Platform.runLater(() -> latestVersion.setText("Unknown"));
             }
+        }
 
-            /*
-            double originalWidth = latestVersionResult.getWidth();
-            String latestVersion = SettingsFunc.getLatestVersion();
+    }
 
-            Platform.runLater(() -> latestVersionResult.setText(latestVersion == null ? "Unknown" : latestVersion));
-            while (latestVersionResult.getWidth() == originalWidth) { try {Thread.sleep(10);} catch (InterruptedException ignored) {} }
-            Platform.runLater(() -> latestVersionResultContainer.setPadding(new Insets(70, 0, 0, -latestVersionResult.getWidth())));
+    // Will attempt to check the version in the event of failure will update
+    class awaitReconnection implements Runnable {
 
-             */
+        public awaitReconnection() {
+            Thread thread = new Thread(this, "reconnection-get-version");
+            thread.setDaemon(true);
+            thread.start();
+        }
+
+        public void run() {
+
+            // Sending repeated connection attempts is fine as we only need one to succeed, rest go nowhere
+            Timer connectionAttempt = new Timer();
+            connectionAttempt.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                        if (InetAddress.getByName("github.com").isReachable(1000)) {
+                            new getLatestVersion();
+                            connectionAttempt.cancel();
+                        }
+                    } catch (IOException ignored) {}
+
+                }
+            }, 0, 1000);
+
         }
 
     }
@@ -245,6 +268,7 @@ public class settings {
             this.element = element;
 
             thread = new Thread(this, "executable-execution");
+            thread.setDaemon(true);
             thread.start();
         }
 
