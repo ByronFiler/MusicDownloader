@@ -19,6 +19,9 @@ import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -32,6 +35,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 // TODO
+// Switch settings and downloads to the icons and animate them depending on what is happening
+// Not showing loading icon, fix that
+// The loading indicator png thing can be replaced with a ProgressIndicator
 // Fix title isn't centered with the search bar due to the invisible loading icon
 public class search {
 
@@ -173,64 +179,6 @@ public class search {
         }, 2000);
     }
 
-    // TODO: Switch to a JSONArray
-    public static ArrayList<ArrayList<String>> allmusicQuery(Document doc) {
-
-        ArrayList<ArrayList<String>> songsData = new ArrayList<>();
-        ArrayList<String> resultData;
-
-        Elements mst = doc.select("ul.search-results");
-        Elements results = mst.select("li");
-
-        for (Element result: results)
-        {
-
-            // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
-            if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740) {
-                resultData = new ArrayList<>();
-
-                // Handling The Title, If it's a song it has "" surround it, which it to be removed
-                String dataRequest = result.select("div.title").text();
-                if (result.select("h4").text().hashCode() == 2582837)
-                    dataRequest = dataRequest.substring(1, dataRequest.length()-1);
-
-                resultData.add(dataRequest);
-
-                // Handling The Artist
-                if (result.select("h4").text().hashCode() == 2582837)
-                    resultData.add(result.select("div.performers").select("a").text());
-                else
-                    resultData.add(result.select("div.artist").text());
-
-                // Handling The Year (only for Albums)
-                resultData.add(result.select("div.year").text());
-
-                // Handing the Genre (only for Albums)
-                resultData.add(result.select("div.genres").text());
-
-                // Determining if it's an album or an image
-                try{
-                    result.select("div.cover").get(0); // Only exists for albums, hence will error on songs
-                    resultData.add("Album");
-                } catch (Exception e) {
-                    resultData.add("Song");
-                }
-
-                // Handling the image link (only for Albums)
-                resultData.add(result.select("img.lazy").attr("data-original"));
-
-                // Page Link for Albums
-                resultData.add(result.select("div.title").select("a").attr("href"));
-
-                resultData.add(Integer.toString(results.indexOf(result))); // Identifier
-
-                songsData.add(resultData);
-            }
-        }
-
-        return songsData;
-    }
-
     // Generating the full data for the search data
     class allMusicQuery implements Runnable {
 
@@ -251,136 +199,165 @@ public class search {
         }
 
         public void run() {
+            Document doc;
 
-            // Raw & Basic Data
-            ArrayList<ArrayList<String>> searchResults;
-
+            // Attempting connection
             try {
-
-                Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + query).get();
-                searchResults = allmusicQuery(doc);
-
+                doc = Jsoup.connect("https://www.allmusic.com/search/all/" + query).get();
             } catch (IOException e) {
 
                 Platform.runLater(() -> {
                     timerRotate.cancel();
                     loadingIcon.setVisible(false);
 
-                    errorMessage.setText("Invalid Search");
-                    errorMessage.setVisible(true);
+                    Debug.warn(thread, "Failed to connect to https://www.allmusic.com/search/all/" + query);
+                    new awaitReconnection();
                 });
-                Debug.warn(thread, "Failed to connect to allmusic");
                 return;
-
             }
 
-            // Populated & Table-Ready
-            Model.resultsSet[] tableData = new Model.resultsSet[searchResults.size()];
+            // Extracting basic data from search
+            JSONArray searchData = new JSONArray();
 
-            boolean dataSaver = Model.getInstance().settings.getSettingBool("data_saver");
+            for (Element result: doc.select("ul.search-results").select("li"))
+            {
 
-            if (searchResults.size() > 0) {
+                // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
+                if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740) {
+                    JSONObject resultData = new JSONObject();
 
-                for (ArrayList<String> searchResult: searchResults) {
+                    // Handling The Title, If it's a song it has "" surround it, which it to be removed
+                    try {
+                        // Title
+                        resultData.put("title", result.select("div.title").text().replaceAll("\"", ""));
 
-                    /*
-                    [
-                        0: Title,
-                        1: Artist,
-                        2: Year,
-                        3: Genre,
-                        4: Type,
-                        5: Album Art URL,
-                        6: Information Page,
-                        7: ???
-                    ]
-                     */
+                        // Artist
+                        resultData.put("artist", result.select("h4").text().hashCode() == 2582837 ? result.select("div.performers").select("a").text() : result.select("div.artist").text());
 
-                    // Data is missing and must be acquired
-                    if (searchResult.get(4).equals("Song") && !dataSaver) {
+                        // Year (Albums Only)
+                        resultData.put("year", result.select("div.year").text());
 
-                        try {
-                            // Establishing connection and reading response
-                            Document songDataPage = Jsoup.connect(searchResult.get(6)).get();
+                        // Genre (Albums Only)
+                        resultData.put("genre", result.select("div.genres").text());
 
-                            // Locating the album art
-                            if (songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https") && !songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").equals("https://cdn-gce.allmusic.com/images/lazy.gif")) {
-                                searchResult.set(5, songDataPage.selectFirst("td.cover").selectFirst("img").attr("src"));
-                            } else {
-                                searchResult.set(5, new File("resources/song_default.png").toURI().toString());
-                            }
+                        // Type
+                        resultData.put("album", result.select("div.cover").size() > 0 ? 1 : 0);
 
-                            // Locating the year
-                            if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4)
-                                searchResult.set(2, songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear"));
-
-                            // Locating the genre
-                            try {
-                                searchResult.set(
-                                        3,
-                                        songDataPage
-                                                .selectFirst("div.song_genres")
-                                                .selectFirst("div.middle")
-                                                .selectFirst("a")
-                                                .text()
-                                                .split("\\(")[0]
-                                                .substring(
-                                                        0,
-                                                        songDataPage
-                                                                .selectFirst("div.song_genres")
-                                                                .selectFirst("div.middle")
-                                                                .selectFirst("a")
-                                                                .text()
-                                                                .split("\\(")[0]
-                                                                .length() - 1
-                                                )
-                                );
-                            } catch (NullPointerException ignored) {}
-
-
-                        } catch (IOException ignored) {
-                            Debug.warn(thread, "Failed to connect to: " + searchResult.get(6));
+                        // Art (Albums Only)
+                        if (result.select("div.cover").size() > 0) {
+                            String potentialAlbumArt = result.select("img.lazy").attr("data-original");
+                            resultData.put("art", potentialAlbumArt.isBlank() ? new File(getClass().getResource("app/img/album_default.png").getPath()).toURI().toString() : potentialAlbumArt);
                         }
 
-                    } else {
+                        // Link
+                        resultData.put("link", result.select("div.title").select("a").attr("href"));
 
-                        if (searchResult.get(5).isEmpty())
-                            searchResult.set(5, new File("resources/album_default.png").toURI().toString());
+                        searchData.put(resultData);
 
-                    }
-
-                    try {
-                        tableData[searchResults.indexOf(searchResult)] = new Model.resultsSet(
-                                new ImageView(new Image(searchResult.get(5))),
-                                searchResult.get(0),
-                                searchResult.get(1),
-                                searchResult.get(2),
-                                searchResult.get(3),
-                                searchResult.get(4)
-                        );
-                    } catch (IllegalArgumentException ignored) {
-                        Debug.warn(thread, "Error processing search result: " + searchResult.toString());
+                    } catch (JSONException e) {
+                        Debug.error(thread, "Failed to process search request JSON for https://www.allmusic.com/search/all/" + query, e.getStackTrace());
                     }
                 }
+            }
 
-                // Updating the model with the data
+            if (searchData.length() > 0) {
+                // Adding remaining data & preparing data for table
+                Model.resultsSet[] tableData = new Model.resultsSet[searchData.length()];
+                for (int i = 0; i < searchData.length(); i++) {
+
+                    // Gathering additional data for JSON object
+                    try {
+                        if (searchData.getJSONObject(i).getInt("album") == 0) {
+
+                            if (!Model.getInstance().settings.getSettingBool("data_saver")) {
+
+                                // Finding: Album Art Link, Year and Genre
+
+                                // Reading information page
+                                Document songDataPage = Jsoup.connect(searchData.getJSONObject(i).getString("link")).get();
+
+                                // Album Art
+                                String potentialAlbumArt = songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https") && !songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").equals("https://cdn-gce.allmusic.com/images/lazy.gif") ? songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") : new File("resources/song_default.png").toURI().toString();
+                                searchData.getJSONObject(i).put("art", potentialAlbumArt.isBlank() ? new File(getClass().getResource("app/img/song_default.png").getPath()).toURI().toString() : potentialAlbumArt);
+                                // Year
+                                if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4)
+                                    searchData.getJSONObject(i).put("year", songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear"));
+
+                                // Genre
+                                try {
+                                    searchData.getJSONObject(i).put(
+                                            "genre",
+                                            songDataPage
+                                                    .selectFirst("div.song_genres")
+                                                    .selectFirst("div.middle")
+                                                    .selectFirst("a")
+                                                    .text()
+                                                    .split("\\(")[0]
+                                                    .substring(
+                                                            0,
+                                                            songDataPage
+                                                                    .selectFirst("div.song_genres")
+                                                                    .selectFirst("div.middle")
+                                                                    .selectFirst("a")
+                                                                    .text()
+                                                                    .split("\\(")[0]
+                                                                    .length() - 1
+                                                    )
+                                    );
+                                } catch (NullPointerException ignored) {}
+                            } else {
+                                searchData.getJSONObject(0).put("art", new File("app/img/song_default.png").toURI().toString());
+                            }
+
+                        }
+                    } catch (JSONException e) {
+                        Debug.error(thread, "Failed to process found search results.", e.getStackTrace());
+                    } catch (IOException e) {
+                        try {
+                            Debug.warn(thread, "Connection error on connecting to: " + searchData.getJSONObject(i).getString("link"));
+                        } catch (JSONException er) {
+                            Debug.error(thread, "Failed to process found search results.", e.getStackTrace());
+                        }
+                    }
+
+                    // Add as processed element to table data
+                    try {
+                        tableData[i] = new Model.resultsSet(
+                                new ImageView(new Image(searchData.getJSONObject(i).getString("art"))),
+                                searchData.getJSONObject(i).getString("title"),
+                                searchData.getJSONObject(i).getString("artist"),
+                                searchData.getJSONObject(i).getString("year"),
+                                searchData.getJSONObject(i).getString("genre"),
+                                searchData.getJSONObject(i).getInt("album") == 0 ? "Song" : "Album"
+                        );
+                    } catch (JSONException | IllegalArgumentException e) {
+                        try {
+                            System.out.println(searchData.getJSONObject(i));
+                        } catch (JSONException ignored) {
+                            System.out.println("huh");
+                        }
+                        Debug.error(thread, "Failed to generate table result", e.getStackTrace());
+                    }
+
+                }
+
+                // Sending processed data to the model
                 Model.getInstance().setSearchResults(tableData);
 
-                // Transitioning to results to show search results
-                System.out.println("Switching to search view");
+                // Changing scene to results-view
                 try {
-
-                    Parent resultsView = FXMLLoader.load(new File("resources/fxml/results.fxml").toURI().toURL());
+                    Parent resultsView = FXMLLoader.load(getClass().getResource("app/fxml/results.fxml"));
                     Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
-                    Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView)));
 
-                } catch(IOException e) {
-                    Debug.error(null, "Missing FXML File: Settings.fxml", e.getStackTrace());
+                    Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39)));
+
+                } catch (IOException e) {
+                    Debug.error(null, "FXML Error: Settings.fxml", e.getStackTrace());
                 }
 
             } else {
 
-                Debug.warn(thread, "No search results found for query: " + query);
+                Debug.trace(thread, "No search results found for query: " + query);
                 Platform.runLater(() -> {
                     timerRotate.cancel();
                     loadingIcon.setVisible(false);
@@ -522,7 +499,6 @@ public class search {
         }
 
     }
-
 
 
 }
