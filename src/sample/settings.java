@@ -6,6 +6,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
@@ -19,6 +20,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import javax.swing.*;
 import java.io.IOException;
 
 public class settings {
@@ -51,10 +53,16 @@ public class settings {
     @FXML ToggleSwitch darkThemeToggle;
     @FXML ToggleSwitch dataSaverToggle;
 
+    @FXML Button saveSettings;
+    @FXML Button cancel;
+
+    private JSONObject settings;
+
     @FXML
     private void initialize() {
 
         // Prepare settings information from model data
+        settings = Model.getInstance().settings.getSettings();
 
         // Information
         version.setText(Model.getInstance().settings.getVersion() == null ? "Unknown" : Model.getInstance().settings.getVersion());
@@ -102,7 +110,82 @@ public class settings {
     }
 
     @FXML private void selectNewFolder() {
-        Debug.trace(null, "Should select new folder to save");
+
+        try {
+
+            JFileChooser newFolder = new JFileChooser();
+            newFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            newFolder.showSaveDialog(null);
+
+            outputDirectory.setText(newFolder.getSelectedFile().getPath());
+            validateConfirm();
+
+        } catch (NullPointerException ignored) {}
+
+    }
+
+    @FXML private void validateConfirm() {
+        // Check if settings have been adjusted from default
+
+        if (settings.toString().equals(getNewSettings().toString())) {
+            // Settings have not been modified, hence return to default
+            Platform.runLater(() -> {
+                saveSettings.setDisable(true);
+                cancel.setText("Back");
+            });
+
+        } else {
+            // Settings have been modified
+            Platform.runLater(() -> {
+                saveSettings.setDisable(false);
+                cancel.setText("Cancel");
+            });
+
+        }
+
+    }
+
+    @FXML private void saveSettings() {
+        Model.getInstance().settings.saveSettings(getNewSettings());
+        settings = Model.getInstance().settings.getSettings();
+
+        Platform.runLater(() -> {
+            saveSettings.setDisable(true);
+            cancel.setText("Back");
+        });
+
+        Debug.trace(null, "Updated settings file");
+    }
+
+    private JSONObject getNewSettings() {
+
+        JSONObject settings = new JSONObject();
+
+        try {
+            //
+            settings.put("output_directory", outputDirectory.getText());
+            settings.put("music_format", musicFormat.getSelectionModel().getSelectedIndex());
+            settings.put("save_album_art", saveAlbumArt.getSelectionModel().getSelectedIndex());
+
+            // Meta-Data Application
+            settings.put("album_art", albumArtToggle.isSelected() ? 1 : 0);
+            settings.put("album_title", albumTitleToggle.isSelected() ? 1 : 0);
+            settings.put("song_title", songTitleToggle.isSelected() ? 1 : 0);
+            settings.put("artist", artistToggle.isSelected() ? 1 : 0);
+            settings.put("year", yearToggle.isSelected() ? 1 : 0);
+            settings.put("track", trackNumberToggle.isSelected() ? 1 : 0);
+
+            // Application Configuration
+            settings.put("theme", darkThemeToggle.isSelected() ? 1 : 0);
+            settings.put("data_saver", dataSaverToggle.isSelected() ? 1 : 0);
+
+        } catch (JSONException e) {
+            Debug.error(null, "Failed to generate new settings.", e.getStackTrace());
+        }
+
+        return settings;
+
+
     }
 
     // Sends a web-request to the github to check the latest version available

@@ -27,14 +27,14 @@
                <bottom>
                   <BorderPane prefHeight="40.0" BorderPane.alignment="CENTER">
                      <left>
-                        <Button mnemonicParsing="false" style="-fx-background-color: green; -fx-text-fill: white;" prefHeight="40.0" prefWidth="80.0" text="Confirm" textAlignment="CENTER" BorderPane.alignment="CENTER" disable="true">
+                        <Button fx:id="saveSettings" onMouseClicked="#saveSettings" mnemonicParsing="false" style="-fx-background-color: green; -fx-text-fill: white;" prefHeight="40.0" prefWidth="80.0" text="Confirm" textAlignment="CENTER" BorderPane.alignment="CENTER" disable="true">
                            <BorderPane.margin>
                               <Insets left="10.0" />
                            </BorderPane.margin>
                         </Button>
                      </left>
                      <right>
-                        <Button mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="80.0" text="Back" BorderPane.alignment="CENTER">
+                        <Button fx:id="cancel" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="80.0" text="Back" BorderPane.alignment="CENTER">
                            <BorderPane.margin>
                               <Insets right="10.0" />
                            </BorderPane.margin>
@@ -179,7 +179,7 @@
                                           </Text>
                                        </left>
                                        <right>
-                                          <ComboBox fx:id="musicFormat" prefWidth="150.0" BorderPane.alignment="CENTER" />
+                                          <ComboBox fx:id="musicFormat" onAction="#validateConfirm" prefWidth="150.0" BorderPane.alignment="CENTER" />
                                              <items>
                                                 <FXCollections fx:factory="observableArrayList">
                                                    <String fx:value="mp3"></String>
@@ -199,7 +199,7 @@
                                           </Text>
                                        </left>
                                        <right>
-                                          <ComboBox fx:id="saveAlbumArt" prefWidth="150.0" BorderPane.alignment="CENTER" />
+                                          <ComboBox fx:id="saveAlbumArt" onAction="#validateConfirm" prefWidth="150.0" BorderPane.alignment="CENTER" />
                                              <items>
                                                 <FXCollections fx:factory="observableArrayList">
                                                    <String fx:value="Never"></String>
@@ -234,7 +234,7 @@
                                     </Text>
                                  </left>
                                  <right>
-                                    <ToggleSwitch fx:id="albumArtToggle" BorderPane.alignment="CENTER" />
+                                    <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="albumArtToggle" BorderPane.alignment="CENTER" />
                                  </right>
                               </BorderPane>
                               <BorderPane prefHeight="30.0" prefWidth="200.0">
@@ -246,7 +246,7 @@
                                     </Text>
                                  </left>
                                  <right>
-                                    <ToggleSwitch fx:id="albumTitleToggle" BorderPane.alignment="CENTER" />
+                                    <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="albumTitleToggle" BorderPane.alignment="CENTER" />
                                  </right>
                               </BorderPane>
                               <BorderPane prefHeight="30.0" prefWidth="200.0">
@@ -258,7 +258,7 @@
                                     </Text>
                                  </left>
                                  <right>
-                                    <ToggleSwitch fx:id="songTitleToggle" BorderPane.alignment="CENTER" />
+                                    <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="songTitleToggle" BorderPane.alignment="CENTER" />
                                  </right>
                               </BorderPane>
                               <BorderPane prefHeight="30.0" prefWidth="200.0">
@@ -270,7 +270,7 @@
                                     </Text>
                                  </left>
                                  <right>
-                                    <ToggleSwitch fx:id="artistToggle" BorderPane.alignment="CENTER" />
+                                    <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="artistToggle" BorderPane.alignment="CENTER" />
                                  </right>
                               </BorderPane>
                               <BorderPane prefHeight="30.0" prefWidth="200.0">
@@ -282,7 +282,7 @@
                                     </Text>
                                  </left>
                                  <right>
-                                    <ToggleSwitch fx:id="yearToggle" BorderPane.alignment="CENTER" />
+                                    <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="yearToggle" BorderPane.alignment="CENTER" />
                                  </right>
                               </BorderPane>
                               <BorderPane prefHeight="30.0" prefWidth="200.0">
@@ -294,7 +294,7 @@
                                     </Text>
                                  </left>
                                  <right>
-                                    <ToggleSwitch fx:id="trackNumberToggle" BorderPane.alignment="CENTER" />
+                                    <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="trackNumberToggle" BorderPane.alignment="CENTER" />
                                  </right>
                               </BorderPane>
                            </children>
@@ -319,7 +319,7 @@
                                     </Text>
                                  </left>
                                  <right>
-                                    <ToggleSwitch fx:id="darkThemeToggle" BorderPane.alignment="CENTER" />
+                                    <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="darkThemeToggle" BorderPane.alignment="CENTER" />
                                  </right>
                               </BorderPane>
                               <BorderPane prefHeight="30.0" prefWidth="500.0">
@@ -331,7 +331,7 @@
                                     </Text>
                                  </left>
                                  <right>
-                                    <ToggleSwitch fx:id="dataSaverToggle" BorderPane.alignment="CENTER" />
+                                    <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="dataSaverToggle" BorderPane.alignment="CENTER" />
                                  </right>
                               </BorderPane>
                            </children>

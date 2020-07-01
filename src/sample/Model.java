@@ -93,11 +93,24 @@ public class Model {
             }
         }
 
-        public boolean getSettingBool(String key) {
+        public void saveSettings(JSONObject settings) {
+            try {
+                FileWriter settingsFile = new FileWriter("resources/json/config.json");
+                settingsFile.write(settings.toString());
+                settingsFile.close();
+
+                this.settings = settings;
+
+            } catch (IOException e) {
+                Debug.error(null, "Failed to update settings file.", e.getStackTrace());
+            }
+        }
+
+        public synchronized boolean getSettingBool(String key) {
             return Integer.parseInt(getSetting(key)) != 0;
         }
 
-        public String getSetting(String key) {
+        public synchronized String getSetting(String key) {
 
             try {
                 return settings.get(key).toString();
@@ -116,6 +129,10 @@ public class Model {
 
             }
 
+        }
+
+        public synchronized JSONObject getSettings() {
+            return settings;
         }
 
         public String getVersion() {
