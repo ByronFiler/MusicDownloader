@@ -1,6 +1,14 @@
 package sample;
 
+import com.musicg.fingerprint.FingerprintManager;
+import com.musicg.fingerprint.FingerprintSimilarityComputer;
+import com.musicg.wave.Wave;
+import javafx.application.Platform;
 import javafx.scene.image.ImageView;
+import javazoom.jl.converter.Converter;
+import javazoom.jl.decoder.JavaLayerException;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -9,52 +17,185 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Scanner;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+
+// TODO
+// Switch to using actual boolean values instead of 0 and 1
+
+// TODO
+// On downloads class, add an advanced audio referential check setting
+// If enabled once the target file is downloaded, open the all music song link -> get music player 30 second clip download -> create trimmed version of song to 30 seconds -> compare
 
 public class Model {
 
     private final static Model instance = new Model();
 
-    private final JSONArray downloadQueue = new JSONArray();
-    private resultsSet[] searchResults;
     public final settings settings = new settings();
     public final download download = new download();
+    public final search search = new search();
+
+    public Model() {
+
+        // Runs in background and checks the cache for optimisations every five minutes to ensure files aren't built up unnecessarily
+        Timer cacheOptimiser = new Timer();
+        cacheOptimiser.schedule(new TimerTask() {
+            @Override
+            public synchronized void run() {
+                // List all files
+                File[] cachedFiles = new File("resources\\cached").listFiles();
+                ArrayList<String> imgData = new ArrayList<>();
+                ArrayList<ArrayList<String>> rename = new ArrayList<>();
+
+                // File sizes at different times
+                int deletedFiles = 0;
+                int originalSize = Arrays.stream(Objects.requireNonNull(new File("resources\\cached\\").listFiles())).mapToInt(existingFile -> (int) existingFile.length()).sum();
+
+                if (cachedFiles == null | Objects.requireNonNull(cachedFiles).length == 0)
+                    return;
+
+                // Load binary data, md5 hashes instead of keeping full file in memory
+                for (File workFile : cachedFiles) {
+                    if (workFile.getName().split("\\.")[1].equals("jpg")) {
+
+                        try {
+                            String hash = DigestUtils.md5Hex(
+                                    Files.newInputStream(
+                                            Paths.get(workFile.getAbsolutePath())
+                                    )
+                            );
+
+                            if (imgData.contains(hash)) {
+
+                                // Exists in data hence to setup a rename reference
+                                rename.add(
+                                        new ArrayList<>(
+                                                Arrays.asList(
+                                                        workFile.getName(),
+                                                        cachedFiles[imgData.indexOf(hash)].getName()
+                                                )
+                                        )
+                                );
+
+                            } else {
+                                imgData.add(hash);
+                            }
+
+
+                        } catch (IOException ignored) { }
+
+                    } else {
+
+                        if (!workFile.delete())
+                            Debug.warn(null, "Failed to delete non jpeg file in cache: " + workFile.getAbsolutePath());
+                        else
+                            deletedFiles++;
+                    }
+
+                }
+
+                // Begin the process of deleting files and renaming references
+                for (ArrayList<String> fileNames : rename) {
+
+                    // Delete the old no longer relevant file
+                    if (!new File("resources/cached/" + fileNames.get(0)).delete())
+                        Debug.warn(null, "Failed to delete file: " + new File("resources\\cached\\" + fileNames.get(0)).getAbsolutePath());
+                    else
+                        deletedFiles++;
+
+                    // Delete all references to the file in the downloads history
+                    try {
+
+                        // Can cause an error if the file is blank, but will load the jsonarray
+                        JSONArray downloadsHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+
+                        // Iterate through downloads history, replacing the old references with the new
+                        for (int i = 0; i < downloadsHistory.length(); i++) {
+
+                            try {
+                                if (downloadsHistory.getJSONObject(i).get("cached").toString().equals("resources/cached/" + fileNames.get(1)))
+                                    downloadsHistory.getJSONObject(i).put("cached", "resources/cached/" + fileNames.get(0));
+                            } catch (JSONException ignored) {
+                            }
+
+                        }
+
+                        // Writing changes
+                        try {
+                            FileWriter updateDownloads = new FileWriter("resources\\json\\downloads.json");
+                            updateDownloads.write(downloadsHistory.toString());
+                            updateDownloads.close();
+
+                        } catch (IOException e) {
+                            // Likely file deleted, adjust to handle, for now just error
+                            Debug.error(null, "Error writing to downloads file", e.getCause());
+                        }
+
+                    } catch (JSONException e) {
+
+                        // There is no download history and no use of the cached files, hence delete them
+                        for (File deleteFile : cachedFiles) {
+                            if (!deleteFile.delete()) {
+                                Debug.warn(null, "Failed to delete file: " + deleteFile.getAbsolutePath());
+                            }
+                        }
+                        return;
+
+                    } catch (FileNotFoundException ignored) {
+                        // Generate a new downloads folder
+                    }
+
+                }
+
+                if (deletedFiles > 0) {
+                    int currentSize = Arrays.stream(Objects.requireNonNull(new File("resources\\cached\\").listFiles())).mapToInt(existingFile -> (int) existingFile.length()).sum();
+                    Debug.trace(
+                            null,
+                            String.format(
+                                    "Cache optimisation finished, deleted %s files, a cache size reduction of %2.2f%%",
+                                    deletedFiles,
+                                    ((double) (originalSize - currentSize) / originalSize) * 100
+                            )
+                    );
+                } else {
+                    Debug.trace(null, "Cache is optimised.");
+                }
+
+            }
+        }, 0, 60 * 1000);
+
+    }
 
     public static Model getInstance() {
         return instance;
     }
 
-    public void setSearchResults(resultsSet[] generatedSearchResults) {
-        searchResults = generatedSearchResults;
-    }
+    public static class search {
+        private resultsSet[] searchResults;
+        private JSONArray searchResultsJson;
 
-    public resultsSet[] getSearchResults() {
-        return searchResults;
-    }
+        public resultsSet[] getSearchResults() {
+            return searchResults;
+        }
 
-    // Allow Access to Downloads
-    public boolean downloadsAccessible() {
+        public void setSearchResults(resultsSet[] searchResults) {
+            this.searchResults = searchResults;
+        }
 
-        // Should allow access to downloads if there is: download history or downloads in progress
-        JSONArray downloadHistory = new JSONArray();
-        try {
+        public JSONArray getSearchResultsJson() {return searchResultsJson; }
 
-            downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\config.json")).useDelimiter("\\Z").next());
-
-        } catch (FileNotFoundException e) {
-            // Regenerate the downloads file
-
-        } catch (JSONException ignored) {}
-
-        return downloadHistory.length() > 0 || downloadQueue.length() > 0;
-
+        public void setSearchResultsJson(JSONArray searchResultsJson) {
+            this.searchResultsJson = searchResultsJson;
+        }
     }
 
     public static class download {
-
-        private JSONArray downloadQueue = new JSONArray();
-        private JSONArray downloadHistory = new JSONArray();
+        private acquireDownloadFiles downloader;
+        private volatile JSONArray downloadQueue = new JSONArray();
         private volatile JSONObject downloadObject = new JSONObject();
+        private JSONArray downloadHistory = new JSONArray();
 
         public download() {
 
@@ -86,6 +227,190 @@ public class Model {
             return downloadObject;
         }
 
+        public synchronized acquireDownloadFiles getDownloader() {
+            try {
+                return downloader;
+            } catch (NullPointerException ignored) {
+                return null;
+            }
+        }
+
+        public synchronized void updateDownloadQueue(JSONObject queueItem) {
+            if (downloadQueue.length() == 0 && !downloadObject.has("songs")) {
+
+                // No downloads in progress or in queue, hence start a new download thread.
+                Debug.trace(null, "New download request received, queue is blank and hence will begin downloading...");
+                downloadObject = queueItem;
+                downloader = new acquireDownloadFiles(downloadObject);
+
+            } else {
+
+                // Download already in progress, hence queue
+                Debug.trace(null, String.format("New download request received, adding to queue in position %s.", Model.getInstance().download.getDownloadQueue().length()+1));
+                downloadQueue.put(queueItem);
+
+            }
+        }
+
+        public boolean downloadsAccessible() {
+
+            // Should allow access to downloads if there is: download history or downloads in progress
+            JSONArray downloadHistory = new JSONArray();
+            try {
+
+                downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\config.json")).useDelimiter("\\Z").next());
+
+            } catch (FileNotFoundException e) {
+                // Regenerate the downloads file
+
+            } catch (JSONException ignored) {}
+
+            return downloadHistory.length() > 0 || downloadQueue.length() > 0;
+
+        }
+
+        // TODO Implement the functionality of downloading
+        class acquireDownloadFiles implements Runnable {
+            Thread thread;
+            JSONObject downloadData;
+
+            public acquireDownloadFiles(JSONObject downloadData) {
+                this.downloadData = downloadData;
+
+                // Not a daemon, a kill must handle this properly
+                thread = new Thread(this, "acquire-download-files");
+                thread.start();
+            }
+
+            // 0.7+ Acceptable
+            private float evaluateDownloadValidity (String sampleFile, String downloadedFile) {
+
+                try {
+
+                    byte[] sampleData = {};
+                    byte[] downloadedData = {};
+
+                    String sampleFileTemp = "tmp_" + Double.toString(Math.random()).split("\\.")[1] + ".wav";
+                    String fullFileTemp = "tmp_" + Double.toString(Math.random()).split("\\.")[1] + ".wav";
+
+                    // Heavy, consider checking if this is necessary
+                    new Converter().convert(sampleFile, sampleFileTemp);
+                    new Converter().convert(downloadedFile, fullFileTemp);
+
+                    try {
+                        sampleData = new FingerprintManager().extractFingerprint(new Wave(sampleFileTemp));
+                        downloadedData = new FingerprintManager().extractFingerprint(new Wave(fullFileTemp));
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        Debug.warn(null, "File is too large to compare.");
+                    }
+
+                    if (!new File(sampleFileTemp).delete())
+                        Debug.warn(null, "Failed to delete file: " + sampleFileTemp);
+                    if (!new File(fullFileTemp).delete())
+                        Debug.warn(null, "Failed to delete file: " + fullFileTemp);
+
+                    FingerprintSimilarityComputer fingerprint = new FingerprintSimilarityComputer(sampleData, downloadedData);
+                    return fingerprint.getFingerprintsSimilarity().getScore();
+
+                } catch (JavaLayerException e) {
+                    Debug.error(null, String.format("Error comparing files: %s and %s", sampleFile, downloadedFile), e.getCause());
+                }
+
+                return 1;
+            }
+
+            private String generateFolder(String folderRequest) {
+
+                if (Files.exists(Paths.get(folderRequest))) {
+                    int i = 1; // Looks better than Album (0)
+                    while (true) {
+
+                        // File exists so move onto the next one
+                        if (Files.exists(Paths.get(folderRequest + "(" + i + ")"))) {
+                            i++;
+                        } else {
+                            if (new File(folderRequest + "(" + i + ")").mkdir())
+                                return folderRequest + "(" + i + ")";
+                            else {
+                                Debug.error(thread, "Failed to create directory: " + folderRequest + "(" + i + ")", null);
+                            }
+                        }
+                    }
+                } else {
+                    if (new File(folderRequest).mkdir())
+                        return folderRequest;
+                    else {
+                        Debug.error(thread, "Failed to create directory: " + folderRequest, null);
+                    }
+                }
+
+                return "";
+
+            }
+
+            @Override
+            public void run() {
+
+                // Making the folder to contain the downloads
+                try {
+                    downloadObject.getJSONObject("metadata").put("directory", generateFolder(downloadObject.getJSONObject("metadata").getString("directory")));
+                } catch (JSONException ignored) {}
+
+                // Download the album art
+                try {
+                    FileUtils.copyURLToFile(
+                            new URL(downloadObject.getJSONObject("metadata").getString("art")),
+                            new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
+                    );
+                } catch (IOException e) {
+                    Debug.error(thread, "Failed to download album art.", e.getCause());
+                } catch (JSONException ignored) {}
+
+                // Download files
+                
+
+                // Check song if necessary
+
+                // Apply meta data
+
+                // Move onto the next item if necessary
+                Platform.runLater(() -> {
+                    if (downloadQueue.length() > 0) {
+                        try {
+                            // Spawning new thread
+                            downloadObject = downloadQueue.getJSONObject(0);
+                            downloader = new acquireDownloadFiles(downloadObject);
+
+                            // Update queue
+                            if (downloadQueue.length() > 1) {
+
+                                // Move queued item to the model and respawn this thread.
+                                JSONArray newQueue = new JSONArray();
+                                for (int i = 1; i < downloadQueue.length(); i++) {
+                                    newQueue.put(downloadQueue.getJSONObject(i));
+                                }
+
+                                downloadQueue = newQueue;
+
+                            } else {
+
+                                // Queue had only one item, hence has now been cleared
+
+                                downloadQueue = new JSONArray();
+
+                            }
+
+                        } catch (JSONException e) {
+                            Debug.error(thread, "Failed to process queue.", e.getCause());
+                        }
+
+                    } else {
+                        downloadObject = new JSONObject();
+                    }
+                });
+
+            }
+        }
     }
 
     public static class settings {
@@ -248,5 +573,4 @@ public class Model {
             this.type = type;
         }
     }
-
 }

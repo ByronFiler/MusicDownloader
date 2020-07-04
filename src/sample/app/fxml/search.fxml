@@ -83,7 +83,7 @@
                               <ProgressIndicator fx:id="loadingIcon" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" prefHeight="25.0" prefWidth="25.0" visible="false" />
                            </children>
                         </HBox>
-                        <ListView fx:id="autocompleteResults" maxWidth="400.0" prefHeight="150.0" prefWidth="400.0" style="-fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-table-cell-border-color: transparent; -fx-background: transparent; -fx-background-color: transparent; -fx-background-insets: 0, 0 0 1 0; -fx-table-cell-border-color: derive(-fx-color, 5%);" stylesheets="@../css/search.css" visible="false">
+                        <ListView fx:id="autocompleteResults" maxWidth="440.0" prefHeight="150.0" prefWidth="440.0" style="-fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-table-cell-border-color: transparent; -fx-background: transparent; -fx-background-color: transparent; -fx-background-insets: 0, 0 0 1 0; -fx-table-cell-border-color: derive(-fx-color, 5%);" stylesheets="@../css/search.css" visible="false">
                            <opaqueInsets>
                               <Insets />
                            </opaqueInsets>

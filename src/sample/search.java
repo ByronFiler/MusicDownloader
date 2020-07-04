@@ -37,6 +37,7 @@ import java.util.TimerTask;
 // Switch settings and downloads to the icons and animate them depending on what is happening
 // Error message is not centered and is out of place
 // Losing connection mid-search generates a partially completed results table, don't let this happen
+// Continue testing connection drops: Control Panel\Network and Internet\Network Connections
 
 public class search {
 
@@ -58,7 +59,7 @@ public class search {
     private void initialize() {
 
         // Theoretically no way this could change via normal use of the program, but if user starts a download, waits for it to finish and clears file, downloads page needs a check to prevent
-        if (Model.getInstance().downloadsAccessible()) {
+        if (Model.getInstance().download.downloadsAccessible()) {
             downloads.setVisible(true);
         }
 
@@ -66,8 +67,16 @@ public class search {
     }
 
     @FXML
-    private void downloadsView() {
-        Debug.trace(null, "Requested to switch to downloads view.");
+    private void downloadsView(Event event) {
+        try {
+            Parent settingsView = FXMLLoader.load(getClass().getResource("app/fxml/downloads.fxml"));
+
+            Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
+
+        } catch(IOException e) {
+            Debug.error(null, "FXML Error: downloads.fxml", e.getCause());
+        }
     }
 
     @FXML
@@ -124,26 +133,7 @@ public class search {
 
                         // Start a new search
                         searchThread = new allMusicQuery(e, search.getText() + e.getText());
-
-                        // Animating the icon
                         loadingIcon.setVisible(true);
-
-                        /*
-                        timerRotate = new Timer();
-                        timerRotate.schedule(new TimerTask() {
-                            @Override
-                            public void run() {
-
-                                if (searchThread.working())
-                                    loadingIcon.setRotate(loadingIcon.getRotate() + 18);
-                                else {
-                                    loadingIcon.setVisible(false);
-                                    timerRotate.cancel();
-                                }
-                            }
-                        }, 0, 100);
-
-                         */
 
                     }
 
@@ -279,11 +269,18 @@ public class search {
                                 Document songDataPage = Jsoup.connect(searchData.getJSONObject(i).getString("link")).get();
 
                                 // Album Art
-                                String potentialAlbumArt = songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https") && !songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").equals("https://cdn-gce.allmusic.com/images/lazy.gif") ? songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") : new File("resources/song_default.png").toURI().toString();
-                                searchData.getJSONObject(i).put("art", potentialAlbumArt.isBlank() ? new File(getClass().getResource("app/img/song_default.png").getPath()).toURI().toString() : potentialAlbumArt);
+                                try {
+                                    String potentialAlbumArt = songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https") && !songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").equals("https://cdn-gce.allmusic.com/images/lazy.gif") ? songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") : new File("resources/song_default.png").toURI().toString();
+                                    searchData.getJSONObject(i).put("art", potentialAlbumArt.isBlank() ? new File(getClass().getResource("app/img/song_default.png").getPath()).toURI().toString() : potentialAlbumArt);
+                                } catch (NullPointerException ignored) {
+                                    searchData.getJSONObject(i).put("art", new File(getClass().getResource("app/img/song_default.png").getPath()).toURI().toString());
+                                }
+
                                 // Year
-                                if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4)
-                                    searchData.getJSONObject(i).put("year", songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear"));
+                                try {
+                                    if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4)
+                                        searchData.getJSONObject(i).put("year", songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear"));
+                                } catch (NullPointerException ignored) {}
 
                                 // Genre
                                 try {
@@ -333,18 +330,14 @@ public class search {
                                 searchData.getJSONObject(i).getInt("album") == 0 ? "Song" : "Album"
                         );
                     } catch (JSONException | IllegalArgumentException e) {
-                        try {
-                            System.out.println(searchData.getJSONObject(i));
-                        } catch (JSONException ignored) {
-                            System.out.println("huh");
-                        }
                         Debug.error(thread, "Failed to generate table result", e.getCause());
                     }
 
                 }
 
                 // Sending processed data to the model
-                Model.getInstance().setSearchResults(tableData);
+                Model.getInstance().search.setSearchResults(tableData);
+                Model.getInstance().search.setSearchResultsJson(searchData);
 
                 // Changing scene to results-view
                 try {

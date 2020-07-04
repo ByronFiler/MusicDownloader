@@ -30,8 +30,8 @@
                <Button fx:id="cancel" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="120.0" text="Back" BorderPane.alignment="CENTER" />
             </right>
             <left>
-               <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-                  <Button fx:id="download" disable="true" mnemonicParsing="false" prefHeight="40.0" prefWidth="120.0" text="Download" />
+               <HBox prefHeight="100.0" prefWidth="176.0" BorderPane.alignment="CENTER">
+                  <Button fx:id="download" disable="true" mnemonicParsing="false" onMouseClicked="#download" prefHeight="40.0" prefWidth="120.0" text="Download" />
                   <ProgressIndicator fx:id="queueAdditionProgress" visible="false" />
                </HBox>
             </left>
@@ -45,7 +45,7 @@
             <padding>
                <Insets bottom="50.0" />
             </padding>
-            <TableView fx:id="results" prefHeight="679.0" prefWidth="540.0" VBox.vgrow="ALWAYS">
+            <TableView fx:id="results" onMouseClicked="#downloadButtonCheck" prefHeight="679.0" prefWidth="540.0" VBox.vgrow="ALWAYS">
                <columns>
                   <TableColumn fx:id="artColumn" prefWidth="90.0" text="Album Art">
                      <cellValueFactory><PropertyValueFactory property="albumArt" /></cellValueFactory>

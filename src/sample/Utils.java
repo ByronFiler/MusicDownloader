@@ -22,7 +22,7 @@ public class Utils {
 
     public View view;
 
-    // TODO: Implemented in latest
+    // TODO: Implemented
     public static class resultsSet {
         private ImageView albumArt;
         private String title;
@@ -90,7 +90,7 @@ public class Utils {
         }
     }
 
-    // TODO: Removed/Replaced in latest
+    // TODO: Implemented
     public static class autocompleteResultsSet {
         private ImageView icon;
         private String name;
@@ -120,6 +120,7 @@ public class Utils {
         }
     }
 
+    // TODO: Implemented
     public static synchronized int timeConversion(String stringTime){
         String[] songDataBreak = stringTime.split(":");
         int songLenSec = 0;
@@ -132,7 +133,7 @@ public class Utils {
         return songLenSec;
     }
 
-    // TODO: Implemented in latest
+    // TODO: Implemented
     public static synchronized ArrayList<ArrayList<String>> allmusicQuery(Document doc) {
 
         ArrayList<ArrayList<String>> songsData = new ArrayList<>();
@@ -190,6 +191,7 @@ public class Utils {
         return songsData;
     }
 
+    // TODO Implemented
     public static synchronized ArrayList<ArrayList<String>> youtubeQuery(String query) throws IOException, JSONException {
 
         // [Web Data] -> JavaScript -> String -> Json -> Data
@@ -265,7 +267,9 @@ public class Utils {
         return searchDataExtracted;
     }
 
+    // TODO: Implemented
     public static synchronized String generateFolder(String folderRequest) {
+
         if (Files.exists(Paths.get(folderRequest))) {
             int i = 1; // Looks better than Album (0)
             while (true) {
@@ -319,6 +323,7 @@ public class Utils {
         fos.close();
     }
 
+    // TODO: Implemented
     public static synchronized String evaluateBestLink(ArrayList<ArrayList<String>> fullData, int songRealTime){
 
         int bestTimeDifference = Integer.MAX_VALUE;
@@ -336,6 +341,124 @@ public class Utils {
 
     }
 
+    // TODO: Implemented
+    public static synchronized String generateNewId(JSONArray temporaryData, JSONArray downloadsQueue) throws IOException, JSONException {
+
+        String id = Double.toString(Math.random()).split("\\.")[1];
+
+        // Checking in temporary data
+        if (idExistsInData(temporaryData, id)) {
+            return generateNewId(temporaryData, downloadsQueue);
+        }
+
+        // Checking in actual downloads queue
+        for (int i = 0; i < downloadsQueue.length(); i++) {
+
+            if (idExistsInData( (JSONArray) ((JSONObject) downloadsQueue.get(i)).get("songs"), id )) {
+                return generateNewId(temporaryData, downloadsQueue);
+            }
+
+        }
+
+        // Checking in downloads history
+        try {
+            JSONArray fileData = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+            if (idExistsInData(fileData, id)) {
+                return generateNewId(temporaryData, downloadsQueue);
+            }
+        } catch (NoSuchElementException ignored) {}
+
+        // Did not match existing records, return generated ID
+        return id;
+    }
+
+    // TODO: Implemented
+    public static synchronized String generateNewCacheArtId(JSONArray downloadsQueue) {
+
+        // Generating the potential ID
+        String id = Double.toString(Math.random()).split("\\.")[1];
+
+        // Checking if it exists in the downloads queue
+        try {
+            for (int i = 0; i < downloadsQueue.length(); i++) {
+
+                if (downloadsQueue.getJSONObject(i).getJSONObject("meta").get("artId").equals(id)) {
+                    // Our generated ID already exists in the queue, generate a new one
+                    return generateNewCacheArtId(downloadsQueue);
+                }
+
+            }
+        } catch (JSONException ignored) {}
+
+        // Checking if it exists in existing cached arts
+        File[] existingCache = new File("resources\\cache").listFiles();
+        for (File cachedArt: existingCache) {
+            if (cachedArt.isFile() && cachedArt.getName().split("\\.")[1].equals("jpg") && cachedArt.getName().split("\\.")[0].equals(id) ) {
+                // Our generated ID already exists in the files, generate a new one
+                return generateNewCacheArtId(downloadsQueue);
+            }
+        }
+
+        // Generated ID was not found to match any existing record, hence use this ID
+        return id;
+
+    }
+
+    // TODO: Not relevant
+    public static synchronized JSONArray deleteFromJSONArray(JSONArray data, int target) {
+
+        try {
+            ArrayList<String> list = new ArrayList<>();
+
+            for (int j = 0; j < data.length(); j++) {
+                list.add(data.get(j).toString());
+            }
+
+            list.remove(target);
+            return new JSONArray(list);
+
+        } catch (JSONException e) {
+            Debug.error(null, "Error deleting from JSONArray.", e.getCause());
+            return new JSONArray();
+        }
+
+    }
+
+    public static synchronized void updateDownloads(JSONObject addition) throws IOException, JSONException {
+
+        JSONArray downloadHistory = new JSONArray();
+        try {
+            downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+        } catch (NoSuchElementException ignored) { }
+
+        downloadHistory.put(downloadHistory.length(), addition);
+        FileWriter recordUpdater = new FileWriter("resources\\json\\downloads.json");
+        recordUpdater.write(downloadHistory.toString());
+        recordUpdater.close();
+
+    }
+
+    // TODO: Implemented
+    private static synchronized boolean idExistsInData(JSONArray songs, String id) throws NoSuchElementException{
+
+        try {
+            for (int i = 0; i < songs.length(); i++)
+            {
+                if ((songs.getJSONObject(0)).get("id").equals(id)) {
+                    return true;
+                }
+            }
+        } catch (JSONException | NoSuchElementException ignored) {}
+        return false;
+
+    }
+
+    // TODO: Not relevant
+    public static synchronized boolean downloadFFMPEG(Thread t) {
+        return false;
+    }
+
+    // TODO: Not relevant
     public static synchronized boolean downloadYoutubedl(Thread t) {
 
         boolean needsDownload = true;
@@ -396,117 +519,4 @@ public class Utils {
 
         return false;
     }
-
-    public static synchronized boolean downloadFFMPEG(Thread t) {
-        return false;
-    }
-
-    public static synchronized String generateNewId(JSONArray temporaryData, JSONArray downloadsQueue) throws IOException, JSONException {
-
-        String id = Double.toString(Math.random()).split("\\.")[1];
-
-        // Checking in temporary data
-        if (idExistsInData(temporaryData, id)) {
-            return generateNewId(temporaryData, downloadsQueue);
-        }
-
-        // Checking in actual downloads queue
-        for (int i = 0; i < downloadsQueue.length(); i++) {
-
-            if (idExistsInData( (JSONArray) ((JSONObject) downloadsQueue.get(i)).get("songs"), id )) {
-                return generateNewId(temporaryData, downloadsQueue);
-            }
-
-        }
-
-        // Checking in downloads history
-        try {
-            JSONArray fileData = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
-            if (idExistsInData(fileData, id)) {
-                return generateNewId(temporaryData, downloadsQueue);
-            }
-        } catch (NoSuchElementException ignored) {}
-
-        // Did not match existing records, return generated ID
-        return id;
-    }
-
-    public static synchronized String generateNewCacheArtId(JSONArray downloadsQueue) {
-
-        // Generating the potential ID
-        String id = Double.toString(Math.random()).split("\\.")[1];
-
-        // Checking if it exists in the downloads queue
-        try {
-            for (int i = 0; i < downloadsQueue.length(); i++) {
-
-                if (downloadsQueue.getJSONObject(i).getJSONObject("meta").get("artId").equals(id)) {
-                    // Our generated ID already exists in the queue, generate a new one
-                    return generateNewCacheArtId(downloadsQueue);
-                }
-
-            }
-        } catch (JSONException ignored) {}
-
-        // Checking if it exists in existing cached arts
-        File[] existingCache = new File("resources\\cache").listFiles();
-        for (File cachedArt: existingCache) {
-            if (cachedArt.isFile() && cachedArt.getName().split("\\.")[1].equals("jpg") && cachedArt.getName().split("\\.")[0].equals(id) ) {
-                // Our generated ID already exists in the files, generate a new one
-                return generateNewCacheArtId(downloadsQueue);
-            }
-        }
-
-        // Generated ID was not found to match any existing record, hence use this ID
-        return id;
-
-    }
-
-    public static synchronized JSONArray deleteFromJSONArray(JSONArray data, int target) {
-
-        try {
-            ArrayList<String> list = new ArrayList<>();
-
-            for (int j = 0; j < data.length(); j++) {
-                list.add(data.get(j).toString());
-            }
-
-            list.remove(target);
-            return new JSONArray(list);
-
-        } catch (JSONException e) {
-            Debug.error(null, "Error deleting from JSONArray.", e.getCause());
-            return new JSONArray();
-        }
-
-    }
-
-    public static synchronized void updateDownloads(JSONObject addition) throws IOException, JSONException {
-
-        JSONArray downloadHistory = new JSONArray();
-        try {
-            downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
-        } catch (NoSuchElementException ignored) { }
-
-        downloadHistory.put(downloadHistory.length(), addition);
-        FileWriter recordUpdater = new FileWriter("resources\\json\\downloads.json");
-        recordUpdater.write(downloadHistory.toString());
-        recordUpdater.close();
-
-    }
-
-    private static synchronized boolean idExistsInData(JSONArray songs, String id) throws NoSuchElementException{
-
-        try {
-            for (int i = 0; i < songs.length(); i++)
-            {
-                if ((songs.getJSONObject(0)).get("id").equals(id)) {
-                    return true;
-                }
-            }
-        } catch (JSONException | NoSuchElementException ignored) {}
-        return false;
-
-    }
-
 }

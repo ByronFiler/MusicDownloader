@@ -51,13 +51,13 @@ public class downloads {
 
         // Go to search page
         try {
-            Parent settingsView = FXMLLoader.load(getClass().getResource("app/fxml/settings.fxml"));
+            Parent searchView = FXMLLoader.load(getClass().getResource("app/fxml/search.fxml"));
 
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
+            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch(IOException e) {
-            Debug.error(null, "Missing FXML File: Settings.fxml", e.getCause());
+            Debug.error(null, "FXML Error: search.fxml", e.getCause());
         }
 
     }

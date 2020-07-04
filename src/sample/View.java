@@ -1672,7 +1672,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    // Search: Added
+    // TODO: Added
     class generateAutocomplete implements Runnable {
 
         Thread t;
@@ -1736,7 +1736,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    // Search: Added
+    // TODO: Added
     class allMusicQuery implements Runnable {
 
         Thread t;
@@ -1888,7 +1888,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    // Search: Added
+    // TODO: Added
     static class autoCompleteWeb implements Runnable {
 
         Thread t;
@@ -1960,7 +1960,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    // Search: Added
+    // TODO: Added
     class addToTable implements Runnable {
 
         Thread t;
@@ -2052,7 +2052,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    // Settings: Added
+    // TODO: Added
     class getLatestVersion implements Runnable {
 
         Thread t;
@@ -2074,7 +2074,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    // Settings: Not Added
+    // TODO: Added / Not Needed
     class selectFolder implements  Runnable {
 
         Thread t;
@@ -2182,7 +2182,7 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
-    // Settings: Added
+    // TODO: (Settings) Implemented
     class youtubeDlVerification implements Runnable {
 
         Thread t;
@@ -2213,7 +2213,7 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
-    // Settings: Added
+    // TODO: (Settings) Implemented
     class ffmpegVerificationThread implements Runnable {
 
         Thread t;
@@ -2301,7 +2301,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    // Settings: Not Added
+    // TODO: (Settings) Replaced
     class outputDirectoryListener implements Runnable {
 
         Thread t;
@@ -2501,7 +2501,7 @@ public class View implements EventHandler<KeyEvent>
         }
     }
 
-    // Results: Not Added
+    // TODO: (Model) Implemented
     class addToQueue implements Runnable {
 
         private Thread t;
@@ -2576,6 +2576,7 @@ public class View implements EventHandler<KeyEvent>
                         startTime = Instant.now().toEpochMilli();
 
                         if (killRequest) {restoreButtons(); return;}
+
                         try {
                             JSONObject trackDetails = new JSONObject();
                             trackDetails.put("title", track.select("div.title").text());
@@ -3231,7 +3232,7 @@ public class View implements EventHandler<KeyEvent>
 
     }
 
-    // Model: Not Added
+    // TODO: (Model) Implemented
     static class optimiseCache implements Runnable {
 
         Thread t;

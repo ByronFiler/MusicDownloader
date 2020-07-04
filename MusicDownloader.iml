@@ -18,5 +18,7 @@
     <orderEntry type="library" name="Gradle: commons-codec:commons-codec:1.9" level="project" />
     <orderEntry type="library" name="Gradle: org.controlsfx:controlsfx:11.0.1" level="project" />
     <orderEntry type="library" name="Gradle: org.openjfx:javafx-graphics:linux:11.0.2" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.fracpete:musicg:1.4.2.2" level="project" />
+    <orderEntry type="library" name="Gradle: javazoom:jlayer:1.0.1" level="project" />
   </component>
 </module>
