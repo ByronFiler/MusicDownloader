@@ -42,6 +42,8 @@ public class results {
     @FXML public Button download;
     @FXML public Button cancel;
 
+    generateQueueItem queueAdder;
+
     @FXML
     private void initialize() {
 
@@ -58,14 +60,22 @@ public class results {
         Debug.trace(null, "Initialized results view");
 
     }
-
-
+    
     @FXML
     public void download() {
 
         try {
+
+            queueAdditionProgress.setVisible(true);
+
+            download.setText("Adding to queue...");
+            download.setDisable(true);
+
+            cancel.setText("Cancel");
+            cancel.setOnMouseClicked(e -> queueAdder.kill());
+
             // Selected Item -> Selected Item Data -> Select Item Data in correctly positioned array -> JSON Data needed -> Spawn thread with data to generate a queue item
-            new generateQueueItem(
+            queueAdder = new generateQueueItem(
                     Model
                             .getInstance()
                             .search
@@ -82,13 +92,17 @@ public class results {
             Platform.runLater(() -> download.setDisable(true));
         }
 
-
-
     }
 
     @FXML
     public void downloadButtonCheck() {
-        Platform.runLater(() -> download.setDisable(results.getSelectionModel().getSelectedIndex() == -1));
+
+        try {
+            if (queueAdder.isDead())
+                throw new NullPointerException();
+        } catch (NullPointerException ignored) {
+            Platform.runLater(() -> download.setDisable(results.getSelectionModel().getSelectedIndex() == -1));
+        }
     }
 
     @FXML
@@ -108,10 +122,12 @@ public class results {
     }
 
     // TODO: Add network error handling
-    static class generateQueueItem implements Runnable{
+    class generateQueueItem implements Runnable{
 
         private final Thread thread;
         private final JSONObject basicData;
+        private volatile boolean kill;
+        private volatile boolean completed = false;
 
         public generateQueueItem(JSONObject basicData) {
             this.basicData = basicData;
@@ -357,6 +373,14 @@ public class results {
             return songLenSec;
         }
 
+        public void kill() {
+            kill = true;
+        }
+
+        public boolean isDead() {
+            return completed;
+        }
+
         public void run() {
             JSONObject downloadItem = new JSONObject();
             JSONArray songs = new JSONArray();
@@ -381,17 +405,21 @@ public class results {
                 Elements trackResults;
                 if (basicData.getInt("album") == 0) {
 
+                    Document songDataRequest = null;
+                    Document albumDataRequest = null;
+
                     // Different output directory
                     metaData.put("directory", Model.getInstance().settings.getSetting("output_directory"));
 
                     // Requires additional work to get the album data we want
-                    Document songDataRequest = Jsoup.connect(basicData.getString("link")).get();
+                    if (!kill)
+                        songDataRequest = Jsoup.connect(basicData.getString("link")).get();
 
-                    Document albumDataRequest = Jsoup.connect(songDataRequest.selectFirst("div.title").selectFirst("a").attr("href")).get();
+                    if (!kill)
+                        albumDataRequest = Jsoup.connect(Objects.requireNonNull(songDataRequest).selectFirst("div.title").selectFirst("a").attr("href")).get();
 
                     // Get album title
-                    metaData.put("album", albumDataRequest.selectFirst("h1.album-title").text());
-
+                    metaData.put("album", Objects.requireNonNull(albumDataRequest).selectFirst("h1.album-title").text());
                     trackResults = albumDataRequest.select("tr.track");
 
                 } else {
@@ -407,6 +435,9 @@ public class results {
                 }
 
                 for (Element track: trackResults) {
+
+                    if (kill)
+                        break;
 
                     if ( (basicData.getInt("album") == 0 && track.selectFirst("div.title").selectFirst("a").text().equals(basicData.getString("title"))) || basicData.getInt("album") != 0 ) {
                         JSONObject newSong = new JSONObject();
@@ -430,10 +461,11 @@ public class results {
                     }
                 }
 
-
-                downloadItem.put("metadata", metaData);
-                downloadItem.put("songs", songs);
-                Model.getInstance().download.updateDownloadQueue(downloadItem);
+                if (!kill) {
+                    downloadItem.put("metadata", metaData);
+                    downloadItem.put("songs", songs);
+                    Model.getInstance().download.updateDownloadQueue(downloadItem);
+                }
 
             } catch (JSONException e) {
                 Debug.error(thread, "Error in JSON processing download item.", e.getCause());
@@ -442,9 +474,21 @@ public class results {
                 // Handle reconnection
             }
 
+            // Restore buttons to default
+            Platform.runLater(() -> {
+                queueAdditionProgress.setVisible(false);
+
+                download.setText("Download");
+                downloadButtonCheck();
+
+                cancel.setText("Back");
+                cancel.setOnMouseClicked(results.this::searchView);
+            });
+            completed = true;
+
         }
 
-        private static class QuickSort {
+        private class QuickSort {
 
             private final JSONArray searchDataExtracted;
 
