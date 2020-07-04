@@ -276,45 +276,34 @@ public class results {
 
                         try {
 
-                            // Discard playlists & radios
-                            if (
-                                    !contents.getJSONObject(i).has("playlistRenderer") &&
-                                    !contents.getJSONObject(i).has("radioRenderer") &&
-                                    !contents.getJSONObject(i).has("horizontalCardListRenderer") &&
-                                    !contents.getJSONObject(i).has("shelfRenderer")
-                            ) {
+                            int length = timeConversion(
+                                    contents
+                                            .getJSONObject(i)
+                                            .getJSONObject("videoRenderer")
+                                            .getJSONObject("lengthText")
+                                            .getString("simpleText")
+                            );
 
-                                int length = timeConversion(
+                            // Checks that the length is within 15% either way of the target time, otherwise definitely not relevant.
+                            if (length < targetTime * 1.15 && length > targetTime / 1.15) {
+
+                                searchDataTemp = new JSONObject();
+
+                                // Extract the playtime and the link to the video
+                                searchDataTemp.put(
+                                        "watch_id",
                                         contents
                                                 .getJSONObject(i)
                                                 .getJSONObject("videoRenderer")
-                                                .getJSONObject("lengthText")
-                                                .getString("simpleText")
+                                                .getString("videoId")
                                 );
 
-                                // Checks that the length is within 15% either way of the target time, otherwise definitely not relevant.
-                                if (length < targetTime * 1.15 && length > targetTime / 1.15) {
+                                searchDataTemp.put("difference", Math.abs(length - targetTime));
 
-                                    searchDataTemp = new JSONObject();
-
-                                    // Extract the playtime and the link to the video
-                                    searchDataTemp.put(
-                                            "watch_id",
-                                            contents
-                                                    .getJSONObject(i)
-                                                    .getJSONObject("videoRenderer")
-                                                    .getString("videoId")
-                                    );
-
-                                    searchDataTemp.put("difference", Math.abs(length - targetTime));
-
-                                    searchDataExtracted.put(searchDataTemp);
-                                }
+                                searchDataExtracted.put(searchDataTemp);
                             }
 
-                        } catch (JSONException e) {
-                            Debug.warn(null, "Failed to generate search data from query, from json response: \n" + contents.getJSONObject(i));
-                        }
+                        } catch (JSONException ignored) {} // Youtube adds random elements that are tricky to handle and are best ignored
                     }
 
                 } catch (JSONException e) {

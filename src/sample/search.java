@@ -57,12 +57,10 @@ public class search {
 
     @FXML
     private void initialize() {
-
         // Theoretically no way this could change via normal use of the program, but if user starts a download, waits for it to finish and clears file, downloads page needs a check to prevent
         if (Model.getInstance().download.downloadsAccessible()) {
             downloads.setVisible(true);
         }
-
         Debug.trace(null, "Initialized search view.");
     }
 

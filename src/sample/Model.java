@@ -1,17 +1,19 @@
 package sample;
 
+import com.mpatric.mp3agic.*;
+import com.musicg.fingerprint.FingerprintManager;
+import com.musicg.fingerprint.FingerprintSimilarityComputer;
+import com.musicg.wave.Wave;
 import javafx.application.Platform;
 import javafx.scene.image.ImageView;
+import javazoom.jl.converter.Converter;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -191,6 +193,7 @@ public class Model {
         private volatile JSONArray downloadQueue = new JSONArray();
         private volatile JSONObject downloadObject = new JSONObject();
         private JSONArray downloadHistory = new JSONArray();
+        protected final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
 
         public download() {
 
@@ -264,7 +267,6 @@ public class Model {
 
         }
 
-        // TODO Implement the functionality of downloading
         class acquireDownloadFiles implements Runnable {
             Thread thread;
             JSONObject downloadData;
@@ -277,45 +279,55 @@ public class Model {
                 thread.start();
             }
 
-            // Rewrite to: USE SAMPLE SOURCE AS LINK, CHECK IF THE FILE IS A WAV IF NOT CONVERT IT
-            /*
             private float evaluateDownloadValidity (String sampleFileSource, String downloadedFile) {
 
+                // Preparing sample: Downloading sample
                 try {
-
-                    byte[] sampleData = {};
-                    byte[] downloadedData = {};
-
-                    String sampleFileTemp = "tmp_" + Double.toString(Math.random()).split("\\.")[1] + ".wav";
-                    String fullFileTemp = "tmp_" + Double.toString(Math.random()).split("\\.")[1] + ".wav";
-
-                    // Heavy, consider checking if this is necessary
-                    new Converter().convert(sampleFile, sampleFileTemp);
-                    new Converter().convert(downloadedFile, fullFileTemp);
-
-                    try {
-                        sampleData = new FingerprintManager().extractFingerprint(new Wave(sampleFileTemp));
-                        downloadedData = new FingerprintManager().extractFingerprint(new Wave(fullFileTemp));
-                    } catch (ArrayIndexOutOfBoundsException e) {
-                        Debug.warn(null, "File is too large to compare.");
-                    }
-
-                    if (!new File(sampleFileTemp).delete())
-                        Debug.warn(null, "Failed to delete file: " + sampleFileTemp);
-                    if (!new File(fullFileTemp).delete())
-                        Debug.warn(null, "Failed to delete file: " + fullFileTemp);
-
-                    FingerprintSimilarityComputer fingerprint = new FingerprintSimilarityComputer(sampleData, downloadedData);
-                    return fingerprint.getFingerprintsSimilarity().getScore();
-
-                } catch (JavaLayerException e) {
-                    Debug.error(null, String.format("Error comparing files: %s and %s", sampleFile, downloadedFile), e.getCause());
+                    FileUtils.copyURLToFile(
+                            new URL(sampleFileSource),
+                            new File("smp.mp3")
+                    );
+                } catch (IOException e) {
+                    Debug.warn(thread, "Error connecting to: " + String.format("https://rovimusic.rovicorp.com/playback.mp3?c=%s=&f=I", sampleFileSource));
+                    // Handle reconnection
                 }
 
-                return 1;
-            }
+                // Preparing sample: Converting to comparable wav format from mp3 & deleting old mp3
+                try {
+                    new Converter().convert("smp.mp3", "smp.wav");
+                } catch (Exception ignored) {} // Falsely throws an exception even on success
 
-             */
+                if (!new File("smp.mp3").delete())
+                    Debug.warn(thread, "Failed to delete : smp.mp3");
+
+                // Checking if the download file needs to be converted
+                byte[] sampleData = new FingerprintManager().extractFingerprint(new Wave("smp.wav"));
+                byte[] downloadData = new byte[0];
+                try {
+
+                    try {
+                        downloadData = new FingerprintManager().extractFingerprint(new Wave(downloadedFile));
+                    } catch (Exception e) {
+                        try {
+                            new Converter().convert(downloadedFile, "dl.wav");
+                            downloadData = new FingerprintManager().extractFingerprint(new Wave("dl.wav"));
+                        } catch (Exception ignored) {} // Always errors even on success, ignored
+                    }
+
+                } catch (ArrayIndexOutOfBoundsException ignored) {
+                    Debug.warn(thread, "File is too large to be checked.");
+                    return 1;
+                }
+
+                // Deleting temporary files
+                if (!new File("dl.wav").delete())
+                    Debug.warn(thread, "Failed to delete file: dl.wav");
+                if (!new File("smp.wav").delete())
+                    Debug.warn(thread, "Failed to delete file: smp.wav");
+
+                FingerprintSimilarityComputer fingerprint = new FingerprintSimilarityComputer(sampleData, downloadData);
+                return fingerprint.getFingerprintsSimilarity().getScore();
+            }
 
             private String generateFolder(String folderRequest) {
 
@@ -346,6 +358,146 @@ public class Model {
 
             }
 
+            private synchronized void downloadFile(JSONObject song, String format, int sourceDepth, String index) throws IOException, JSONException {
+
+                // Start download
+                FileWriter batCreator = new FileWriter("exec.bat");
+                batCreator.write(
+                        String.format(
+                            "youtube-dl --extract-audio --audio-format %s --ignore-errors --retries 10 https://www.youtube.com/watch?v=%s",
+                            format,
+                            song.getJSONArray("source").getString(sourceDepth)
+                    )
+                );
+                batCreator.close();
+
+                ProcessBuilder builder = new ProcessBuilder("exec.bat");
+                builder.redirectErrorStream(true);
+                Process process = builder.start();
+                InputStream is = process.getInputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
+                String line;
+                String downloadedFile = "";
+                while ((line = reader.readLine()) != null) {
+                    // Can parse this later
+                    if (line.contains("[ffmpeg]")) {
+                        downloadedFile = line.substring(22);
+                    }
+
+                }
+
+                // Delete now useless bat
+                if (!new File("exec.bat").delete())
+                    Debug.warn(thread, "Failed to delete file: exec.bat");
+
+                // Validate
+                if (Model.getInstance().settings.getSettingBool("advanced_validation")) {
+                    float downloadValidity = evaluateDownloadValidity(
+                            String.format("https://rovimusic.rovicorp.com/playback.mp3?c=%s=&f=I", song.getString("sample")),
+                            downloadedFile
+                    );
+
+                    Debug.trace(
+                            thread,
+                            String.format(
+                                    "Calculated downloaded validity of %s at %2.2f [%s]",
+                                    song.getString("title"),
+                                    downloadValidity * 100,
+                                    downloadValidity > 0.7 ? "PASS" : "FAIL"
+                            )
+                    );
+
+                    if (downloadValidity <= 0.7) {
+
+                        // Delete downloaded files & sample
+                        if (!new File(downloadedFile).delete()) {
+                            Debug.warn(thread, "Failed to delete: " + downloadedFile);
+                        }
+
+                        if (song.getJSONArray("source").length() > sourceDepth + 2) {
+                            // Can continue and move onto the next source
+                            downloadFile(song, format, sourceDepth + 1, index);
+                            return;
+                        } else {
+                            Debug.warn(thread, "Failed to find a song in sources that was found to be valid, inform user of failure.");
+                        }
+
+                    }
+                }
+
+                // Apply meta-data
+                if (format.equals("mp3")) {
+
+                    Debug.trace(thread, "Hit meta data application.");
+
+                    try {
+                        Mp3File mp3Applicator = new Mp3File(downloadedFile);
+
+                        ID3v2 id3v2tag = new ID3v24Tag();
+                        mp3Applicator.setId3v2Tag(id3v2tag);
+
+                        if (Model.getInstance().settings.getSettingBool("album_art")) {
+                            // Could break this up into mb loads
+
+                            RandomAccessFile art = new RandomAccessFile(
+                                    new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg"),
+                                    "r"
+                            );
+
+                            byte[] bytes;
+                            bytes = new byte[(int) art.length()]; // Maybe make this 1024
+                            art.read(bytes);
+                            art.close();
+
+                            id3v2tag.setAlbumImage(bytes, "image/jpg");
+                        }
+
+                        // Applying remaining data
+                        if (Model.getInstance().settings.getSettingBool("album_title"))
+                            id3v2tag.setTitle(downloadObject.getJSONObject("metadata").getString("album"));
+
+                        if (Model.getInstance().settings.getSettingBool("song_title"))
+                            id3v2tag.setAlbum(song.getString("title"));
+
+                        if (Model.getInstance().settings.getSettingBool("artist")) {
+                            id3v2tag.setArtist(downloadObject.getJSONObject("metadata").getString("artist"));
+                            id3v2tag.setAlbumArtist(downloadObject.getJSONObject("metadata").getString("artist"));
+                        }
+
+                        if (Model.getInstance().settings.getSettingBool("year"))
+                            id3v2tag.setYear(downloadObject.getJSONObject("metadata").getString("year"));
+
+                        // Add this as a possible setting, also contain
+                        id3v2tag.setTrack(index);
+
+                        try {
+                            mp3Applicator.save(downloadObject.getJSONObject("metadata").getString("directory") + "\\" + song.getString("title") + "." + format);
+
+                            // Delete old file
+                            if (!new File(downloadedFile).delete()) {
+                                Debug.error(thread, "Failed to delete file: " + downloadedFile, new IOException().getCause());
+                            }
+
+                        } catch (IOException | NotSupportedException e) {
+                            e.printStackTrace();
+                        }
+                    } catch (InvalidDataException | UnsupportedTagException e) {
+                        Debug.warn(thread, "Failed to apply meta data to: " + downloadedFile);
+                    }
+
+                } else {
+
+                    // Just move & rename the file
+                    Files.move(
+                            Paths.get(downloadedFile),
+                            Paths.get(downloadObject.getJSONObject("metadata").getString("directory") + "\\" + song.getString("title") + "." + format)
+                    );
+
+                }
+
+            }
+
             @Override
             public void run() {
 
@@ -368,11 +520,17 @@ public class Model {
                 try {
                     for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
 
-                        // Bat file with relevant command
-
-                        // Execute bat file
-
-                        // Update self with progress & information
+                        // Will call it's self recursively until it exhausts possible files or succeeds
+                        try {
+                            downloadFile(
+                                    downloadObject.getJSONArray("songs").getJSONObject(i),
+                                    songReferences.get(Model.getInstance().settings.getSettingInt("music_format")),
+                                    0,
+                                    String.valueOf(i+1)
+                            );
+                        } catch (IOException | JSONException e) {
+                            Debug.error(thread, "Error downloading song: " + i, e.getCause());
+                        }
 
                         Debug.trace(
                                 thread,
@@ -384,35 +542,38 @@ public class Model {
                                 )
                         );
 
-                        // Check song if necessary
-                        if (Model.getInstance().settings.getSettingBool("advanced_validation")) {
-
-                            /*
-                            float downloadValidity = evaluateDownloadValidity(downloadObject.getJSONArray("songs").getJSONObject(i).getString("sample"), "");
-                            Debug.trace(
-                                    thread,
-                                    String.format(
-                                            "Validated %s, found a match of %2.2f%% [%s]",
-                                            downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
-                                            downloadValidity,
-                                            downloadValidity > 0.7 ? "PASS" : "FAIL"
-                                    )
-                            );
-
-                            if (downloadValidity < 0.7) {
-                                // Hence must move onto the next best link
-
-                            }
-
-                             */
-                        }
-
-                        // Apply meta data
-
 
                     }
                 } catch (JSONException e) {
                     Debug.error(thread, "JSON Error when attempting to access songs to download.", e.getCause());
+                }
+
+                // Check if we should delete the album art
+                try {
+                    switch (Model.getInstance().settings.getSettingInt("save_album_art")) {
+
+                        // Delete album art always
+                        case 0:
+                            if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
+                                Debug.warn(thread, "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
+                            break;
+
+                        // Delete for songs
+                        case 1:
+                            if (downloadObject.getJSONArray("songs").length() == 1)
+                                if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
+                                    Debug.warn(thread, "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
+                            break;
+
+                        // Delete for albums
+                        case 2:
+                            if (downloadObject.getJSONArray("songs").length() > 1)
+                                if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
+                                    Debug.warn(thread, "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
+                            break;
+                    }
+                } catch (JSONException e) {
+                    Debug.error(thread, "Failed to perform check to delete album art.", e.getCause());
                 }
 
                 // Move onto the next item if necessary
@@ -514,6 +675,10 @@ public class Model {
 
         public synchronized boolean getSettingBool(String key) {
             return Boolean.parseBoolean(getSetting(key));
+        }
+
+        public synchronized int getSettingInt(String key) {
+            return Integer.parseInt(getSetting(key));
         }
 
         public synchronized String getSetting(String key) {
