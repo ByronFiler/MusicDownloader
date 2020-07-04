@@ -1,12 +1,7 @@
 package sample;
 
-import com.musicg.fingerprint.FingerprintManager;
-import com.musicg.fingerprint.FingerprintSimilarityComputer;
-import com.musicg.wave.Wave;
 import javafx.application.Platform;
 import javafx.scene.image.ImageView;
-import javazoom.jl.converter.Converter;
-import javazoom.jl.decoder.JavaLayerException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
@@ -282,8 +277,9 @@ public class Model {
                 thread.start();
             }
 
-            // 0.7+ Acceptable
-            private float evaluateDownloadValidity (String sampleFile, String downloadedFile) {
+            // Rewrite to: USE SAMPLE SOURCE AS LINK, CHECK IF THE FILE IS A WAV IF NOT CONVERT IT
+            /*
+            private float evaluateDownloadValidity (String sampleFileSource, String downloadedFile) {
 
                 try {
 
@@ -318,6 +314,8 @@ public class Model {
 
                 return 1;
             }
+
+             */
 
             private String generateFolder(String folderRequest) {
 
@@ -367,11 +365,55 @@ public class Model {
                 } catch (JSONException ignored) {}
 
                 // Download files
+                try {
+                    for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
+
+                        // Bat file with relevant command
+
+                        // Execute bat file
+
+                        // Update self with progress & information
+
+                        Debug.trace(
+                                thread,
+                                String.format(
+                                        "Successfully downloaded \"%s\" (%s of %s)",
+                                        downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
+                                        i+1,
+                                        downloadObject.getJSONArray("songs").length()
+                                )
+                        );
+
+                        // Check song if necessary
+                        if (Model.getInstance().settings.getSettingBool("advanced_validation")) {
+
+                            /*
+                            float downloadValidity = evaluateDownloadValidity(downloadObject.getJSONArray("songs").getJSONObject(i).getString("sample"), "");
+                            Debug.trace(
+                                    thread,
+                                    String.format(
+                                            "Validated %s, found a match of %2.2f%% [%s]",
+                                            downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
+                                            downloadValidity,
+                                            downloadValidity > 0.7 ? "PASS" : "FAIL"
+                                    )
+                            );
+
+                            if (downloadValidity < 0.7) {
+                                // Hence must move onto the next best link
+
+                            }
+
+                             */
+                        }
+
+                        // Apply meta data
 
 
-                // Check song if necessary
-
-                // Apply meta data
+                    }
+                } catch (JSONException e) {
+                    Debug.error(thread, "JSON Error when attempting to access songs to download.", e.getCause());
+                }
 
                 // Move onto the next item if necessary
                 Platform.runLater(() -> {

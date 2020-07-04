@@ -194,7 +194,7 @@ public class results {
             return id;
         }
 
-        private String getSource(String query, int targetTime) {
+        private JSONArray getSource(String query, int targetTime) {
 
             // [Web Data] -> JavaScript -> String -> Json -> Data
             Document youtubeSearch;
@@ -202,12 +202,12 @@ public class results {
                 youtubeSearch = Jsoup.connect("https://www.youtube.com/results?search_query=" + query).get();
             } catch (IOException e) {
                 Debug.warn(thread, "Error connecting to https://www.youtube.com/results?search_query=" + query);
-                return "";
+                return new JSONArray();
                 // Await reconnection
             }
 
-            ArrayList<ArrayList<String>> searchDataExtracted = new ArrayList<>();
-            ArrayList<String> searchDataTemp;
+            JSONArray searchDataExtracted = new JSONArray();
+            JSONObject searchDataTemp;
 
             if (youtubeSearch.select("script").size() == 17) {
                 // Youtube has given us the data we require embedded in the HTML and must be parsed from the HTML
@@ -217,15 +217,39 @@ public class results {
 
                 for (int i = 0; i < youtubeSearch.select("ol.item-section").get(0).select("span.video-time").size(); i++) {
 
-                    searchDataTemp = new ArrayList<>();
-                    searchDataTemp.add("https://youtube.com" + youtubeSearch.select("ol.item-section").get(0).select("a[href][aria-hidden]").get(i).attr("href"));
-                    searchDataTemp.add(Integer.toString(timeConversion(youtubeSearch.select("ol.item-section").get(0).select("span.video-time").get(i).text())));
-                    searchDataExtracted.add(searchDataTemp);
+                    try {
+                        searchDataTemp = new JSONObject();
+                        searchDataTemp.put(
+                                "watch_id",
+                                youtubeSearch
+                                        .select("ol.item-section")
+                                        .get(0)
+                                        .select("a[href][aria-hidden]")
+                                        .get(i).attr("href")
+                                        .substring(9) // Removes /watch?v= from the source
+                        );
+                        searchDataTemp.put(
+                                "difference",
+                                Math.abs(
+                                    timeConversion(
+                                            youtubeSearch
+                                                    .select("ol.item-section")
+                                                    .get(0)
+                                                    .select("span.video-time")
+                                                    .get(i)
+                                                    .text()
+                                    ) - targetTime
+                                )
+                        );
+                        searchDataExtracted.put(searchDataTemp);
+                    } catch (JSONException e) {
+                        Debug.warn(null, "Failed to generate search data from query, from html response.");
+                    }
                 }
 
             } else {
-                // YouTube has given us the data stored in json stored script tags which be parsed
 
+                // YouTube has given us the data stored in json stored script tags which be parsed
                 try {
                     // Web Data -> [JavaScript] -> String -> Json -> Data
                     Element jsData = youtubeSearch.select("script").get(24);
@@ -237,57 +261,94 @@ public class results {
                     // Web Data -> JavaScript -> String -> [Json] -> Data
                     JSONObject json = new JSONObject(jsonConversion);
 
-                    // contents -> twoColumnSearchResultsRenderer -> primaryContents -> sectionListRenderer
-                    JSONObject contents = (JSONObject) (
-                            (JSONObject) (
-                                    (JSONObject) (
-                                            (JSONObject) json.get("contents")
-                                    ).get("twoColumnSearchResultsRenderer")
-                            ).get("primaryContents")
-                    ).get("sectionListRenderer");
+                    // Parsing deep JSON to get relevant data
+                    JSONArray contents = json
+                            .getJSONObject("contents")
+                            .getJSONObject("twoColumnSearchResultsRenderer")
+                            .getJSONObject("primaryContents")
+                            .getJSONObject("sectionListRenderer")
+                            .getJSONArray("contents")
+                            .getJSONObject(0)
+                            .getJSONObject("itemSectionRenderer")
+                            .getJSONArray("contents");
 
-                    JSONArray contents1 = (JSONArray) contents.get("contents");
-                    JSONObject contents2 = (JSONObject) (
-                            (JSONObject) contents1.get(0)
-                    ).get("itemSectionRenderer");
+                    for (int i = 0; i < contents.length(); i++) {
 
-                    JSONArray contents3 = (JSONArray) contents2.get("contents");
-
-                    //for (Object videoData: contents3)
-                    for (int i = 0; i < contents3.length(); i++) {
-                        searchDataTemp = new ArrayList<>();
-                        JSONObject jsonVideoData = contents3.getJSONObject(i);
                         try {
-                            // Extract the playtime and the link to the video
-                            String lengthData = (String) ((JSONObject) ((JSONObject) jsonVideoData.get("videoRenderer")).get("lengthText")).get("simpleText");
-                            String watchLink = "https://www.youtube.com/watch?v=" + ((JSONObject) jsonVideoData.get("videoRenderer")).get("videoId");
 
-                            searchDataTemp.add(watchLink);
-                            searchDataTemp.add(Integer.toString(timeConversion(lengthData)));
+                            // Discard playlists & radios
+                            if (
+                                    !contents.getJSONObject(i).has("playlistRenderer") &&
+                                    !contents.getJSONObject(i).has("radioRenderer") &&
+                                    !contents.getJSONObject(i).has("horizontalCardListRenderer") &&
+                                    !contents.getJSONObject(i).has("shelfRenderer")
+                            ) {
 
+                                int length = timeConversion(
+                                        contents
+                                                .getJSONObject(i)
+                                                .getJSONObject("videoRenderer")
+                                                .getJSONObject("lengthText")
+                                                .getString("simpleText")
+                                );
 
-                            searchDataExtracted.add(searchDataTemp);
-                        } catch (Exception ignored) {
+                                // Checks that the length is within 15% either way of the target time, otherwise definitely not relevant.
+                                if (length < targetTime * 1.15 && length > targetTime / 1.15) {
+
+                                    searchDataTemp = new JSONObject();
+
+                                    // Extract the playtime and the link to the video
+                                    searchDataTemp.put(
+                                            "watch_id",
+                                            contents
+                                                    .getJSONObject(i)
+                                                    .getJSONObject("videoRenderer")
+                                                    .getString("videoId")
+                                    );
+
+                                    searchDataTemp.put("difference", Math.abs(length - targetTime));
+
+                                    searchDataExtracted.put(searchDataTemp);
+                                }
+                            }
+
+                        } catch (JSONException e) {
+                            Debug.warn(null, "Failed to generate search data from query, from json response: \n" + contents.getJSONObject(i));
                         }
                     }
+
                 } catch (JSONException e) {
                     Debug.error(thread, "Failed to parse youtube results.", e.getCause());
                 }
 
             }
 
-            int bestTimeDifference = Integer.MAX_VALUE;
-            int indexOfBest = -1;
+            try {
 
-            for (ArrayList<String> video: searchDataExtracted)
-            {
-                if (Math.abs(Integer.parseInt(video.get(1)) - targetTime) < bestTimeDifference){
-                    bestTimeDifference = Math.abs(Integer.parseInt(video.get(1)) - targetTime);
-                    indexOfBest = searchDataExtracted.indexOf(video);
+                switch (searchDataExtracted.length()) {
+
+                    case 0:
+                        // Unable to find a song which matched what we are looking for
+                        Debug.warn(thread, "Youtube does not have the this song, inform user of failure.");
+                        return new JSONArray();
+
+                    case 1:
+                        // Only one element, hence doesn't need to be sorted
+                        return new JSONArray(searchDataExtracted.getJSONObject(0).getString("watch_id"));
+
+                    default:
+                        // Quick-sort remaining and return
+                        JSONArray sortedData = new QuickSort(searchDataExtracted, 0, searchDataExtracted.length() - 1).getSorted();
+                        JSONArray reducedData = new JSONArray();
+                        for (int i = 0; i < sortedData.length(); i++) {
+                            reducedData.put(sortedData.getJSONObject(i).getString("watch_id"));
+                        }
+                        return reducedData;
                 }
+            } catch (JSONException e) {
+                Debug.error(thread, "Failed to sort songs data with data: " + searchDataExtracted, e.getCause());
+                return new JSONArray();
             }
-
-            return searchDataExtracted.get(indexOfBest).get(0);
 
 
         }
@@ -357,6 +418,7 @@ public class results {
                 }
 
                 for (Element track: trackResults) {
+
                     if ( (basicData.getInt("album") == 0 && track.selectFirst("div.title").selectFirst("a").text().equals(basicData.getString("title"))) || basicData.getInt("album") != 0 ) {
                         JSONObject newSong = new JSONObject();
                         newSong.put("title", track.select("div.title").text());
@@ -368,7 +430,8 @@ public class results {
                                 )
                         );
                         try {
-                            newSong.put("sample", track.selectFirst("a.audio-player").attr("data-sample-url"));
+                            String sampleSource = track.selectFirst("a.audio-player").attr("data-sample-url");
+                            newSong.put("sample", sampleSource.substring(46, sampleSource.length()-5));
                         } catch (NullPointerException ignored) {}
 
                         metaData.put("playtime", metaData.getInt("playtime") + timeConversion(track.select("td.time").text()));
@@ -390,6 +453,69 @@ public class results {
                 // Handle reconnection
             }
 
+        }
+
+        private static class QuickSort {
+
+            private final JSONArray searchDataExtracted;
+
+            public QuickSort(JSONArray searchDataExtracted, int low, int high) throws JSONException {
+                this.searchDataExtracted = searchDataExtracted;
+
+                sort(this.searchDataExtracted, low, high);
+            }
+
+            int partition(JSONArray searchData, int low, int high) throws JSONException{
+                int pivot = searchData.getJSONObject(high).getInt("difference");
+                int i = low-1; // index of smaller element
+                for (int j=low; j<high; j++)
+                {
+                    // If current element is smaller than the pivot
+                    if (searchData.getJSONObject(j).getInt("difference") < pivot)
+                    {
+                        i++;
+
+                        // swap arr[i] and arr[j]
+                        //int temp = arr[i];
+                        int temp = searchData.getJSONObject(i).getInt("difference");
+                        String temp0 = searchData.getJSONObject(i).getString("watch_id");
+
+                        searchData.getJSONObject(i).put("difference", searchData.getJSONObject(j).getInt("difference"));
+                        searchData.getJSONObject(i).put("watch_id", searchData.getJSONObject(j).getString("watch_id"));
+
+                        searchData.getJSONObject(j).put("difference", temp);
+                        searchData.getJSONObject(j).put("watch_id", temp0);
+                    }
+                }
+
+                // swap arr[i+1] and arr[high] (or pivot)
+                int temp = searchData.getJSONObject(i+1).getInt("difference");
+                String temp0 = searchData.getJSONObject(i+1).getString("watch_id");
+
+                searchData.getJSONObject(i+1).put("difference", searchData.getJSONObject(high).getInt("difference"));
+                searchData.getJSONObject(i+1).put("watch_id", searchData.getJSONObject(high).getString("watch_id"));
+
+                searchData.getJSONObject(high).put("difference", temp);
+                searchData.getJSONObject(high).put("watch_id", temp0);
+
+                return i+1;
+            }
+
+            void sort(JSONArray searchData, int low, int high) throws JSONException {
+                if (low < high)
+                {
+                    int pi = partition(searchData, low, high);
+
+                    // Recursively sort elements before
+                    // partition and after partition
+                    sort(searchData, low, pi-1);
+                    sort(searchData, pi+1, high);
+                }
+            }
+
+            JSONArray getSorted() {
+                return searchDataExtracted;
+            }
         }
 
     }
