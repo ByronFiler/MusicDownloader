@@ -367,7 +367,7 @@ public class Model {
                 } catch (JSONException ignored) {}
 
                 // Download files
-                
+
 
                 // Check song if necessary
 
@@ -423,7 +423,7 @@ public class Model {
 
             // Declare default settings for reference
             try{
-                defaultSettings = new JSONObject("{\"output_directory\":\"\",\"save_album_art\":1,\"music_format\":0, \"album_art\":1, \"album_title\":1, \"song_title\":1, \"artist\":1, \"year\":1, \"track\":1,\"theme\":0, \"data_saver\":0}");
+                defaultSettings = new JSONObject("{\"advanced_validation\": true, \"output_directory\":\"\",\"save_album_art\":true,\"music_format\":0, \"album_art\":true, \"album_title\":true, \"song_title\":true, \"artist\":true, \"year\":true, \"track\":true,\"dark_theme\":false, \"data_saver\":false}");
             } catch (JSONException ignored) {}
 
             // Load users actual settings
@@ -471,7 +471,7 @@ public class Model {
         }
 
         public synchronized boolean getSettingBool(String key) {
-            return Integer.parseInt(getSetting(key)) != 0;
+            return Boolean.parseBoolean(getSetting(key));
         }
 
         public synchronized String getSetting(String key) {

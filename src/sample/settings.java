@@ -41,6 +41,7 @@ public class settings {
     @FXML Label outputDirectoryInfo;
     @FXML ComboBox<String> musicFormat;
     @FXML ComboBox<String> saveAlbumArt;
+    @FXML ToggleSwitch advancedValidationToggle;
 
     // Meta-Data Application
     @FXML ToggleSwitch albumArtToggle;
@@ -77,6 +78,7 @@ public class settings {
         outputDirectory.wrappingWidthProperty().bind(saveMusicLine.widthProperty().subtract(outputDirectoryInfo.widthProperty()).subtract(30));
         musicFormat.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("music_format")));
         saveAlbumArt.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("save_album_art")));
+        advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
 
         // Meta-Data
         albumArtToggle.setSelected(Model.getInstance().settings.getSettingBool("album_art"));
@@ -87,10 +89,8 @@ public class settings {
         trackNumberToggle.setSelected(Model.getInstance().settings.getSettingBool("track"));
 
         // Application
-        darkThemeToggle.setSelected(Model.getInstance().settings.getSettingBool("theme"));
+        darkThemeToggle.setSelected(Model.getInstance().settings.getSettingBool("dark_theme"));
         dataSaverToggle.setSelected(Model.getInstance().settings.getSettingBool("data_saver"));
-
-
         Debug.trace(null, "Initialized settings view.");
 
     }
@@ -131,6 +131,9 @@ public class settings {
     private void validateConfirm() {
         // Check if settings have been adjusted from default
 
+        System.out.println(settings.toString());
+        System.out.println(getNewSettings().toString());
+
         if (settings.toString().equals(getNewSettings().toString())) {
             // Settings have not been modified, hence return to default
             Platform.runLater(() -> {
@@ -167,22 +170,23 @@ public class settings {
         JSONObject settings = new JSONObject();
 
         try {
-            //
+            // Files
             settings.put("output_directory", outputDirectory.getText());
             settings.put("music_format", musicFormat.getSelectionModel().getSelectedIndex());
             settings.put("save_album_art", saveAlbumArt.getSelectionModel().getSelectedIndex());
+            settings.put("advanced_validation", advancedValidationToggle.isSelected());
 
             // Meta-Data Application
-            settings.put("album_art", albumArtToggle.isSelected() ? 1 : 0);
-            settings.put("album_title", albumTitleToggle.isSelected() ? 1 : 0);
-            settings.put("song_title", songTitleToggle.isSelected() ? 1 : 0);
-            settings.put("artist", artistToggle.isSelected() ? 1 : 0);
-            settings.put("year", yearToggle.isSelected() ? 1 : 0);
-            settings.put("track", trackNumberToggle.isSelected() ? 1 : 0);
+            settings.put("album_art", albumArtToggle.isSelected());
+            settings.put("album_title", albumTitleToggle.isSelected());
+            settings.put("song_title", songTitleToggle.isSelected());
+            settings.put("artist", artistToggle.isSelected());
+            settings.put("year", yearToggle.isSelected());
+            settings.put("track", trackNumberToggle.isSelected());
 
             // Application Configuration
-            settings.put("theme", darkThemeToggle.isSelected() ? 1 : 0);
-            settings.put("data_saver", dataSaverToggle.isSelected() ? 1 : 0);
+            settings.put("dark_theme", darkThemeToggle.isSelected());
+            settings.put("data_saver", dataSaverToggle.isSelected());
 
         } catch (JSONException e) {
             Debug.error(null, "Failed to generate new settings.", e.getCause());
