@@ -105,16 +105,16 @@ public class Model {
                     // Delete all references to the file in the downloads history
                     try {
 
-                        // Can cause an error if the file is blank, but will load the jsonarray
+                        // Can cause an error if the file is blank, but will load the JSON Array
                         JSONArray downloadsHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
 
                         // Iterate through downloads history, replacing the old references with the new
                         for (int i = 0; i < downloadsHistory.length(); i++) {
-
                             try {
-                                if (downloadsHistory.getJSONObject(i).get("cached").toString().equals("resources/cached/" + fileNames.get(1)))
-                                    downloadsHistory.getJSONObject(i).put("cached", "resources/cached/" + fileNames.get(0));
+                                if (downloadsHistory.getJSONObject(i).getString("artId").equals(fileNames.get(0).replace(".jpg", "")))
+                                    downloadsHistory.getJSONObject(i).put("artId", fileNames.get(1).replace(".jpg", ""));
                             } catch (JSONException ignored) {
+                                Debug.warn(null, "Failed to work on downloads file.");
                             }
 
                         }
@@ -192,28 +192,46 @@ public class Model {
         private acquireDownloadFiles downloader;
         private volatile JSONArray downloadQueue = new JSONArray();
         private volatile JSONObject downloadObject = new JSONObject();
-        private JSONArray downloadHistory = new JSONArray();
-        protected final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
+        private final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
+        private volatile JSONObject historyItem = new JSONObject();
 
         public download() {
 
             try {
-                downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+                JSONArray downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
                 Debug.trace(null, String.format("Found a download history of %s item(s).", downloadHistory.length()));
-            } catch (FileNotFoundException | JSONException e) {
+            } catch (FileNotFoundException e) {
                 try {
                     Debug.trace(null, "No download history found.");
-                    if (!new File("resources\\json\\downloads.json").createNewFile()) {
+                    if (!new File("resources\\json\\downloads.json").createNewFile())
                         throw new IOException();
-                    }
                 } catch (IOException ex) {
                     Debug.error(null, "Failed to create downloads file.", ex.getCause());
                 }
-            }
+            } catch (JSONException | NoSuchElementException ignored) {}
 
         }
 
         public synchronized JSONArray getDownloadHistory() {
+
+            JSONArray downloadHistory = new JSONArray();
+            try {
+                downloadHistory =
+                        new JSONArray(
+                            new Scanner(
+                                new File("resources\\json\\downloads.json")
+                            ).useDelimiter("\\Z").next()
+                );
+            } catch (FileNotFoundException | JSONException e) {
+                try {
+                    if (Files.exists(Paths.get("resources\\json\\downloads.json")))
+                        if (!new File("resources\\json\\downloads.json").createNewFile())
+                            throw new IOException();
+                } catch (IOException er) {
+                    Debug.warn(null, "Failed to create new downloads history folder.");
+                }
+            }
+
             return downloadHistory;
         }
 
@@ -256,14 +274,88 @@ public class Model {
             JSONArray downloadHistory = new JSONArray();
             try {
 
-                downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\config.json")).useDelimiter("\\Z").next());
+                downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
 
             } catch (FileNotFoundException e) {
                 // Regenerate the downloads file
 
             } catch (JSONException ignored) {}
 
-            return downloadHistory.length() > 0 || downloadQueue.length() > 0;
+            return downloadHistory.length() > 0 || downloadQueue.length() > 0 || downloadObject.has("metadata");
+
+        }
+
+        public void setHistoryItem(JSONObject historyItem) {
+            this.historyItem = historyItem;
+        }
+
+        public JSONObject getHistoryItem() {
+            return historyItem;
+        }
+
+        public void deleteHistory(JSONObject targetDeletion) {
+
+            // TODO: Fix
+            // Delete all data not just target
+
+            JSONArray downloadHistory = new JSONArray();
+            JSONArray newDownloadHistory = new JSONArray();
+
+            // Loading existing history
+            try {
+                downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+            } catch (FileNotFoundException | JSONException e) {
+                Debug.trace(null, "Failed to read history to delete");
+            }
+
+            // Adding all to history except history item to remove
+            try {
+                for (int i = 0; i < downloadHistory.length(); i++) {
+                    if (!downloadHistory.getJSONObject(i).toString().equals(targetDeletion.toString())) {
+                        newDownloadHistory.put(downloadHistory.getJSONObject(i));
+                    }
+                }
+            } catch (JSONException e) {
+                Debug.error(null, "Failed to validate download history to remove element.", e.getCause());
+            }
+
+            // Rewriting the new history
+            try {
+                FileWriter downloadHistoryFile = new FileWriter("resources\\json\\downloads.json");
+                downloadHistoryFile.write(newDownloadHistory.toString());
+                downloadHistoryFile.close();
+            } catch (IOException e) {
+                Debug.error(null, "Error writing new download history.", e.getCause());
+            }
+
+        }
+
+        private void updateDownloadHistory(JSONObject newHistory) {
+
+            JSONArray existingHistory = new JSONArray();
+            try {
+                existingHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+            } catch (FileNotFoundException e) {
+
+                // Recreate the downloads file
+                try {
+                    if (new File("resources\\json\\downloads.json").createNewFile())
+                        Debug.trace(null, "Created new downloads history file.");
+
+                } catch (IOException er) {
+                    Debug.error(null, "Failed to recreate downloads folder.", e.getCause());
+                }
+
+            } catch (JSONException | NoSuchElementException ignored) {}
+            existingHistory.put(newHistory);
+
+            try {
+                FileWriter updateHistory = new FileWriter("resources\\json\\downloads.json");
+                updateHistory.write(existingHistory.toString());
+                updateHistory.close();
+            } catch (IOException e) {
+                Debug.warn(null, "Failed to write updated downloads history.");
+            }
 
         }
 
@@ -288,7 +380,7 @@ public class Model {
                             new File("smp.mp3")
                     );
                 } catch (IOException e) {
-                    Debug.warn(thread, "Error connecting to: " + String.format("https://rovimusic.rovicorp.com/playback.mp3?c=%s=&f=I", sampleFileSource));
+                    Debug.warn(thread, "Error connecting to: " + sampleFileSource);
                     // Handle reconnection
                 }
 
@@ -301,12 +393,13 @@ public class Model {
                     Debug.warn(thread, "Failed to delete : smp.mp3");
 
                 // Checking if the download file needs to be converted
-                byte[] sampleData = new FingerprintManager().extractFingerprint(new Wave("smp.wav"));
+
+                byte[] sampleData = new byte[0];
                 byte[] downloadData = new byte[0];
                 try {
-
                     try {
                         downloadData = new FingerprintManager().extractFingerprint(new Wave(downloadedFile));
+                        sampleData = new FingerprintManager().extractFingerprint(new Wave("smp.wav"));
                     } catch (Exception e) {
                         try {
                             new Converter().convert(downloadedFile, "dl.wav");
@@ -429,8 +522,6 @@ public class Model {
                 // Apply meta-data
                 if (format.equals("mp3")) {
 
-                    Debug.trace(thread, "Hit meta data application.");
-
                     try {
                         Mp3File mp3Applicator = new Mp3File(downloadedFile);
 
@@ -516,6 +607,18 @@ public class Model {
                     Debug.error(thread, "Failed to download album art.", e.getCause());
                 } catch (JSONException ignored) {}
 
+                // Cache the album art
+                try {
+                    Files.copy(
+                            Paths.get(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg"),
+                            Paths.get("resources\\cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg")
+                    );
+                } catch (JSONException ignored) {
+                    Debug.warn(thread, "Failed to get JSON data to cache album art.");
+                } catch (IOException ignored) {
+                    Debug.warn(thread, "Failed to cache album art.");
+                }
+
                 // Download files
                 try {
                     for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
@@ -529,7 +632,12 @@ public class Model {
                                     String.valueOf(i+1)
                             );
                         } catch (IOException | JSONException e) {
-                            Debug.error(thread, "Error downloading song: " + i, e.getCause());
+                            try {
+                                Debug.error(thread, "Error downloading song: " + downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"), e.getCause());
+                            } catch (JSONException er) {
+                                Debug.error(thread, "JSON Error downloading song", er.getCause());
+                            }
+
                         }
 
                         Debug.trace(
@@ -541,6 +649,22 @@ public class Model {
                                         downloadObject.getJSONArray("songs").length()
                                 )
                         );
+
+                        // Updating the downloads history
+                        try {
+
+                            JSONObject downloadHistory = new JSONObject();
+                            downloadHistory.put("title", downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"));
+                            downloadHistory.put("artist", downloadObject.getJSONObject("metadata").getString("artist"));
+                            downloadHistory.put("artUrl", downloadObject.getJSONObject("metadata").getString("art"));
+                            downloadHistory.put("artId", downloadObject.getJSONObject("metadata").getString("artId"));
+                            downloadHistory.put("directory", downloadObject.getJSONObject("metadata").getString("directory"));
+                            downloadHistory.put("id", downloadObject.getJSONArray("songs").getJSONObject(i).getString("id"));
+                            Model.getInstance().download.updateDownloadHistory(downloadHistory);
+
+                        } catch (JSONException e) {
+                            Debug.warn(thread, "Failed to generate JSON for download history result.");
+                        }
 
 
                     }

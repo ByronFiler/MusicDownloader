@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.Group?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onMouseEntered="#hoverSelect" onMouseExited="#hoverUnselect" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.history">
+   <left>
+      <HBox maxHeight="85.0" prefHeight="85.0" prefWidth="285.0" BorderPane.alignment="CENTER">
+         <children>
+            <ImageView fx:id="albumArt" fitHeight="85.0" fitWidth="85.0" pickOnBounds="true">
+               <image>
+                  <Image url="@../img/song_default.png" />
+               </image></ImageView>
+            <BorderPane prefHeight="200.0" prefWidth="200.0">
+               <bottom>
+                  <Text fx:id="status" strokeType="OUTSIDE" strokeWidth="0.0" text="Status" BorderPane.alignment="BOTTOM_LEFT" />
+               </bottom>
+               <top>
+                  <VBox BorderPane.alignment="CENTER">
+                     <children>
+                        <Text fx:id="title" strokeType="OUTSIDE" strokeWidth="0.0" style="-fx-font-weight: bold;" text="Song Title">
+                           <font>
+                              <Font name="Arial" size="22.0" />
+                           </font>
+                        </Text>
+                        <Text fx:id="artist" strokeType="OUTSIDE" strokeWidth="0.0" style="-fx-font-style: italic;" text="Artist">
+                           <font>
+                              <Font name="Arial" size="16.0" />
+                           </font></Text>
+                     </children>
+                  </VBox>
+               </top>
+               <HBox.margin>
+                  <Insets />
+               </HBox.margin>
+               <padding>
+                  <Insets left="5.0" />
+               </padding>
+            </BorderPane>
+         </children>
+         <BorderPane.margin>
+            <Insets />
+         </BorderPane.margin>
+      </HBox>
+   </left>
+   <right>
+      <HBox alignment="CENTER" prefHeight="85.0" prefWidth="23.0" BorderPane.alignment="CENTER_RIGHT">
+         <children>
+            <Group onMouseClicked="#deleteHistory" onMouseEntered="#blackenCross" onMouseExited="#lightenCross">
+               <children>
+                  <Line fx:id="crossLine0" endY="20.0" startX="20.0" stroke="GREY" strokeWidth="2.0" />
+                  <Line fx:id="crossLine1" startX="20.0" startY="20.0" stroke="GREY" strokeWidth="2.0" />
+               </children>
+               <cursor>
+                  <Cursor fx:constant="HAND" />
+               </cursor>
+            </Group>
+         </children>
+      </HBox>
+   </right>
+   <padding>
+      <Insets right="10.0" />
+   </padding>
+</BorderPane>

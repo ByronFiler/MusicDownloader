@@ -154,10 +154,14 @@ public class Debug {
             }
         }
 
-        if (advancedDebugConcise) {
-            return String.format(" [%s] ", advancedDebugData.get(0));
-        } else {
-            return String.format(" [%s] ", String.join(" from ", advancedDebugData));
+        try {
+            if (advancedDebugConcise) {
+                return String.format(" [%s] ", advancedDebugData.get(0));
+            } else {
+                return String.format(" [%s] ", String.join(" from ", advancedDebugData));
+            }
+        } catch (IndexOutOfBoundsException ignored) {
+            return "";
         }
 
     }

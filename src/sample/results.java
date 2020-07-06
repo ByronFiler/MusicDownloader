@@ -60,7 +60,7 @@ public class results {
         Debug.trace(null, "Initialized results view");
 
     }
-    
+
     @FXML
     public void download() {
 
@@ -288,6 +288,11 @@ public class results {
                             .getJSONObject("itemSectionRenderer")
                             .getJSONArray("contents");
 
+
+                    // If youtube gives a bad response, just retry
+                    if (contents.length() < 10)
+                        return getSource(query, targetTime);
+
                     for (int i = 0; i < contents.length(); i++) {
 
                         try {
@@ -319,7 +324,9 @@ public class results {
                                 searchDataExtracted.put(searchDataTemp);
                             }
 
-                        } catch (JSONException ignored) {} // Youtube adds random elements that are tricky to handle and are best ignored
+                        } catch (JSONException ignored) {
+
+                        } // Youtube adds random elements that are tricky to handle and are best ignored
                     }
 
                 } catch (JSONException e) {
@@ -464,6 +471,7 @@ public class results {
                 if (!kill) {
                     downloadItem.put("metadata", metaData);
                     downloadItem.put("songs", songs);
+                    System.out.println(downloadItem);
                     Model.getInstance().download.updateDownloadQueue(downloadItem);
                 }
 

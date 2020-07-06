@@ -14,99 +14,93 @@
 <?import javafx.scene.text.Text?>
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.downloads">
-   <children>
-      <BorderPane prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="30.0">
-         <top>
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Downloads" BorderPane.alignment="TOP_LEFT">
-               <font>
-                  <Font name="Arial" size="28.0" />
-               </font>
-            </Text>
-         </top>
-         <center>
-            <VBox prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
-               <BorderPane.margin>
-                  <Insets bottom="10.0" top="10.0" />
-               </BorderPane.margin>
-               <children>
-                  <BorderPane prefHeight="140.0" prefWidth="540.0">
-                     <left>
-                        <VBox fx:id="downloadInfo" prefHeight="150.0" prefWidth="215.0" BorderPane.alignment="CENTER">
-                           <children>
-                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Current Download" underline="true">
-                                 <font>
-                                    <Font size="18.0" />
-                                 </font>
-                              </Text>
-                              <BorderPane prefHeight="30.0" prefWidth="200.0">
-                                 <left>
-                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Download Speed: " wrappingWidth="150.240234375" BorderPane.alignment="CENTER">
-                                       <font>
-                                          <Font size="14.0" />
-                                       </font>
-                                    </Text>
-                                 </left>
-                                 <right>
-                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="X.X MiB/S" BorderPane.alignment="CENTER" />
-                                 </right>
-                              </BorderPane>
-                              <BorderPane prefHeight="30.0" prefWidth="200.0">
-                                 <left>
-                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Song ETA: " BorderPane.alignment="CENTER">
-                                       <font>
-                                          <Font size="14.0" />
-                                       </font>
-                                    </Text>
-                                 </left>
-                                 <right>
-                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="MM:SS" BorderPane.alignment="CENTER" />
-                                 </right>
-                              </BorderPane>
-                              <BorderPane prefHeight="30.0" prefWidth="200.0">
-                                 <left>
-                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Processing Song: " BorderPane.alignment="CENTER">
-                                       <font>
-                                          <Font size="14.0" />
-                                       </font>
-                                    </Text>
-                                 </left>
-                                 <right>
-                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Name, X of Y" BorderPane.alignment="CENTER" />
-                                 </right>
-                              </BorderPane>
-                           </children>
-                        </VBox>
-                     </left>
-                     <right>
-                        <LineChart prefHeight="150.0" prefWidth="321.0" BorderPane.alignment="CENTER">
-                          <xAxis>
-                            <CategoryAxis side="BOTTOM" />
-                          </xAxis>
-                          <yAxis>
-                            <NumberAxis side="LEFT" />
-                          </yAxis>
-                        </LineChart>
-                     </right>
-                  </BorderPane>
-                  <BorderPane prefHeight="30.0" prefWidth="540.0">
-                     <left>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Download Items" underline="true" BorderPane.alignment="CENTER">
-                           <font>
-                              <Font size="18.0" />
-                           </font>
-                        </Text>
-                     </left>
-                     <right>
-                        <ComboBox prefWidth="150.0" BorderPane.alignment="CENTER" />
-                     </right>
-                  </BorderPane>
-                  <ListView VBox.vgrow="ALWAYS" />
-               </children>
-            </VBox>
-         </center>
-         <bottom>
-            <Button mnemonicParsing="false" prefHeight="40.0" prefWidth="120.0" text="Back" BorderPane.alignment="BOTTOM_RIGHT" />
-         </bottom>
-      </BorderPane>
-   </children>
+   <BorderPane prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="30.0">
+      <top>
+         <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Downloads" BorderPane.alignment="TOP_LEFT">
+            <font>
+               <Font name="Arial" size="28.0" />
+            </font>
+         </Text>
+      </top>
+      <center>
+         <VBox fx:id="viewContainer" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+            <BorderPane.margin>
+               <Insets bottom="10.0" top="10.0" />
+            </BorderPane.margin>
+            <BorderPane fx:id="infoContainer" prefHeight="140.0" prefWidth="540.0">
+               <left>
+                  <VBox fx:id="downloadInfo" prefHeight="150.0" prefWidth="215.0" BorderPane.alignment="CENTER">
+                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Current Download" underline="true">
+                        <font>
+                           <Font size="18.0" />
+                        </font>
+                     </Text>
+                     <BorderPane prefHeight="30.0" prefWidth="200.0">
+                        <left>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Download Speed: " wrappingWidth="150.240234375" BorderPane.alignment="CENTER">
+                              <font>
+                                 <Font size="14.0" />
+                              </font>
+                           </Text>
+                        </left>
+                        <right>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="X.X MiB/S" BorderPane.alignment="CENTER" />
+                        </right>
+                     </BorderPane>
+                     <BorderPane prefHeight="30.0" prefWidth="200.0">
+                        <left>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Song ETA: " BorderPane.alignment="CENTER">
+                              <font>
+                                 <Font size="14.0" />
+                              </font>
+                           </Text>
+                        </left>
+                        <right>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="MM:SS" BorderPane.alignment="CENTER" />
+                        </right>
+                     </BorderPane>
+                     <BorderPane prefHeight="30.0" prefWidth="200.0">
+                        <left>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Processing Song: " BorderPane.alignment="CENTER">
+                              <font>
+                                 <Font size="14.0" />
+                              </font>
+                           </Text>
+                        </left>
+                        <right>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Name, X of Y" BorderPane.alignment="CENTER" />
+                        </right>
+                     </BorderPane>
+                  </VBox>
+               </left>
+               <right>
+                  <LineChart prefHeight="150.0" prefWidth="321.0" BorderPane.alignment="CENTER">
+                     <xAxis>
+                        <CategoryAxis side="BOTTOM" />
+                     </xAxis>
+                     <yAxis>
+                        <NumberAxis side="LEFT" />
+                     </yAxis>
+                  </LineChart>
+               </right>
+            </BorderPane>
+            <BorderPane prefHeight="30.0" prefWidth="540.0">
+               <left>
+                  <Text fx:id="eventViewTitle" strokeType="OUTSIDE" strokeWidth="0.0" text="Download Items" underline="true" BorderPane.alignment="CENTER">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Text>
+               </left>
+               <right>
+                  <ComboBox fx:id="eventViewSelector" prefWidth="150.0" BorderPane.alignment="CENTER" />
+               </right>
+            </BorderPane>
+            <ListView id="downloadEventsView" fx:id="eventsViewTable" stylesheets="@../css/search.css" VBox.vgrow="ALWAYS" />
+         </VBox>
+      </center>
+      <bottom>
+         <Button mnemonicParsing="false" prefHeight="40.0" prefWidth="120.0" text="Back" BorderPane.alignment="BOTTOM_RIGHT" />
+      </bottom>
+   </BorderPane>
 </AnchorPane>

@@ -1470,6 +1470,7 @@ public class View implements EventHandler<KeyEvent>
         Group cross = new Group(crossLine0, crossLine1);
         HBox crossBox = new HBox(cross);
         crossBox.setAlignment(Pos.CENTER_RIGHT);
+
         Tooltip.install(crossBox, new Tooltip("Delete record."));
         crossBox.setOnMouseEntered(e -> { crossLine0.setStroke(darkTheme ? Color.WHITE : Color.BLACK); crossLine1.setStroke(darkTheme ? Color.WHITE : Color.BLACK); });
         crossBox.setOnMouseExited(e -> {crossLine0.setStroke(Color.GRAY);crossLine1.setStroke(Color.GRAY); });

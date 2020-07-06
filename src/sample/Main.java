@@ -9,10 +9,21 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
+// TODO
+
+// Auto-zip setting
+// Handle the no youtube results strange error warning
+// Create temporary directory
+
+// Structure files & check about running
+// data: All user created application data: config, download history, cache
+// tmp: Temporary files: youtube-dl raw downloads, temporary wav files, bat files
+// app: Core app files: css, fxml, images
+
 public class Main extends Application {
 
     @Override
-    public void start(Stage primaryStage) {
+    public void start(Stage primaryStage) throws IOException {
 
         boolean useBeta = true;
 
@@ -30,8 +41,12 @@ public class Main extends Application {
                 Debug.trace(null, "Primary Stage Generated");
 
             } catch (IOException e) {
+
+                throw e;
+
                 // FXML File Error
-                System.exit(-1);
+                //Debug.error(null, "FXML Error: search.fxml", e.getCause());
+                //System.exit(-1);
             }
 
         } else {

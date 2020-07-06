@@ -98,8 +98,7 @@
 }
 
 #downloadHistoryArtistTitle {
-    -fx-font: 16 arial;
-    -fx-font-style: italic;
+    -fx-font: 16 arial; -fx-font-style: italic;
 }
 
 #downloadStatus {

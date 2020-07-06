@@ -4,3 +4,12 @@
     -fx-background-insets: 0, 0 0 1 0 ;
     -fx-table-cell-border-color: derive(-fx-color, 5%);
 }
+
+#downloadEventsView {
+    -fx-background-color: transparent;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-table-cell-border-color: transparent;
+    -fx-fill: transparent;
+    -fx-highlight-fill: transparent;
+}
