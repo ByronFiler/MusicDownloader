@@ -456,6 +456,8 @@ public class results {
                                         timeConversion(track.select("td.time").text())
                                 )
                         );
+                        newSong.put("completed", JSONObject.NULL);
+
                         try {
                             String sampleSource = track.selectFirst("a.audio-player").attr("data-sample-url");
                             newSong.put("sample", sampleSource.substring(46, sampleSource.length()-5));

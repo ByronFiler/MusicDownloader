@@ -14,6 +14,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 
@@ -24,38 +25,76 @@ public class downloads {
     @FXML BorderPane infoContainer;
     @FXML VBox downloadInfo;
 
+    @FXML Text downloadSpeed;
+    @FXML Text eta;
+    @FXML Text processing;
+
     @FXML Text eventViewTitle;
     @FXML ComboBox<String> eventViewSelector;
-
     @FXML ListView<BorderPane> eventsViewTable;
 
     @FXML
     private void initialize() {
 
         JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
+        JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
 
         // Check what should be displayed
-        if (downloadHistory.length() > 0 || Model.getInstance().download.getDownloadQueue().length() > 0 || Model.getInstance().download.getDownloadObject().length() > 0) {
+        if (downloadHistory.length() > 0 || Model.getInstance().download.getDownloadQueue().length() > 0 || downloadObject.length() > 0) {
 
-            if (downloadHistory.length() > 0 && !Model.getInstance().download.getDownloadObject().has("metadata")) {
-                // Drawing purely download history
-                eventViewTitle.setText("Download History");
-                eventViewSelector.setVisible(false);
-                infoContainer.setVisible(false);
-                infoContainer.setManaged(false);
+            // Drawing current downloads if they exist
+            if (downloadObject.has("metadata")) {
 
-                // Drawing the download history
+                try {
+                    for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
+
+                        // Preparing relevant data to be used in view
+                        JSONObject downloadingItemData = new JSONObject();
+                        downloadingItemData.put("artId", downloadObject.getJSONObject("metadata").getString("artId"));
+                        downloadingItemData.put("artist", downloadObject.getJSONObject("metadata").getString("artist"));
+                        downloadingItemData.put("id", downloadObject.getJSONArray("songs").getJSONObject(i).getString("id"));
+                        downloadingItemData.put("title", downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"));
+                        downloadingItemData.put("directory", downloadObject.getJSONObject("metadata").getString("directory"));
+                        downloadingItemData.put("artUrl", downloadObject.getJSONObject("metadata").getString("artUrl"));
+                        downloadingItemData.put("completed", downloadObject.getJSONArray("songs").getJSONObject(i).getBoolean("completed"));
+
+                        // Send data to the model
+                        Model.getInstance().download.setDataItem(downloadingItemData);
+
+                        // Create the result view
+                        BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load();
+                        downloadItemLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
+
+                        // Update the list view
+                        eventsViewTable.getItems().add(downloadItemLoader);
+
+                    }
+                } catch (JSONException e) {
+                    Debug.error(null, "Error parsing JSON for download object.", e.getCause());
+                } catch (IOException e) {
+                    Debug.error(null, "FXML Error: history.fxml", e.getCause());
+                }
+
+            }
+
+            // Drawing planned downloads if they exist
+
+
+            // Drawing download histories if they exist
+            if (downloadHistory.length() > 0) {
+                eventViewSelector.getItems().add("Downloads");
+                
                 for (int i = 0; i < downloadHistory.length(); i++) {
 
                     try {
+                        // Update the model
+                        Model.getInstance().download.setDataItem(downloadHistory.getJSONObject(i));
 
-                        // Pass the BorderPane element too
-
-                        // Initialize a back and fourth between the model
-                        Model.getInstance().download.setHistoryItem(downloadHistory.getJSONObject(i));
-                        BorderPane resultLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load();
+                        // Loading the FXML
+                        BorderPane resultLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load(); // Something in here is taking too much time
                         resultLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
 
+                        // Update table
                         eventsViewTable.getItems().add(resultLoader);
 
                     } catch (JSONException e) {
@@ -66,12 +105,34 @@ public class downloads {
                     }
 
                 }
+            }
 
-            } else if (Model.getInstance().download.getDownloadHistory().length() == 0 && Model.getInstance().download.getDownloadObject().has("metadata")){
-                // Drawing purely downloads in progress and download queue if necessary
+            // Evaluate whether to decide to hide the current download info-box and the combobox
+            if (eventViewSelector.getItems().size() < 2) {
+
+                // Only one thing to show
+                eventViewSelector.setVisible(false);
+
+                // Only has one relevant item, hence hide it's self and set the title as the only relevant item
+                switch (eventViewSelector.getItems().get(0)) {
+
+                    case "Downloads":
+                        eventViewTitle.setText("Download History");
+                        infoContainer.setVisible(false);
+                        infoContainer.setManaged(false);
+                        break;
+
+
+                    case "Downloading...":
+                        eventViewTitle.setText("Downloading...");
+                        break;
+                }
 
             } else {
-                // Has: history, downloads in progress and possibly more items in download queue
+
+                eventViewTitle.setText("All");
+                eventViewSelector.getItems().add(0, "All");
+
             }
 
         } else {

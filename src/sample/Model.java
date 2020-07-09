@@ -140,7 +140,7 @@ public class Model {
                         }
                         return;
 
-                    } catch (FileNotFoundException ignored) {
+                    } catch (FileNotFoundException | NoSuchElementException ignored) {
                         // Generate a new downloads folder
                     }
 
@@ -193,7 +193,7 @@ public class Model {
         private volatile JSONArray downloadQueue = new JSONArray();
         private volatile JSONObject downloadObject = new JSONObject();
         private final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
-        private volatile JSONObject historyItem = new JSONObject();
+        private volatile JSONObject dataItem = new JSONObject();
 
         public download() {
 
@@ -252,10 +252,20 @@ public class Model {
         }
 
         public synchronized void updateDownloadQueue(JSONObject queueItem) {
+
             if (downloadQueue.length() == 0 && !downloadObject.has("songs")) {
 
                 // No downloads in progress or in queue, hence start a new download thread.
                 Debug.trace(null, "New download request received, queue is blank and hence will begin downloading...");
+
+                // For processing downloads, the progress must be viewed as started to work
+                try {
+                    for (int i = 0; i < queueItem.getJSONArray("songs").length(); i++)
+                        queueItem.getJSONArray("songs").getJSONObject(i).put("completed", false);
+                } catch (JSONException e) {
+                    Debug.error(null, "Error updating downloads queue.", e.getCause());
+                }
+
                 downloadObject = queueItem;
                 downloader = new acquireDownloadFiles(downloadObject);
 
@@ -279,18 +289,18 @@ public class Model {
             } catch (FileNotFoundException e) {
                 // Regenerate the downloads file
 
-            } catch (JSONException ignored) {}
+            } catch (JSONException | NoSuchElementException ignored) {}
 
             return downloadHistory.length() > 0 || downloadQueue.length() > 0 || downloadObject.has("metadata");
 
         }
 
-        public void setHistoryItem(JSONObject historyItem) {
-            this.historyItem = historyItem;
+        public void setDataItem(JSONObject dataItem) {
+            this.dataItem = dataItem;
         }
 
-        public JSONObject getHistoryItem() {
-            return historyItem;
+        public JSONObject getDataItem() {
+            return dataItem;
         }
 
         public void deleteHistory(JSONObject targetDeletion) {
@@ -359,10 +369,11 @@ public class Model {
 
         }
 
-        class acquireDownloadFiles implements Runnable {
+        private class acquireDownloadFiles implements Runnable {
             Thread thread;
             JSONObject downloadData;
 
+            //String processingMessageInternal = "";
             public acquireDownloadFiles(JSONObject downloadData) {
                 this.downloadData = downloadData;
 
@@ -623,6 +634,8 @@ public class Model {
                 try {
                     for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
 
+                        // processingMessageInternal = Integer.toString(i);
+
                         // Will call it's self recursively until it exhausts possible files or succeeds
                         try {
                             downloadFile(
@@ -706,6 +719,12 @@ public class Model {
                         try {
                             // Spawning new thread
                             downloadObject = downloadQueue.getJSONObject(0);
+
+                            // Marking it now as primed to download
+                            for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++)
+                                downloadObject.getJSONArray("songs").getJSONObject(i).put("completed", false);
+
+                            // Starting the new download
                             downloader = new acquireDownloadFiles(downloadObject);
 
                             // Update queue
@@ -713,9 +732,8 @@ public class Model {
 
                                 // Move queued item to the model and respawn this thread.
                                 JSONArray newQueue = new JSONArray();
-                                for (int i = 1; i < downloadQueue.length(); i++) {
+                                for (int i = 1; i < downloadQueue.length(); i++)
                                     newQueue.put(downloadQueue.getJSONObject(i));
-                                }
 
                                 downloadQueue = newQueue;
 

@@ -44,7 +44,7 @@
                            </Text>
                         </left>
                         <right>
-                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="X.X MiB/S" BorderPane.alignment="CENTER" />
+                           <Text fx:id="downloadSpeed" strokeType="OUTSIDE" strokeWidth="0.0" text="X.X MiB/S" BorderPane.alignment="CENTER" />
                         </right>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="200.0">
@@ -56,7 +56,7 @@
                            </Text>
                         </left>
                         <right>
-                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="MM:SS" BorderPane.alignment="CENTER" />
+                           <Text fx:id="eta" strokeType="OUTSIDE" strokeWidth="0.0" text="MM:SS" BorderPane.alignment="CENTER" />
                         </right>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="200.0">
@@ -68,7 +68,7 @@
                            </Text>
                         </left>
                         <right>
-                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Name, X of Y" BorderPane.alignment="CENTER" />
+                           <Text fx:id="processing" strokeType="OUTSIDE" strokeWidth="0.0" text="Name, X of Y" BorderPane.alignment="CENTER" />
                         </right>
                      </BorderPane>
                   </VBox>
