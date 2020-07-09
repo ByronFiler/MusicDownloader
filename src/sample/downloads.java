@@ -37,29 +37,22 @@ public class downloads {
     private void initialize() {
 
         JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
+        JSONArray downloadQueue = Model.getInstance().download.getDownloadQueue();
         JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
 
         // Check what should be displayed
-        if (downloadHistory.length() > 0 || Model.getInstance().download.getDownloadQueue().length() > 0 || downloadObject.length() > 0) {
+        if (downloadHistory.length() > 0 || downloadQueue.length() > 0 || downloadObject.length() > 0) {
 
             // Drawing current downloads if they exist
             if (downloadObject.has("metadata")) {
 
+                eventViewSelector.getItems().add("Currently Downloading...");
+
                 try {
                     for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
 
-                        // Preparing relevant data to be used in view
-                        JSONObject downloadingItemData = new JSONObject();
-                        downloadingItemData.put("artId", downloadObject.getJSONObject("metadata").getString("artId"));
-                        downloadingItemData.put("artist", downloadObject.getJSONObject("metadata").getString("artist"));
-                        downloadingItemData.put("id", downloadObject.getJSONArray("songs").getJSONObject(i).getString("id"));
-                        downloadingItemData.put("title", downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"));
-                        downloadingItemData.put("directory", downloadObject.getJSONObject("metadata").getString("directory"));
-                        downloadingItemData.put("artUrl", downloadObject.getJSONObject("metadata").getString("artUrl"));
-                        downloadingItemData.put("completed", downloadObject.getJSONArray("songs").getJSONObject(i).getBoolean("completed"));
-
-                        // Send data to the model
-                        Model.getInstance().download.setDataItem(downloadingItemData);
+                        // Send (converted) data to the model
+                        Model.getInstance().download.setDataItem(generateViewData(downloadObject, i));
 
                         // Create the result view
                         BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load();
@@ -78,11 +71,37 @@ public class downloads {
             }
 
             // Drawing planned downloads if they exist
+            if (downloadQueue.length() > 0) {
 
+                eventViewSelector.getItems().add("Queue");
+
+                try {
+                    for (int i = 0; i < downloadQueue.length(); i++) {
+                        for (int j = 0; j < downloadQueue.getJSONObject(i).getJSONArray("songs").length(); j++) {
+
+                            // Sending (converted) data to model
+                            Model.getInstance().download.setDataItem(generateViewData(downloadQueue.getJSONObject(i), j));
+
+                            // Creating the result view
+                            BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load();
+                            downloadItemLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
+
+                            // Update the table
+                            eventsViewTable.getItems().add(downloadItemLoader);
+                        }
+
+                    }
+                } catch (JSONException e) {
+                    Debug.error(null, "Failed to parse data to draw planned queue items.", e.getCause());
+                } catch (IOException e) {
+                    Debug.error(null, "FXML Error: history.fxml [planned queue]", e.getCause());
+                }
+
+            }
 
             // Drawing download histories if they exist
             if (downloadHistory.length() > 0) {
-                eventViewSelector.getItems().add("Downloads");
+                eventViewSelector.getItems().add("Downloads Queue");
                 
                 for (int i = 0; i < downloadHistory.length(); i++) {
 
@@ -132,6 +151,9 @@ public class downloads {
 
                 eventViewTitle.setText("All");
                 eventViewSelector.getItems().add(0, "All");
+                eventViewSelector.getSelectionModel().select(0);
+
+                // Handle changes
 
             }
 
@@ -156,6 +178,21 @@ public class downloads {
         } catch(IOException e) {
             Debug.error(null, "FXML Error: search.fxml", e.getCause());
         }
+
+    }
+
+    private JSONObject generateViewData(JSONObject source, int index) throws JSONException {
+
+        JSONObject viewData = new JSONObject();
+        viewData.put("artId", source.getJSONObject("metadata").getString("artId"));
+        viewData.put("artist", source.getJSONObject("metadata").getString("artist"));
+        viewData.put("id", source.getJSONArray("songs").getJSONObject(index).getString("id"));
+        viewData.put("title", source.getJSONArray("songs").getJSONObject(index).getString("title"));
+        viewData.put("directory", source.getJSONObject("metadata").getString("directory"));
+        viewData.put("artUrl", source.getJSONObject("metadata").getString("art")); // error
+        viewData.put("completed", source.getJSONArray("songs").getJSONObject(index).getBoolean("completed"));
+
+        return viewData;
 
     }
 

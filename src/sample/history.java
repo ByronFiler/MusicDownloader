@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
 import javafx.scene.*;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -20,6 +21,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.stream.IntStream;
@@ -34,8 +36,6 @@ public class history {
 
     private JSONObject data;
 
-
-    // 2 ~ 4ms to execute
     @FXML
     void initialize() throws JSONException {
         // Load in relevant data from the Model
@@ -58,28 +58,32 @@ public class history {
 
         } else {
 
-            // Sending the request causes lag, hence use as thread
-            Thread loadAlbumArt = new Thread(() -> {
-                try {
-                    if (InetAddress.getByName("allmusic.com").isReachable(1000)) {
-                        albumArt.setImage(
-                                new Image(
-                                        data.getString("artUrl"),
-                                        85,
-                                        85,
-                                        true,
-                                        true
-                                )
-                        );
+            // Sending the request causes lag, hence use as thread, only needs to be called once, in future can add network error handling but that seems excessive as of the moment
+            try {
+                Thread loadAlbumArt = new Thread(() -> {
+                    try {
+                        if (InetAddress.getByName("allmusic.com").isReachable(1000)) {
+                            albumArt.setImage(
+                                    new Image(
+                                            data.getString("artUrl"),
+                                            85,
+                                            85,
+                                            true,
+                                            true
+                                    )
+                            );
+                        }
+                    } catch (IOException e) {
+                        Debug.warn(null, "Failed to connect to allmusic to get album art, using default.");
+                    } catch (JSONException e) {
+                        Debug.error(null, "Failed to get art for loading resource.", e.getCause());
                     }
-                } catch (IOException e) {
-                    Debug.warn(null, "Failed to connect to allmusic to get album art, using default.");
-                } catch (JSONException e) {
-                    Debug.error(null, "Failed to get art for loading resource.", e.getCause());
-                }
-            }, "load-art");
-            loadAlbumArt.setDaemon(true);
-            loadAlbumArt.start();
+                }, "load-art");
+                loadAlbumArt.setDaemon(true);
+                loadAlbumArt.start();
+            } catch (IndexOutOfBoundsException e) {
+                Debug.warn(null, "Internal error loading album art.");
+            }
         }
 
         if (!Files.exists(Paths.get(data.getString("directory")))) {
@@ -99,21 +103,44 @@ public class history {
             if (data.get("completed") == JSONObject.NULL) {
 
                 // Queued in the future, not current in progress for a download
-                // Download Icon
-
+                try {
+                    iconContainer.getChildren().add(
+                            new ImageView(
+                                    new Image(
+                                            getClass().getResource("app/img/icon.png").toURI().toString(),
+                                            25,
+                                            25,
+                                            true,
+                                            true
+                                    )
+                            )
+                    );
+                } catch (URISyntaxException ignored) {}
 
 
 
             } else {
                 if (data.getBoolean("completed")) {
 
-                    // In queue and downloaded
-                    // Green Tick
+                    // In queue and downloaded (Green Tick)
+                    try {
+                        iconContainer.getChildren().add(
+                                new ImageView(
+                                        new Image(
+                                                getClass().getResource("app/img/tick.png").toURI().toString(),
+                                                25,
+                                                25,
+                                                true,
+                                                true
+                                        )
+                                )
+                        );
+                    } catch (URISyntaxException ignored) {}
 
                 } else {
 
-                    // In queue, not downloaded
-                    // ProgressIndicator (Indeterminate)
+                    // In queue, not downloaded (ProgressIndicator (Indeterminate))
+                    iconContainer.getChildren().add(new ProgressIndicator());
 
                 }
             }
