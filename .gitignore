@@ -1,10 +1,11 @@
 /out
 /downloads
 /target
-/resources/cache
+/resources/cached
 /.idea
 *.class
 *.DS_Store
 *.txt
 *.json
+*.iml
 !meta.json

@@ -79,6 +79,10 @@ public class downloads {
 
                     case "Currently Downloading":
                         eventViewTitle.setText("Currently Downloading");
+
+                        // Load in download data from Model
+                        
+
                         break;
                 }
 
