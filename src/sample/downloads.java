@@ -18,7 +18,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
-// Not working with FXML file
+// TODO
+// Theoretically can assign elements ID and perhaps just hide and unmanage IDs instead of reloading assets for efficency
 public class downloads {
 
     @FXML VBox viewContainer;

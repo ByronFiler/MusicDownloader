@@ -19,13 +19,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
-// TODO
-// Switch to using actual boolean values instead of 0 and 1
-
-// TODO
-// On downloads class, add an advanced audio referential check setting
-// If enabled once the target file is downloaded, open the all music song link -> get music player 30 second clip download -> create trimmed version of song to 30 seconds -> compare
-
 public class Model {
 
     private final static Model instance = new Model();
