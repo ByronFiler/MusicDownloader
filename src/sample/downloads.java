@@ -45,85 +45,20 @@ public class downloads {
 
             // Drawing current downloads if they exist
             if (downloadObject.has("metadata")) {
-
-                eventViewSelector.getItems().add("Currently Downloading...");
-
-                try {
-                    for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
-
-                        // Send (converted) data to the model
-                        Model.getInstance().download.setDataItem(generateViewData(downloadObject, i));
-
-                        // Create the result view
-                        BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load();
-                        downloadItemLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
-
-                        // Update the list view
-                        eventsViewTable.getItems().add(downloadItemLoader);
-
-                    }
-                } catch (JSONException e) {
-                    Debug.error(null, "Error parsing JSON for download object.", e.getCause());
-                } catch (IOException e) {
-                    Debug.error(null, "FXML Error: history.fxml", e.getCause());
-                }
-
+                eventViewSelector.getItems().add("Currently Downloading");
+                drawCurrentDownloads(downloadObject);
             }
 
             // Drawing planned downloads if they exist
             if (downloadQueue.length() > 0) {
-
-                eventViewSelector.getItems().add("Queue");
-
-                try {
-                    for (int i = 0; i < downloadQueue.length(); i++) {
-                        for (int j = 0; j < downloadQueue.getJSONObject(i).getJSONArray("songs").length(); j++) {
-
-                            // Sending (converted) data to model
-                            Model.getInstance().download.setDataItem(generateViewData(downloadQueue.getJSONObject(i), j));
-
-                            // Creating the result view
-                            BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load();
-                            downloadItemLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
-
-                            // Update the table
-                            eventsViewTable.getItems().add(downloadItemLoader);
-                        }
-
-                    }
-                } catch (JSONException e) {
-                    Debug.error(null, "Failed to parse data to draw planned queue items.", e.getCause());
-                } catch (IOException e) {
-                    Debug.error(null, "FXML Error: history.fxml [planned queue]", e.getCause());
-                }
-
+                eventViewSelector.getItems().add("Download Queue");
+                drawPlannedQueue(downloadQueue);
             }
 
             // Drawing download histories if they exist
             if (downloadHistory.length() > 0) {
-                eventViewSelector.getItems().add("Downloads Queue");
-                
-                for (int i = 0; i < downloadHistory.length(); i++) {
-
-                    try {
-                        // Update the model
-                        Model.getInstance().download.setDataItem(downloadHistory.getJSONObject(i));
-
-                        // Loading the FXML
-                        BorderPane resultLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load(); // Something in here is taking too much time
-                        resultLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
-
-                        // Update table
-                        eventsViewTable.getItems().add(resultLoader);
-
-                    } catch (JSONException e) {
-                        // Error for now, later handle it and make it a warning
-                        Debug.error(null, "Failed to parse JSON to draw downloads history.", e.getCause());
-                    } catch (IOException e) {
-                        Debug.error(null, "Failed to create FXML file for result.", e.getCause());
-                    }
-
-                }
+                eventViewSelector.getItems().add("Download History");
+                drawHistory(downloadHistory);
             }
 
             // Evaluate whether to decide to hide the current download info-box and the combobox
@@ -135,15 +70,14 @@ public class downloads {
                 // Only has one relevant item, hence hide it's self and set the title as the only relevant item
                 switch (eventViewSelector.getItems().get(0)) {
 
-                    case "Downloads":
+                    case "Download History":
                         eventViewTitle.setText("Download History");
                         infoContainer.setVisible(false);
                         infoContainer.setManaged(false);
                         break;
 
-
-                    case "Downloading...":
-                        eventViewTitle.setText("Downloading...");
+                    case "Currently Downloading":
+                        eventViewTitle.setText("Currently Downloading");
                         break;
                 }
 
@@ -154,6 +88,39 @@ public class downloads {
                 eventViewSelector.getSelectionModel().select(0);
 
                 // Handle changes
+                eventViewSelector.setOnAction(e -> {
+
+                    eventsViewTable.getItems().clear();
+                    switch (eventViewSelector.getSelectionModel().getSelectedItem()) {
+
+                        case "All":
+                            // Redraw self
+                            try {
+                                Parent searchView = FXMLLoader.load(getClass().getResource("app/fxml/downloads.fxml"));
+
+                                Stage mainWindow = (Stage) ((Node) e.getSource()).getScene().getWindow();
+                                mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
+
+                            } catch(IOException er) {
+                                Debug.error(null, "FXML Error: search.fxml", er.getCause());
+                            }
+
+                        case "Currently Downloading":
+                            drawCurrentDownloads(downloadObject);
+                            break;
+
+                        case "Downloads Queue":
+                            drawPlannedQueue(downloadQueue);
+                            break;
+
+                        case "Download History":
+                            drawHistory(downloadHistory);
+                            break;
+
+                        default:
+                            Debug.error(null, "Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
+                    }
+                });
 
             }
 
@@ -193,6 +160,80 @@ public class downloads {
         viewData.put("completed", source.getJSONArray("songs").getJSONObject(index).getBoolean("completed"));
 
         return viewData;
+
+    }
+
+    private void drawPlannedQueue(JSONArray downloadQueue) {
+
+        try {
+            for (int i = 0; i < downloadQueue.length(); i++) {
+                for (int j = 0; j < downloadQueue.getJSONObject(i).getJSONArray("songs").length(); j++) {
+
+                    // Sending (converted) data to model
+                    Model.getInstance().download.setDataItem(generateViewData(downloadQueue.getJSONObject(i), j));
+
+                    // Creating the result view
+                    BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load();
+                    downloadItemLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
+
+                    // Update the table
+                    eventsViewTable.getItems().add(downloadItemLoader);
+                }
+
+            }
+        } catch (JSONException e) {
+            Debug.error(null, "Failed to parse data to draw planned queue items.", e.getCause());
+        } catch (IOException e) {
+            Debug.error(null, "FXML Error: history.fxml [planned queue]", e.getCause());
+        }
+
+    }
+
+    private void drawCurrentDownloads(JSONObject downloadObject) {
+        try {
+            for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
+
+                // Send (converted) data to the model
+                Model.getInstance().download.setDataItem(generateViewData(downloadObject, i));
+
+                // Create the result view
+                BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load();
+                downloadItemLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
+
+                // Update the list view
+                eventsViewTable.getItems().add(downloadItemLoader);
+
+            }
+        } catch (JSONException e) {
+            Debug.error(null, "Error parsing JSON for download object.", e.getCause());
+        } catch (IOException e) {
+            Debug.error(null, "FXML Error: history.fxml", e.getCause());
+        }
+    }
+
+    private void drawHistory(JSONArray downloadHistory) {
+
+        for (int i = 0; i < downloadHistory.length(); i++) {
+
+            try {
+                // Update the model
+                Model.getInstance().download.setDataItem(downloadHistory.getJSONObject(i));
+
+                // Loading the FXML
+                BorderPane resultLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load(); // Something in here is taking too much time
+                resultLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
+
+                // Update table
+                eventsViewTable.getItems().add(resultLoader);
+
+            } catch (JSONException e) {
+                // Error for now, later handle it and make it a warning
+                Debug.error(null, "Failed to parse JSON to draw downloads history.", e.getCause());
+            } catch (IOException e) {
+                Debug.error(null, "Failed to create FXML file for result.", e.getCause());
+            }
+
+        }
 
     }
 
