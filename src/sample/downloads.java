@@ -79,10 +79,6 @@ public class downloads {
 
                     case "Currently Downloading":
                         eventViewTitle.setText("Currently Downloading");
-
-                        // Load in download data from Model
-                        
-
                         break;
                 }
 
@@ -126,6 +122,31 @@ public class downloads {
                             Debug.error(null, "Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
                     }
                 });
+
+            }
+
+            if (infoContainer.isManaged()) {
+
+                // Load in download data from Model
+                try {
+
+                    JSONObject downloadInfo = Model.getInstance().download.getDownloadInfo();
+
+                    downloadSpeed.setText(downloadInfo.getString("downloadSpeed"));
+                    eta.setText(downloadInfo.getString("eta"));
+                    processing.setText(
+                            String.format(
+                                    "%s (%s/%s)",
+                                    downloadInfo.getString("song"),
+                                    downloadInfo.getString("index"),
+                                    downloadInfo.getString("songCount")
+                            )
+                    );
+
+
+                } catch (JSONException e) {
+                    Debug.error(null, "Error parsing download info.", e.getCause());
+                }
 
             }
 

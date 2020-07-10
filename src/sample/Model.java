@@ -240,14 +240,6 @@ public class Model {
             return downloadObject;
         }
 
-        public synchronized acquireDownloadFiles getDownloader() {
-            try {
-                return downloader;
-            } catch (NullPointerException ignored) {
-                return null;
-            }
-        }
-
         public synchronized void updateDownloadQueue(JSONObject queueItem) {
 
             if (downloadQueue.length() == 0 && !downloadObject.has("songs")) {
@@ -275,7 +267,7 @@ public class Model {
             }
         }
 
-        public boolean downloadsAccessible() {
+        public synchronized boolean downloadsAccessible() {
 
             // Should allow access to downloads if there is: download history or downloads in progress
             JSONArray downloadHistory = new JSONArray();
@@ -292,11 +284,11 @@ public class Model {
 
         }
 
-        public void setDataItem(JSONObject dataItem) {
+        public synchronized void setDataItem(JSONObject dataItem) {
             this.dataItem = dataItem;
         }
 
-        public JSONObject getDataItem() {
+        public synchronized JSONObject getDataItem() {
             return dataItem;
         }
 
@@ -337,7 +329,7 @@ public class Model {
 
         }
 
-        private void updateDownloadHistory(JSONObject newHistory) {
+        private synchronized void updateDownloadHistory(JSONObject newHistory) {
 
             JSONArray existingHistory = new JSONArray();
             try {
@@ -363,6 +355,29 @@ public class Model {
             } catch (IOException e) {
                 Debug.warn(null, "Failed to write updated downloads history.");
             }
+
+        }
+
+        public JSONObject getDownloadInfo() {
+
+            JSONObject downloadInfo = new JSONObject();
+
+            try {
+                downloadInfo = new JSONObject();
+                downloadInfo.put("eta", downloader.getEta());
+                downloadInfo.put("downloadSpeed", downloader.getDownloadSpeed());
+                downloadInfo.put("percentComplete", downloader.getPercentComplete());
+                downloadInfo.put("song", downloader.getSong());
+                downloadInfo.put("songIndex", downloader.getWorkingIndex());
+                downloadInfo.put("songCount", downloader.getSongCount());
+
+            } catch (NullPointerException e) {
+                Debug.error(null, "A current download object was loaded without any download data.", e.getCause());
+            } catch (JSONException e) {
+                Debug.error(null, "Error extracting data from downloading class.", e.getCause());
+            }
+
+            return downloadInfo;
 
         }
 
@@ -481,12 +496,26 @@ public class Model {
                 String line;
                 String downloadedFile = "";
                 while ((line = reader.readLine()) != null) {
-                    // Can parse this later
+
+                    // Parsing command line output
+                    // TODO
+
+                    // Getting data for graph
+
+                    // Getting ETA
+
+                    // Getting download speed
+
+                    // Getting Progress
+
+                    // Sourcing name of downloaded file
                     if (line.contains("[ffmpeg]")) {
                         downloadedFile = line.substring(22);
                     }
 
                 }
+
+                System.exit(0);
 
                 // Delete now useless bat
                 if (!new File("exec.bat").delete())
@@ -595,6 +624,30 @@ public class Model {
 
                 }
 
+            }
+
+            protected synchronized double getPercentComplete() {
+                return 0;
+            }
+
+            protected synchronized int getEta() {
+                return 0;
+            }
+
+            protected synchronized String getSong() {
+                return "";
+            }
+
+            protected synchronized int getWorkingIndex() {
+                return 0;
+            }
+
+            protected synchronized int getSongCount() {
+                return 0;
+            }
+
+            protected synchronized String getDownloadSpeed() {
+                return "";
             }
 
             @Override

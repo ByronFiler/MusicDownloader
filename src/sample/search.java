@@ -29,6 +29,7 @@ import org.jsoup.select.Elements;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -401,9 +402,7 @@ public class search {
                                         10,
                                         new ImageView(
                                                 new Image(
-                                                        new File(
-                                                                result.select("div.cover").size() > 0 ? "resources/album_default.png" : "resources/song_default.png"
-                                                        ).toURI().toString(),
+                                                        getClass().getResource(result.select("div.cover").size() > 0 ? "app/img/album_default.png" : "app/img/song_default.png").toURI().toString(),
                                                         25,
                                                         25,
                                                         true,
@@ -433,7 +432,7 @@ public class search {
                     search.setDisable(true);
                     new awaitReconnection();
                 });
-            }
+            } catch (URISyntaxException ignored) {}
 
         }
 
