@@ -216,8 +216,8 @@ public class settings {
                 Platform.runLater(() -> {
                     try {
                         latestVersion.setText(jsonData.get("version").toString());
-                    } catch (JSONException e) {
-                        Debug.warn(t, "Failed to get latest version, due to it JSON Error, online file missing / damaged.");
+                    } catch (JSONException ignored) {
+                        Debug.warn(t, "Found data syntactically incorrect.");
                     }
                 });
 

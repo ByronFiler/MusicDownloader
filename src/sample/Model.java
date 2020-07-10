@@ -30,6 +30,7 @@ public class Model {
     public Model() {
 
         // Optimises cache by removing duplicate album art caches, updates reference to caches with new caches too
+        // TODO: Should remove any art not referenced by ID in downloads history
         new Thread(() -> {
             // List all files
             File[] cachedFiles = new File("resources\\cached").listFiles();
@@ -293,10 +294,6 @@ public class Model {
         }
 
         public void deleteHistory(JSONObject targetDeletion) {
-
-            // TODO: Fix
-            // Delete all data not just target
-
             JSONArray downloadHistory = new JSONArray();
             JSONArray newDownloadHistory = new JSONArray();
 
@@ -498,7 +495,7 @@ public class Model {
                 while ((line = reader.readLine()) != null) {
 
                     // Parsing command line output
-                    // TODO
+                    // TODO: Do parsing
 
                     // Getting data for graph
 

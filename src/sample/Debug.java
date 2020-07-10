@@ -5,11 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 
-// TODO
-// Error should print full stack trace and kill program
-// Error should throw a new stack trace, and instead pass a message parameter
-// Shouldn't show MAIN for not a thread, just showing nothing
-
 public class Debug {
 
     // Debugging configuration, as it stands volatile is not needed but in future could be
