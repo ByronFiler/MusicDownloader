@@ -183,7 +183,7 @@ public class history {
             root.setOnMouseClicked(event -> {
                 try {
                     Desktop.getDesktop().open(new File(data.getString("directory")));
-                } catch (IOException | JSONException ignored) {
+                } catch (IOException | JSONException | IllegalArgumentException ignored) {
                     root.setCursor(Cursor.DEFAULT);
                     root.setOnMouseClicked(null);
                 }

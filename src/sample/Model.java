@@ -369,9 +369,9 @@ public class Model {
                 downloadInfo.put("songCount", downloader.getSongCount());
 
             } catch (NullPointerException e) {
-                Debug.error(null, "A current download object was loaded without any download data.", e.getCause());
+                //Debug.error(null, "A current download object was loaded without any download data.", e.getCause());
             } catch (JSONException e) {
-                Debug.error(null, "Error extracting data from downloading class.", e.getCause());
+                //Debug.error(null, "Error extracting data from downloading class.", e.getCause());
             }
 
             return downloadInfo;
@@ -828,8 +828,8 @@ public class Model {
 
             // Load the version
             try {
-                version = new JSONObject(new Scanner(new File("resources\\json\\meta.json")).useDelimiter("\\Z").next()).get("version").toString();
-            } catch (FileNotFoundException | JSONException e) {
+                version = new JSONObject(new Scanner(new File("src/sample/app/meta.json")).useDelimiter("\\Z").next()).get("version").toString();
+            } catch (JSONException | FileNotFoundException e) {
                 Debug.warn(null, "Failed to locate version.");
                 version = null;
             }

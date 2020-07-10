@@ -130,10 +130,6 @@ public class settings {
     @FXML
     private void validateConfirm() {
         // Check if settings have been adjusted from default
-
-        System.out.println(settings.toString());
-        System.out.println(getNewSettings().toString());
-
         if (settings.toString().equals(getNewSettings().toString())) {
             // Settings have not been modified, hence return to default
             Platform.runLater(() -> {
