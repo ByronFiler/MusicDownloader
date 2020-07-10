@@ -2,6 +2,7 @@
 /downloads
 /target
 /resources/cache
+/.idea
 *.class
 *.DS_Store
 *.txt
