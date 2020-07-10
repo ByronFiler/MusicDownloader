@@ -36,132 +36,127 @@ public class Model {
 
     public Model() {
 
-        // Runs in background and checks the cache for optimisations every five minutes to ensure files aren't built up unnecessarily
-        Timer cacheOptimiser = new Timer();
-        cacheOptimiser.schedule(new TimerTask() {
-            @Override
-            public synchronized void run() {
-                // List all files
-                File[] cachedFiles = new File("resources\\cached").listFiles();
-                ArrayList<String> imgData = new ArrayList<>();
-                ArrayList<ArrayList<String>> rename = new ArrayList<>();
+        // Optimises cache by removing duplicate album art caches, updates reference to caches with new caches too
+        new Thread(() -> {
+            // List all files
+            File[] cachedFiles = new File("resources\\cached").listFiles();
+            ArrayList<String> imgData = new ArrayList<>();
+            ArrayList<ArrayList<String>> rename = new ArrayList<>();
 
-                // File sizes at different times
-                int deletedFiles = 0;
-                int originalSize = Arrays.stream(Objects.requireNonNull(new File("resources\\cached\\").listFiles())).mapToInt(existingFile -> (int) existingFile.length()).sum();
+            // File sizes at different times
+            int deletedFiles = 0;
+            int originalSize = Arrays.stream(Objects.requireNonNull(new File("resources\\cached\\").listFiles())).mapToInt(existingFile -> (int) existingFile.length()).sum();
 
-                if (cachedFiles == null | Objects.requireNonNull(cachedFiles).length == 0)
-                    return;
+            if (cachedFiles == null | Objects.requireNonNull(cachedFiles).length == 0)
+                return;
 
-                // Load binary data, md5 hashes instead of keeping full file in memory
-                for (File workFile : cachedFiles) {
-                    if (workFile.getName().split("\\.")[1].equals("jpg")) {
+            // Load binary data, md5 hashes instead of keeping full file in memory
+            for (File workFile : cachedFiles) {
+                if (workFile.getName().split("\\.")[1].equals("jpg")) {
 
-                        try {
-                            String hash = DigestUtils.md5Hex(
-                                    Files.newInputStream(
-                                            Paths.get(workFile.getAbsolutePath())
+                    try {
+                        String hash = DigestUtils.md5Hex(
+                                Files.newInputStream(
+                                        Paths.get(workFile.getAbsolutePath())
+                                )
+                        );
+
+                        if (imgData.contains(hash)) {
+
+                            // Exists in data hence to setup a rename reference
+                            rename.add(
+                                    new ArrayList<>(
+                                            Arrays.asList(
+                                                    workFile.getName(),
+                                                    cachedFiles[imgData.indexOf(hash)].getName()
+                                            )
                                     )
                             );
 
-                            if (imgData.contains(hash)) {
-
-                                // Exists in data hence to setup a rename reference
-                                rename.add(
-                                        new ArrayList<>(
-                                                Arrays.asList(
-                                                        workFile.getName(),
-                                                        cachedFiles[imgData.indexOf(hash)].getName()
-                                                )
-                                        )
-                                );
-
-                            } else {
-                                imgData.add(hash);
-                            }
+                        } else {
+                            imgData.add(hash);
+                        }
 
 
-                        } catch (IOException ignored) { }
+                    } catch (IOException ignored) { }
 
-                    } else {
+                } else {
 
-                        if (!workFile.delete())
-                            Debug.warn(null, "Failed to delete non jpeg file in cache: " + workFile.getAbsolutePath());
-                        else
-                            deletedFiles++;
-                    }
-
-                }
-
-                // Begin the process of deleting files and renaming references
-                for (ArrayList<String> fileNames : rename) {
-
-                    // Delete the old no longer relevant file
-                    if (!new File("resources/cached/" + fileNames.get(0)).delete())
-                        Debug.warn(null, "Failed to delete file: " + new File("resources\\cached\\" + fileNames.get(0)).getAbsolutePath());
+                    if (!workFile.delete())
+                        Debug.warn(null, "Failed to delete non jpeg file in cache: " + workFile.getAbsolutePath());
                     else
                         deletedFiles++;
-
-                    // Delete all references to the file in the downloads history
-                    try {
-
-                        // Can cause an error if the file is blank, but will load the JSON Array
-                        JSONArray downloadsHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
-
-                        // Iterate through downloads history, replacing the old references with the new
-                        for (int i = 0; i < downloadsHistory.length(); i++) {
-                            try {
-                                if (downloadsHistory.getJSONObject(i).getString("artId").equals(fileNames.get(0).replace(".jpg", "")))
-                                    downloadsHistory.getJSONObject(i).put("artId", fileNames.get(1).replace(".jpg", ""));
-                            } catch (JSONException ignored) {
-                                Debug.warn(null, "Failed to work on downloads file.");
-                            }
-
-                        }
-
-                        // Writing changes
-                        try {
-                            FileWriter updateDownloads = new FileWriter("resources\\json\\downloads.json");
-                            updateDownloads.write(downloadsHistory.toString());
-                            updateDownloads.close();
-
-                        } catch (IOException e) {
-                            // Likely file deleted, adjust to handle, for now just error
-                            Debug.error(null, "Error writing to downloads file", e.getCause());
-                        }
-
-                    } catch (JSONException e) {
-
-                        // There is no download history and no use of the cached files, hence delete them
-                        for (File deleteFile : cachedFiles) {
-                            if (!deleteFile.delete()) {
-                                Debug.warn(null, "Failed to delete file: " + deleteFile.getAbsolutePath());
-                            }
-                        }
-                        return;
-
-                    } catch (FileNotFoundException | NoSuchElementException ignored) {
-                        // Generate a new downloads folder
-                    }
-
-                }
-
-                if (deletedFiles > 0) {
-                    int currentSize = Arrays.stream(Objects.requireNonNull(new File("resources\\cached\\").listFiles())).mapToInt(existingFile -> (int) existingFile.length()).sum();
-                    Debug.trace(
-                            null,
-                            String.format(
-                                    "Cache optimisation finished, deleted %s files, a cache size reduction of %2.2f%%",
-                                    deletedFiles,
-                                    ((double) (originalSize - currentSize) / originalSize) * 100
-                            )
-                    );
-                } else {
-                    Debug.trace(null, "Cache is optimised.");
                 }
 
             }
-        }, 0, 60 * 1000);
+
+            // Begin the process of deleting files and renaming references
+            for (ArrayList<String> fileNames : rename) {
+
+                // Delete the old no longer relevant file
+                if (!new File("resources/cached/" + fileNames.get(0)).delete())
+                    Debug.warn(null, "Failed to delete file: " + new File("resources\\cached\\" + fileNames.get(0)).getAbsolutePath());
+                else
+                    deletedFiles++;
+
+                // Delete all references to the file in the downloads history
+                try {
+
+                    // Can cause an error if the file is blank, but will load the JSON Array
+                    JSONArray downloadsHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
+
+                    // Iterate through downloads history, replacing the old references with the new
+                    for (int i = 0; i < downloadsHistory.length(); i++) {
+                        try {
+                            if (downloadsHistory.getJSONObject(i).getString("artId").equals(fileNames.get(0).replace(".jpg", "")))
+                                downloadsHistory.getJSONObject(i).put("artId", fileNames.get(1).replace(".jpg", ""));
+                        } catch (JSONException ignored) {
+                            Debug.warn(null, "Failed to work on downloads file.");
+                        }
+
+                    }
+
+                    // Writing changes
+                    try {
+                        FileWriter updateDownloads = new FileWriter("resources\\json\\downloads.json");
+                        updateDownloads.write(downloadsHistory.toString());
+                        updateDownloads.close();
+
+                    } catch (IOException e) {
+                        // Likely file deleted, adjust to handle, for now just error
+                        Debug.error(null, "Error writing to downloads file", e.getCause());
+                    }
+
+                } catch (JSONException e) {
+
+                    // There is no download history and no use of the cached files, hence delete them
+                    for (File deleteFile : cachedFiles) {
+                        if (!deleteFile.delete()) {
+                            Debug.warn(null, "Failed to delete file: " + deleteFile.getAbsolutePath());
+                        }
+                    }
+                    return;
+
+                } catch (FileNotFoundException | NoSuchElementException ignored) {
+                    // Generate a new downloads folder
+                }
+
+            }
+
+            if (deletedFiles > 0) {
+                int currentSize = Arrays.stream(Objects.requireNonNull(new File("resources\\cached\\").listFiles())).mapToInt(existingFile -> (int) existingFile.length()).sum();
+                Debug.trace(
+                        null,
+                        String.format(
+                                "Cache optimisation finished, deleted %s files, a cache size reduction of %2.2f%%",
+                                deletedFiles,
+                                ((double) (originalSize - currentSize) / originalSize) * 100
+                        )
+                );
+            } else {
+                Debug.trace(null, "Cache is optimised.");
+            }
+        }, "cache-optimiser");
 
     }
 
