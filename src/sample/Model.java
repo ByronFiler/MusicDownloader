@@ -382,6 +382,10 @@ public class Model {
             Thread thread;
             JSONObject downloadData;
 
+            private String percentComplete = "0%";
+            private String eta = "Calculating...";
+            private String downloadSpeed = "Calculating...";
+
             //String processingMessageInternal = "";
             public acquireDownloadFiles(JSONObject downloadData) {
                 this.downloadData = downloadData;
@@ -495,15 +499,25 @@ public class Model {
                 while ((line = reader.readLine()) != null) {
 
                     // Parsing command line output
+                    // Sample: "[download]  31.4% of 811.15KiB at  3.04MiB/s ETA 00:00"
                     // TODO: Do parsing
 
-                    // Getting data for graph
+                    try {
+                        // Getting data for graph
+                        // Downloaded playtime seconds per second at time period
 
-                    // Getting ETA
+                        // Getting ETA
+                        this.eta = line.split("ETA")[1].strip();
 
-                    // Getting download speed
+                        // Getting download speed
+                        this.downloadSpeed = line.split("of")[1].split("in")[0];
 
-                    // Getting Progress
+                        // Getting Progress
+                        this.percentComplete = line.substring(12).split("%")[0] + "%";
+
+                    } catch (Exception e) {
+                        Debug.warn(null, "[" + e.getClass() + "] Failed to process line: " + line);
+                    }
 
                     // Sourcing name of downloaded file
                     if (line.contains("[ffmpeg]")) {
@@ -623,8 +637,8 @@ public class Model {
 
             }
 
-            protected synchronized double getPercentComplete() {
-                return 0;
+            protected synchronized String getPercentComplete() {
+                return percentComplete;
             }
 
             protected synchronized int getEta() {

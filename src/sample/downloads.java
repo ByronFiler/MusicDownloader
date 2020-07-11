@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.stream.IntStream;
 
+// TODO: Make graphs and that a separate FXML page for better queries
 public class downloads {
 
     @FXML VBox viewContainer;
@@ -58,7 +59,7 @@ public class downloads {
                         Model.getInstance().download.setDataItem(generateViewData(downloadObject, i));
 
                         // Create the result view
-                        BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load();
+                        BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/download.fxml")).load();
                         downloadItemLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
 
                         // downloadItemLoader.setId(generateNewId() + "#1");
@@ -72,7 +73,7 @@ public class downloads {
                 } catch (JSONException e) {
                     Debug.error(null, "Error parsing JSON for download object.", e.getCause());
                 } catch (IOException e) {
-                    Debug.error(null, "FXML Error: history.fxml", e.getCause());
+                    Debug.error(null, "FXML Error: download.fxml", e.getCause());
                 }
             }
 
@@ -100,7 +101,7 @@ public class downloads {
                             Model.getInstance().download.setDataItem(generateViewData(downloadQueue.getJSONObject(i), j));
 
                             // Creating the result view
-                            BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load();
+                            BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/download.fxml")).load();
                             downloadItemLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
 
                             plannedDownloadsView[k] = downloadItemLoader;
@@ -114,7 +115,7 @@ public class downloads {
                 } catch (JSONException e) {
                     Debug.error(null, "Failed to parse data to draw planned queue items.", e.getCause());
                 } catch (IOException e) {
-                    Debug.error(null, "FXML Error: history.fxml [planned queue]", e.getCause());
+                    Debug.error(null, "FXML Error: download.fxml [planned queue]", e.getCause());
                 }
             }
 
@@ -129,7 +130,7 @@ public class downloads {
                         Model.getInstance().download.setDataItem(downloadHistory.getJSONObject(i));
 
                         // Loading the FXML
-                        BorderPane resultLoader = new FXMLLoader(getClass().getResource("app/fxml/history.fxml")).load(); // Something in here is taking too much time
+                        BorderPane resultLoader = new FXMLLoader(getClass().getResource("app/fxml/download.fxml")).load(); // Something in here is taking too much time
                         resultLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
 
                         downloadHistoriesView[i] = resultLoader;
