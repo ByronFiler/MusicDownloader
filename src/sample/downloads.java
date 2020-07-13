@@ -23,12 +23,15 @@ import java.util.stream.IntStream;
 public class downloads {
 
     @FXML VBox viewContainer;
+    /*
     @FXML BorderPane infoContainer;
     @FXML VBox downloadInfo;
 
     @FXML Text downloadSpeed;
     @FXML Text eta;
     @FXML Text processing;
+
+     */
 
     @FXML Text eventViewTitle;
     @FXML ComboBox<String> eventViewSelector;
@@ -161,8 +164,6 @@ public class downloads {
 
                     case "Download History":
                         eventViewTitle.setText("Download History");
-                        infoContainer.setVisible(false);
-                        infoContainer.setManaged(false);
                         break;
 
                     case "Currently Downloading":
@@ -208,27 +209,14 @@ public class downloads {
 
             }
 
-            if (infoContainer.isManaged()) {
-
-                // Load in download data from Model
+            // Handling view to show download speed, eta, etc.
+            // TODO Check working
+            if (!Model.getInstance().download.getDownloadInfo().toString().equals(new JSONObject().toString()) && currentDownloadsView.length > 0) {
                 try {
-
-                    JSONObject downloadInfo = Model.getInstance().download.getDownloadInfo();
-
-                    downloadSpeed.setText(downloadInfo.getString("downloadSpeed"));
-                    eta.setText(downloadInfo.getString("eta"));
-                    processing.setText(
-                            String.format(
-                                    "%s (%s/%s)",
-                                    downloadInfo.getString("song"),
-                                    downloadInfo.getString("index"),
-                                    downloadInfo.getString("songCount")
-                            )
-                    );
-
-
-                } catch (JSONException e) {
-                    //Debug.error(null, "Error parsing download info.", e.getCause());
+                    BorderPane dataView = new FXMLLoader(getClass().getResource("app/fxml/downloadData.fxml")).load();
+                    viewContainer.getChildren().add(0, dataView);
+                } catch (IOException e) {
+                    Debug.error(null, "FXML Error: downloadData.fxml", e.getCause());
                 }
 
             }

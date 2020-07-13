@@ -367,6 +367,8 @@ public class Model {
                 downloadInfo.put("song", downloader.getSong());
                 downloadInfo.put("songIndex", downloader.getWorkingIndex());
                 downloadInfo.put("songCount", downloader.getSongCount());
+                downloadInfo.put("seriesData", new JSONArray());
+
 
             } catch (NullPointerException e) {
                 //Debug.error(null, "A current download object was loaded without any download data.", e.getCause());
@@ -374,9 +376,40 @@ public class Model {
                 //Debug.error(null, "Error extracting data from downloading class.", e.getCause());
             }
 
-            return downloadInfo;
+            // return downloadInfo;
+
+            try {
+                return new JSONObject("{\"eta\": \"00:05\", \"downloadSpeed\": \"5.5MiB/s\", \"processingMessage\": \"Us and Them (7 of 10)\", \"seriesData\": [{\"speed\": \"5000\", \"time\": \"7\"}, {\"speed\": \"4000\", \"time\": \"5\"}]}");
+            } catch (JSONException e){
+                Debug.error(null, "lol", null);
+                return new JSONObject();
+            }
+        }
+
+        /*
+        TODO: Delete
+        public XYChart.Series<Number, Number> getHistoryChartData() {
+
+            XYChart.Series series = new XYChart.Series();
+
+            //populating the series with data
+            series.getData().add(new XYChart.Data(1, 23));
+            series.getData().add(new XYChart.Data(2, 14));
+            series.getData().add(new XYChart.Data(3, 15));
+            series.getData().add(new XYChart.Data(4, 24));
+            series.getData().add(new XYChart.Data(5, 34));
+            series.getData().add(new XYChart.Data(6, 36));
+            series.getData().add(new XYChart.Data(7, 22));
+            series.getData().add(new XYChart.Data(8, 45));
+            series.getData().add(new XYChart.Data(9, 43));
+            series.getData().add(new XYChart.Data(10, 17));
+            series.getData().add(new XYChart.Data(11, 29));
+            series.getData().add(new XYChart.Data(12, 25));
+
+            return series;
 
         }
+         */
 
         private class acquireDownloadFiles implements Runnable {
             Thread thread;
