@@ -182,7 +182,6 @@ public class Model {
         private volatile JSONArray downloadQueue = new JSONArray();
         private volatile JSONObject downloadObject = new JSONObject();
         private final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
-        private volatile JSONObject dataItem = new JSONObject();
 
         public download() {
 
@@ -285,14 +284,6 @@ public class Model {
 
         }
 
-        public synchronized void setDataItem(JSONObject dataItem) {
-            this.dataItem = dataItem;
-        }
-
-        public synchronized JSONObject getDataItem() {
-            return dataItem;
-        }
-
         public void deleteHistory(JSONObject targetDeletion) {
             JSONArray downloadHistory = new JSONArray();
             JSONArray newDownloadHistory = new JSONArray();
@@ -357,7 +348,7 @@ public class Model {
 
         public JSONObject getDownloadInfo() {
 
-            JSONObject downloadInfo = new JSONObject();
+            JSONObject downloadInfo;
 
             try {
                 downloadInfo = new JSONObject();
@@ -385,31 +376,6 @@ public class Model {
                 return new JSONObject();
             }
         }
-
-        /*
-        TODO: Delete
-        public XYChart.Series<Number, Number> getHistoryChartData() {
-
-            XYChart.Series series = new XYChart.Series();
-
-            //populating the series with data
-            series.getData().add(new XYChart.Data(1, 23));
-            series.getData().add(new XYChart.Data(2, 14));
-            series.getData().add(new XYChart.Data(3, 15));
-            series.getData().add(new XYChart.Data(4, 24));
-            series.getData().add(new XYChart.Data(5, 34));
-            series.getData().add(new XYChart.Data(6, 36));
-            series.getData().add(new XYChart.Data(7, 22));
-            series.getData().add(new XYChart.Data(8, 45));
-            series.getData().add(new XYChart.Data(9, 43));
-            series.getData().add(new XYChart.Data(10, 17));
-            series.getData().add(new XYChart.Data(11, 29));
-            series.getData().add(new XYChart.Data(12, 25));
-
-            return series;
-
-        }
-         */
 
         private class acquireDownloadFiles implements Runnable {
             Thread thread;

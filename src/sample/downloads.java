@@ -3,20 +3,34 @@ package sample;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Cursor;
+import javafx.scene.*;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.effect.ColorAdjust;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.awt.*;
+import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.stream.IntStream;
 
 // TODO: Make graphs and that a separate FXML page for better queries
@@ -58,25 +72,13 @@ public class downloads {
                     currentDownloadsView = new BorderPane[downloadObject.getJSONArray("songs").length()];
                     for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
 
-                        // Send (converted) data to the model
-                        Model.getInstance().download.setDataItem(generateViewData(downloadObject, i));
-
-                        // Create the result view
-                        BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/download.fxml")).load();
-                        downloadItemLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
-
-                        // downloadItemLoader.setId(generateNewId() + "#1");
-
-                        currentDownloadsView[i] = downloadItemLoader;
-
-                        // Update the list view
-                        eventsViewTable.getItems().add(downloadItemLoader);
+                        // Update the table & data
+                        eventsViewTable.getItems().add(generateViewResult(generateViewData(downloadObject, i)));
+                        currentDownloadsView[i] = eventsViewTable.getItems().get(eventsViewTable.getItems().size()-1);
 
                     }
                 } catch (JSONException e) {
                     Debug.error(null, "Error parsing JSON for download object.", e.getCause());
-                } catch (IOException e) {
-                    Debug.error(null, "FXML Error: download.fxml", e.getCause());
                 }
             }
 
@@ -100,25 +102,15 @@ public class downloads {
                     for (int i = 0; i < downloadQueue.length(); i++) {
                         for (int j = 0; j < downloadQueue.getJSONObject(i).getJSONArray("songs").length(); j++) {
 
-                            // Sending (converted) data to model
-                            Model.getInstance().download.setDataItem(generateViewData(downloadQueue.getJSONObject(i), j));
-
-                            // Creating the result view
-                            BorderPane downloadItemLoader = new FXMLLoader(getClass().getResource("app/fxml/download.fxml")).load();
-                            downloadItemLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
-
-                            plannedDownloadsView[k] = downloadItemLoader;
-
-                            // Update the table
-                            eventsViewTable.getItems().add(downloadItemLoader);
+                            // Update the table & data
+                            eventsViewTable.getItems().add(generateViewResult(generateViewData(downloadQueue.getJSONObject(i), j)));
+                            plannedDownloadsView[k] = eventsViewTable.getItems().get(eventsViewTable.getItems().size()-1);
                             k++;
                         }
 
                     }
                 } catch (JSONException e) {
                     Debug.error(null, "Failed to parse data to draw planned queue items.", e.getCause());
-                } catch (IOException e) {
-                    Debug.error(null, "FXML Error: download.fxml [planned queue]", e.getCause());
                 }
             }
 
@@ -129,25 +121,13 @@ public class downloads {
                 for (int i = 0; i < downloadHistory.length(); i++) {
 
                     try {
-                        // Update the model
-                        Model.getInstance().download.setDataItem(downloadHistory.getJSONObject(i));
-
-                        // Loading the FXML
-                        BorderPane resultLoader = new FXMLLoader(getClass().getResource("app/fxml/download.fxml")).load(); // Something in here is taking too much time
-                        resultLoader.minWidthProperty().bind(eventsViewTable.widthProperty().subtract(30));
-
-                        downloadHistoriesView[i] = resultLoader;
-
-                        //resultLoader.setId(generateNewId() + "#2");
-
-                        // Update table
-                        eventsViewTable.getItems().add(resultLoader);
+                        // Update table & data
+                        eventsViewTable.getItems().add(generateViewResult(downloadHistory.getJSONObject(i)));
+                        downloadHistoriesView[i] = eventsViewTable.getItems().get(eventsViewTable.getItems().size()-1);
 
                     } catch (JSONException e) {
                         // Error for now, later handle it and make it a warning
                         Debug.error(null, "Failed to parse JSON to draw downloads history.", e.getCause());
-                    } catch (IOException e) {
-                        Debug.error(null, "Failed to create FXML file for result.", e.getCause());
                     }
 
                 }
@@ -210,7 +190,6 @@ public class downloads {
             }
 
             // Handling view to show download speed, eta, etc.
-            // TODO Check working
             if (!Model.getInstance().download.getDownloadInfo().toString().equals(new JSONObject().toString()) && currentDownloadsView.length > 0) {
                 try {
                     BorderPane dataView = new FXMLLoader(getClass().getResource("app/fxml/downloadData.fxml")).load();
@@ -256,6 +235,208 @@ public class downloads {
         viewData.put("completed", source.getJSONArray("songs").getJSONObject(index).getBoolean("completed"));
 
         return viewData;
+
+    }
+
+    private BorderPane generateViewResult(JSONObject viewData) throws JSONException{
+
+        BorderPane result = new BorderPane();
+
+        // Left: Album Art, Song Title, Artist, Status & Padding
+        HBox left = new HBox();
+
+        // Preparing album art image: Cached Resource > Online Resource > Default
+        ImageView albumArt = new ImageView();
+        if (Files.exists(Paths.get(String.format("resources\\cached\\%s.jpg", viewData.getString("artId"))))) {
+
+            // Cached album art exists, use that
+            albumArt.setImage(
+                    new Image(
+                            new File(String.format("resources\\cached\\%s.jpg", viewData.getString("artId"))).toURI().toString(),
+                            85,
+                            85,
+                            true,
+                            true
+                    )
+            );
+
+        } else {
+            // Sending the request causes lag, hence use as thread, only needs to be called once, in future can add network error handling but that seems excessive as of the moment
+            try {
+                Thread loadAlbumArt = new Thread(() -> {
+                    try {
+                        if (InetAddress.getByName("allmusic.com").isReachable(1000)) {
+                            albumArt.setImage(
+                                    new Image(
+                                            viewData.getString("artUrl"),
+                                            85,
+                                            85,
+                                            true,
+                                            true
+                                    )
+                            );
+                        }
+                    } catch (IOException e) {
+                        Debug.warn(null, "Failed to connect to allmusic to get album art, using default.");
+                        try {
+                            albumArt.setImage(
+                                    new Image(
+                                            getClass().getResource("app/img/song_default.png").toURI().toString(),
+                                            85,
+                                            85,
+                                            true,
+                                            true
+                                    )
+                            );
+                        } catch (URISyntaxException er) {
+                            Debug.error(null, "Failed to set default album art.", er.getCause());
+                        }
+                    } catch (JSONException e) {
+                        Debug.error(null, "Failed to get art for loading resource.", e.getCause());
+                    }
+                }, "load-art");
+                loadAlbumArt.setDaemon(true);
+                loadAlbumArt.start();
+            } catch (IndexOutOfBoundsException e) {
+                Debug.warn(null, "Internal error loading album art.");
+            }
+        }
+
+        // Greyscale if downloaded & files don't exist
+        if (!Files.exists(Paths.get(viewData.getString("directory"))) && !viewData.has("completed")) {
+            // Greyscale the album art
+            ColorAdjust desaturate = new ColorAdjust();
+            desaturate.setSaturation(-1);
+            albumArt.setEffect(desaturate);
+
+            // Use default cursor as directory can't be opened
+            result.setCursor(Cursor.DEFAULT);
+        }
+
+        BorderPane resultInformationContainer = new BorderPane();
+        //Text status = new Text(viewData.getString("status"));
+        Text status = new Text("Status.");
+
+        Text title = new Text(viewData.getString("title"));
+        title.setStyle("-fx-font-weight: bold; -fx-font-family: arial; -fx-font-size: 22px;");
+
+        Text artist = new Text(viewData.getString("artist"));
+        artist.setStyle("-fx-font-family: arial; -fx-font-size: 16px; -fx-font-style: italic;");
+
+        VBox songArtistContainer = new VBox(title, artist);
+        songArtistContainer.setAlignment(Pos.TOP_LEFT);
+
+        resultInformationContainer.setTop(songArtistContainer);
+        resultInformationContainer.setBottom(status);
+        resultInformationContainer.setPadding(new Insets(0, 0, 0, 5));
+
+        left.getChildren().addAll(albumArt, resultInformationContainer);
+
+        // Right: Icon
+        HBox right = new HBox();
+        // Determine if this is a completed download
+        if (viewData.has("completed")) {
+
+            // This is a scheduled or completed download
+            if (viewData.get("completed") == JSONObject.NULL) {
+
+                // Queued in the future, not current in progress for a download
+                try {
+                    right.getChildren().add(
+                            new ImageView(
+                                    new Image(
+                                            getClass().getResource("app/img/icon.png").toURI().toString(),
+                                            25,
+                                            25,
+                                            true,
+                                            true
+                                    )
+                            )
+                    );
+                } catch (URISyntaxException ignored) {}
+
+
+
+            } else {
+                if (viewData.getBoolean("completed")) {
+
+                    // In queue and downloaded (Green Tick)
+                    try {
+                        right.getChildren().add(
+                                new ImageView(
+                                        new Image(
+                                                getClass().getResource("app/img/tick.png").toURI().toString(),
+                                                25,
+                                                25,
+                                                true,
+                                                true
+                                        )
+                                )
+                        );
+                    } catch (URISyntaxException ignored) {}
+
+                } else {
+
+                    // In queue, not downloaded (ProgressIndicator (Indeterminate))
+                    right.getChildren().add(new ProgressIndicator());
+
+                }
+            }
+
+        } else {
+
+            // This is a history result, should have a box to delete the history item
+            Group crossBox = new Group(
+                    new Line(20, 0, 0, 20),
+                    new Line(20, 20, 0, 0)
+            );
+            IntStream.range(0, 2).forEach(i -> {((Line) crossBox.getChildren().get(i)).setStroke(Color.GRAY); ((Line) crossBox.getChildren().get(i)).setStrokeWidth(2);} );
+            crossBox.setOnMouseEntered(e ->
+                    IntStream
+                            .range(0, 2)
+                            .forEach(
+                                    i -> ((Line) crossBox.getChildren().get(i)).setStroke(Color.BLACK)
+                            )
+            );
+            crossBox.setOnMouseExited(e ->
+                    IntStream
+                            .range(0, 2)
+                            .forEach(
+                                    i -> ((Line) crossBox.getChildren().get(i)).setStroke(Color.GRAY)
+                            )
+            );
+            crossBox.setOnMouseClicked(event -> {
+
+                Model.getInstance().download.deleteHistory(viewData);
+
+                try {
+                    Parent settingsView = FXMLLoader.load(getClass().getResource("app/fxml/downloads.fxml"));
+                    Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                    mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth() - 16, mainWindow.getHeight() - 39));
+                } catch (IOException er) {
+                    Debug.error(null, "FXML Error: Downloads.fxml", er.getCause());
+                }
+
+            });
+            result.setOnMouseClicked(event -> {
+                try {
+                    Desktop.getDesktop().open(new File(viewData.getString("directory")));
+                } catch (IOException | JSONException | IllegalArgumentException ignored) {
+                    result.setCursor(Cursor.DEFAULT);
+                    result.setOnMouseClicked(null);
+                }
+            });
+            right.getChildren().add(crossBox);
+
+        }
+        right.setPadding(new Insets(0, 10, 0, 0));
+        right.setAlignment(Pos.CENTER);
+        right.setMaxWidth(40);
+
+        result.setLeft(left);
+        result.setRight(right);
+
+        return result;
 
     }
 
