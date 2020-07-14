@@ -19,7 +19,6 @@ import java.util.stream.IntStream;
 
 // TODO: Initialize is the only function, doesn't require a unique controller, move back into the downloads controller
 public class downloadData {
-
     @FXML BorderPane root;
 
     @FXML VBox textInfoContainer;

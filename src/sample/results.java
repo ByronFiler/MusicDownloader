@@ -30,13 +30,13 @@ public class results {
 
     @FXML public AnchorPane root;
 
-    @FXML public TableView<Model.resultsSet> results;
-    @FXML public TableColumn<String, Model.resultsSet> artColumn;
-    @FXML public TableColumn<String, Model.resultsSet> titleColumn;
-    @FXML public TableColumn<String, Model.resultsSet> artistColumn;
-    @FXML public TableColumn<String, Model.resultsSet> genreColumn;
-    @FXML public TableColumn<String, Model.resultsSet> yearColumn;
-    @FXML public TableColumn<String, Model.resultsSet> typeColumn;
+    @FXML public TableView<Model.search.resultsSet> results;
+    @FXML public TableColumn<String, Model.search.resultsSet> artColumn;
+    @FXML public TableColumn<String, Model.search.resultsSet> titleColumn;
+    @FXML public TableColumn<String, Model.search.resultsSet> artistColumn;
+    @FXML public TableColumn<String, Model.search.resultsSet> genreColumn;
+    @FXML public TableColumn<String, Model.search.resultsSet> yearColumn;
+    @FXML public TableColumn<String, Model.search.resultsSet> typeColumn;
 
     @FXML public ProgressIndicator queueAdditionProgress;
     @FXML public Button download;
@@ -464,6 +464,7 @@ public class results {
                         } catch (NullPointerException ignored) {}
 
                         metaData.put("playtime", metaData.getInt("playtime") + timeConversion(track.select("td.time").text()));
+                        newSong.put("playtime", timeConversion(track.select("td.time").text()));
 
                         songs.put(newSong);
 
@@ -474,6 +475,7 @@ public class results {
                     downloadItem.put("metadata", metaData);
                     downloadItem.put("songs", songs);
                     System.out.println(downloadItem);
+                    System.exit(0);
                     Model.getInstance().download.updateDownloadQueue(downloadItem);
                 }
 

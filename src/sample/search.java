@@ -58,6 +58,7 @@ public class search {
 
     @FXML
     private void initialize(){
+
         // Theoretically no way this could change via normal use of the program, but if user starts a download, waits for it to finish and clears file, downloads page needs a check to prevent
         if (Model.getInstance().download.downloadsAccessible()) {
             downloads.setVisible(true);
@@ -253,7 +254,7 @@ public class search {
 
             if (searchData.length() > 0) {
                 // Adding remaining data & preparing data for table
-                Model.resultsSet[] tableData = new Model.resultsSet[searchData.length()];
+                Model.search.resultsSet[] tableData = new Model.search.resultsSet[searchData.length()];
                 for (int i = 0; i < searchData.length(); i++) {
 
                     // Gathering additional data for JSON object
@@ -320,7 +321,7 @@ public class search {
 
                     // Add as processed element to table data
                     try {
-                        tableData[i] = new Model.resultsSet(
+                        tableData[i] = new Model.search.resultsSet(
                                 new ImageView(new Image(searchData.getJSONObject(i).getString("art"))),
                                 searchData.getJSONObject(i).getString("title"),
                                 searchData.getJSONObject(i).getString("artist"),

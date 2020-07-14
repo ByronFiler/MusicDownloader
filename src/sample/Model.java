@@ -18,6 +18,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.IntStream;
 
 public class Model {
 
@@ -175,6 +176,75 @@ public class Model {
         public void setSearchResultsJson(JSONArray searchResultsJson) {
             this.searchResultsJson = searchResultsJson;
         }
+
+        // Search results table format
+        @SuppressWarnings("unused")
+        static class resultsSet {
+            private ImageView albumArt;
+            private String title;
+            private String artist;
+            private String year;
+            private String genre;
+            private String type;
+
+            public resultsSet(ImageView albumArt, String title, String artist, String year, String genre, String type) {
+                super();
+                this.albumArt = albumArt;
+                this.title = title;
+                this.artist = artist;
+                this.year = year;
+                this.genre = genre;
+                this.type = type;
+            }
+
+            public ImageView getAlbumArt() {
+                albumArt.setFitHeight(75);
+                albumArt.setFitWidth(75);
+                return albumArt;
+            }
+
+            public void setAlbumArt(ImageView albumArtLink) {
+                this.albumArt = albumArtLink;
+            }
+
+            public String getTitle() {
+                return title;
+            }
+
+            public void setTitle(String title) {
+                this.title = title;
+            }
+
+            public String getArtist() { return artist; }
+
+            public void setArtist(String artist) {
+                this.artist = artist;
+            }
+
+            public String getYear() {
+                return year;
+            }
+
+            public void setYear(String year) {
+                this.year = year;
+            }
+
+            public String getGenre() {
+                return genre;
+            }
+
+            public void setGenre(String genre) {
+                this.genre = genre;
+            }
+
+            public String getType() {
+                return type;
+            }
+
+            public void setType(String type) {
+                this.type = type;
+            }
+        }
     }
 
     public static class download{
@@ -219,9 +289,9 @@ public class Model {
                                 new File("resources\\json\\downloads.json")
                             ).useDelimiter("\\Z").next()
                 );
-            } catch (FileNotFoundException | JSONException e) {
+            } catch (FileNotFoundException | JSONException | NoSuchElementException e) {
                 try {
-                    if (Files.exists(Paths.get("resources\\json\\downloads.json")))
+                    if (!Files.exists(Paths.get("resources\\json\\downloads.json")))
                         if (!new File("resources\\json\\downloads.json").createNewFile())
                             throw new IOException();
                 } catch (IOException er) {
@@ -272,7 +342,6 @@ public class Model {
             // Should allow access to downloads if there is: download history or downloads in progress
             JSONArray downloadHistory = new JSONArray();
             try {
-
                 downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
 
             } catch (FileNotFoundException e) {
@@ -506,13 +575,39 @@ public class Model {
                         // Downloaded playtime seconds per second at time period
 
                         // Getting ETA
-                        this.eta = line.split("ETA")[1].strip();
+                        eta = line.split("ETA")[1].strip();
 
                         // Getting download speed
-                        this.downloadSpeed = line.split("of")[1].split("in")[0];
+                        downloadSpeed = line.split("of")[1].split("in")[0];
 
                         // Getting Progress
-                        this.percentComplete = line.substring(12).split("%")[0] + "%";
+                        percentComplete = line.substring(12).split("%")[0] + "%";
+
+                        // Getting graph data
+                        JSONObject graphData = new JSONObject();
+                        switch (downloadSpeed.replace("", "[0-9.]")) {
+                            case "MiB/s":
+                                graphData.put("speed", Integer.parseInt(downloadSpeed.replace("", "[^0-9.]")) * 1024 * 1024);
+                                break;
+
+                            case "KiB/s":
+                                graphData.put("speed", Integer.parseInt(downloadSpeed.replace("", "[^0-9.]")) * 1024);
+                                break;
+
+                            default:
+                                graphData.put("speed", Integer.parseInt(downloadSpeed.replace("", "[^0-9.]")));
+                        }
+
+                        // Playtime: (Complete Songs Playtime) + (Playtime of Current Song * Percent Complete)
+                        graphData.put("time", IntStream.of(Integer.parseInt(index)).mapToDouble(i -> {
+                            try {
+                                return downloadObject.getJSONArray("songs").getJSONObject(i).getInt("playtime");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            return 0;
+                        }).sum() + (Double.parseDouble(percentComplete) / 100) * downloadObject.getJSONArray("songs").getJSONObject(Integer.parseInt(index)).getDouble("playtime") );
+
 
                     } catch (Exception e) {
                         Debug.warn(null, "[" + e.getClass() + "] Failed to process line: " + line);
@@ -828,13 +923,14 @@ public class Model {
 
             // Declare default settings for reference
             try{
-                defaultSettings = new JSONObject("{\"advanced_validation\": true, \"output_directory\":\"\",\"save_album_art\":true,\"music_format\":0, \"album_art\":true, \"album_title\":true, \"song_title\":true, \"artist\":true, \"year\":true, \"track\":true,\"dark_theme\":false, \"data_saver\":false}");
+                defaultSettings = new JSONObject("{\"advanced_validation\": true, \"output_directory\":\"\",\"save_album_art\":0,\"music_format\":0, \"album_art\":true, \"album_title\":true, \"song_title\":true, \"artist\":true, \"year\":true, \"track\":true,\"dark_theme\":false, \"data_saver\":false}");
             } catch (JSONException ignored) {}
 
             // Load users actual settings
             try {
                 settings = new JSONObject(new Scanner(new File("resources\\json\\config.json")).useDelimiter("\\Z").next());
             } catch (FileNotFoundException | JSONException ignored) {
+                Debug.warn(null, "Failed to load user settings.");
                 settings = defaultSettings;
                 resetSettings();
             }
@@ -858,8 +954,33 @@ public class Model {
                 newConfig.close();
 
             } catch (IOException e) {
-                Debug.error(null, "Failed to reset settings.", e.getCause());
+
+                // Attempt to see if this was due to folders not working or a system IO error
+                if (resetDirectories())
+                    resetSettings();
+                else
+                    Debug.error(null, "Failed to reset settings.", e.getCause());
             }
+        }
+
+        private boolean resetDirectories() {
+
+            boolean wasUseful = false;
+
+            // Checking for non existing folders
+            if (!Files.exists(Paths.get("resources\\cached"))) {
+                wasUseful = true;
+                if (!new File("resources\\cached").mkdirs())
+                    Debug.error(null, "Failed to create non existing directory: resources\\cached", null);
+            }
+
+            if (!Files.exists(Paths.get("resources\\json"))) {
+                wasUseful = true;
+                if (!new File("resources\\json").mkdirs())
+                    Debug.error(null, "Failed to create non existing directory: resources\\json", null);
+            }
+
+            return wasUseful;
         }
 
         public void saveSettings(JSONObject settings) {
@@ -912,74 +1033,5 @@ public class Model {
             return version;
         }
 
-    }
-
-    // Search results table format
-    @SuppressWarnings("unused")
-    public static class resultsSet {
-        private ImageView albumArt;
-        private String title;
-        private String artist;
-        private String year;
-        private String genre;
-        private String type;
-
-        public resultsSet(ImageView albumArt, String title, String artist, String year, String genre, String type) {
-            super();
-            this.albumArt = albumArt;
-            this.title = title;
-            this.artist = artist;
-            this.year = year;
-            this.genre = genre;
-            this.type = type;
-        }
-
-        public ImageView getAlbumArt() {
-            albumArt.setFitHeight(75);
-            albumArt.setFitWidth(75);
-            return albumArt;
-        }
-
-        public void setAlbumArt(ImageView albumArtLink) {
-            this.albumArt = albumArtLink;
-        }
-
-        public String getTitle() {
-            return title;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
-        }
-
-        public String getArtist() { return artist; }
-
-        public void setArtist(String artist) {
-            this.artist = artist;
-        }
-
-        public String getYear() {
-            return year;
-        }
-
-        public void setYear(String year) {
-            this.year = year;
-        }
-
-        public String getGenre() {
-            return genre;
-        }
-
-        public void setGenre(String genre) {
-            this.genre = genre;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
-        }
     }
 }

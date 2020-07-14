@@ -37,15 +37,6 @@ import java.util.stream.IntStream;
 public class downloads {
 
     @FXML VBox viewContainer;
-    /*
-    @FXML BorderPane infoContainer;
-    @FXML VBox downloadInfo;
-
-    @FXML Text downloadSpeed;
-    @FXML Text eta;
-    @FXML Text processing;
-
-     */
 
     @FXML Text eventViewTitle;
     @FXML ComboBox<String> eventViewSelector;
@@ -53,10 +44,10 @@ public class downloads {
 
     @FXML
     private void initialize() {
-
         JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
         JSONArray downloadQueue = Model.getInstance().download.getDownloadQueue();
         JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
+
         BorderPane[] currentDownloadsView = new BorderPane[0];
         BorderPane[] plannedDownloadsView = new BorderPane[0];
         BorderPane[] downloadHistoriesView = new BorderPane[0];
@@ -162,6 +153,7 @@ public class downloads {
                 BorderPane[] finalPlannedDownloadsView = plannedDownloadsView;
                 BorderPane[] finalDownloadHistoriesView = downloadHistoriesView;
                 eventViewSelector.setOnAction(e -> {
+                    eventViewTitle.setText(eventViewSelector.getSelectionModel().getSelectedItem());
                     switch (eventViewSelector.getSelectionModel().getSelectedItem()) {
 
                         case "All":
@@ -169,6 +161,7 @@ public class downloads {
                             eventsViewTable.getItems().addAll(finalCurrentDownloadsView);
                             eventsViewTable.getItems().addAll(finalPlannedDownloadsView);
                             eventsViewTable.getItems().addAll(finalDownloadHistoriesView);
+                            break;
 
                         case "Currently Downloading":
                             eventsViewTable.getItems().setAll(finalCurrentDownloadsView);
@@ -264,6 +257,22 @@ public class downloads {
             // Sending the request causes lag, hence use as thread, only needs to be called once, in future can add network error handling but that seems excessive as of the moment
             try {
                 Thread loadAlbumArt = new Thread(() -> {
+
+                    // Setting as default until it loads (or doesn't)
+                    try {
+                        albumArt.setImage(
+                                new Image(
+                                        getClass().getResource("app/img/song_default.png").toURI().toString(),
+                                        85,
+                                        85,
+                                        true,
+                                        true
+                                )
+                        );
+                    } catch (URISyntaxException er) {
+                        Debug.error(null, "Failed to set default album art.", er.getCause());
+                    }
+
                     try {
                         if (InetAddress.getByName("allmusic.com").isReachable(1000)) {
                             albumArt.setImage(
@@ -278,19 +287,6 @@ public class downloads {
                         }
                     } catch (IOException e) {
                         Debug.warn(null, "Failed to connect to allmusic to get album art, using default.");
-                        try {
-                            albumArt.setImage(
-                                    new Image(
-                                            getClass().getResource("app/img/song_default.png").toURI().toString(),
-                                            85,
-                                            85,
-                                            true,
-                                            true
-                                    )
-                            );
-                        } catch (URISyntaxException er) {
-                            Debug.error(null, "Failed to set default album art.", er.getCause());
-                        }
                     } catch (JSONException e) {
                         Debug.error(null, "Failed to get art for loading resource.", e.getCause());
                     }
@@ -314,8 +310,6 @@ public class downloads {
         }
 
         BorderPane resultInformationContainer = new BorderPane();
-        //Text status = new Text(viewData.getString("status"));
-        Text status = new Text("Status.");
 
         Text title = new Text(viewData.getString("title"));
         title.setStyle("-fx-font-weight: bold; -fx-font-family: arial; -fx-font-size: 22px;");
@@ -327,7 +321,6 @@ public class downloads {
         songArtistContainer.setAlignment(Pos.TOP_LEFT);
 
         resultInformationContainer.setTop(songArtistContainer);
-        resultInformationContainer.setBottom(status);
         resultInformationContainer.setPadding(new Insets(0, 0, 0, 5));
 
         left.getChildren().addAll(albumArt, resultInformationContainer);

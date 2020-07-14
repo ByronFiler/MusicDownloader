@@ -164,10 +164,9 @@ public class settings {
     private JSONObject getNewSettings() {
 
         JSONObject settings = new JSONObject();
-
         try {
             // Files
-            settings.put("output_directory", outputDirectory.getText());
+            settings.put("output_directory", outputDirectory.getText().equals(System.getProperty("user.dir")) ? "" : outputDirectory.getText());
             settings.put("music_format", musicFormat.getSelectionModel().getSelectedIndex());
             settings.put("save_album_art", saveAlbumArt.getSelectionModel().getSelectedIndex());
             settings.put("advanced_validation", advancedValidationToggle.isSelected());
