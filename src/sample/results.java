@@ -8,10 +8,10 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,19 +24,25 @@ import org.jsoup.select.Elements;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Scanner;
 
 public class results {
 
     @FXML public AnchorPane root;
 
-    @FXML public TableView<Model.search.resultsSet> results;
-    @FXML public TableColumn<String, Model.search.resultsSet> artColumn;
-    @FXML public TableColumn<String, Model.search.resultsSet> titleColumn;
-    @FXML public TableColumn<String, Model.search.resultsSet> artistColumn;
-    @FXML public TableColumn<String, Model.search.resultsSet> genreColumn;
-    @FXML public TableColumn<String, Model.search.resultsSet> yearColumn;
-    @FXML public TableColumn<String, Model.search.resultsSet> typeColumn;
+    @FXML public ListView<BorderPane> results;
+    /*
+    @FXML public TableColumn<String, Model.resultsSet> artColumn;
+    @FXML public TableColumn<String, Model.resultsSet> titleColumn;
+    @FXML public TableColumn<String, Model.resultsSet> artistColumn;
+    @FXML public TableColumn<String, Model.resultsSet> genreColumn;
+    @FXML public TableColumn<String, Model.resultsSet> yearColumn;
+    @FXML public TableColumn<String, Model.resultsSet> typeColumn;
+
+     */
 
     @FXML public ProgressIndicator queueAdditionProgress;
     @FXML public Button download;
@@ -47,18 +53,11 @@ public class results {
     @FXML
     private void initialize() {
 
-        // Declare table properties
-        titleColumn.prefWidthProperty().bind(results.widthProperty().multiply(0.2).add(-15));
-        artistColumn.prefWidthProperty().bind(results.widthProperty().multiply(0.2).add(-15));
-        yearColumn.prefWidthProperty().bind(results.widthProperty().multiply(0.2).add(-15));
-        genreColumn.prefWidthProperty().bind(results.widthProperty().multiply(0.2).add(-15));
-        typeColumn.prefWidthProperty().bind(results.widthProperty().multiply(0.2).add(-15));
+        Debug.trace(null, "" + Model.getInstance().search.getSearchResults().length);
 
         // Set the table data
         results.getItems().setAll(Model.getInstance().search.getSearchResults());
-
         Debug.trace(null, "Initialized results view");
-
     }
 
     @FXML
@@ -113,7 +112,7 @@ public class results {
             Parent searchView = FXMLLoader.load(getClass().getResource("app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
-            mainWindow.setScene(new Scene(searchView));
+            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch (IOException e) {
             Debug.error(null, "FXML Error with search.fxml", e.getCause());

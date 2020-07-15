@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -15,7 +16,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
@@ -253,8 +256,10 @@ public class search {
             }
 
             if (searchData.length() > 0) {
+
+                BorderPane[] tableData = new BorderPane[searchData.length()];
+
                 // Adding remaining data & preparing data for table
-                Model.search.resultsSet[] tableData = new Model.search.resultsSet[searchData.length()];
                 for (int i = 0; i < searchData.length(); i++) {
 
                     // Gathering additional data for JSON object
@@ -270,10 +275,12 @@ public class search {
 
                                 // Album Art
                                 try {
-                                    String potentialAlbumArt = songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https") && !songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").equals("https://cdn-gce.allmusic.com/images/lazy.gif") ? songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") : new File("resources/song_default.png").toURI().toString();
+                                    String potentialAlbumArt = songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https") && !songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").equals("https://cdn-gce.allmusic.com/images/lazy.gif") ? songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") : getClass().getResource("app/img/song_default.png").toURI().toString();
                                     searchData.getJSONObject(i).put("art", potentialAlbumArt.isBlank() ? new File(getClass().getResource("app/img/song_default.png").getPath()).toURI().toString() : potentialAlbumArt);
                                 } catch (NullPointerException ignored) {
                                     searchData.getJSONObject(i).put("art", new File(getClass().getResource("app/img/song_default.png").getPath()).toURI().toString());
+                                } catch (URISyntaxException e) {
+                                    Debug.error(null, "URI Formation exception loading song default image.", e.getCause());
                                 }
 
                                 // Year
@@ -321,18 +328,56 @@ public class search {
 
                     // Add as processed element to table data
                     try {
-                        tableData[i] = new Model.search.resultsSet(
-                                new ImageView(new Image(searchData.getJSONObject(i).getString("art"))),
-                                searchData.getJSONObject(i).getString("title"),
-                                searchData.getJSONObject(i).getString("artist"),
-                                searchData.getJSONObject(i).getString("year"),
-                                searchData.getJSONObject(i).getString("genre"),
-                                searchData.getJSONObject(i).getInt("album") == 0 ? "Song" : "Album"
+
+                        BorderPane searchResult = new BorderPane();
+                        HBox left = new HBox();
+
+                        ImageView albumArt = new ImageView(
+                                new Image(
+                                        searchData.getJSONObject(i).getString("art"),
+                                        75,
+                                        75,
+                                        true,
+                                        true
+                                )
                         );
+
+                        BorderPane textInfo = new BorderPane();
+
+                        Text title = new Text(searchData.getJSONObject(i).getString("title"));
+                        title.setStyle("-fx-font-weight: bold; -fx-font-family: arial; -fx-font-size: 22px;");
+
+                        Text artist = new Text(searchData.getJSONObject(i).getString("artist"));
+                        artist.setStyle("-fx-font-family: arial; -fx-font-size: 16px; -fx-font-style: italic;");
+
+                        VBox songArtistContainer = new VBox(title, artist);
+
+                        StringBuilder metaInfoRaw = new StringBuilder(searchData.getJSONObject(i).getInt("album") == 0 ? "Song" : "Album");
+
+                        if (!searchData.getJSONObject(i).getString("year").isBlank())
+                            metaInfoRaw.append(" | ").append(searchData.getJSONObject(i).getString("year"));
+
+                        if (!searchData.getJSONObject(i).getString("genre").isBlank())
+                            metaInfoRaw.append(" | ").append(searchData.getJSONObject(i).getString("genre"));
+
+                        Text metaInfo = new Text(
+                                metaInfoRaw.toString()
+                        );
+
+                        textInfo.setTop(songArtistContainer);
+                        textInfo.setBottom(metaInfo);
+
+                        textInfo.setPadding(new Insets(0, 0, 0, 5));
+
+                        left.getChildren().setAll(albumArt, textInfo);
+
+                        searchResult.setLeft(left);
+
+                        tableData[i] = searchResult;
+
                     } catch (JSONException | IllegalArgumentException e) {
                         Debug.error(thread, "Failed to generate table result", e.getCause());
                     }
-
                 }
 
                 // Sending processed data to the model

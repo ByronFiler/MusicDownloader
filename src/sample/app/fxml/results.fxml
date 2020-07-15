@@ -2,17 +2,11 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ProgressIndicator?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.cell.PropertyValueFactory?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
-
 <AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.results">
    <BorderPane prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="30.0">
       <top>
@@ -45,28 +39,7 @@
             <padding>
                <Insets bottom="50.0" />
             </padding>
-            <TableView fx:id="results" onMouseClicked="#downloadButtonCheck" prefHeight="679.0" prefWidth="540.0" VBox.vgrow="ALWAYS">
-               <columns>
-                  <TableColumn fx:id="artColumn" prefWidth="90.0" text="Album Art">
-                     <cellValueFactory><PropertyValueFactory property="albumArt" /></cellValueFactory>
-                  </TableColumn>
-                  <TableColumn fx:id="titleColumn" prefWidth="90.0" text="Title">
-                     <cellValueFactory><PropertyValueFactory property="title" /></cellValueFactory>
-                  </TableColumn>
-                  <TableColumn fx:id="artistColumn" prefWidth="90.0" text="Artist">
-                     <cellValueFactory><PropertyValueFactory property="artist" /></cellValueFactory>
-                  </TableColumn>
-                  <TableColumn fx:id="yearColumn" prefWidth="90.0" text="Year">
-                     <cellValueFactory><PropertyValueFactory property="year" /></cellValueFactory>
-                  </TableColumn>
-                  <TableColumn fx:id="genreColumn" prefWidth="90.0" text="Genre">
-                     <cellValueFactory><PropertyValueFactory property="genre" /></cellValueFactory>
-                  </TableColumn>
-                  <TableColumn fx:id="typeColumn" prefWidth="90.0" text="Type">
-                     <cellValueFactory><PropertyValueFactory property="type" /></cellValueFactory>
-                  </TableColumn>
-               </columns>
-            </TableView>
+            <ListView fx:id="results" onMouseClicked="#downloadButtonCheck" prefHeight="679.0" prefWidth="540.0" VBox.vgrow="ALWAYS"/>
          </VBox>
       </center>
    </BorderPane>

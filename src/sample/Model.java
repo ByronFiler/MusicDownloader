@@ -5,7 +5,7 @@ import com.musicg.fingerprint.FingerprintManager;
 import com.musicg.fingerprint.FingerprintSimilarityComputer;
 import com.musicg.wave.Wave;
 import javafx.application.Platform;
-import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
 import javazoom.jl.converter.Converter;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -160,14 +160,15 @@ public class Model {
     }
 
     public static class search {
-        private resultsSet[] searchResults;
+        //private resultsSet[] searchResults;
+        private BorderPane[] searchResults;
         private JSONArray searchResultsJson;
 
-        public resultsSet[] getSearchResults() {
+        public BorderPane[] getSearchResults(){
             return searchResults;
         }
 
-        public void setSearchResults(resultsSet[] searchResults) {
+        public void setSearchResults(BorderPane[] searchResults) {
             this.searchResults = searchResults;
         }
 
@@ -176,78 +177,10 @@ public class Model {
         public void setSearchResultsJson(JSONArray searchResultsJson) {
             this.searchResultsJson = searchResultsJson;
         }
-
-        // Search results table format
-        @SuppressWarnings("unused")
-        static class resultsSet {
-            private ImageView albumArt;
-            private String title;
-            private String artist;
-            private String year;
-            private String genre;
-            private String type;
-
-            public resultsSet(ImageView albumArt, String title, String artist, String year, String genre, String type) {
-                super();
-                this.albumArt = albumArt;
-                this.title = title;
-                this.artist = artist;
-                this.year = year;
-                this.genre = genre;
-                this.type = type;
-            }
-
-            public ImageView getAlbumArt() {
-                albumArt.setFitHeight(75);
-                albumArt.setFitWidth(75);
-                return albumArt;
-            }
-
-            public void setAlbumArt(ImageView albumArtLink) {
-                this.albumArt = albumArtLink;
-            }
-
-            public String getTitle() {
-                return title;
-            }
-
-            public void setTitle(String title) {
-                this.title = title;
-            }
-
-            public String getArtist() { return artist; }
-
-            public void setArtist(String artist) {
-                this.artist = artist;
-            }
-
-            public String getYear() {
-                return year;
-            }
-
-            public void setYear(String year) {
-                this.year = year;
-            }
-
-            public String getGenre() {
-                return genre;
-            }
-
-            public void setGenre(String genre) {
-                this.genre = genre;
-            }
-
-            public String getType() {
-                return type;
-            }
-
-            public void setType(String type) {
-                this.type = type;
-            }
-        }
     }
 
     public static class download{
+
         private acquireDownloadFiles downloader;
         private volatile JSONArray downloadQueue = new JSONArray();
         private volatile JSONObject downloadObject = new JSONObject();
@@ -255,6 +188,7 @@ public class Model {
 
         public download() {
 
+            /*
             try {
                 downloadObject = new JSONObject(
                         "{\"metadata\":{\"art\":\"https://rovimusic.rovicorp.com/image.jpg?c=EUokLyfMctShPK4In1fAA4Af7E_1E-2MlBBPmPAXRBU=&f=2\",\"artId\":\"05810864125232795\",\"artist\":\"Pink Floyd\",\"year\":\"1973\",\"album\":\"The Dark Side of the Moon\",\"genre\":\"Pop/Rock\",\"playtime\":2574,\"directory\":\"C:\\\\Users\\\\byron\\\\Documents\\\\Dev\\\\MusicDownloader\\\\downloads\\\\The Dark Side of the Moon\"},\"songs\":[{\"position\":1,\"id\":\"7012986679409586\",\"source\":[\"xCbzkW5wero\",\"HW-lXjOyUWo\"],\"completed\":true,\"title\":\"Speak to Me\",\"sample\":\"hTIxMWJqyil71qaGizxidhyhM-OFI8zG4l-qVpXXB1I\"},{\"position\":2,\"id\":\"04271141165175796\",\"source\":[\"y1i8RoAQW-8\",\"UOW2pfZKF4Y\",\"2ivwOXGeCbI\",\"gnLLuzS2Ofw\"],\"completed\":false,\"title\":\"Breathe (In the Air)\",\"sample\":\"hIzYGfNje1cR64cquskMmCpQg_7iAU1wjqLgK_xGXts\"},{\"position\":3,\"id\":\"13183160348016032\",\"source\":[\"vVooyS4mG4w\",\"2sUyk5zSbhM\",\"POKIpg6NGzQ\",\"VouHPeO4Gls\",\"yq3VYrASrSI\",\"ynd7TLJXl0E\",\"im7w1JPZrwU\",\"usEByUDs_7k\",\"GZB6mGGuUIQ\",\"mrojrDCI02k\"],\"completed\":false,\"title\":\"On the Run\",\"sample\":\"ES4UL38AjoK_6hpwCBKoog4Q1ghY8VaPylnm7PwcKNY\"},{\"position\":4,\"id\":\"8998022614909142\",\"source\":[\"T4AnBssEQ0A\",\"pgXozIma-Oc\",\"dVMkfv5AzcA\",\"JwYX52BP2Sk\",\"AukADw4m7CE\",\"-EzURpTF5c8\",\"oEGL7j2LN84\",\"F_VjVqe3KJ0\",\"GG2tZNOQWAA\",\"rL3AgkwbYgo\",\"A7pI96Osp9c\",\"Z-OytmtYoOI\",\"LNBRBTDBUxQ\",\"lke-uABclNk\",\"z67FsTNpexg\"],\"completed\":false,\"title\":\"Time\",\"sample\":\"GGyQUL4DuzbMe8ua6RRqRgSijaXJlYnq0St31qpAJWo\"},{\"position\":5,\"id\":\"6063852326789261\",\"source\":[\"mPGv8L3a_sY\",\"T13se_2A7c8\",\"cVBCE3gaNxc\",\"kK0rpKOEAt0\",\"2-DvI9Ljeg4\",\"sxo0OJkbaMY\",\"CVWHItGgrdE\",\"qanO3qf9-rE\",\"-orwSbzkzvw\",\"gryCFevszRQ\",\"vWZ6hmHj2MA\"],\"completed\":false,\"title\":\"The Great Gig in the Sky\",\"sample\":\"hIzYGfNje1cR64cquskMmB_TZlp6n_cq-Emr2zx15tU\"},{\"position\":6,\"id\":\"7609847131902222\",\"source\":[\"JkhX5W7JoWI\",\"Z0ftw7tMfOM\",\"z3cg3IQzSqw\",\"de7iay8Rv7o\",\"cpbbuaIA3Ds\",\"sndo_wdc384\",\"T2KiJGJq_pk\",\"Kjgwjh4H7wg\",\"8oPq1-ymSVY\",\"JwYX52BP2Sk\",\"_FrOQC-zEog\"],\"completed\":false,\"title\":\"Money\",\"sample\":\"GGyQUL4DuzbMe8ua6RRqRphUoDg0hsvx4F4sL4oO-nA\"},{\"position\":7,\"id\":\"19200560517400156\",\"source\":[\"3vAqfqNMUoA\",\"GKiLEgAzFDQ\",\"GIoJ_ihR7SA\",\"h90j3lOXNvU\",\"nDbeqj-1XOo\",\"2KmaPWmVH7Q\",\"s_Yayz5o-l0\",\"I3OdanjBYoM\",\"eGwtXfIH3bc\",\"sf1JN1lLN2I\",\"JbGyNtKKK5I\",\"Sd4ihZVgSE0\",\"deU_uwlNpOo\",\"wzRYUpBHXNk\",\"LezoMi3yftM\"],\"completed\":false,\"title\":\"Us and Them\",\"sample\":\"hTIxMWJqyil71qaGizxidoAf7E_1E-2MlBBPmPAXRBU\"},{\"position\":8,\"id\":\"133524150825584\",\"source\":[\"Sb3reMS84-U\",\"bK7HJvmgFnM\",\"_83urK9rO4U\",\"i3ioG1-JipA\",\"yXumgSaFPpA\",\"KW2UwELSE3M\",\"wpbI82NY9QA\"],\"completed\":false,\"title\":\"Any Colour You Like\",\"sample\":\"uevnophJKve4T7V89NdIbD6KsMttLlyBmmVTZ6_CLs0\"},{\"position\":9,\"id\":\"18088778908475966\",\"source\":[\"JC5O9ZHXmTs\",\"BhYKN21olBw\",\"pE_Q0ohfeyE\",\"pnExahMPPFI\",\"LDxF80pyVDo\"],\"completed\":false,\"title\":\"Brain Damage\",\"sample\":\"hTIxMWJqyil71qaGizxidgSijaXJlYnq0St31qpAJWo\"},{\"position\":10,\"id\":\"5460082801431189\",\"source\":[\"jIC5MtVVzos\",\"WZtfsfoKSB0\",\"9wjZrswriz0\",\"YmCA4Y8fUZo\",\"n9xOl8qZ7tc\"],\"completed\":false,\"title\":\"Eclipse\",\"sample\":\"hTIxMWJqyil71qaGizxidt_M69_UI9rrJSVvWL2-yAg\"}]}\n");
@@ -263,6 +197,7 @@ public class Model {
             } catch (Exception e) {
                 Debug.error(null, "Fuck2", e.getCause());
             }
+             */
 
             try {
                 JSONArray downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
@@ -1034,4 +969,75 @@ public class Model {
         }
 
     }
+
+    /*
+    // Search results table format
+    @SuppressWarnings("unused")
+    static class resultsSet {
+        private ImageView albumArt;
+        private String title;
+        private String artist;
+        private String year;
+        private String genre;
+        private String type;
+
+        public resultsSet(ImageView albumArt, String title, String artist, String year, String genre, String type) {
+            super();
+            this.albumArt = albumArt;
+            this.title = title;
+            this.artist = artist;
+            this.year = year;
+            this.genre = genre;
+            this.type = type;
+        }
+
+        public ImageView getAlbumArt() {
+            albumArt.setFitHeight(75);
+            albumArt.setFitWidth(75);
+            return albumArt;
+        }
+
+        public void setAlbumArt(ImageView albumArtLink) {
+            this.albumArt = albumArtLink;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public void setTitle(String title) {
+            this.title = title;
+        }
+
+        public String getArtist() { return artist; }
+
+        public void setArtist(String artist) {
+            this.artist = artist;
+        }
+
+        public String getYear() {
+            return year;
+        }
+
+        public void setYear(String year) {
+            this.year = year;
+        }
+
+        public String getGenre() {
+            return genre;
+        }
+
+        public void setGenre(String genre) {
+            this.genre = genre;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+    }
+     */
 }

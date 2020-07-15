@@ -16,7 +16,7 @@ import java.io.IOException;
 // Create temporary directory
 
 // Structure files & check about running
-// data: All user created application data: config, download history, cache
+// usr: All user created application data: config, download history, cache
 // tmp: Temporary files: youtube-dl raw downloads, temporary wav files, bat files
 // app: Core app files: css, fxml, images
 
