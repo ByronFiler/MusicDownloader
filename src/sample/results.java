@@ -34,15 +34,6 @@ public class results {
     @FXML public AnchorPane root;
 
     @FXML public ListView<BorderPane> results;
-    /*
-    @FXML public TableColumn<String, Model.resultsSet> artColumn;
-    @FXML public TableColumn<String, Model.resultsSet> titleColumn;
-    @FXML public TableColumn<String, Model.resultsSet> artistColumn;
-    @FXML public TableColumn<String, Model.resultsSet> genreColumn;
-    @FXML public TableColumn<String, Model.resultsSet> yearColumn;
-    @FXML public TableColumn<String, Model.resultsSet> typeColumn;
-
-     */
 
     @FXML public ProgressIndicator queueAdditionProgress;
     @FXML public Button download;
