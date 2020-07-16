@@ -1,0 +1,1 @@
+youtube-dl --extract-audio --audio-format mp3 --ignore-errors --retries 10 https://www.youtube.com/watch?v=W1oaXqBJRRQ

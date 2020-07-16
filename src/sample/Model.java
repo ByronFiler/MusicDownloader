@@ -20,6 +20,9 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.IntStream;
 
+//TODO
+// Could look at doing that thing other apps do and show progress on the icon [https://stackoverflow.com/a/47943535/6460641]
+
 public class Model {
 
     private final static Model instance = new Model();
@@ -379,14 +382,14 @@ public class Model {
         }
 
         private class acquireDownloadFiles implements Runnable {
-            Thread thread;
-            JSONObject downloadData;
+            final Thread thread;
+            final JSONObject downloadData;
 
-            private volatile JSONArray graphData = new JSONArray();
-            private volatile String percentComplete = "0%";
-            private volatile String eta = "Calculating...";
-            private volatile String downloadSpeed = "Calculating...";
-            private volatile String song = "";
+            volatile JSONArray graphData = new JSONArray();
+            volatile String percentComplete = "0%";
+            volatile String eta = "Calculating...";
+            volatile String downloadSpeed = "Calculating...";
+            volatile String song = "";
 
             //String processingMessageInternal = "";
             public acquireDownloadFiles(JSONObject downloadData) {

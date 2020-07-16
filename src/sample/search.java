@@ -42,6 +42,7 @@ import java.util.TimerTask;
 // Error message is not centered and is out of place
 // Losing connection mid-search generates a partially completed results table, don't let this happen
 // Continue testing connection drops: Control Panel\Network and Internet\Network Connections
+// Search data could also theoretically load songs since the request is already sent to save sending the requests again decreasing load speeds and web requests
 
 public class search {
 

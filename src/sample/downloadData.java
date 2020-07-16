@@ -12,6 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.time.Instant;
 import java.util.OptionalDouble;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -28,6 +29,9 @@ public class downloadData {
 
     @FXML
     private void initialize() {
+
+        long start = Instant.now().toEpochMilli();
+
         final JSONObject[] workingData = {new JSONObject()};
         new Timer().schedule(new TimerTask() {
             @Override
@@ -94,13 +98,45 @@ public class downloadData {
                         // Due to size constraints we ideally just want to map a few data points if there are too many
                         if (chartData.length() > 10) {
 
-                            for (int i = 0; i < 10; i++) {
-                                series.getData().add(
-                                        new XYChart.Data<>(
-                                                chartData.getJSONObject((int) Math.floor( (double) (chartData.length()/10) * i)).getInt("time"),
-                                                chartData.getJSONObject( (int) Math.floor( (double) (chartData.length()/10) * i) ).getInt("speed") / Math.pow(1024, conversion)
-                                        )
-                                );
+                            // Group data into 10 clusters calculate average of each
+                            for (int i = 0; i < 9; i++) {
+
+                                OptionalDouble clusterAverageTimeOpt = IntStream.range(
+                                        (int) Math.round((double) chartData.length() / 10) * i,
+                                        (int) Math.round((double) chartData.length() / 10) * i+1
+                                ).mapToDouble(j -> {
+                                    try {
+                                        return chartData.getJSONObject(j).getInt("time");
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                    return 0;
+                                }).average();
+
+                                OptionalDouble clusterAverageSpeedOpt = IntStream.range(
+                                        (int) Math.round((double) chartData.length() / 10) * i,
+                                        (int) Math.round((double) chartData.length() / 10) * i+1
+                                ).mapToDouble(j -> {
+                                    try {
+                                        return chartData.getJSONObject(j).getInt("speed");
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                    return 0;
+                                }).average();
+
+                                if (clusterAverageTimeOpt.isPresent() && clusterAverageSpeedOpt.isPresent()) {
+
+                                    series.getData().add(
+                                            new XYChart.Data<>(
+                                                    clusterAverageTimeOpt.getAsDouble(),
+                                                    clusterAverageSpeedOpt.getAsDouble()
+                                            )
+                                    );
+
+                                } else {
+                                    Debug.error(null, "Failed to calculate average of given cluster.", null);
+                                }
 
                             }
 
@@ -127,8 +163,14 @@ public class downloadData {
 
                 }
 
+                Debug.trace(null, "Rendered data in : " + (Instant.now().toEpochMilli() - start) + "ms");
+
+
             }
         }, 0, 50);
+
+        Debug.trace(null, "Initialized downloads data in : " + (Instant.now().toEpochMilli() - start) + "ms");
+
     }
 
 }
