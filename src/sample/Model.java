@@ -364,21 +364,13 @@ public class Model {
                 downloadInfo.put("seriesData", downloader.getGraphData());
 
             } catch (NullPointerException e) {
-                Debug.error(null, "A current download object was loaded without any download data.", e.getCause());
+                return new JSONObject();
             } catch (JSONException e) {
                 Debug.error(null, "Error extracting data from downloading class.", e.getCause());
             }
 
             return downloadInfo;
-            /*
-            try {
-                return new JSONObject("{\"eta\": \"00:05\", \"downloadSpeed\": \"5.5MiB/s\", \"processingMessage\": \"Us and Them (7 of 10)\", \"seriesData\": [{\"speed\": \"5000\", \"time\": \"7\"}, {\"speed\": \"4000\", \"time\": \"5\"}]}");
-            } catch (JSONException e){
-                Debug.error(null, "lol", null);
-                return new JSONObject();
-            }
 
-             */
         }
 
         private class acquireDownloadFiles implements Runnable {

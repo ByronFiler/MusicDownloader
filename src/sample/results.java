@@ -10,8 +10,11 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,6 +27,7 @@ import org.jsoup.select.Elements;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -88,6 +92,24 @@ public class results {
             if (queueAdder.isDead())
                 throw new NullPointerException();
         } catch (NullPointerException ignored) {
+
+            for (BorderPane searchResult: results.getItems()) {
+                searchResult.setRight(null);
+            }
+            try {
+                results.getSelectionModel().getSelectedItems().get(0).setRight(new HBox(new ImageView(
+                        new Image(
+                                getClass().getResource("app/img/tick.png").toURI().toString(),
+                                25,
+                                25,
+                                true,
+                                true
+                        )
+                )));
+            } catch (URISyntaxException e) {
+                Debug.error(null, "Failed to set tick to mark selected element.", e.getCause());
+            }
+
             Platform.runLater(() -> download.setDisable(results.getSelectionModel().getSelectedIndex() == -1));
         }
     }
