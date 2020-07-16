@@ -43,9 +43,6 @@ public class results {
 
     @FXML
     private void initialize() {
-
-        Debug.trace(null, "" + Model.getInstance().search.getSearchResults().length);
-
         // Set the table data
         results.getItems().setAll(Model.getInstance().search.getSearchResults());
         Debug.trace(null, "Initialized results view");
@@ -464,8 +461,6 @@ public class results {
                 if (!kill) {
                     downloadItem.put("metadata", metaData);
                     downloadItem.put("songs", songs);
-                    System.out.println(downloadItem);
-                    System.exit(0);
                     Model.getInstance().download.updateDownloadQueue(downloadItem);
                 }
 

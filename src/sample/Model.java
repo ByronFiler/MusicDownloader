@@ -352,42 +352,41 @@ public class Model {
 
         public JSONObject getDownloadInfo() {
 
-            JSONObject downloadInfo;
-
+            JSONObject downloadInfo = new JSONObject();
             try {
-                downloadInfo = new JSONObject();
                 downloadInfo.put("eta", downloader.getEta());
                 downloadInfo.put("downloadSpeed", downloader.getDownloadSpeed());
                 downloadInfo.put("percentComplete", downloader.getPercentComplete());
                 downloadInfo.put("song", downloader.getSong());
-                downloadInfo.put("songIndex", downloader.getWorkingIndex());
-                downloadInfo.put("songCount", downloader.getSongCount());
-                downloadInfo.put("seriesData", new JSONArray());
-
+                downloadInfo.put("seriesData", downloader.getGraphData());
 
             } catch (NullPointerException e) {
-                //Debug.error(null, "A current download object was loaded without any download data.", e.getCause());
+                Debug.error(null, "A current download object was loaded without any download data.", e.getCause());
             } catch (JSONException e) {
-                //Debug.error(null, "Error extracting data from downloading class.", e.getCause());
+                Debug.error(null, "Error extracting data from downloading class.", e.getCause());
             }
 
-            // return downloadInfo;
-
+            return downloadInfo;
+            /*
             try {
                 return new JSONObject("{\"eta\": \"00:05\", \"downloadSpeed\": \"5.5MiB/s\", \"processingMessage\": \"Us and Them (7 of 10)\", \"seriesData\": [{\"speed\": \"5000\", \"time\": \"7\"}, {\"speed\": \"4000\", \"time\": \"5\"}]}");
             } catch (JSONException e){
                 Debug.error(null, "lol", null);
                 return new JSONObject();
             }
+
+             */
         }
 
         private class acquireDownloadFiles implements Runnable {
             Thread thread;
             JSONObject downloadData;
 
-            private String percentComplete = "0%";
-            private String eta = "Calculating...";
-            private String downloadSpeed = "Calculating...";
+            private volatile JSONArray graphData = new JSONArray();
+            private volatile String percentComplete = "0%";
+            private volatile String eta = "Calculating...";
+            private volatile String downloadSpeed = "Calculating...";
+            private volatile String song = "";
 
             //String processingMessageInternal = "";
             public acquireDownloadFiles(JSONObject downloadData) {
@@ -506,43 +505,46 @@ public class Model {
                     // TODO: Do parsing
 
                     try {
-                        // Getting data for graph
-                        // Downloaded playtime seconds per second at time period
 
-                        // Getting ETA
-                        eta = line.split("ETA")[1].strip();
+                        if (line.contains("%") && !line.contains("in")) {
 
-                        // Getting download speed
-                        downloadSpeed = line.split("of")[1].split("in")[0];
+                            // Getting ETA
+                            eta = line.split("ETA")[1].strip();
 
-                        // Getting Progress
-                        percentComplete = line.substring(12).split("%")[0] + "%";
+                            // Getting download speed
+                            downloadSpeed = line.split("at")[1].split("at")[0].split("ETA")[0].strip();
 
-                        // Getting graph data
-                        JSONObject graphData = new JSONObject();
-                        switch (downloadSpeed.replace("", "[0-9.]")) {
-                            case "MiB/s":
-                                graphData.put("speed", Integer.parseInt(downloadSpeed.replace("", "[^0-9.]")) * 1024 * 1024);
-                                break;
+                            // Getting Progress
+                            percentComplete = line.substring(11).split("%")[0].strip() + "%";
 
-                            case "KiB/s":
-                                graphData.put("speed", Integer.parseInt(downloadSpeed.replace("", "[^0-9.]")) * 1024);
-                                break;
 
-                            default:
-                                graphData.put("speed", Integer.parseInt(downloadSpeed.replace("", "[^0-9.]")));
-                        }
+                            // Getting graph data
+                            JSONObject lineGraphData = new JSONObject();
+                            switch (downloadSpeed.replaceAll("[^A-Za-z]+", "")) {
+                                case "MiBs":
+                                    lineGraphData.put("speed", Double.parseDouble(downloadSpeed.replaceAll("[^\\d.]", "")) * 1024 * 1024);
+                                    break;
 
-                        // Playtime: (Complete Songs Playtime) + (Playtime of Current Song * Percent Complete)
-                        graphData.put("time", IntStream.of(Integer.parseInt(index)).mapToDouble(i -> {
-                            try {
-                                return downloadObject.getJSONArray("songs").getJSONObject(i).getInt("playtime");
-                            } catch (JSONException e) {
-                                e.printStackTrace();
+                                case "KiBs":
+                                    lineGraphData.put("speed", Double.parseDouble(downloadSpeed.replaceAll("[^\\d.]", "")) * 1024);
+                                    break;
+
+                                default:
+                                    lineGraphData.put("speed", Double.parseDouble(downloadSpeed.replaceAll("[^\\d.]", "")));
                             }
-                            return 0;
-                        }).sum() + (Double.parseDouble(percentComplete) / 100) * downloadObject.getJSONArray("songs").getJSONObject(Integer.parseInt(index)).getDouble("playtime") );
 
+                            // Playtime: (Complete Songs Playtime) + (Playtime of Current Song * Percent Complete)
+                            lineGraphData.put("time", IntStream.of(Integer.parseInt(index)-1).mapToDouble(i -> {
+                                try {
+                                    return downloadObject.getJSONArray("songs").getJSONObject(i).getInt("playtime");
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                                return 0;
+                            }).sum() + (Double.parseDouble(percentComplete.replaceAll("[^\\d.]", "")) / 100) * downloadObject.getJSONArray("songs").getJSONObject(Integer.parseInt(index)-1).getDouble("playtime"));
+
+                            graphData.put(lineGraphData);
+                        }
 
                     } catch (Exception e) {
                         Debug.warn(null, "[" + e.getClass() + "] Failed to process line: " + line);
@@ -554,8 +556,6 @@ public class Model {
                     }
 
                 }
-
-                System.exit(0);
 
                 // Delete now useless bat
                 if (!new File("exec.bat").delete())
@@ -670,24 +670,20 @@ public class Model {
                 return percentComplete;
             }
 
-            protected synchronized int getEta() {
-                return 0;
+            protected synchronized String getEta() {
+                return eta;
             }
 
             protected synchronized String getSong() {
-                return "";
-            }
-
-            protected synchronized int getWorkingIndex() {
-                return 0;
-            }
-
-            protected synchronized int getSongCount() {
-                return 0;
+                return song;
             }
 
             protected synchronized String getDownloadSpeed() {
-                return "";
+                return downloadSpeed;
+            }
+
+            protected synchronized JSONArray getGraphData() {
+                return graphData;
             }
 
             @Override
@@ -724,7 +720,7 @@ public class Model {
                 try {
                     for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
 
-                        // processingMessageInternal = Integer.toString(i);
+                        song = downloadObject.getJSONArray("songs").getJSONObject(i).getString("title");
 
                         // Will call it's self recursively until it exhausts possible files or succeeds
                         try {

@@ -42,8 +42,11 @@ public class downloadData {
 
                         // UI Text
                         downloadSpeed.setText(workingData[0].getString("downloadSpeed"));
+
                         eta.setText(workingData[0].getString("eta"));
-                        processing.setText(workingData[0].getString("processingMessage"));
+
+                        processing.setText(workingData[0].getString("song"));
+
                         // processing.setWrappingWidth(INTERNAL CONTAINER WIDTH - (INFO MESSAGE + SPACING));
                         textInfoContainer.prefWidthProperty().bind(root.prefHeightProperty().divide(2).subtract(20));
 
@@ -88,23 +91,36 @@ public class downloadData {
                         LineChart<Number, Number> chart = new LineChart<>(xAxis,yAxis);
                         XYChart.Series<Number, Number> series = new XYChart.Series<>();
 
-                        for (int i = 0; i < chartData.length(); i++) {
-                            series.getData().add(
-                                    new XYChart.Data<>(
-                                            chartData.getJSONObject(i).getInt("time"),
-                                            chartData.getJSONObject(i).getInt("speed") / Math.pow(1024, conversion)
-                                    )
-                            );
+                        // Due to size constraints we ideally just want to map a few data points if there are too many
+                        if (chartData.length() > 10) {
 
+                            for (int i = 0; i < 10; i++) {
+                                series.getData().add(
+                                        new XYChart.Data<>(
+                                                chartData.getJSONObject((int) Math.floor( (double) (chartData.length()/10) * i)).getInt("time"),
+                                                chartData.getJSONObject( (int) Math.floor( (double) (chartData.length()/10) * i) ).getInt("speed") / Math.pow(1024, conversion)
+                                        )
+                                );
+
+                            }
+
+                        } else {
+
+                            for (int i = 0; i < chartData.length(); i++) {
+                                series.getData().add(
+                                        new XYChart.Data<>(
+                                                chartData.getJSONObject(i).getInt("time"),
+                                                chartData.getJSONObject(i).getInt("speed") / Math.pow(1024, conversion)
+                                        )
+                                );
+
+                            }
                         }
-
 
                         chart.getData().add(series);
                         chart.prefWidthProperty().bind(root.prefWidthProperty().subtract(textInfoContainer.widthProperty()));
 
                         Platform.runLater(() -> root.setRight(chart));
-
-
                     } catch (JSONException e) {
                         Debug.warn(null, "Unknown key");
                     }
