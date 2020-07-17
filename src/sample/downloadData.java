@@ -163,8 +163,8 @@ public class downloadData {
 
                 }
 
-                Debug.trace(null, "Rendered data in : " + (Instant.now().toEpochMilli() - start) + "ms");
-
+                if (Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString()))
+                    this.cancel();
 
             }
         }, 0, 50);

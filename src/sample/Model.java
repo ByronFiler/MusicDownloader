@@ -9,11 +9,13 @@ import javafx.scene.layout.BorderPane;
 import javazoom.jl.converter.Converter;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -33,128 +35,157 @@ public class Model {
 
     public Model() {
 
-        // Optimises cache by removing duplicate album art caches, updates reference to caches with new caches too
-        // TODO: Should remove any art not referenced by ID in downloads history
+        // TODO: Could reacquire album art cache that has been deleted.
         new Thread(() -> {
-            // List all files
-            File[] cachedFiles = new File("resources\\cached").listFiles();
-            ArrayList<String> imgData = new ArrayList<>();
-            ArrayList<ArrayList<String>> rename = new ArrayList<>();
 
-            // File sizes at different times
-            int deletedFiles = 0;
-            int originalSize = Arrays.stream(Objects.requireNonNull(new File("resources\\cached\\").listFiles())).mapToInt(existingFile -> (int) existingFile.length()).sum();
+            JSONArray downloadHistory = download.getDownloadHistory();
+            ArrayList<String> usedArtIds = new ArrayList<>();
+            ArrayList<File> deleteFiles = new ArrayList<>();
+            JSONArray filesData = new JSONArray();
+            JSONArray renameRequests = new JSONArray();
 
-            if (cachedFiles == null | Objects.requireNonNull(cachedFiles).length == 0)
-                return;
+            try {
+                for (int i = 0; i < downloadHistory.length(); i++) {
 
-            // Load binary data, md5 hashes instead of keeping full file in memory
-            for (File workFile : cachedFiles) {
-                if (workFile.getName().split("\\.")[1].equals("jpg")) {
+                    if (!usedArtIds.contains(downloadHistory.getJSONObject(i).getString("artId")))
+                        usedArtIds.add(downloadHistory.getJSONObject(i).getString("artId"));
+                }
+            } catch (JSONException e) {
+                Debug.error(null, "Failed to parse download history for art IDs.", e.getCause());
+            }
+
+            for (File foundFile: Objects.requireNonNull(new File("resources/cached").listFiles())) {
+
+                // Check the file is an image and is being used
+                if (FilenameUtils.getExtension(foundFile.getAbsolutePath()).equals("jpg") && usedArtIds.contains(FilenameUtils.removeExtension(foundFile.getName())) ) {
 
                     try {
                         String hash = DigestUtils.md5Hex(
                                 Files.newInputStream(
-                                        Paths.get(workFile.getAbsolutePath())
+                                        Paths.get(foundFile.getAbsolutePath())
                                 )
                         );
 
-                        if (imgData.contains(hash)) {
+                        boolean updated = false;
 
-                            // Exists in data hence to setup a rename reference
-                            rename.add(
-                                    new ArrayList<>(
-                                            Arrays.asList(
-                                                    workFile.getName(),
-                                                    cachedFiles[imgData.indexOf(hash)].getName()
+                        for (int i = 0; i < filesData.length(); i++) {
+
+                            if (filesData.getJSONObject(i).getString("hash").equals(hash)) {
+
+                                renameRequests.put(
+                                        new JSONObject(
+                                                String.format(
+                                                        "{\"original\": %s, \"new\": %s}",
+                                                        FilenameUtils.removeExtension(foundFile.getName()),
+                                                        filesData.getJSONObject(i).getString("id")
+                                                )
+                                        )
+                                );
+                                deleteFiles.add(foundFile);
+                                updated = true;
+
+                            }
+
+                        }
+
+                        if (!updated) {
+
+                            filesData.put(
+                                    new JSONObject(
+                                            String.format(
+                                                    "{\"id\": %s, \"hash\": %s}",
+                                                    FilenameUtils.removeExtension(foundFile.getName()),
+                                                    hash
                                             )
                                     )
                             );
 
-                        } else {
-                            imgData.add(hash);
                         }
 
 
-                    } catch (IOException ignored) { }
+                    } catch (IOException | JSONException e) {
+                        e.printStackTrace();
+                    }
 
                 } else {
-
-                    if (!workFile.delete())
-                        Debug.warn(null, "Failed to delete non jpeg file in cache: " + workFile.getAbsolutePath());
-                    else
-                        deletedFiles++;
+                    if (!foundFile.delete())
+                        Debug.warn(null, "Failed to delete file: " + foundFile.getAbsolutePath());
                 }
 
             }
 
-            // Begin the process of deleting files and renaming references
-            for (ArrayList<String> fileNames : rename) {
+            try {
 
-                // Delete the old no longer relevant file
-                if (!new File("resources/cached/" + fileNames.get(0)).delete())
-                    Debug.warn(null, "Failed to delete file: " + new File("resources\\cached\\" + fileNames.get(0)).getAbsolutePath());
-                else
-                    deletedFiles++;
+                for (int i = 0; i < renameRequests.length(); i++) {
 
-                // Delete all references to the file in the downloads history
+                    for (int j = 0; j < downloadHistory.length(); j++) {
+
+                        if (downloadHistory.getJSONObject(j).getString("artId").equals(renameRequests.getJSONObject(i).getString("original"))) {
+
+                            downloadHistory.getJSONObject(j).put("artId", renameRequests.getJSONObject(i).getString("new"));
+
+                        }
+
+                    }
+
+                }
+
                 try {
+                    download.setDownloadHistory(downloadHistory);
 
-                    // Can cause an error if the file is blank, but will load the JSON Array
-                    JSONArray downloadsHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
-
-                    // Iterate through downloads history, replacing the old references with the new
-                    for (int i = 0; i < downloadsHistory.length(); i++) {
-                        try {
-                            if (downloadsHistory.getJSONObject(i).getString("artId").equals(fileNames.get(0).replace(".jpg", "")))
-                                downloadsHistory.getJSONObject(i).put("artId", fileNames.get(1).replace(".jpg", ""));
-                        } catch (JSONException ignored) {
-                            Debug.warn(null, "Failed to work on downloads file.");
-                        }
-
+                    // Now to delete files
+                    for (File deleteFile: deleteFiles) {
+                        if (!deleteFile.delete())
+                            Debug.warn(Thread.currentThread(), "Failed to delete " + deleteFile.getAbsolutePath());
                     }
 
-                    // Writing changes
-                    try {
-                        FileWriter updateDownloads = new FileWriter("resources\\json\\downloads.json");
-                        updateDownloads.write(downloadsHistory.toString());
-                        updateDownloads.close();
-
-                    } catch (IOException e) {
-                        // Likely file deleted, adjust to handle, for now just error
-                        Debug.error(null, "Error writing to downloads file", e.getCause());
-                    }
-
-                } catch (JSONException e) {
-
-                    // There is no download history and no use of the cached files, hence delete them
-                    for (File deleteFile : cachedFiles) {
-                        if (!deleteFile.delete()) {
-                            Debug.warn(null, "Failed to delete file: " + deleteFile.getAbsolutePath());
-                        }
-                    }
-                    return;
-
-                } catch (FileNotFoundException | NoSuchElementException ignored) {
-                    // Generate a new downloads folder
+                } catch (IOException e) {
+                    Debug.warn(null, "Failed to write updated downloads history.");
                 }
 
+
+            } catch (JSONException e) {
+                Debug.error(null, "Failed to rewrite JSON data for download queue optimisation.", e.getCause());
             }
 
-            if (deletedFiles > 0) {
-                int currentSize = Arrays.stream(Objects.requireNonNull(new File("resources\\cached\\").listFiles())).mapToInt(existingFile -> (int) existingFile.length()).sum();
-                Debug.trace(
-                        null,
-                        String.format(
-                                "Cache optimisation finished, deleted %s files, a cache size reduction of %2.2f%%",
-                                deletedFiles,
-                                ((double) (originalSize - currentSize) / originalSize) * 100
-                        )
-                );
-            } else {
-                Debug.trace(null, "Cache is optimised.");
+            // Start re-downloading missing files.
+            JSONArray downloadObjects = new JSONArray();
+            try {
+                for (int i = 0; i < downloadHistory.length(); i++) {
+
+                    if (!Files.exists(Paths.get(String.format("resources\\cached\\%s.jpg", downloadHistory.getJSONObject(i).getString("artId"))))) {
+
+                        boolean alreadyPlanned = false;
+                        for (int j = 0; i < downloadObjects.length(); j++) {
+
+                            if (downloadObjects.getJSONObject(j).getString("artUrl").equals(downloadHistory.getJSONObject(i).getString("artUrl"))) {
+                                alreadyPlanned = true;
+                            }
+
+                        }
+                        if (!alreadyPlanned)
+                            downloadObjects.put(downloadHistory.getJSONObject(i));
+
+                    }
+
+                }
+
+                for (int i = 0; i < downloadObjects.length(); i++) {
+
+                    FileUtils.copyURLToFile(
+                            new URL(downloadObjects.getJSONObject(i).getString("artUrl")),
+                            new File(String.format("resources\\cached\\%s.jpg", downloadObjects.getJSONObject(i).getString("artId")))
+                    );
+
+                }
+
+            } catch (JSONException | MalformedURLException e) {
+                Debug.error(Thread.currentThread(), "Failed to get art for checking files to redownload.", e.getCause());
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        }, "cache-optimiser");
+
+        }, "cache-optimiser").start();
 
     }
 
@@ -163,7 +194,6 @@ public class Model {
     }
 
     public static class search {
-        //private resultsSet[] searchResults;
         private BorderPane[] searchResults;
         private JSONArray searchResultsJson;
 
@@ -187,24 +217,16 @@ public class Model {
         private acquireDownloadFiles downloader;
         private volatile JSONArray downloadQueue = new JSONArray();
         private volatile JSONObject downloadObject = new JSONObject();
+        private JSONArray downloadHistory = new JSONArray();
         private final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
 
         public download() {
 
-            /*
-            try {
-                downloadObject = new JSONObject(
-                        "{\"metadata\":{\"art\":\"https://rovimusic.rovicorp.com/image.jpg?c=EUokLyfMctShPK4In1fAA4Af7E_1E-2MlBBPmPAXRBU=&f=2\",\"artId\":\"05810864125232795\",\"artist\":\"Pink Floyd\",\"year\":\"1973\",\"album\":\"The Dark Side of the Moon\",\"genre\":\"Pop/Rock\",\"playtime\":2574,\"directory\":\"C:\\\\Users\\\\byron\\\\Documents\\\\Dev\\\\MusicDownloader\\\\downloads\\\\The Dark Side of the Moon\"},\"songs\":[{\"position\":1,\"id\":\"7012986679409586\",\"source\":[\"xCbzkW5wero\",\"HW-lXjOyUWo\"],\"completed\":true,\"title\":\"Speak to Me\",\"sample\":\"hTIxMWJqyil71qaGizxidhyhM-OFI8zG4l-qVpXXB1I\"},{\"position\":2,\"id\":\"04271141165175796\",\"source\":[\"y1i8RoAQW-8\",\"UOW2pfZKF4Y\",\"2ivwOXGeCbI\",\"gnLLuzS2Ofw\"],\"completed\":false,\"title\":\"Breathe (In the Air)\",\"sample\":\"hIzYGfNje1cR64cquskMmCpQg_7iAU1wjqLgK_xGXts\"},{\"position\":3,\"id\":\"13183160348016032\",\"source\":[\"vVooyS4mG4w\",\"2sUyk5zSbhM\",\"POKIpg6NGzQ\",\"VouHPeO4Gls\",\"yq3VYrASrSI\",\"ynd7TLJXl0E\",\"im7w1JPZrwU\",\"usEByUDs_7k\",\"GZB6mGGuUIQ\",\"mrojrDCI02k\"],\"completed\":false,\"title\":\"On the Run\",\"sample\":\"ES4UL38AjoK_6hpwCBKoog4Q1ghY8VaPylnm7PwcKNY\"},{\"position\":4,\"id\":\"8998022614909142\",\"source\":[\"T4AnBssEQ0A\",\"pgXozIma-Oc\",\"dVMkfv5AzcA\",\"JwYX52BP2Sk\",\"AukADw4m7CE\",\"-EzURpTF5c8\",\"oEGL7j2LN84\",\"F_VjVqe3KJ0\",\"GG2tZNOQWAA\",\"rL3AgkwbYgo\",\"A7pI96Osp9c\",\"Z-OytmtYoOI\",\"LNBRBTDBUxQ\",\"lke-uABclNk\",\"z67FsTNpexg\"],\"completed\":false,\"title\":\"Time\",\"sample\":\"GGyQUL4DuzbMe8ua6RRqRgSijaXJlYnq0St31qpAJWo\"},{\"position\":5,\"id\":\"6063852326789261\",\"source\":[\"mPGv8L3a_sY\",\"T13se_2A7c8\",\"cVBCE3gaNxc\",\"kK0rpKOEAt0\",\"2-DvI9Ljeg4\",\"sxo0OJkbaMY\",\"CVWHItGgrdE\",\"qanO3qf9-rE\",\"-orwSbzkzvw\",\"gryCFevszRQ\",\"vWZ6hmHj2MA\"],\"completed\":false,\"title\":\"The Great Gig in the Sky\",\"sample\":\"hIzYGfNje1cR64cquskMmB_TZlp6n_cq-Emr2zx15tU\"},{\"position\":6,\"id\":\"7609847131902222\",\"source\":[\"JkhX5W7JoWI\",\"Z0ftw7tMfOM\",\"z3cg3IQzSqw\",\"de7iay8Rv7o\",\"cpbbuaIA3Ds\",\"sndo_wdc384\",\"T2KiJGJq_pk\",\"Kjgwjh4H7wg\",\"8oPq1-ymSVY\",\"JwYX52BP2Sk\",\"_FrOQC-zEog\"],\"completed\":false,\"title\":\"Money\",\"sample\":\"GGyQUL4DuzbMe8ua6RRqRphUoDg0hsvx4F4sL4oO-nA\"},{\"position\":7,\"id\":\"19200560517400156\",\"source\":[\"3vAqfqNMUoA\",\"GKiLEgAzFDQ\",\"GIoJ_ihR7SA\",\"h90j3lOXNvU\",\"nDbeqj-1XOo\",\"2KmaPWmVH7Q\",\"s_Yayz5o-l0\",\"I3OdanjBYoM\",\"eGwtXfIH3bc\",\"sf1JN1lLN2I\",\"JbGyNtKKK5I\",\"Sd4ihZVgSE0\",\"deU_uwlNpOo\",\"wzRYUpBHXNk\",\"LezoMi3yftM\"],\"completed\":false,\"title\":\"Us and Them\",\"sample\":\"hTIxMWJqyil71qaGizxidoAf7E_1E-2MlBBPmPAXRBU\"},{\"position\":8,\"id\":\"133524150825584\",\"source\":[\"Sb3reMS84-U\",\"bK7HJvmgFnM\",\"_83urK9rO4U\",\"i3ioG1-JipA\",\"yXumgSaFPpA\",\"KW2UwELSE3M\",\"wpbI82NY9QA\"],\"completed\":false,\"title\":\"Any Colour You Like\",\"sample\":\"uevnophJKve4T7V89NdIbD6KsMttLlyBmmVTZ6_CLs0\"},{\"position\":9,\"id\":\"18088778908475966\",\"source\":[\"JC5O9ZHXmTs\",\"BhYKN21olBw\",\"pE_Q0ohfeyE\",\"pnExahMPPFI\",\"LDxF80pyVDo\"],\"completed\":false,\"title\":\"Brain Damage\",\"sample\":\"hTIxMWJqyil71qaGizxidgSijaXJlYnq0St31qpAJWo\"},{\"position\":10,\"id\":\"5460082801431189\",\"source\":[\"jIC5MtVVzos\",\"WZtfsfoKSB0\",\"9wjZrswriz0\",\"YmCA4Y8fUZo\",\"n9xOl8qZ7tc\"],\"completed\":false,\"title\":\"Eclipse\",\"sample\":\"hTIxMWJqyil71qaGizxidt_M69_UI9rrJSVvWL2-yAg\"}]}\n");
-            } catch (JSONException e) {
-                Debug.error(null, "Fuck", e.getCause());
-            } catch (Exception e) {
-                Debug.error(null, "Fuck2", e.getCause());
-            }
-             */
+            refreshDownloadHistory();
 
             try {
                 JSONArray downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
-                Debug.trace(null, String.format("Found a download history of %s item(s).", downloadHistory.length()));
+                Debug.trace(null, String.format("Found a download history of %s item%s.", downloadHistory.length(), downloadHistory.length() == 1 ? "" : "s"));
             } catch (FileNotFoundException e) {
                 try {
                     Debug.trace(null, "No download history found.");
@@ -217,16 +239,15 @@ public class Model {
 
         }
 
-        public synchronized JSONArray getDownloadHistory() {
-
+        private synchronized void refreshDownloadHistory() {
             JSONArray downloadHistory = new JSONArray();
             try {
                 downloadHistory =
                         new JSONArray(
-                            new Scanner(
-                                new File("resources\\json\\downloads.json")
-                            ).useDelimiter("\\Z").next()
-                );
+                                new Scanner(
+                                        new File("resources\\json\\downloads.json")
+                                ).useDelimiter("\\Z").next()
+                        );
             } catch (FileNotFoundException | JSONException | NoSuchElementException e) {
                 try {
                     if (!Files.exists(Paths.get("resources\\json\\downloads.json")))
@@ -236,7 +257,11 @@ public class Model {
                     Debug.warn(null, "Failed to create new downloads history folder.");
                 }
             }
+            this.downloadHistory = downloadHistory;
 
+        }
+
+        public synchronized JSONArray getDownloadHistory() {
             return downloadHistory;
         }
 
@@ -321,6 +346,15 @@ public class Model {
             } catch (IOException e) {
                 Debug.error(null, "Error writing new download history.", e.getCause());
             }
+
+        }
+
+        protected synchronized void setDownloadHistory(JSONArray downloadHistory) throws IOException{
+            this.downloadHistory = downloadHistory;
+
+            FileWriter updateHistory = new FileWriter("resources\\json\\downloads.json");
+            updateHistory.write(downloadHistory.toString());
+            updateHistory.close();
 
         }
 

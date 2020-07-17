@@ -8,4 +8,7 @@
 *.txt
 *.json
 *.iml
+*.bat
+*.part
+*.mp3
 !meta.json

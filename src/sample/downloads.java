@@ -234,12 +234,14 @@ public class downloads {
     private BorderPane generateViewResult(JSONObject viewData) throws JSONException{
 
         BorderPane result = new BorderPane();
+        result.setCursor(Cursor.HAND);
 
         // Left: Album Art, Song Title, Artist, Status & Padding
         HBox left = new HBox();
 
         // Preparing album art image: Cached Resource > Online Resource > Default
         ImageView albumArt = new ImageView();
+
         if (Files.exists(Paths.get(String.format("resources\\cached\\%s.jpg", viewData.getString("artId"))))) {
 
             // Cached album art exists, use that
@@ -254,6 +256,9 @@ public class downloads {
             );
 
         } else {
+
+            Debug.warn(Thread.currentThread(), "Failed to use cached resource.");
+
             // Sending the request causes lag, hence use as thread, only needs to be called once, in future can add network error handling but that seems excessive as of the moment
             try {
                 Thread loadAlbumArt = new Thread(() -> {
