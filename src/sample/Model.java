@@ -35,7 +35,6 @@ public class Model {
 
     public Model() {
 
-        // TODO: Could reacquire album art cache that has been deleted.
         new Thread(() -> {
 
             JSONArray downloadHistory = download.getDownloadHistory();

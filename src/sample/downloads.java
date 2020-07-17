@@ -1,5 +1,6 @@
 package sample;
 
+import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -7,6 +8,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.*;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
@@ -31,6 +35,9 @@ import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.OptionalDouble;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.stream.IntStream;
 
 // TODO: Make graphs and that a separate FXML page for better queries
@@ -41,6 +48,11 @@ public class downloads {
     @FXML Text eventViewTitle;
     @FXML ComboBox<String> eventViewSelector;
     @FXML ListView<BorderPane> eventsViewTable;
+
+    @FXML VBox textInfoContainer;
+    @FXML Text processing;
+    @FXML Text downloadSpeed;
+    @FXML Text eta;
 
     @FXML
     private void initialize() {
@@ -184,12 +196,146 @@ public class downloads {
 
             // Handling view to show download speed, eta, etc.
             if (!Model.getInstance().download.getDownloadInfo().toString().equals(new JSONObject().toString()) && currentDownloadsView.length > 0) {
-                try {
-                    BorderPane dataView = new FXMLLoader(getClass().getResource("app/fxml/downloadData.fxml")).load();
-                    viewContainer.getChildren().add(0, dataView);
-                } catch (IOException e) {
-                    Debug.error(null, "FXML Error: downloadData.fxml", e.getCause());
-                }
+                final JSONObject[] workingData = {new JSONObject()};
+                new Timer().schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+
+                        // New data received, redrawing
+                        if (!Model.getInstance().download.getDownloadInfo().toString().equals(workingData[0].toString())) {
+
+                            // Begin drawing with loaded data
+                            try {
+                                workingData[0] = Model.getInstance().download.getDownloadInfo();
+
+                                // UI Text
+                                downloadSpeed.setText(workingData[0].getString("downloadSpeed"));
+
+                                eta.setText(workingData[0].getString("eta"));
+
+                                processing.setText(workingData[0].getString("song"));
+
+                                // processing.setWrappingWidth(INTERNAL CONTAINER WIDTH - (INFO MESSAGE + SPACING));
+                                textInfoContainer.prefWidthProperty().bind( ((BorderPane) viewContainer.getChildren().get(0)).prefHeightProperty().divide(2).subtract(20));
+
+                                // Preparing the data
+                                JSONArray chartData = workingData[0].getJSONArray("seriesData");
+
+                                // Calculating max point
+                                double minCalculator = 0;
+                                OptionalDouble minCalculatorOpt = IntStream.range(0, chartData.length()).mapToDouble(i -> {
+                                    try {
+                                        return chartData.getJSONObject(i).getInt("speed");
+                                    } catch (JSONException e) {
+                                        Debug.error(null, "Missing data in working data.", e.getCause());
+                                    }
+                                    return 0;
+                                }).min();
+
+                                if (minCalculatorOpt.isPresent())
+                                    minCalculator = minCalculatorOpt.getAsDouble();
+                                else
+                                    Debug.error(null, "Failed to get maximum value from given data.", null);
+
+                                int conversion;
+                                // Surely there is a better way to do this?
+                                if (minCalculator > 1024 * 1024) {
+                                    // Using units MiB/s
+                                    conversion = 2;
+                                } else if (minCalculator > 1024) {
+                                    // Using units KiB/s
+                                    conversion = 1;
+                                } else {
+                                    // Using units Bytes/s
+                                    conversion = 0;
+                                }
+
+                                NumberAxis xAxis = new NumberAxis();
+                                NumberAxis yAxis = new NumberAxis();
+
+                                yAxis.setLabel(new String[]{"Bytes/s", "KiB/s", "MiB/s"}[conversion]);
+                                xAxis.setLabel("Playtime Downloaded");
+
+                                LineChart<Number, Number> chart = new LineChart<>(xAxis,yAxis);
+                                XYChart.Series<Number, Number> series = new XYChart.Series<>();
+
+                                // Due to size constraints we ideally just want to map a few data points if there are too many
+                                if (chartData.length() > 10) {
+
+                                    // Group data into 10 clusters calculate average of each
+                                    for (int i = 0; i < 9; i++) {
+
+                                        OptionalDouble clusterAverageTimeOpt = IntStream.range(
+                                                (int) Math.round((double) chartData.length() / 10) * i,
+                                                (int) Math.round((double) chartData.length() / 10) * i+1
+                                        ).mapToDouble(j -> {
+                                            try {
+                                                return chartData.getJSONObject(j).getInt("time");
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            }
+                                            return 0;
+                                        }).average();
+
+                                        OptionalDouble clusterAverageSpeedOpt = IntStream.range(
+                                                (int) Math.round((double) chartData.length() / 10) * i,
+                                                (int) Math.round((double) chartData.length() / 10) * i+1
+                                        ).mapToDouble(j -> {
+                                            try {
+                                                return chartData.getJSONObject(j).getInt("speed");
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            }
+                                            return 0;
+                                        }).average();
+
+                                        if (clusterAverageTimeOpt.isPresent() && clusterAverageSpeedOpt.isPresent()) {
+
+                                            series.getData().add(
+                                                    new XYChart.Data<>(
+                                                            clusterAverageTimeOpt.getAsDouble(),
+                                                            clusterAverageSpeedOpt.getAsDouble()
+                                                    )
+                                            );
+
+                                        } else {
+                                            Debug.error(null, "Failed to calculate average of given cluster.", null);
+                                        }
+
+                                    }
+
+                                } else {
+
+                                    for (int i = 0; i < chartData.length(); i++) {
+                                        series.getData().add(
+                                                new XYChart.Data<>(
+                                                        chartData.getJSONObject(i).getInt("time"),
+                                                        chartData.getJSONObject(i).getInt("speed") / Math.pow(1024, conversion)
+                                                )
+                                        );
+
+                                    }
+                                }
+
+                                chart.getData().add(series);
+                                chart.prefWidthProperty().bind(((BorderPane) viewContainer.getChildren().get(0)).prefWidthProperty().subtract(textInfoContainer.widthProperty()));
+
+                                Platform.runLater(() -> ((BorderPane) viewContainer.getChildren().get(0)).setRight(chart));
+                            } catch (JSONException e) {
+                                Debug.warn(null, "Unknown key");
+                            }
+
+                        }
+
+                        if (Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString()))
+                            this.cancel();
+
+                    }
+                }, 0, 50);
+
+            } else {
+
+                viewContainer.getChildren().remove(0);
 
             }
 
