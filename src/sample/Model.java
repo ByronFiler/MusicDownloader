@@ -21,6 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.IntStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 //TODO
 // Could look at doing that thing other apps do and show progress on the icon [https://stackoverflow.com/a/47943535/6460641]
@@ -220,44 +222,8 @@ public class Model {
         private final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
 
         public download() {
-
             refreshDownloadHistory();
-
-            try {
-                JSONArray downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
-                Debug.trace(null, String.format("Found a download history of %s item%s.", downloadHistory.length(), downloadHistory.length() == 1 ? "" : "s"));
-            } catch (FileNotFoundException e) {
-                try {
-                    Debug.trace(null, "No download history found.");
-                    if (!new File("resources\\json\\downloads.json").createNewFile())
-                        throw new IOException();
-                } catch (IOException ex) {
-                    Debug.error(null, "Failed to create downloads file.", ex.getCause());
-                }
-            } catch (JSONException | NoSuchElementException ignored) {}
-
-        }
-
-        private synchronized void refreshDownloadHistory() {
-            JSONArray downloadHistory = new JSONArray();
-            try {
-                downloadHistory =
-                        new JSONArray(
-                                new Scanner(
-                                        new File("resources\\json\\downloads.json")
-                                ).useDelimiter("\\Z").next()
-                        );
-            } catch (FileNotFoundException | JSONException | NoSuchElementException e) {
-                try {
-                    if (!Files.exists(Paths.get("resources\\json\\downloads.json")))
-                        if (!new File("resources\\json\\downloads.json").createNewFile())
-                            throw new IOException();
-                } catch (IOException er) {
-                    Debug.warn(null, "Failed to create new downloads history folder.");
-                }
-            }
-            this.downloadHistory = downloadHistory;
-
+            Debug.trace(null, String.format("Found a download history of %s item%s.", downloadHistory.length(), downloadHistory.length() == 1 ? "" : "s"));
         }
 
         public synchronized JSONArray getDownloadHistory() {
@@ -302,29 +268,12 @@ public class Model {
         public synchronized boolean downloadsAccessible() {
 
             // Should allow access to downloads if there is: download history or downloads in progress
-            JSONArray downloadHistory = new JSONArray();
-            try {
-                downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
-
-            } catch (FileNotFoundException e) {
-                // Regenerate the downloads file
-
-            } catch (JSONException | NoSuchElementException ignored) {}
-
             return downloadHistory.length() > 0 || downloadQueue.length() > 0 || downloadObject.has("metadata");
 
         }
 
         public void deleteHistory(JSONObject targetDeletion) {
-            JSONArray downloadHistory = new JSONArray();
             JSONArray newDownloadHistory = new JSONArray();
-
-            // Loading existing history
-            try {
-                downloadHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
-            } catch (FileNotFoundException | JSONException e) {
-                Debug.trace(null, "Failed to read history to delete");
-            }
 
             // Adding all to history except history item to remove
             try {
@@ -339,49 +288,9 @@ public class Model {
 
             // Rewriting the new history
             try {
-                FileWriter downloadHistoryFile = new FileWriter("resources\\json\\downloads.json");
-                downloadHistoryFile.write(newDownloadHistory.toString());
-                downloadHistoryFile.close();
+                setDownloadHistory(newDownloadHistory);
             } catch (IOException e) {
                 Debug.error(null, "Error writing new download history.", e.getCause());
-            }
-
-        }
-
-        protected synchronized void setDownloadHistory(JSONArray downloadHistory) throws IOException{
-            this.downloadHistory = downloadHistory;
-
-            FileWriter updateHistory = new FileWriter("resources\\json\\downloads.json");
-            updateHistory.write(downloadHistory.toString());
-            updateHistory.close();
-
-        }
-
-        private synchronized void updateDownloadHistory(JSONObject newHistory) {
-
-            JSONArray existingHistory = new JSONArray();
-            try {
-                existingHistory = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
-            } catch (FileNotFoundException e) {
-
-                // Recreate the downloads file
-                try {
-                    if (new File("resources\\json\\downloads.json").createNewFile())
-                        Debug.trace(null, "Created new downloads history file.");
-
-                } catch (IOException er) {
-                    Debug.error(null, "Failed to recreate downloads folder.", e.getCause());
-                }
-
-            } catch (JSONException | NoSuchElementException ignored) {}
-            existingHistory.put(newHistory);
-
-            try {
-                FileWriter updateHistory = new FileWriter("resources\\json\\downloads.json");
-                updateHistory.write(existingHistory.toString());
-                updateHistory.close();
-            } catch (IOException e) {
-                Debug.warn(null, "Failed to write updated downloads history.");
             }
 
         }
@@ -404,6 +313,69 @@ public class Model {
 
             return downloadInfo;
 
+        }
+
+        protected synchronized void setDownloadHistory(JSONArray downloadHistory) throws IOException{
+
+            ByteArrayInputStream fis = new ByteArrayInputStream(downloadHistory.toString().getBytes());
+            GZIPOutputStream gzipOS = new GZIPOutputStream(
+                    new FileOutputStream(
+                            new File("resources\\json\\downloads.gz")
+                    )
+            );
+
+            byte[] buffer = new byte[1024];
+            int len;
+            while((len=fis.read(buffer)) != -1)
+                gzipOS.write(buffer, 0, len);
+
+            gzipOS.close();
+            fis.close();
+
+            this.downloadHistory = downloadHistory;
+
+        }
+
+        private synchronized void updateDownloadHistory(JSONObject newHistory) {
+
+            downloadHistory.put(newHistory);
+
+            try {
+                setDownloadHistory(downloadHistory);
+            } catch (IOException e) {
+                Debug.warn(null, "Failed to write updated downloads history.");
+            }
+
+        }
+
+        private synchronized void refreshDownloadHistory() {
+            try {
+                GZIPInputStream gis = new GZIPInputStream(
+                        new FileInputStream(
+                                new File("resources\\json\\downloads.gz")
+                        )
+                );
+                ByteArrayOutputStream fos = new ByteArrayOutputStream();
+
+                byte[] buffer = new byte[1024];
+                int len;
+                while((len = gis.read(buffer)) != -1)
+                    fos.write(buffer, 0, len);
+
+                fos.close();
+                gis.close();
+
+                this.downloadHistory = new JSONArray(fos.toString());
+
+            } catch (IOException | JSONException e) {
+                try {
+                    if (!Files.exists(Paths.get("resources\\json\\downloads.gz")))
+                        if (!new File("resources\\json\\downloads.gz").createNewFile())
+                            throw new IOException();
+                } catch (IOException er) {
+                    Debug.warn(null, "Failed to create new downloads history file.");
+                }
+            }
         }
 
         private class acquireDownloadFiles implements Runnable {

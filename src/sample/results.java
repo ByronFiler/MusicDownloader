@@ -25,13 +25,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Scanner;
 
 public class results {
 
@@ -208,12 +206,10 @@ public class results {
             } catch (JSONException ignored) {}
 
             // Checking in downloads history
-            try {
-                JSONArray fileData = new JSONArray(new Scanner(new File("resources\\json\\downloads.json")).useDelimiter("\\Z").next());
-                if (idExistsInData(fileData, id)) {
-                    return generateNewSongId(downloadItems);
-                }
-            } catch (NoSuchElementException | FileNotFoundException | JSONException ignored) {}
+            JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
+            if (idExistsInData(downloadHistory, id)) {
+                return generateNewSongId(downloadItems);
+            }
 
             // Did not match existing records, return generated ID
             return id;
