@@ -163,7 +163,7 @@ public class results {
             } catch (JSONException ignored) {}
 
             // Checking if it exists in existing cached arts
-            for (File cachedArt: Objects.requireNonNull(new File("resources\\cached").listFiles())) {
+            for (File cachedArt: Objects.requireNonNull(new File("usr\\cached").listFiles())) {
                 if (cachedArt.isFile() && cachedArt.getName().split("\\.")[1].equals("jpg") && cachedArt.getName().split("\\.")[0].equals(id)) {
                     // Our generated ID already exists in the files, generate a new one
                     return generateNewCacheArtId(downloadItems);

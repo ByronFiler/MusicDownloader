@@ -1,7 +1,7 @@
 /out
 /downloads
 /target
-/resources
+/usr
 /.idea
 *.class
 *.DS_Store

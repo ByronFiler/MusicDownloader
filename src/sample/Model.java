@@ -55,7 +55,7 @@ public class Model {
                 Debug.error(null, "Failed to parse download history for art IDs.", e.getCause());
             }
 
-            for (File foundFile: Objects.requireNonNull(new File("resources/cached").listFiles())) {
+            for (File foundFile: Objects.requireNonNull(new File("usr/cached").listFiles())) {
 
                 // Check the file is an image and is being used
                 if (FilenameUtils.getExtension(foundFile.getAbsolutePath()).equals("jpg") && usedArtIds.contains(FilenameUtils.removeExtension(foundFile.getName())) ) {
@@ -154,7 +154,7 @@ public class Model {
             try {
                 for (int i = 0; i < downloadHistory.length(); i++) {
 
-                    if (!Files.exists(Paths.get(String.format("resources\\cached\\%s.jpg", downloadHistory.getJSONObject(i).getString("artId"))))) {
+                    if (!Files.exists(Paths.get(String.format("usr\\cached\\%s.jpg", downloadHistory.getJSONObject(i).getString("artId"))))) {
 
                         boolean alreadyPlanned = false;
                         for (int j = 0; i < downloadObjects.length(); j++) {
@@ -175,7 +175,7 @@ public class Model {
 
                     FileUtils.copyURLToFile(
                             new URL(downloadObjects.getJSONObject(i).getString("artUrl")),
-                            new File(String.format("resources\\cached\\%s.jpg", downloadObjects.getJSONObject(i).getString("artId")))
+                            new File(String.format("usr\\cached\\%s.jpg", downloadObjects.getJSONObject(i).getString("artId")))
                     );
 
                 }
@@ -320,7 +320,7 @@ public class Model {
             ByteArrayInputStream fis = new ByteArrayInputStream(downloadHistory.toString().getBytes());
             GZIPOutputStream gzipOS = new GZIPOutputStream(
                     new FileOutputStream(
-                            new File("resources\\json\\downloads.gz")
+                            new File("usr\\json\\downloads.gz")
                     )
             );
 
@@ -352,7 +352,7 @@ public class Model {
             try {
                 GZIPInputStream gis = new GZIPInputStream(
                         new FileInputStream(
-                                new File("resources\\json\\downloads.gz")
+                                new File("usr\\json\\downloads.gz")
                         )
                 );
                 ByteArrayOutputStream fos = new ByteArrayOutputStream();
@@ -369,8 +369,8 @@ public class Model {
 
             } catch (IOException | JSONException e) {
                 try {
-                    if (!Files.exists(Paths.get("resources\\json\\downloads.gz")))
-                        if (!new File("resources\\json\\downloads.gz").createNewFile())
+                    if (!Files.exists(Paths.get("usr\\json\\downloads.gz")))
+                        if (!new File("usr\\json\\downloads.gz").createNewFile())
                             throw new IOException();
                 } catch (IOException er) {
                     Debug.warn(null, "Failed to create new downloads history file.");
@@ -388,7 +388,6 @@ public class Model {
             volatile String downloadSpeed = "Calculating...";
             volatile String song = "";
 
-            //String processingMessageInternal = "";
             public acquireDownloadFiles(JSONObject downloadData) {
                 this.downloadData = downloadData;
 
@@ -708,7 +707,7 @@ public class Model {
                 try {
                     Files.copy(
                             Paths.get(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg"),
-                            Paths.get("resources\\cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg")
+                            Paths.get("usr\\cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg")
                     );
                 } catch (JSONException ignored) {
                     Debug.warn(thread, "Failed to get JSON data to cache album art.");
@@ -862,7 +861,7 @@ public class Model {
 
             // Load users actual settings
             try {
-                settings = new JSONObject(new Scanner(new File("resources\\json\\config.json")).useDelimiter("\\Z").next());
+                settings = new JSONObject(new Scanner(new File("usr\\json\\config.json")).useDelimiter("\\Z").next());
             } catch (FileNotFoundException | JSONException ignored) {
                 Debug.warn(null, "Failed to load user settings.");
                 settings = defaultSettings;
@@ -883,7 +882,7 @@ public class Model {
 
             try {
 
-                FileWriter newConfig = new FileWriter("resources\\json\\config.json");
+                FileWriter newConfig = new FileWriter("usr\\json\\config.json");
                 newConfig.write(defaultSettings.toString());
                 newConfig.close();
 
@@ -902,16 +901,16 @@ public class Model {
             boolean wasUseful = false;
 
             // Checking for non existing folders
-            if (!Files.exists(Paths.get("resources\\cached"))) {
+            if (!Files.exists(Paths.get("usr\\cached"))) {
                 wasUseful = true;
-                if (!new File("resources\\cached").mkdirs())
-                    Debug.error(null, "Failed to create non existing directory: resources\\cached", null);
+                if (!new File("usr\\cached").mkdirs())
+                    Debug.error(null, "Failed to create non existing directory: usr\\cached", null);
             }
 
-            if (!Files.exists(Paths.get("resources\\json"))) {
+            if (!Files.exists(Paths.get("usr\\json"))) {
                 wasUseful = true;
-                if (!new File("resources\\json").mkdirs())
-                    Debug.error(null, "Failed to create non existing directory: resources\\json", null);
+                if (!new File("usr\\json").mkdirs())
+                    Debug.error(null, "Failed to create non existing directory: usr\\json", null);
             }
 
             return wasUseful;
@@ -919,7 +918,7 @@ public class Model {
 
         public void saveSettings(JSONObject settings) {
             try {
-                FileWriter settingsFile = new FileWriter("resources/json/config.json");
+                FileWriter settingsFile = new FileWriter("usr/json/config.json");
                 settingsFile.write(settings.toString());
                 settingsFile.close();
 
