@@ -746,6 +746,7 @@ public class Model {
 
                 // Download files
                 try {
+
                     for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
 
                         song = downloadObject.getJSONArray("songs").getJSONObject(i).getString("title");
@@ -766,6 +767,9 @@ public class Model {
                             }
 
                         }
+
+                        // Update internal referencing
+                        downloadObject.getJSONArray("songs").getJSONObject(i).put("completed", true);
 
                         Debug.trace(
                                 thread,
@@ -854,7 +858,6 @@ public class Model {
                             } else {
 
                                 // Queue had only one item, hence has now been cleared
-
                                 downloadQueue = new JSONArray();
 
                             }

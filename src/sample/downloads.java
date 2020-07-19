@@ -35,12 +35,15 @@ import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ConcurrentModificationException;
 import java.util.OptionalDouble;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.IntStream;
 
-// TODO: Make graphs and that a separate FXML page for better queries
+// TODO: Fix lag when loading in
+// TODO: TimeTask to auto update the completion icon
+
 public class downloads {
 
     @FXML VBox viewContainer;
@@ -60,7 +63,7 @@ public class downloads {
         JSONArray downloadQueue = Model.getInstance().download.getDownloadQueue();
         JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
 
-        BorderPane[] currentDownloadsView = new BorderPane[0];
+        final BorderPane[][] currentDownloadsView = {new BorderPane[0]};
         BorderPane[] plannedDownloadsView = new BorderPane[0];
         BorderPane[] downloadHistoriesView = new BorderPane[0];
 
@@ -72,17 +75,71 @@ public class downloads {
 
                 eventViewSelector.getItems().add("Currently Downloading");
                 try {
-                    currentDownloadsView = new BorderPane[downloadObject.getJSONArray("songs").length()];
+                    currentDownloadsView[0] = new BorderPane[downloadObject.getJSONArray("songs").length()];
                     for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
 
                         // Update the table & data
                         eventsViewTable.getItems().add(generateViewResult(generateViewData(downloadObject, i)));
-                        currentDownloadsView[i] = eventsViewTable.getItems().get(eventsViewTable.getItems().size()-1);
+                        currentDownloadsView[0][i] = eventsViewTable.getItems().get(eventsViewTable.getItems().size()-1);
 
                     }
                 } catch (JSONException e) {
                     Debug.error(null, "Error parsing JSON for download object.", e.getCause());
                 }
+
+                // TimerTask to update and redraw if necessary
+                new Timer().schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+
+                        if (Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString())) {
+                            this.cancel();
+                        } else {
+
+                            try {
+                                for (int i = 0; i < Model.getInstance().download.getDownloadObject().getJSONArray("songs").length(); i++) {
+
+                                    int workingCounter = 0;
+
+                                    try {
+                                        for (BorderPane element : eventsViewTable.getItems()) {
+
+                                            try {
+                                                if (element.getId().equals("working")) {
+                                                    if (workingCounter == i && Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
+                                                        Platform.runLater(() -> {
+                                                            try {
+                                                                ((HBox) element.getRight()).getChildren().setAll(
+                                                                        new ImageView(
+                                                                                new Image(
+                                                                                        getClass().getResource("app/img/tick.png").toURI().toString(),
+                                                                                        25,
+                                                                                        25,
+                                                                                        true,
+                                                                                        true
+                                                                                )
+                                                                        )
+                                                                );
+                                                            } catch (URISyntaxException e) {
+                                                                e.printStackTrace();
+                                                            }
+                                                        });
+                                                }
+                                            } catch (NullPointerException ignored) {
+                                            }
+                                            workingCounter++;
+
+                                        }
+                                    } catch (ConcurrentModificationException ignored) {
+                                    }
+                                }
+                            } catch (JSONException e) {
+                                Debug.error(Thread.currentThread(), "Failed to parse JSON to update element result.", e.getCause());
+                            }
+                        }
+                    }
+                }, 0, 50);
+
             }
 
             // Drawing planned downloads if they exist
@@ -161,41 +218,44 @@ public class downloads {
                 eventViewSelector.getSelectionModel().select(0);
 
                 // Handle changes
-                BorderPane[] finalCurrentDownloadsView = currentDownloadsView;
+                BorderPane[] finalCurrentDownloadsView = currentDownloadsView[0];
                 BorderPane[] finalPlannedDownloadsView = plannedDownloadsView;
                 BorderPane[] finalDownloadHistoriesView = downloadHistoriesView;
                 eventViewSelector.setOnAction(e -> {
-                    eventViewTitle.setText(eventViewSelector.getSelectionModel().getSelectedItem());
-                    switch (eventViewSelector.getSelectionModel().getSelectedItem()) {
+                    try {
+                        eventViewTitle.setText(eventViewSelector.getSelectionModel().getSelectedItem());
+                        switch (eventViewSelector.getSelectionModel().getSelectedItem()) {
 
-                        case "All":
-                            eventsViewTable.getItems().clear();
-                            eventsViewTable.getItems().addAll(finalCurrentDownloadsView);
-                            eventsViewTable.getItems().addAll(finalPlannedDownloadsView);
-                            eventsViewTable.getItems().addAll(finalDownloadHistoriesView);
-                            break;
+                            case "All":
+                                eventsViewTable.getItems().clear();
+                                eventsViewTable.getItems().addAll(finalCurrentDownloadsView);
+                                eventsViewTable.getItems().addAll(finalPlannedDownloadsView);
+                                eventsViewTable.getItems().addAll(finalDownloadHistoriesView);
+                                break;
 
-                        case "Currently Downloading":
-                            eventsViewTable.getItems().setAll(finalCurrentDownloadsView);
-                            break;
+                            case "Currently Downloading":
+                                eventsViewTable.getItems().setAll(finalCurrentDownloadsView);
+                                break;
 
-                        case "Downloads Queue":
-                            eventsViewTable.getItems().setAll(finalPlannedDownloadsView);
-                            break;
+                            case "Downloads Queue":
+                                eventsViewTable.getItems().setAll(finalPlannedDownloadsView);
+                                break;
 
-                        case "Download History":
-                            eventsViewTable.getItems().setAll(finalDownloadHistoriesView);
-                            break;
+                            case "Download History":
+                                eventsViewTable.getItems().setAll(finalDownloadHistoriesView);
+                                break;
 
-                        default:
-                            Debug.error(null, "Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
-                    }
+                            default:
+                                Debug.error(null, "Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
+                        }
+                    } catch (NullPointerException ignored) {}
                 });
 
             }
 
             // Handling view to show download speed, eta, etc.
-            if (!Model.getInstance().download.getDownloadInfo().toString().equals(new JSONObject().toString()) && currentDownloadsView.length > 0) {
+            if (!Model.getInstance().download.getDownloadInfo().toString().equals(new JSONObject().toString()) && currentDownloadsView[0].length > 0) {
+
                 final JSONObject[] workingData = {new JSONObject()};
                 new Timer().schedule(new TimerTask() {
                     @Override
@@ -327,17 +387,68 @@ public class downloads {
 
                         }
 
-                        if (Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString()))
+                        // Downloads are completed, show now only histories
+                        if (Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString())) {
+                            Platform.runLater(() -> {
+                                eventsViewTable.getItems().clear();
+                                eventViewSelector.getItems().clear();
+                                initialize();
+                            });
                             this.cancel();
+                        }
 
                     }
-                }, 0, 50);
+                }, 0, 20);
 
             } else {
 
                 viewContainer.getChildren().remove(0);
 
             }
+
+            /*
+            BorderPane[] finalCurrentDownloadsView1 = currentDownloadsView[0];
+            BorderPane[] finalPlannedDownloadsView1 = plannedDownloadsView;
+            BorderPane[] finalDownloadHistoriesView1 = downloadHistoriesView;
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run(){
+
+                    try {
+                        // Await model changes to redraw current downloads
+                        JSONObject currentDownloads = Model.getInstance().download.getDownloadObject();
+                        if (currentDownloads.toString().equals(new JSONObject().toString())) {
+
+                            this.cancel();
+
+                        } else {
+
+                            BorderPane[] newCurrentDownloads = new BorderPane[currentDownloads.getJSONArray("songs").length()];
+                            for (int i = 0; i < currentDownloads.getJSONArray("songs").length(); i++)
+                                newCurrentDownloads[i] = eventsViewTable.getItems().get(eventsViewTable.getItems().size() - 1);
+
+                            // Update if data has changed
+                            if (!Arrays.equals(newCurrentDownloads, finalCurrentDownloadsView1)) {
+
+                                Platform.runLater(() -> {
+                                    currentDownloadsView[0] = newCurrentDownloads;
+
+                                    eventsViewTable.getItems().clear();
+                                    eventsViewTable.getItems().addAll(currentDownloadsView[0]);
+                                    eventsViewTable.getItems().addAll(finalPlannedDownloadsView1);
+                                    eventsViewTable.getItems().addAll(finalDownloadHistoriesView1);
+                                });
+
+                            }
+                        }
+
+                    } catch (JSONException e) {
+                        Debug.error(Thread.currentThread(), "Failed to parse JSON to update current downloads view.", e.getCause());
+                    }
+
+                }
+            }, 0, 50);
+             */
 
         } else {
             Debug.warn(null, "Downloads was accessed without any downloads history, downloads in progress or any download queue items, this should not have happened.");
@@ -502,6 +613,9 @@ public class downloads {
 
 
             } else {
+
+                result.setId("working");
+
                 if (viewData.getBoolean("completed")) {
 
                     // In queue and downloaded (Green Tick)
