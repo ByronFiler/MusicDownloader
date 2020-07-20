@@ -808,6 +808,7 @@ public class Model {
                         } catch (JSONException e) {
                             Debug.warn(thread, "Failed to generate JSON for download history result.");
                         }
+
                     }
                 } catch (JSONException e) {
                     Debug.error(thread, "JSON Error when attempting to access songs to download.", e.getCause());

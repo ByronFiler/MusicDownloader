@@ -400,55 +400,8 @@ public class downloads {
                     }
                 }, 0, 20);
 
-            } else {
-
+            } else
                 viewContainer.getChildren().remove(0);
-
-            }
-
-            /*
-            BorderPane[] finalCurrentDownloadsView1 = currentDownloadsView[0];
-            BorderPane[] finalPlannedDownloadsView1 = plannedDownloadsView;
-            BorderPane[] finalDownloadHistoriesView1 = downloadHistoriesView;
-            new Timer().schedule(new TimerTask() {
-                @Override
-                public void run(){
-
-                    try {
-                        // Await model changes to redraw current downloads
-                        JSONObject currentDownloads = Model.getInstance().download.getDownloadObject();
-                        if (currentDownloads.toString().equals(new JSONObject().toString())) {
-
-                            this.cancel();
-
-                        } else {
-
-                            BorderPane[] newCurrentDownloads = new BorderPane[currentDownloads.getJSONArray("songs").length()];
-                            for (int i = 0; i < currentDownloads.getJSONArray("songs").length(); i++)
-                                newCurrentDownloads[i] = eventsViewTable.getItems().get(eventsViewTable.getItems().size() - 1);
-
-                            // Update if data has changed
-                            if (!Arrays.equals(newCurrentDownloads, finalCurrentDownloadsView1)) {
-
-                                Platform.runLater(() -> {
-                                    currentDownloadsView[0] = newCurrentDownloads;
-
-                                    eventsViewTable.getItems().clear();
-                                    eventsViewTable.getItems().addAll(currentDownloadsView[0]);
-                                    eventsViewTable.getItems().addAll(finalPlannedDownloadsView1);
-                                    eventsViewTable.getItems().addAll(finalDownloadHistoriesView1);
-                                });
-
-                            }
-                        }
-
-                    } catch (JSONException e) {
-                        Debug.error(Thread.currentThread(), "Failed to parse JSON to update current downloads view.", e.getCause());
-                    }
-
-                }
-            }, 0, 50);
-             */
 
         } else {
             Debug.warn(null, "Downloads was accessed without any downloads history, downloads in progress or any download queue items, this should not have happened.");

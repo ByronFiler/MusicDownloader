@@ -63,7 +63,6 @@ public class settings {
 
     @FXML
     private void initialize() {
-
         // Prepare settings information from model data
         settings = Model.getInstance().settings.getSettings();
 
@@ -290,6 +289,3 @@ public class settings {
 
     }
 }
-
-
-

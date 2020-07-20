@@ -8,9 +8,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -464,12 +462,17 @@ public class search {
                 }
 
                 // Add generated data to the search query
-                if (!killRequest) {
+                if (!killRequest && !search.getText().isBlank())
                     Platform.runLater(() -> {
                         autocompleteResults.getItems().setAll(autocompleteResultsView);
                         autocompleteResults.setVisible(true);
                     });
-                }
+
+                if (search.getText().isBlank())
+                    Platform.runLater(() -> {
+                        autocompleteResults.getItems().clear();
+                        autocompleteResults.setVisible(false);
+                    });
 
             } catch (IOException ignored) {
 
