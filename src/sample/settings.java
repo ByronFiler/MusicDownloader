@@ -11,7 +11,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.controlsfx.control.ToggleSwitch;
 import org.json.JSONException;
@@ -30,14 +29,16 @@ import java.util.TimerTask;
 
 public class settings {
 
+    @FXML BorderPane root;
+
     // Information
-    @FXML Text version;
-    @FXML Text latestVersion;
-    @FXML Text youtubeDl;
-    @FXML Text ffmpeg;
+    @FXML Label version;
+    @FXML Label latestVersion;
+    @FXML Label youtubeDl;
+    @FXML Label ffmpeg;
 
     // Files
-    @FXML Text outputDirectory;
+    @FXML Label outputDirectory;
     @FXML BorderPane saveMusicLine;
     @FXML Label outputDirectoryInfo;
     @FXML ComboBox<String> musicFormat;
@@ -64,6 +65,7 @@ public class settings {
 
     @FXML
     private void initialize() {
+
         // Prepare settings information from model data
         settings = Model.getInstance().settings.getSettings();
 
@@ -75,7 +77,7 @@ public class settings {
 
         // Files
         outputDirectory.setText(Model.getInstance().settings.getSetting("output_directory").equals("") ? System.getProperty("user.dir") : Model.getInstance().settings.getSetting("output_directory"));
-        outputDirectory.wrappingWidthProperty().bind(saveMusicLine.widthProperty().subtract(outputDirectoryInfo.widthProperty()).subtract(30));
+        // outputDirectory.wrappingWidthProperty().bind(saveMusicLine.widthProperty().subtract(outputDirectoryInfo.widthProperty()).subtract(30));
         musicFormat.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("music_format")));
         saveAlbumArt.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("save_album_art")));
         advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
@@ -91,6 +93,20 @@ public class settings {
         // Application
         darkThemeToggle.setSelected(Model.getInstance().settings.getSettingBool("dark_theme"));
         dataSaverToggle.setSelected(Model.getInstance().settings.getSettingBool("data_saver"));
+
+        // Load theme
+        if (Model.getInstance().settings.getSettingBool("dark_theme"))
+            root.getStylesheets().setAll(
+                    String.valueOf(getClass().getResource("app/css/settings.css")),
+                    String.valueOf(getClass().getResource("app/css/dark/settings.css"))
+            );
+
+        else
+            root.getStylesheets().setAll(
+                    String.valueOf(getClass().getResource("app/css/settings.css")),
+                    String.valueOf(getClass().getResource("app/css/standard/settings.css"))
+            );
+
         Debug.trace(null, "Initialized settings view.");
 
     }
@@ -129,6 +145,27 @@ public class settings {
 
     @FXML
     private void validateConfirm() {
+
+        JSONObject newSettings = getNewSettings();
+
+        try {
+
+            if (newSettings.getBoolean("dark_theme"))
+                root.getStylesheets().setAll(
+                        String.valueOf(getClass().getResource("app/css/dark/settings.css")),
+                        String.valueOf(getClass().getResource("app/css/settings.css"))
+                );
+
+            else
+                root.getStylesheets().setAll(
+                        String.valueOf(getClass().getResource("app/css/standard/settings.css")),
+                        String.valueOf(getClass().getResource("app/css/settings.css"))
+                );
+
+        } catch (JSONException e) {
+            Debug.error(null, "Error checking new settings for dark theme.", e.getCause());
+        }
+
         // Check if settings have been adjusted from default
         if (settings.toString().equals(getNewSettings().toString())) {
             // Settings have not been modified, hence return to default
@@ -260,9 +297,9 @@ public class settings {
 
         private final Thread thread;
         private final String executable;
-        private final Text element;
+        private final Label element;
 
-        verifyExecutable(String executable, Text element) {
+        verifyExecutable(String executable, Label element) {
             this.executable = executable;
             this.element = element;
 

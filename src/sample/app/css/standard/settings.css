@@ -1,0 +1,19 @@
+.root {
+    -fx-background-color: #F5F5F5;
+}
+
+.settingsContainer {
+    -fx-background-color: rgba(10, 10, 10, 0.06);
+}
+
+.title {
+    -fx-text-fill: black;
+}
+
+.setting {
+    -fx-text-fill: black;
+}
+
+.underline {
+    -fx-border-color : black;
+}

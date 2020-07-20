@@ -1,5 +1,4 @@
 .underline {
-    -fx-border-color : black;
     -fx-border-width : 0 0 1 0;
 }
 
@@ -12,4 +11,13 @@
 .setting {
     -fx-font-family: Arial;
     -fx-font-size: 16px;
+}
+
+.confirm_button {
+    -fx-background-color: green;
+    -fx-text-fill: white;
+}
+
+.selector {
+    -fx-border-radius: 0;
 }
