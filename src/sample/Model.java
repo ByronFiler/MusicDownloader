@@ -44,6 +44,7 @@ public class Model {
             ArrayList<File> deleteFiles = new ArrayList<>();
             JSONArray filesData = new JSONArray();
             JSONArray renameRequests = new JSONArray();
+            int deletedFilesCount = 0;
 
             try {
                 for (int i = 0; i < downloadHistory.length(); i++) {
@@ -67,7 +68,7 @@ public class Model {
                                 )
                         );
 
-                        boolean updated = false;
+                        boolean add = true;
 
                         for (int i = 0; i < filesData.length(); i++) {
 
@@ -76,32 +77,29 @@ public class Model {
                                 renameRequests.put(
                                         new JSONObject(
                                                 String.format(
-                                                        "{\"original\": %s, \"new\": %s}",
+                                                        "{\"original\": \"%s\", \"new\": \"%s\"}",
                                                         FilenameUtils.removeExtension(foundFile.getName()),
                                                         filesData.getJSONObject(i).getString("id")
                                                 )
                                         )
                                 );
                                 deleteFiles.add(foundFile);
-                                updated = true;
+                                add = false;
 
                             }
 
                         }
 
-                        if (!updated) {
-
+                        if (add)
                             filesData.put(
                                     new JSONObject(
                                             String.format(
-                                                    "{\"id\": %s, \"hash\": %s}",
+                                                    "{\"id\": \"%s\", \"hash\": \"%s\"}",
                                                     FilenameUtils.removeExtension(foundFile.getName()),
                                                     hash
                                             )
                                     )
                             );
-
-                        }
 
 
                     } catch (IOException | JSONException e) {
@@ -111,9 +109,14 @@ public class Model {
                 } else {
                     if (!foundFile.delete())
                         Debug.warn(null, "Failed to delete file: " + foundFile.getAbsolutePath());
+                    else
+                        deletedFilesCount++;
                 }
 
             }
+
+            if (deletedFilesCount > 0)
+                Debug.trace(Thread.currentThread(), String.format("Deleted %s non used file%s.", deletedFilesCount, deletedFilesCount == 1 ? "" : "s"));
 
             try {
 
@@ -132,12 +135,39 @@ public class Model {
                 }
 
                 try {
+
                     download.setDownloadHistory(downloadHistory);
 
                     // Now to delete files
+                    deletedFilesCount = 0;
                     for (File deleteFile: deleteFiles) {
                         if (!deleteFile.delete())
                             Debug.warn(Thread.currentThread(), "Failed to delete " + deleteFile.getAbsolutePath());
+                        else
+                            deletedFilesCount++;
+                    }
+                    if (deleteFiles.size() > 0) {
+
+                        StringBuilder deletedFilesMessage = new StringBuilder(String.format(
+                                "Successfully deleted %s file%s",
+                                deletedFilesCount,
+                                deletedFilesCount == 1 ? "" : "s"
+                        ));
+
+                        if (deletedFilesCount == deleteFiles.size())
+                            deletedFilesMessage.append(".");
+
+                        else
+                            deletedFilesMessage.append(
+                                    String.format(
+                                            " and failed to delete %s file%s.",
+                                            deleteFiles.size() - deletedFilesCount,
+                                            deleteFiles.size() - deletedFilesCount == 1 ? "" : "s"
+                                    )
+                            );
+
+                        Debug.trace(Thread.currentThread(), deletedFilesMessage.toString());
+
                     }
 
                 } catch (IOException e) {
@@ -157,12 +187,15 @@ public class Model {
                     if (!Files.exists(Paths.get(String.format("usr\\cached\\%s.jpg", downloadHistory.getJSONObject(i).getString("artId"))))) {
 
                         boolean alreadyPlanned = false;
-                        for (int j = 0; i < downloadObjects.length(); j++) {
+                        if (downloadObjects.length() > 0) {
+                            for (int j = 0; j < downloadObjects.length(); j++) {
 
-                            if (downloadObjects.getJSONObject(j).getString("artUrl").equals(downloadHistory.getJSONObject(i).getString("artUrl"))) {
-                                alreadyPlanned = true;
+                                if (downloadObjects.getJSONObject(j).getString("artUrl").equals(downloadHistory.getJSONObject(i).getString("artUrl"))) {
+                                    alreadyPlanned = true;
+                                    downloadHistory.getJSONObject(j).put("artId", downloadObjects.getJSONObject(j).getString("artId"));
+                                }
+
                             }
-
                         }
                         if (!alreadyPlanned)
                             downloadObjects.put(downloadHistory.getJSONObject(i));
@@ -171,17 +204,25 @@ public class Model {
 
                 }
 
+                int reacquiredFilesCount = 0;
                 for (int i = 0; i < downloadObjects.length(); i++) {
 
                     FileUtils.copyURLToFile(
                             new URL(downloadObjects.getJSONObject(i).getString("artUrl")),
                             new File(String.format("usr\\cached\\%s.jpg", downloadObjects.getJSONObject(i).getString("artId")))
                     );
+                    reacquiredFilesCount++;
 
                 }
+                Debug.trace(
+                        Thread.currentThread(),
+                        String.format("Reacquired %s file%s to cache.", reacquiredFilesCount, reacquiredFilesCount == 1 ? "" : "s")
+                );
+
+                download.setDownloadHistory(downloadHistory);
 
             } catch (JSONException | MalformedURLException e) {
-                Debug.error(Thread.currentThread(), "Failed to get art for checking files to redownload.", e.getCause());
+                Debug.error(Thread.currentThread(), "Failed to get art for checking files to re-download.", e.getCause());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -767,8 +808,6 @@ public class Model {
                         } catch (JSONException e) {
                             Debug.warn(thread, "Failed to generate JSON for download history result.");
                         }
-
-
                     }
                 } catch (JSONException e) {
                     Debug.error(thread, "JSON Error when attempting to access songs to download.", e.getCause());
@@ -797,6 +836,9 @@ public class Model {
                                 if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
                                     Debug.warn(thread, "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
                             break;
+
+                        default:
+                            Debug.error(Thread.currentThread(), "Unexpected value: " + Model.getInstance().settings.getSettingInt("save_album_art"), new IllegalStateException().getCause());
                     }
                 } catch (JSONException e) {
                     Debug.error(thread, "Failed to perform check to delete album art.", e.getCause());

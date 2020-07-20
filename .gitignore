@@ -11,4 +11,5 @@
 *.bat
 *.part
 *.mp3
+*.webm
 !meta.json
