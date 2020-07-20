@@ -194,22 +194,21 @@ public class results {
 
             // Checking in temporary data
             try {
-                for (int i = 0; i < downloadItems.length(); i++) {
-                    for (int j = 0; j < downloadItems.getJSONArray(i).length(); j++) {
+                for (int i = 0; i < downloadItems.length(); i++)
 
-                        if (idExistsInData(downloadItems.getJSONArray(i).getJSONObject(j).getJSONArray("songs"), id)) {
+                    for (int j = 0; j < downloadItems.getJSONArray(i).length(); j++)
+
+                        if (idExistsInData(downloadItems.getJSONArray(i).getJSONObject(j).getJSONArray("songs"), id))
                             return generateNewCacheArtId(downloadItems);
-                        }
 
-                    }
-                }
-            } catch (JSONException ignored) {}
+            } catch (JSONException e) {
+                Debug.error(null, "Failed to parse temporary data for ID generation.", e.getCause());
+            }
 
             // Checking in downloads history
             JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
-            if (idExistsInData(downloadHistory, id)) {
+            if (idExistsInData(downloadHistory, id))
                 return generateNewSongId(downloadItems);
-            }
 
             // Did not match existing records, return generated ID
             return id;
@@ -292,7 +291,6 @@ public class results {
                             .getJSONObject(0)
                             .getJSONObject("itemSectionRenderer")
                             .getJSONArray("contents");
-
 
                     // If youtube gives a bad response, just retry
                     if (contents.length() < 10)

@@ -41,9 +41,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.IntStream;
 
-// TODO: Fix lag when loading in
-// TODO: TimeTask to auto update the completion icon
-
 public class downloads {
 
     @FXML VBox viewContainer;

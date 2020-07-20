@@ -1,4 +1,15 @@
 .underline {
     -fx-border-color : black;
-    -fx-border-width : 0 0 1 0
+    -fx-border-width : 0 0 1 0;
+}
+
+.title {
+    -fx-font-weight: bold;
+    -fx-font-family: Arial;
+    -fx-font-size: 22px;
+}
+
+.setting {
+    -fx-font-family: Arial;
+    -fx-font-size: 16px;
 }

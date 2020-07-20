@@ -19,9 +19,6 @@
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0"
             prefWidth="600.0" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
             fx:controller="sample.settings">
-   <opaqueInsets>
-      <Insets/>
-   </opaqueInsets>
    <StackPane prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
               AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
       <BorderPane prefHeight="710.0" prefWidth="594.0" stylesheets="@../css/settings.css">
@@ -61,104 +58,51 @@
                </padding>
                <BorderPane prefHeight="24.0" prefWidth="521.0" styleClass="underline">
                   <top>
-                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Settings" wrappingWidth="510.0"
-                           BorderPane.alignment="TOP_LEFT">
-                        <font>
-                           <Font name="Arial" size="24.0"/>
-                        </font>
-                     </Text>
+                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Settings" wrappingWidth="510.0" BorderPane.alignment="TOP_LEFT" styleClass="title"/>
                   </top>
                </BorderPane>
                <VBox prefHeight="141.0" prefWidth="510.0">
                   <HBox prefHeight="23.0" prefWidth="570.0" styleClass="underline">
-                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Information" wrappingWidth="570.0">
-                        <font>
-                           <Font name="Arial" size="22.0"/>
-                        </font>
-                     </Text>
+                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Information" wrappingWidth="570.0" styleClass="title"/>
                   </HBox>
                   <VBox prefHeight="106.0" prefWidth="500.0">
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Version"
-                                 wrappingWidth="72.720703125" BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
-                           </Text>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Version" wrappingWidth="73" BorderPane.alignment="CENTER" styleClass="setting"/>
                         </left>
                         <right>
-                           <Text fx:id="version" strokeType="OUTSIDE" strokeWidth="0.0" text="Checking..."
-                                 BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
-                           </Text>
+                           <Text fx:id="version" strokeType="OUTSIDE" strokeWidth="0.0" text="Checking..." BorderPane.alignment="CENTER" styleClass="setting"/>
                         </right>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Latest Version"
-                                 BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
-                           </Text>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Latest Version" BorderPane.alignment="CENTER" styleClass="setting"/>
                         </left>
                         <right>
-                           <Text fx:id="latestVersion" strokeType="OUTSIDE" strokeWidth="0.0"
-                                 text="Checking..." BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
-                           </Text>
+                           <Text fx:id="latestVersion" strokeType="OUTSIDE" strokeWidth="0.0" text="Checking..." BorderPane.alignment="CENTER" styleClass="setting"/>
                         </right>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="YouTube-DL Status"
-                                 BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
-                           </Text>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="YouTube-DL Status" BorderPane.alignment="CENTER" styleClass="setting"/>
                         </left>
                         <right>
-                           <Text fx:id="youtubeDl" strokeType="OUTSIDE" strokeWidth="0.0" text="Checking..."
-                                 BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
-                           </Text>
+                           <Text fx:id="youtubeDl" strokeType="OUTSIDE" strokeWidth="0.0" text="Checking..." BorderPane.alignment="CENTER" styleClass="setting" />
                         </right>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="FFMPEG Status"
-                                 BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
-                           </Text>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="FFMPEG Status" BorderPane.alignment="CENTER" styleClass="setting"/>
                         </left>
                         <right>
-                           <Text fx:id="ffmpeg" strokeType="OUTSIDE" strokeWidth="0.0" text="Checking..."
-                                 BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
-                           </Text>
+                           <Text fx:id="ffmpeg" strokeType="OUTSIDE" strokeWidth="0.0" text="Checking..." BorderPane.alignment="CENTER" styleClass="setting" />
                         </right>
                      </BorderPane>
                   </VBox>
                </VBox>
                <VBox prefHeight="113.0" prefWidth="500.0">
                   <HBox prefHeight="25.0" prefWidth="570.0" styleClass="underline">
-                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Files">
-                        <font>
-                           <Font name="Arial" size="22.0"/>
-                        </font>
-                     </Text>
+                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Files" styleClass="title"/>
                   </HBox>
                   <VBox prefWidth="500.0" spacing="5">
                      <BorderPane fx:id="saveMusicLine" prefHeight="30.0" prefWidth="500.0">
@@ -166,36 +110,22 @@
                            <Text fx:id="outputDirectory" accessibleText="Click to change."
                                  onMouseClicked="#selectNewFolder" strokeType="OUTSIDE" strokeWidth="0.0"
                                  text="C:\TargetDirectory\" textAlignment="RIGHT"
-                                 BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
+                                 BorderPane.alignment="CENTER" styleClass="setting">
                               <cursor>
                                  <Cursor fx:constant="HAND"/>
                               </cursor>
                            </Text>
                         </right>
                         <left>
-                           <Label fx:id="outputDirectoryInfo" text="Save Music To:"
-                                  BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
-                           </Label>
+                           <Label fx:id="outputDirectoryInfo" text="Save Music To:" BorderPane.alignment="CENTER" styleClass="setting"/>
                         </left>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Music Format:"
-                                 BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
-                           </Text>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Music Format:" BorderPane.alignment="CENTER" styleClass="setting" />
                         </left>
                         <right>
-                           <ComboBox fx:id="musicFormat" onAction="#validateConfirm" prefWidth="150.0"
-                                     BorderPane.alignment="CENTER"/>
+                           <ComboBox fx:id="musicFormat" onAction="#validateConfirm" prefWidth="150.0" BorderPane.alignment="CENTER"/>
                            <items>
                               <FXCollections fx:factory="observableArrayList">
                                  <String fx:value="mp3"/>
@@ -208,16 +138,10 @@
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Save Album Art:"
-                                 BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
-                           </Text>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Save Album Art:" BorderPane.alignment="CENTER" styleClass="setting" />
                         </left>
                         <right>
-                           <ComboBox fx:id="saveAlbumArt" onAction="#validateConfirm" prefWidth="150.0"
-                                     BorderPane.alignment="CENTER"/>
+                           <ComboBox fx:id="saveAlbumArt" onAction="#validateConfirm" prefWidth="150.0" BorderPane.alignment="CENTER"/>
                            <items>
                               <FXCollections fx:factory="observableArrayList">
                                  <String fx:value="Never"/>
@@ -230,147 +154,85 @@
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Text strokeType="OUTSIDE" strokeWidth="0.0"
-                                 text="Advanced Download Validation: " BorderPane.alignment="CENTER">
-                              <font>
-                                 <Font name="Arial" size="16.0"/>
-                              </font>
-                           </Text>
+                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Advanced Download Validation: " BorderPane.alignment="CENTER" styleClass="setting"/>
                         </left>
                         <right>
-                           <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="advancedValidationToggle"
-                                         BorderPane.alignment="CENTER"/>
+                           <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="advancedValidationToggle" BorderPane.alignment="CENTER"/>
                         </right>
                      </BorderPane>
                   </VBox>
                </VBox>
                <VBox prefHeight="200.0" prefWidth="100.0">
                   <HBox prefHeight="24.0" prefWidth="570.0" styleClass="underline">
-                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Meta-Data Application">
-                        <font>
-                           <Font name="Arial" size="22.0"/>
-                        </font>
-                     </Text>
+                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Meta-Data Application" styleClass="title"/>
                   </HBox>
                   <BorderPane prefHeight="30.0" prefWidth="200.0">
                      <left>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Album Art:"
-                              BorderPane.alignment="CENTER">
-                           <font>
-                              <Font name="Arial" size="16.0"/>
-                           </font>
-                        </Text>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Album Art:" BorderPane.alignment="CENTER" styleClass="setting"/>
                      </left>
                      <right>
-                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="albumArtToggle"
-                                      BorderPane.alignment="CENTER"/>
+                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="albumArtToggle" BorderPane.alignment="CENTER"/>
                      </right>
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="200.0">
                      <left>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Album Title:"
-                              BorderPane.alignment="CENTER">
-                           <font>
-                              <Font name="Arial" size="16.0"/>
-                           </font>
-                        </Text>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Album Title:" BorderPane.alignment="CENTER" styleClass="setting" />
                      </left>
                      <right>
-                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="albumTitleToggle"
-                                      BorderPane.alignment="CENTER"/>
+                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="albumTitleToggle" BorderPane.alignment="CENTER"/>
                      </right>
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="200.0">
                      <left>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Song Title:"
-                              BorderPane.alignment="CENTER">
-                           <font>
-                              <Font name="Arial" size="16.0"/>
-                           </font>
-                        </Text>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Song Title:" BorderPane.alignment="CENTER" styleClass="setting"/>
                      </left>
                      <right>
-                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="songTitleToggle"
-                                      BorderPane.alignment="CENTER"/>
+                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="songTitleToggle" BorderPane.alignment="CENTER"/>
                      </right>
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="200.0">
                      <left>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Artist:"
-                              BorderPane.alignment="CENTER">
-                           <font>
-                              <Font name="Arial" size="16.0"/>
-                           </font>
-                        </Text>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Artist:" BorderPane.alignment="CENTER" styleClass="setting" />
                      </left>
                      <right>
-                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="artistToggle"
-                                      BorderPane.alignment="CENTER"/>
+                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="artistToggle" BorderPane.alignment="CENTER"/>
                      </right>
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="200.0">
                      <left>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Year:"
-                              BorderPane.alignment="CENTER">
-                           <font>
-                              <Font name="Arial" size="16.0"/>
-                           </font>
-                        </Text>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Year:" BorderPane.alignment="CENTER" styleClass="setting"/>
                      </left>
                      <right>
-                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="yearToggle"
-                                      BorderPane.alignment="CENTER"/>
+                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="yearToggle" BorderPane.alignment="CENTER"/>
                      </right>
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="200.0">
                      <left>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Track Number:"
-                              BorderPane.alignment="CENTER">
-                           <font>
-                              <Font name="Arial" size="16.0"/>
-                           </font>
-                        </Text>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Track Number:" BorderPane.alignment="CENTER" styleClass="setting"/>
                      </left>
                      <right>
-                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="trackNumberToggle"
-                                      BorderPane.alignment="CENTER"/>
+                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="trackNumberToggle" BorderPane.alignment="CENTER"/>
                      </right>
                   </BorderPane>
                </VBox>
                <VBox prefHeight="97.0" prefWidth="500.0">
                   <HBox prefHeight="25.0" prefWidth="570.0" styleClass="underline">
-                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Application Configuration">
-                        <font>
-                           <Font name="Arial" size="22.0"/>
-                        </font>
-                     </Text>
+                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Application Configuration" styleClass="title"/>
                   </HBox>
                   <BorderPane prefHeight="30.0" prefWidth="500.0">
                      <left>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Theme:"
-                              BorderPane.alignment="CENTER">
-                           <font>
-                              <Font name="Arial" size="16.0"/>
-                           </font>
-                        </Text>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Theme:" BorderPane.alignment="CENTER" styleClass="setting"/>
                      </left>
                      <right>
-                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="darkThemeToggle"
-                                      BorderPane.alignment="CENTER"/>
+                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="darkThemeToggle" BorderPane.alignment="CENTER"/>
                      </right>
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="500.0">
                      <left>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Data Saver Mode:"
-                              BorderPane.alignment="CENTER">
-                           <font>
-                              <Font name="Arial" size="16.0"/>
-                           </font>
-                        </Text>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Data Saver Mode:" BorderPane.alignment="CENTER" styleClass="setting"/>
                      </left>
                      <right>
-                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="dataSaverToggle"
-                                      BorderPane.alignment="CENTER"/>
+                        <ToggleSwitch onMouseClicked="#validateConfirm" fx:id="dataSaverToggle" BorderPane.alignment="CENTER"/>
                      </right>
                   </BorderPane>
                </VBox>

@@ -36,7 +36,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 // TODO
-// Switch settings and downloads to the icons and animate them depending on what is happening
 // Error message is not centered and is out of place
 // Losing connection mid-search generates a partially completed results table, don't let this happen
 // Continue testing connection drops: Control Panel\Network and Internet\Network Connections

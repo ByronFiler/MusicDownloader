@@ -15,7 +15,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -24,11 +23,7 @@ import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-//TODO
-// Could look at doing that thing other apps do and show progress on the icon [https://stackoverflow.com/a/47943535/6460641]
-
 public class Model {
-
     private final static Model instance = new Model();
 
     public final settings settings = new settings();
@@ -36,7 +31,6 @@ public class Model {
     public final search search = new search();
 
     public Model() {
-
         new Thread(() -> {
 
             JSONArray downloadHistory = download.getDownloadHistory();
@@ -214,21 +208,20 @@ public class Model {
                     reacquiredFilesCount++;
 
                 }
-                Debug.trace(
-                        Thread.currentThread(),
-                        String.format("Reacquired %s file%s to cache.", reacquiredFilesCount, reacquiredFilesCount == 1 ? "" : "s")
-                );
+                if (reacquiredFilesCount > 0) {
+                    Debug.trace(
+                            Thread.currentThread(),
+                            String.format("Reacquired %s file%s to cache.", reacquiredFilesCount, reacquiredFilesCount == 1 ? "" : "s")
+                    );
 
-                download.setDownloadHistory(downloadHistory);
+                    download.setDownloadHistory(downloadHistory);
+                }
 
-            } catch (JSONException | MalformedURLException e) {
+            } catch (JSONException | IOException e) {
                 Debug.error(Thread.currentThread(), "Failed to get art for checking files to re-download.", e.getCause());
-            } catch (IOException e) {
-                e.printStackTrace();
             }
 
         }, "cache-optimiser").start();
-
     }
 
     public static Model getInstance() {
@@ -539,10 +532,6 @@ public class Model {
                 String line;
                 String downloadedFile = "";
                 while ((line = reader.readLine()) != null) {
-
-                    // Parsing command line output
-                    // Sample: "[download]  31.4% of 811.15KiB at  3.04MiB/s ETA 00:00"
-                    // TODO: Do parsing
 
                     try {
 

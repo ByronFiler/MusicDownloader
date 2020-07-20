@@ -29,6 +29,7 @@ import java.util.TimerTask;
 // Information & Files cutoff when resizing
 
 public class settings {
+
     // Information
     @FXML Text version;
     @FXML Text latestVersion;
