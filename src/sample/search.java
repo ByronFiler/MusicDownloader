@@ -5,6 +5,7 @@ import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -435,7 +436,6 @@ public class search {
     }
 
     // Updating the UI with the autocomplete suggestions
-    // TODO: Should hide autocomplete table until some is generated otherwise takes up dead space
     class generateAutocomplete implements Runnable {
 
         private final Thread thread;
@@ -459,37 +459,43 @@ public class search {
                 Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + query).get();
                 ArrayList<HBox> autocompleteResultsView = new ArrayList<>();
                 Elements results = doc.select("ul.search-results").select("li");
+                JSONArray autocompleteDataRaw = new JSONArray();
 
                 for (Element result: results)
                 {
 
-                    // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
-                    if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740) {
+                    try {
+                        JSONObject searchResultRaw = new JSONObject(String.format("{\"album\": %s, \"title\": \"%s\"}", result.select("div.cover").size() > 0, result.select("div.title").text().replaceAll("\"", "")));
 
-                        Label resultTitle = new Label(result.select("div.title").text().replaceAll("\"", ""));
-                        resultTitle.getStyleClass().add("autocompleteResult");
+                        // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
+                        if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740 && !autocompleteDataRaw.toString().contains(searchResultRaw.toString())) {
+                            autocompleteDataRaw.put(searchResultRaw);
 
-                        ImageView resultIcon = new ImageView(
-                                new Image(
-                                        getClass().getResource(result.select("div.cover").size() > 0 ? "app/img/album_default.png" : "app/img/song_default.png").toURI().toString(),
-                                        25,
-                                        25,
-                                        true,
-                                        true
-                                )
-                        );
+                            Label resultTitle = new Label(result.select("div.title").text().replaceAll("\"", ""));
+                            resultTitle.getStyleClass().add("autocompleteResult");
 
-                        if (Model.getInstance().settings.getSettingBool("dark_theme"))
-                            resultIcon.setEffect(new ColorAdjust(0, 0, 1, 0));
+                            ImageView resultIcon = new ImageView(
+                                    new Image(
+                                            getClass().getResource(result.select("div.cover").size() > 0 ? "app/img/album_default.png" : "app/img/song_default.png").toURI().toString(),
+                                            25,
+                                            25,
+                                            true,
+                                            true
+                                    )
+                            );
 
-                        autocompleteResultsView.add(
-                                new HBox(
-                                        10,
-                                        resultIcon,
-                                        resultTitle
-                                )
-                        );
+                            if (Model.getInstance().settings.getSettingBool("dark_theme"))
+                                resultIcon.setEffect(new ColorAdjust(0, 0, 1, 0));
 
+                            HBox autocompleteResultView = new HBox(10, resultIcon, resultTitle);
+                            autocompleteResultView.setOnMouseClicked(e -> search.setText( ((Label) (autocompleteResultView.getChildren().get(1))) .getText()));
+                            autocompleteResultView.setCursor(Cursor.HAND);
+
+                            autocompleteResultsView.add(autocompleteResultView);
+
+                        }
+                    } catch (JSONException e) {
+                        Debug.warn(Thread.currentThread(), "Failed to parse JSON: " + String.format("{\"album\": %s, \"title\": \"%s\"}", result.select("div.cover").size() > 0, result.select("div.title").text().replaceAll("\"", "")));
                     }
                 }
 
@@ -514,6 +520,7 @@ public class search {
                     search.setDisable(true);
                     new awaitReconnection();
                 });
+
             } catch (URISyntaxException ignored) {}
 
         }
@@ -577,6 +584,5 @@ public class search {
         }
 
     }
-
 
 }

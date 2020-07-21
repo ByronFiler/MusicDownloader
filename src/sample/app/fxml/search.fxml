@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.Cursor?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
+
 <AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" stylesheets="@../css/search.css" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="sample.search">
    <children>
       <StackPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -58,7 +63,7 @@
                <center>
                   <VBox alignment="CENTER" maxHeight="200.0" maxWidth="500.0" prefHeight="200.0" prefWidth="500.0" styleClass="searchContainer" BorderPane.alignment="CENTER">
                      <children>
-                        <Label text="Music Downloader" styleClass="title">
+                        <Label styleClass="title" text="Music Downloader">
                            <VBox.margin>
                               <Insets />
                            </VBox.margin>
@@ -78,7 +83,7 @@
                                  </font>
                               </TextField>
 
-                              <ProgressIndicator fx:id="loadingIcon" maxHeight="25.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" prefHeight="25.0" prefWidth="25.0" visible="false" />
+                              <ProgressIndicator fx:id="loadingIcon" maxHeight="56.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" prefHeight="56.0" prefWidth="25.0" visible="false" />
                            </children>
                         </HBox>
                         <ListView fx:id="autocompleteResults" maxWidth="440.0" prefHeight="150.0" prefWidth="440.0" style="-fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-table-cell-border-color: transparent; -fx-background: transparent; -fx-background-color: transparent; -fx-background-insets: 0, 0 0 1 0; -fx-table-cell-border-color: derive(-fx-color, 5%);" stylesheets="@../css/search.css" visible="false">
