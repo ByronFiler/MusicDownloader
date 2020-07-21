@@ -45,6 +45,7 @@ import java.util.TimerTask;
 // Losing connection mid-search generates a partially completed results table, don't let this happen
 // Continue testing connection drops: Control Panel\Network and Internet\Network Connections
 // Search data could also theoretically load songs since the request is already sent to save sending the requests again decreasing load speeds and web requests
+// Internal logic to search isn't great with error handling
 
 public class search {
 
@@ -259,7 +260,7 @@ public class search {
                         resultData.put("genre", result.select("div.genres").text());
 
                         // Type
-                        resultData.put("album", result.select("div.cover").size() > 0 ? 1 : 0);
+                        resultData.put("album", result.select("div.cover").size() > 0);
 
                         // Art (Albums Only)
                         if (result.select("div.cover").size() > 0) {
@@ -287,7 +288,7 @@ public class search {
 
                     // Gathering additional data for JSON object
                     try {
-                        if (searchData.getJSONObject(i).getInt("album") == 0) {
+                        if (!searchData.getJSONObject(i).getBoolean("album")) {
 
                             if (!Model.getInstance().settings.getSettingBool("data_saver")) {
 
@@ -367,15 +368,15 @@ public class search {
 
                         BorderPane textInfo = new BorderPane();
 
-                        Text title = new Text(searchData.getJSONObject(i).getString("title"));
-                        title.setStyle("-fx-font-weight: bold; -fx-font-family: arial; -fx-font-size: 22px;");
+                        Label title = new Label(searchData.getJSONObject(i).getString("title"));
+                        title.getStyleClass().add("resultTitle");
 
-                        Text artist = new Text(searchData.getJSONObject(i).getString("artist"));
-                        artist.setStyle("-fx-font-family: arial; -fx-font-size: 16px; -fx-font-style: italic;");
+                        Label artist = new Label(searchData.getJSONObject(i).getString("artist"));
+                        artist.getStyleClass().add("resultArtist");
 
                         VBox songArtistContainer = new VBox(title, artist);
 
-                        StringBuilder metaInfoRaw = new StringBuilder(searchData.getJSONObject(i).getInt("album") == 0 ? "Song" : "Album");
+                        StringBuilder metaInfoRaw = new StringBuilder(searchData.getJSONObject(i).getBoolean("album") ? "Song" : "Album");
 
                         if (!searchData.getJSONObject(i).getString("year").isBlank())
                             metaInfoRaw.append(" | ").append(searchData.getJSONObject(i).getString("year"));
@@ -383,9 +384,8 @@ public class search {
                         if (!searchData.getJSONObject(i).getString("genre").isBlank())
                             metaInfoRaw.append(" | ").append(searchData.getJSONObject(i).getString("genre"));
 
-                        Text metaInfo = new Text(
-                                metaInfoRaw.toString()
-                        );
+                        Label metaInfo = new Label(metaInfoRaw.toString());
+                        metaInfo.getStyleClass().add("resultMeta");
 
                         textInfo.setTop(songArtistContainer);
                         textInfo.setBottom(metaInfo);
@@ -395,10 +395,12 @@ public class search {
                         left.getChildren().setAll(albumArt, textInfo);
 
                         searchResult.setLeft(left);
+                        searchResult.getStyleClass().add("resultContainer");
 
                         tableData[i] = searchResult;
 
                     } catch (JSONException | IllegalArgumentException e) {
+                        e.printStackTrace();
                         Debug.error(thread, "Failed to generate table result", e.getCause());
                     }
                 }

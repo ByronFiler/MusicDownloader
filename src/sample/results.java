@@ -4,6 +4,8 @@ import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -45,8 +47,17 @@ public class results {
 
     @FXML
     private void initialize() {
+
         // Set the table data
         results.getItems().setAll(Model.getInstance().search.getSearchResults());
+
+        // Set theme
+        if (Model.getInstance().settings.getSettingBool("dark_theme"))
+            root.getStylesheets().add(String.valueOf(getClass().getResource("app/css/dark/results.css")));
+
+        else
+            root.getStylesheets().add(String.valueOf(getClass().getResource("app/css/standard/results.css")));
+
         Debug.trace(null, "Initialized results view");
     }
 
@@ -61,6 +72,7 @@ public class results {
             download.setDisable(true);
 
             cancel.setText("Cancel");
+            cancel.setId("cancel_button");
             cancel.setOnMouseClicked(e -> queueAdder.kill());
 
             // Selected Item -> Selected Item Data -> Select Item Data in correctly positioned array -> JSON Data needed -> Spawn thread with data to generate a queue item
@@ -95,7 +107,8 @@ public class results {
                 searchResult.setRight(null);
             }
             try {
-                results.getSelectionModel().getSelectedItems().get(0).setRight(new HBox(new ImageView(
+
+                HBox tickContainer = new HBox(new ImageView(
                         new Image(
                                 getClass().getResource("app/img/tick.png").toURI().toString(),
                                 25,
@@ -103,7 +116,11 @@ public class results {
                                 true,
                                 true
                         )
-                )));
+                ));
+                tickContainer.setAlignment(Pos.CENTER);
+                tickContainer.setPadding(new Insets(0, 5, 0, 0));
+
+                results.getSelectionModel().getSelectedItems().get(0).setRight(tickContainer);
             } catch (URISyntaxException e) {
                 Debug.error(null, "Failed to set tick to mark selected element.", e.getCause());
             }
@@ -413,7 +430,7 @@ public class results {
                 metaData.put("playtime", 0);
 
                 Elements trackResults;
-                if (basicData.getInt("album") == 0) {
+                if (!basicData.getBoolean("album")) {
 
                     Document songDataRequest = null;
                     Document albumDataRequest = null;
@@ -421,7 +438,7 @@ public class results {
                     // Different output directory
                     metaData.put("directory", Model.getInstance().settings.getSetting("output_directory"));
 
-                    // Requires additional work to get the album data we want
+                    // Requires additional work to get the album data we want, takes time so we check twice, otherwise excessive wait
                     if (!kill)
                         songDataRequest = Jsoup.connect(basicData.getString("link")).get();
 
@@ -449,7 +466,7 @@ public class results {
                     if (kill)
                         break;
 
-                    if ( (basicData.getInt("album") == 0 && track.selectFirst("div.title").selectFirst("a").text().equals(basicData.getString("title"))) || basicData.getInt("album") != 0 ) {
+                    if ( (!basicData.getBoolean("album") && track.selectFirst("div.title").selectFirst("a").text().equals(basicData.getString("title"))) || basicData.getBoolean("album")) {
                         JSONObject newSong = new JSONObject();
                         newSong.put("title", track.select("div.title").text());
                         newSong.put("position", trackResults.indexOf(track) +1);
@@ -481,6 +498,7 @@ public class results {
                 }
 
             } catch (JSONException e) {
+                e.printStackTrace();
                 Debug.error(thread, "Error in JSON processing download item.", e.getCause());
             } catch (IOException e) {
                 Debug.warn(thread, "Connection error, attempting to reconnect.");
@@ -495,6 +513,7 @@ public class results {
                 downloadButtonCheck();
 
                 cancel.setText("Back");
+                cancel.setId("back_button");
                 cancel.setOnMouseClicked(results.this::searchView);
             });
             completed = true;
