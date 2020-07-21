@@ -8,21 +8,19 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.*;
-import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -36,23 +34,24 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ConcurrentModificationException;
-import java.util.OptionalDouble;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.IntStream;
 
+// TODO
+// Fix lag when opening downloads while downloading something
+// Remove song eta feature
+
+// THE LAG IS BECAUSE I'M CALLING METHODS WHILE IT'S DOWNLOADING SOMETHING CAUSING IT TO FREEZE, HENCE SPAWN ACTUAL DOWNLOAD AS A SEPARATE THREAD OR SOMETHING
+
 public class downloads {
 
+    @FXML AnchorPane root;
     @FXML VBox viewContainer;
 
-    @FXML Text eventViewTitle;
+    @FXML Label eventViewTitle;
     @FXML ComboBox<String> eventViewSelector;
     @FXML ListView<BorderPane> eventsViewTable;
-
-    @FXML VBox textInfoContainer;
-    @FXML Text processing;
-    @FXML Text downloadSpeed;
-    @FXML Text eta;
 
     @FXML
     private void initialize() {
@@ -90,7 +89,13 @@ public class downloads {
                     public void run() {
 
                         if (Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString())) {
+                            Debug.trace(Thread.currentThread(), "Detected download completion in view.");
+                            Platform.runLater(() -> {
+                                eventsViewTable.getItems().clear();
+                                initialize();
+                            });
                             this.cancel();
+
                         } else {
 
                             try {
@@ -250,159 +255,16 @@ public class downloads {
 
             }
 
-            // Handling view to show download speed, eta, etc.
-            if (!Model.getInstance().download.getDownloadInfo().toString().equals(new JSONObject().toString()) && currentDownloadsView[0].length > 0) {
-
-                final JSONObject[] workingData = {new JSONObject()};
-                new Timer().schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-
-                        // New data received, redrawing
-                        if (!Model.getInstance().download.getDownloadInfo().toString().equals(workingData[0].toString())) {
-
-                            // Begin drawing with loaded data
-                            try {
-                                workingData[0] = Model.getInstance().download.getDownloadInfo();
-
-                                // UI Text
-                                downloadSpeed.setText(workingData[0].getString("downloadSpeed"));
-
-                                eta.setText(workingData[0].getString("eta"));
-
-                                processing.setText(workingData[0].getString("song"));
-
-                                // processing.setWrappingWidth(INTERNAL CONTAINER WIDTH - (INFO MESSAGE + SPACING));
-                                textInfoContainer.prefWidthProperty().bind( ((BorderPane) viewContainer.getChildren().get(0)).prefHeightProperty().divide(2).subtract(20));
-
-                                // Preparing the data
-                                JSONArray chartData = workingData[0].getJSONArray("seriesData");
-
-                                // Calculating max point
-                                double minCalculator = 0;
-                                OptionalDouble minCalculatorOpt = IntStream.range(0, chartData.length()).mapToDouble(i -> {
-                                    try {
-                                        return chartData.getJSONObject(i).getInt("speed");
-                                    } catch (JSONException e) {
-                                        Debug.error(null, "Missing data in working data.", e.getCause());
-                                    }
-                                    return 0;
-                                }).min();
-
-                                if (minCalculatorOpt.isPresent())
-                                    minCalculator = minCalculatorOpt.getAsDouble();
-                                else
-                                    Debug.error(null, "Failed to get maximum value from given data.", null);
-
-                                int conversion;
-                                // Surely there is a better way to do this?
-                                if (minCalculator > 1024 * 1024) {
-                                    // Using units MiB/s
-                                    conversion = 2;
-                                } else if (minCalculator > 1024) {
-                                    // Using units KiB/s
-                                    conversion = 1;
-                                } else {
-                                    // Using units Bytes/s
-                                    conversion = 0;
-                                }
-
-                                NumberAxis xAxis = new NumberAxis();
-                                NumberAxis yAxis = new NumberAxis();
-
-                                yAxis.setLabel(new String[]{"Bytes/s", "KiB/s", "MiB/s"}[conversion]);
-                                xAxis.setLabel("Playtime Downloaded");
-
-                                LineChart<Number, Number> chart = new LineChart<>(xAxis,yAxis);
-                                XYChart.Series<Number, Number> series = new XYChart.Series<>();
-
-                                // Due to size constraints we ideally just want to map a few data points if there are too many
-                                if (chartData.length() > 10) {
-
-                                    // Group data into 10 clusters calculate average of each
-                                    for (int i = 0; i < 9; i++) {
-
-                                        OptionalDouble clusterAverageTimeOpt = IntStream.range(
-                                                (int) Math.round((double) chartData.length() / 10) * i,
-                                                (int) Math.round((double) chartData.length() / 10) * i+1
-                                        ).mapToDouble(j -> {
-                                            try {
-                                                return chartData.getJSONObject(j).getInt("time");
-                                            } catch (JSONException e) {
-                                                e.printStackTrace();
-                                            }
-                                            return 0;
-                                        }).average();
-
-                                        OptionalDouble clusterAverageSpeedOpt = IntStream.range(
-                                                (int) Math.round((double) chartData.length() / 10) * i,
-                                                (int) Math.round((double) chartData.length() / 10) * i+1
-                                        ).mapToDouble(j -> {
-                                            try {
-                                                return chartData.getJSONObject(j).getInt("speed");
-                                            } catch (JSONException e) {
-                                                e.printStackTrace();
-                                            }
-                                            return 0;
-                                        }).average();
-
-                                        if (clusterAverageTimeOpt.isPresent() && clusterAverageSpeedOpt.isPresent()) {
-
-                                            series.getData().add(
-                                                    new XYChart.Data<>(
-                                                            clusterAverageTimeOpt.getAsDouble(),
-                                                            clusterAverageSpeedOpt.getAsDouble()
-                                                    )
-                                            );
-
-                                        } else {
-                                            Debug.error(null, "Failed to calculate average of given cluster.", null);
-                                        }
-
-                                    }
-
-                                } else {
-
-                                    for (int i = 0; i < chartData.length(); i++) {
-                                        series.getData().add(
-                                                new XYChart.Data<>(
-                                                        chartData.getJSONObject(i).getInt("time"),
-                                                        chartData.getJSONObject(i).getInt("speed") / Math.pow(1024, conversion)
-                                                )
-                                        );
-
-                                    }
-                                }
-
-                                chart.getData().add(series);
-                                chart.prefWidthProperty().bind(((BorderPane) viewContainer.getChildren().get(0)).prefWidthProperty().subtract(textInfoContainer.widthProperty()));
-
-                                Platform.runLater(() -> ((BorderPane) viewContainer.getChildren().get(0)).setRight(chart));
-                            } catch (JSONException e) {
-                                Debug.warn(null, "Unknown key");
-                            }
-
-                        }
-
-                        // Downloads are completed, show now only histories
-                        if (Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString())) {
-                            Platform.runLater(() -> {
-                                eventsViewTable.getItems().clear();
-                                eventViewSelector.getItems().clear();
-                                initialize();
-                            });
-                            this.cancel();
-                        }
-
-                    }
-                }, 0, 20);
-
-            } else
-                viewContainer.getChildren().remove(0);
-
         } else {
             Debug.warn(null, "Downloads was accessed without any downloads history, downloads in progress or any download queue items, this should not have happened.");
         }
+
+        // Load style
+        if (Model.getInstance().settings.getSettingBool("dark_theme"))
+            root.getStylesheets().add(String.valueOf(getClass().getResource("app/css/dark/downloads.css")));
+        else
+            root.getStylesheets().add(String.valueOf(getClass().getResource("app/css/standard/downloads.css")));
+
 
         Debug.trace(null, "Initialized downloads view.");
 
@@ -505,6 +367,7 @@ public class downloads {
                 }, "load-art");
                 loadAlbumArt.setDaemon(true);
                 loadAlbumArt.start();
+
             } catch (IndexOutOfBoundsException e) {
                 Debug.warn(null, "Internal error loading album art.");
             }
@@ -513,9 +376,7 @@ public class downloads {
         // Greyscale if downloaded & files don't exist
         if (!Files.exists(Paths.get(viewData.getString("directory"))) && !viewData.has("completed")) {
             // Greyscale the album art
-            ColorAdjust desaturate = new ColorAdjust();
-            desaturate.setSaturation(-1);
-            albumArt.setEffect(desaturate);
+            albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
 
             // Use default cursor as directory can't be opened
             result.setCursor(Cursor.DEFAULT);
@@ -523,11 +384,11 @@ public class downloads {
 
         BorderPane resultInformationContainer = new BorderPane();
 
-        Text title = new Text(viewData.getString("title"));
-        title.setStyle("-fx-font-weight: bold; -fx-font-family: arial; -fx-font-size: 22px;");
+        Label title = new Label(viewData.getString("title"));
+        title.getStyleClass().add("resultTitle");
 
-        Text artist = new Text(viewData.getString("artist"));
-        artist.setStyle("-fx-font-family: arial; -fx-font-size: 16px; -fx-font-style: italic;");
+        Label artist = new Label(viewData.getString("artist"));
+        artist.getStyleClass().add("resultArtist");
 
         VBox songArtistContainer = new VBox(title, artist);
         songArtistContainer.setAlignment(Pos.TOP_LEFT);
@@ -594,25 +455,25 @@ public class downloads {
         } else {
 
             // This is a history result, should have a box to delete the history item
-            Group crossBox = new Group(
-                    new Line(20, 0, 0, 20),
-                    new Line(20, 20, 0, 0)
-            );
-            IntStream.range(0, 2).forEach(i -> {((Line) crossBox.getChildren().get(i)).setStroke(Color.GRAY); ((Line) crossBox.getChildren().get(i)).setStrokeWidth(2);} );
-            crossBox.setOnMouseEntered(e ->
-                    IntStream
-                            .range(0, 2)
-                            .forEach(
-                                    i -> ((Line) crossBox.getChildren().get(i)).setStroke(Color.BLACK)
-                            )
-            );
-            crossBox.setOnMouseExited(e ->
-                    IntStream
-                            .range(0, 2)
-                            .forEach(
-                                    i -> ((Line) crossBox.getChildren().get(i)).setStroke(Color.GRAY)
-                            )
-            );
+
+            Line crossLine0 = new Line(20, 0, 0, 20);
+            crossLine0.getStyleClass().add("cross-line");
+
+            Line crossLine1 = new Line(20, 20, 0, 0);
+            crossLine1.getStyleClass().add("cross-line");
+
+            Group crossBox = new Group(crossLine0, crossLine1);
+
+            crossBox.setOnMouseEntered(e -> {
+                crossLine0.setStroke(Color.RED);
+                crossLine1.setStroke(Color.RED);
+            });
+
+            crossBox.setOnMouseExited(e -> {
+                crossLine0.setStroke(Color.rgb(193, 199, 201));
+                crossLine1.setStroke(Color.rgb(193, 199, 201));
+            });
+
             crossBox.setOnMouseClicked(event -> {
 
                 Model.getInstance().download.deleteHistory(viewData);
@@ -643,6 +504,7 @@ public class downloads {
 
         result.setLeft(left);
         result.setRight(right);
+        result.getStyleClass().add("resultContainer");
 
         return result;
 

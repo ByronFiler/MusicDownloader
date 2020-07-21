@@ -11,6 +11,8 @@ import java.io.IOException;
 
 // TODO
 
+// Once CSS files are finished merge into a single style sheet
+
 // Auto-zip setting
 // Handle the no youtube results strange error warning
 // Create temporary directory
