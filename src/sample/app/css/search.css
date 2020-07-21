@@ -13,3 +13,13 @@
     -fx-fill: transparent;
     -fx-highlight-fill: transparent;
 }
+
+.searchBox {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.title {
+    -fx-font-family: "Arial Black";
+    -fx-font-size: 32px;
+}

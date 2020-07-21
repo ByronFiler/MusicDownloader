@@ -8,7 +8,11 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.TextField;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -50,6 +54,7 @@ public class search {
     @FXML private Text errorMessage;
     @FXML private ListView<HBox> autocompleteResults;
     @FXML private ImageView downloads;
+    @FXML private ImageView settings;
 
     // Timer timerRotate;
     Timer hideErrorMessage;
@@ -61,9 +66,27 @@ public class search {
     private void initialize(){
 
         // Theoretically no way this could change via normal use of the program, but if user starts a download, waits for it to finish and clears file, downloads page needs a check to prevent
-        if (Model.getInstance().download.downloadsAccessible()) {
+        if (Model.getInstance().download.downloadsAccessible())
             downloads.setVisible(true);
+
+        // Loading in CSS
+        if (Model.getInstance().settings.getSettingBool("dark_theme")) {
+
+            root.getStylesheets().add(
+                    String.valueOf(getClass().getResource("app/css/dark/search.css"))
+            );
+
+            ColorAdjust invert = new ColorAdjust();
+            invert.setBrightness(1);
+
+            downloads.setEffect(invert);
+            settings.setEffect(invert);
         }
+        else
+            root.getStylesheets().add(
+                    String.valueOf(getClass().getResource("app/css/standard/search.css"))
+            );
+
         Debug.trace(null, "Initialized search view.");
     }
 
@@ -84,7 +107,6 @@ public class search {
     private void settingsView(Event event) {
 
         try {
-
             Parent settingsView = FXMLLoader.load(getClass().getResource("app/fxml/settings.fxml"));
 
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
@@ -148,12 +170,14 @@ public class search {
 
             }
 
-        } else if (e.getCode() == KeyCode.BACK_SPACE && search.getText().length() == 1) {
+        } else if (search.getText().length() < 3) {
 
             // Kill all running autocomplete threads
-            autoCompleteThread.kill();
-            autocompleteResults.getItems().clear();
-            autocompleteResults.setVisible(false);
+            try {
+                autoCompleteThread.kill();
+                autocompleteResults.getItems().clear();
+                autocompleteResults.setVisible(false);
+            } catch (NullPointerException ignored) {}
 
         }
     }
@@ -411,6 +435,7 @@ public class search {
     }
 
     // Updating the UI with the autocomplete suggestions
+    // TODO: Should hide autocomplete table until some is generated otherwise takes up dead space
     class generateAutocomplete implements Runnable {
 
         private final Thread thread;
@@ -441,19 +466,27 @@ public class search {
                     // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
                     if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740) {
 
+                        Label resultTitle = new Label(result.select("div.title").text().replaceAll("\"", ""));
+                        resultTitle.getStyleClass().add("autocompleteResult");
+
+                        ImageView resultIcon = new ImageView(
+                                new Image(
+                                        getClass().getResource(result.select("div.cover").size() > 0 ? "app/img/album_default.png" : "app/img/song_default.png").toURI().toString(),
+                                        25,
+                                        25,
+                                        true,
+                                        true
+                                )
+                        );
+
+                        if (Model.getInstance().settings.getSettingBool("dark_theme"))
+                            resultIcon.setEffect(new ColorAdjust(0, 0, 1, 0));
+
                         autocompleteResultsView.add(
                                 new HBox(
                                         10,
-                                        new ImageView(
-                                                new Image(
-                                                        getClass().getResource(result.select("div.cover").size() > 0 ? "app/img/album_default.png" : "app/img/song_default.png").toURI().toString(),
-                                                        25,
-                                                        25,
-                                                        true,
-                                                        true
-                                                )
-                                        ),
-                                        new Text(result.select("div.title").text().replaceAll("\"", ""))
+                                        resultIcon,
+                                        resultTitle
                                 )
                         );
 
