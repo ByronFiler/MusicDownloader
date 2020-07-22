@@ -1,4 +1,4 @@
-package sample;
+package sample.controllers;
 
 import javafx.application.Platform;
 import javafx.event.Event;
@@ -25,6 +25,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import sample.Debug;
+import sample.Model;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,10 +55,10 @@ public class results {
 
         // Set theme
         if (Model.getInstance().settings.getSettingBool("dark_theme"))
-            root.getStylesheets().add(String.valueOf(getClass().getResource("app/css/dark/results.css")));
+            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/dark/results.css")));
 
         else
-            root.getStylesheets().add(String.valueOf(getClass().getResource("app/css/standard/results.css")));
+            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/standard/results.css")));
 
         Debug.trace(null, "Initialized results view");
     }
@@ -110,7 +112,7 @@ public class results {
 
                 HBox tickContainer = new HBox(new ImageView(
                         new Image(
-                                getClass().getResource("app/img/tick.png").toURI().toString(),
+                                getClass().getResource("../app/img/tick.png").toURI().toString(),
                                 25,
                                 25,
                                 true,
@@ -134,7 +136,7 @@ public class results {
 
         try {
 
-            Parent searchView = FXMLLoader.load(getClass().getResource("app/fxml/search.fxml"));
+            Parent searchView = FXMLLoader.load(getClass().getResource("../app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));

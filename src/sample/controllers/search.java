@@ -1,4 +1,4 @@
-package sample;
+package sample.controllers;
 
 import javafx.application.Platform;
 import javafx.event.Event;
@@ -32,6 +32,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import sample.Debug;
+import sample.Model;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,7 +82,7 @@ public class search {
         if (Model.getInstance().settings.getSettingBool("dark_theme")) {
 
             root.getStylesheets().add(
-                    String.valueOf(getClass().getResource("app/css/dark/search.css"))
+                    String.valueOf(getClass().getResource("../app/css/dark/search.css"))
             );
 
             ColorAdjust invert = new ColorAdjust();
@@ -91,7 +93,7 @@ public class search {
         }
         else
             root.getStylesheets().add(
-                    String.valueOf(getClass().getResource("app/css/standard/search.css"))
+                    String.valueOf(getClass().getResource("../app/css/standard/search.css"))
             );
 
         Debug.trace(null, "Initialized search view.");
@@ -100,7 +102,7 @@ public class search {
     @FXML
     private void downloadsView(Event event) {
         try {
-            Parent settingsView = FXMLLoader.load(getClass().getResource("app/fxml/downloads.fxml"));
+            Parent settingsView = FXMLLoader.load(getClass().getResource("../app/fxml/downloads.fxml"));
 
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
             mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
@@ -114,7 +116,7 @@ public class search {
     private void settingsView(Event event) {
 
         try {
-            Parent settingsView = FXMLLoader.load(getClass().getResource("app/fxml/settings.fxml"));
+            Parent settingsView = FXMLLoader.load(getClass().getResource("../app/fxml/settings.fxml"));
 
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
             mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
@@ -272,7 +274,7 @@ public class search {
                         // Art (Albums Only)
                         if (result.select("div.cover").size() > 0) {
                             String potentialAlbumArt = result.select("img.lazy").attr("data-original");
-                            resultData.put("art", potentialAlbumArt.isEmpty() ? new File(getClass().getResource("app/img/album_default.png").getPath()).toURI().toString() : potentialAlbumArt);
+                            resultData.put("art", potentialAlbumArt.isEmpty() ? new File(getClass().getResource("../app/img/album_default.png").getPath()).toURI().toString() : potentialAlbumArt);
                         }
 
                         // Link
@@ -306,10 +308,10 @@ public class search {
 
                                 // Album Art
                                 try {
-                                    String potentialAlbumArt = songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https") && !songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").equals("https://cdn-gce.allmusic.com/images/lazy.gif") ? songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") : getClass().getResource("app/img/song_default.png").toURI().toString();
-                                    searchData.getJSONObject(i).put("art", potentialAlbumArt.isEmpty() ? new File(getClass().getResource("app/img/song_default.png").getPath()).toURI().toString() : potentialAlbumArt);
+                                    String potentialAlbumArt = songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https") && !songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").equals("https://cdn-gce.allmusic.com/images/lazy.gif") ? songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") : getClass().getResource("../app/img/song_default.png").toURI().toString();
+                                    searchData.getJSONObject(i).put("art", potentialAlbumArt.isEmpty() ? new File(getClass().getResource("../app/img/song_default.png").getPath()).toURI().toString() : potentialAlbumArt);
                                 } catch (NullPointerException ignored) {
-                                    searchData.getJSONObject(i).put("art", new File(getClass().getResource("app/img/song_default.png").getPath()).toURI().toString());
+                                    searchData.getJSONObject(i).put("art", new File(getClass().getResource("../app/img/song_default.png").getPath()).toURI().toString());
                                 } catch (URISyntaxException e) {
                                     Debug.error(null, "URI Formation exception loading song default image.", e.getCause());
                                 }
@@ -343,7 +345,7 @@ public class search {
                                     );
                                 } catch (NullPointerException ignored) {}
                             } else {
-                                searchData.getJSONObject(i).put("art", getClass().getResource("app/img/song_default.png"));
+                                searchData.getJSONObject(i).put("art", getClass().getResource("../app/img/song_default.png"));
                             }
 
                         }
@@ -418,7 +420,7 @@ public class search {
 
                 // Changing scene to results-view
                 try {
-                    Parent resultsView = FXMLLoader.load(getClass().getResource("app/fxml/results.fxml"));
+                    Parent resultsView = FXMLLoader.load(getClass().getResource("../app/fxml/results.fxml"));
                     Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
                     Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39)));
@@ -485,7 +487,7 @@ public class search {
 
                             ImageView resultIcon = new ImageView(
                                     new Image(
-                                            getClass().getResource(result.select("div.cover").size() > 0 ? "app/img/album_default.png" : "app/img/song_default.png").toURI().toString(),
+                                            getClass().getResource(result.select("div.cover").size() > 0 ? "../app/img/album_default.png" : "../app/img/song_default.png").toURI().toString(),
                                             25,
                                             25,
                                             true,

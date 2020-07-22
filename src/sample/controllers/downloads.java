@@ -1,4 +1,4 @@
-package sample;
+package sample.controllers;
 
 import javafx.application.Platform;
 import javafx.event.Event;
@@ -25,6 +25,8 @@ import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import sample.Debug;
+import sample.Model;
 
 import java.awt.*;
 import java.io.File;
@@ -109,7 +111,7 @@ public class downloads {
                                                                 ((HBox) element.getRight()).getChildren().setAll(
                                                                         new ImageView(
                                                                                 new Image(
-                                                                                        getClass().getResource("app/img/tick.png").toURI().toString(),
+                                                                                        getClass().getResource("../app/img/tick.png").toURI().toString(),
                                                                                         25,
                                                                                         25,
                                                                                         true,
@@ -251,14 +253,14 @@ public class downloads {
             }
 
         } else {
-            Debug.warn(null, "Downloads was accessed without any downloads history, downloads in progress or any download queue items, this should not have happened.");
+            Debug.warn(null, "Downloads was accessed without any downloads history, downloads in progress or any download queue items, this should not have h../appened.");
         }
 
         // Load style
         if (Model.getInstance().settings.getSettingBool("dark_theme"))
-            root.getStylesheets().add(String.valueOf(getClass().getResource("app/css/dark/downloads.css")));
+            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/dark/downloads.css")));
         else
-            root.getStylesheets().add(String.valueOf(getClass().getResource("app/css/standard/downloads.css")));
+            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/standard/downloads.css")));
 
 
         Debug.trace(null, "Initialized downloads view.");
@@ -270,7 +272,7 @@ public class downloads {
 
         // Go to search page
         try {
-            Parent searchView = FXMLLoader.load(getClass().getResource("app/fxml/search.fxml"));
+            Parent searchView = FXMLLoader.load(getClass().getResource("../app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
@@ -331,7 +333,7 @@ public class downloads {
                     try {
                         albumArt.setImage(
                                 new Image(
-                                        getClass().getResource("app/img/song_default.png").toURI().toString(),
+                                        getClass().getResource("../app/img/song_default.png").toURI().toString(),
                                         85,
                                         85,
                                         true,
@@ -406,7 +408,7 @@ public class downloads {
                     right.getChildren().add(
                             new ImageView(
                                     new Image(
-                                            getClass().getResource("app/img/icon.png").toURI().toString(),
+                                            getClass().getResource("../app/img/icon.png").toURI().toString(),
                                             25,
                                             25,
                                             true,
@@ -429,7 +431,7 @@ public class downloads {
                         right.getChildren().add(
                                 new ImageView(
                                         new Image(
-                                                getClass().getResource("app/img/tick.png").toURI().toString(),
+                                                getClass().getResource("../app/img/tick.png").toURI().toString(),
                                                 25,
                                                 25,
                                                 true,
@@ -474,7 +476,7 @@ public class downloads {
                 Model.getInstance().download.deleteHistory(viewData);
 
                 try {
-                    Parent settingsView = FXMLLoader.load(getClass().getResource("app/fxml/downloads.fxml"));
+                    Parent settingsView = FXMLLoader.load(getClass().getResource("../app/fxml/downloads.fxml"));
                     Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
                     mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth() - 16, mainWindow.getHeight() - 39));
                 } catch (IOException er) {

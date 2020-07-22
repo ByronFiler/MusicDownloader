@@ -1,4 +1,4 @@
-package sample;
+package sample.controllers;
 
 import javafx.application.Platform;
 import javafx.event.Event;
@@ -17,6 +17,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import sample.Debug;
+import sample.Model;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -45,7 +47,7 @@ public class settings {
     @FXML ComboBox<String> saveAlbumArt;
     @FXML ToggleSwitch advancedValidationToggle;
 
-    // Meta-Data Application
+    // Meta-Data application
     @FXML ToggleSwitch albumArtToggle;
     @FXML ToggleSwitch albumTitleToggle;
     @FXML ToggleSwitch songTitleToggle;
@@ -53,7 +55,7 @@ public class settings {
     @FXML ToggleSwitch yearToggle;
     @FXML ToggleSwitch trackNumberToggle;
 
-    // Application Configuration
+    // ../application Configuration
     @FXML ToggleSwitch darkThemeToggle;
     @FXML ToggleSwitch dataSaverToggle;
 
@@ -77,7 +79,6 @@ public class settings {
 
         // Files
         outputDirectory.setText(Model.getInstance().settings.getSetting("output_directory").equals("") ? System.getProperty("user.dir") : Model.getInstance().settings.getSetting("output_directory"));
-        // outputDirectory.wrappingWidthProperty().bind(saveMusicLine.widthProperty().subtract(outputDirectoryInfo.widthProperty()).subtract(30));
         musicFormat.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("music_format")));
         saveAlbumArt.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("save_album_art")));
         advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
@@ -90,21 +91,21 @@ public class settings {
         yearToggle.setSelected(Model.getInstance().settings.getSettingBool("year"));
         trackNumberToggle.setSelected(Model.getInstance().settings.getSettingBool("track"));
 
-        // Application
+        // ../application
         darkThemeToggle.setSelected(Model.getInstance().settings.getSettingBool("dark_theme"));
         dataSaverToggle.setSelected(Model.getInstance().settings.getSettingBool("data_saver"));
 
         // Load theme
         if (Model.getInstance().settings.getSettingBool("dark_theme"))
             root.getStylesheets().setAll(
-                    String.valueOf(getClass().getResource("app/css/settings.css")),
-                    String.valueOf(getClass().getResource("app/css/dark/settings.css"))
+                    String.valueOf(getClass().getResource("../app/css/settings.css")),
+                    String.valueOf(getClass().getResource("../app/css/dark/settings.css"))
             );
 
         else
             root.getStylesheets().setAll(
-                    String.valueOf(getClass().getResource("app/css/settings.css")),
-                    String.valueOf(getClass().getResource("app/css/standard/settings.css"))
+                    String.valueOf(getClass().getResource("../app/css/settings.css")),
+                    String.valueOf(getClass().getResource("../app/css/standard/settings.css"))
             );
 
         Debug.trace(null, "Initialized settings view.");
@@ -116,7 +117,7 @@ public class settings {
 
         try {
 
-            AnchorPane searchView = FXMLLoader.load(getClass().getResource("app/fxml/search.fxml"));
+            AnchorPane searchView = FXMLLoader.load(getClass().getResource("../app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
@@ -152,14 +153,14 @@ public class settings {
 
             if (newSettings.getBoolean("dark_theme"))
                 root.getStylesheets().setAll(
-                        String.valueOf(getClass().getResource("app/css/dark/settings.css")),
-                        String.valueOf(getClass().getResource("app/css/settings.css"))
+                        String.valueOf(getClass().getResource("../app/css/dark/settings.css")),
+                        String.valueOf(getClass().getResource("../app/css/settings.css"))
                 );
 
             else
                 root.getStylesheets().setAll(
-                        String.valueOf(getClass().getResource("app/css/standard/settings.css")),
-                        String.valueOf(getClass().getResource("app/css/settings.css"))
+                        String.valueOf(getClass().getResource("../app/css/standard/settings.css")),
+                        String.valueOf(getClass().getResource("../app/css/settings.css"))
                 );
 
         } catch (JSONException e) {
@@ -208,7 +209,7 @@ public class settings {
             settings.put("save_album_art", saveAlbumArt.getSelectionModel().getSelectedIndex());
             settings.put("advanced_validation", advancedValidationToggle.isSelected());
 
-            // Meta-Data Application
+            // Meta-Data ../application
             settings.put("album_art", albumArtToggle.isSelected());
             settings.put("album_title", albumTitleToggle.isSelected());
             settings.put("song_title", songTitleToggle.isSelected());
@@ -216,7 +217,7 @@ public class settings {
             settings.put("year", yearToggle.isSelected());
             settings.put("track", trackNumberToggle.isSelected());
 
-            // Application Configuration
+            // ../application Configuration
             settings.put("dark_theme", darkThemeToggle.isSelected());
             settings.put("data_saver", dataSaverToggle.isSelected());
 
