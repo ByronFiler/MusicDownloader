@@ -329,26 +329,6 @@ public class Model {
 
         }
 
-        public JSONObject getDownloadInfo() {
-
-            JSONObject downloadInfo = new JSONObject();
-            try {
-                downloadInfo.put("eta", downloader.getEta());
-                downloadInfo.put("downloadSpeed", downloader.getDownloadSpeed());
-                downloadInfo.put("percentComplete", downloader.getPercentComplete());
-                downloadInfo.put("song", downloader.getSong());
-                downloadInfo.put("seriesData", downloader.getGraphData());
-
-            } catch (NullPointerException e) {
-                return new JSONObject();
-            } catch (JSONException e) {
-                Debug.error(null, "Error extracting data from downloading class.", e.getCause());
-            }
-
-            return downloadInfo;
-
-        }
-
         protected synchronized void setDownloadHistory(JSONArray downloadHistory) throws IOException{
 
             ByteArrayInputStream fis = new ByteArrayInputStream(downloadHistory.toString().getBytes());
@@ -695,26 +675,6 @@ public class Model {
 
             }
 
-            protected synchronized String getPercentComplete() {
-                return percentComplete;
-            }
-
-            protected synchronized String getEta() {
-                return eta;
-            }
-
-            protected synchronized String getSong() {
-                return song;
-            }
-
-            protected synchronized String getDownloadSpeed() {
-                return downloadSpeed;
-            }
-
-            protected synchronized JSONArray getGraphData() {
-                return graphData;
-            }
-
             @Override
             public void run() {
 
@@ -746,6 +706,7 @@ public class Model {
                 }
 
                 // Download files
+                JSONArray additionalHistory = new JSONArray();
                 try {
 
                     for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
@@ -792,7 +753,8 @@ public class Model {
                             downloadHistory.put("artId", downloadObject.getJSONObject("metadata").getString("artId"));
                             downloadHistory.put("directory", downloadObject.getJSONObject("metadata").getString("directory"));
                             downloadHistory.put("id", downloadObject.getJSONArray("songs").getJSONObject(i).getString("id"));
-                            Model.getInstance().download.updateDownloadHistory(downloadHistory);
+
+                            additionalHistory.put(downloadHistory);
 
                         } catch (JSONException e) {
                             Debug.warn(thread, "Failed to generate JSON for download history result.");
@@ -801,6 +763,17 @@ public class Model {
                     }
                 } catch (JSONException e) {
                     Debug.error(thread, "JSON Error when attempting to access songs to download.", e.getCause());
+                }
+
+                // Updating the history
+                try {
+                    for (int i = 0; i < additionalHistory.length(); i++)
+                        downloadHistory.put(additionalHistory.getJSONObject(i));
+
+                    setDownloadHistory(downloadHistory);
+
+                } catch (JSONException | IOException e) {
+                    Debug.error(Thread.currentThread(), "Failed to set new download history with current download.", e.getCause());
                 }
 
                 // Check if we should delete the album art
