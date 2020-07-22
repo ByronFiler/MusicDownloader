@@ -22,3 +22,30 @@
     -fx-text-fill: #C1C7C9;
 }
 
+.combo-box {
+    -fx-background-color: rgba(255, 255, 255, 0.06);
+}
+
+.combo-box .list-cell
+{
+    -fx-background: rgba(255, 255, 255, 0.06);
+    -fx-background-color: transparent;
+    -fx-text-fill: #C1C7C9;
+}
+
+.combo-box-popup .list-view
+{
+    -fx-background-color: #121212;
+    -fx-background-insets: 0, 1;
+    -fx-effect: dropshadow( three-pass-box , rgba(0,0,0,0.6) , 8, 0.0 , 0 , 0 );
+}
+
+.combo-box-popup .list-view .list-cell:filled:hover
+{
+    -fx-background-color: white;
+    -fx-text-fill: -fx-text-inner-color;
+}
+
+.button {
+    -fx-background-color: #DADEDF;
+}

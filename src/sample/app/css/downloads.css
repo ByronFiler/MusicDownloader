@@ -19,3 +19,12 @@
     -fx-stroke-width: 2px;
     -fx-stroke: #C1C7C9;
 }
+
+.button {
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+
+    -fx-text-fill: black;
+    -fx-font-family: "Arial";
+    -fx-font-weight: bold;
+}

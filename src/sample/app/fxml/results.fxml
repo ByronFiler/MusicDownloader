@@ -13,11 +13,11 @@
       <bottom>
          <BorderPane prefHeight="40.0" prefWidth="540.0" BorderPane.alignment="CENTER">
             <right>
-               <Button styleClass="button" id="back_button" fx:id="cancel" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="120.0" text="BACK" BorderPane.alignment="CENTER" />
+               <Button styleClass="button" id="back_button" fx:id="cancel" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="120.0" text="Back" BorderPane.alignment="CENTER" />
             </right>
             <left>
                <HBox prefHeight="100.0" prefWidth="176.0" BorderPane.alignment="CENTER">
-                  <Button styleClass="button" id="confirm_button" fx:id="download" disable="true" mnemonicParsing="false" onMouseClicked="#download" prefHeight="40.0" prefWidth="120.0" text="DOWNLOAD" />
+                  <Button styleClass="button" id="confirm_button" fx:id="download" disable="true" mnemonicParsing="false" onMouseClicked="#download" prefHeight="40.0" prefWidth="120.0" text="Download" />
 
                   <ProgressIndicator fx:id="queueAdditionProgress" visible="false" />
                </HBox>
