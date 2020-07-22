@@ -465,13 +465,13 @@ public class downloads {
             Group crossBox = new Group(crossLine0, crossLine1);
 
             crossBox.setOnMouseEntered(e -> {
-                crossLine0.setStroke(Color.RED);
-                crossLine1.setStroke(Color.RED);
+                crossLine0.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.RED : Color.BLACK);
+                crossLine1.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.RED : Color.BLACK);
             });
 
             crossBox.setOnMouseExited(e -> {
-                crossLine0.setStroke(Color.rgb(193, 199, 201));
-                crossLine1.setStroke(Color.rgb(193, 199, 201));
+                crossLine0.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.rgb(193, 199, 201) : Color.GRAY);
+                crossLine1.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.rgb(193, 199, 201) : Color.GRAY);
             });
 
             crossBox.setOnMouseClicked(event -> {

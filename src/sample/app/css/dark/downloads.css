@@ -49,3 +49,7 @@
 .button {
     -fx-background-color: #DADEDF;
 }
+
+.cross-line {
+    -fx-stroke: #C1C7C9;
+}

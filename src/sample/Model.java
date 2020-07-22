@@ -248,8 +248,6 @@ public class Model {
     }
 
     public static class download{
-
-        private acquireDownloadFiles downloader;
         private volatile JSONArray downloadQueue = new JSONArray();
         private volatile JSONObject downloadObject = new JSONObject();
         private JSONArray downloadHistory = new JSONArray();
@@ -288,7 +286,7 @@ public class Model {
                 }
 
                 downloadObject = queueItem;
-                downloader = new acquireDownloadFiles(downloadObject);
+                new acquireDownloadFiles(downloadObject);
 
             } else {
 
@@ -347,18 +345,6 @@ public class Model {
             fis.close();
 
             this.downloadHistory = downloadHistory;
-
-        }
-
-        private synchronized void updateDownloadHistory(JSONObject newHistory) {
-
-            downloadHistory.put(newHistory);
-
-            try {
-                setDownloadHistory(downloadHistory);
-            } catch (IOException e) {
-                Debug.warn(null, "Failed to write updated downloads history.");
-            }
 
         }
 
@@ -819,7 +805,7 @@ public class Model {
                                 downloadObject.getJSONArray("songs").getJSONObject(i).put("completed", false);
 
                             // Starting the new download
-                            downloader = new acquireDownloadFiles(downloadObject);
+                            new acquireDownloadFiles(downloadObject);
 
                             // Update queue
                             if (downloadQueue.length() > 1) {

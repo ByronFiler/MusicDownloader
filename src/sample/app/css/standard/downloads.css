@@ -5,3 +5,15 @@
 .resultContainer {
     -fx-background-color: rgba(10, 10, 10, 0.06);
 }
+
+.resultTitle {
+    -fx-text-fill: black;
+}
+
+.resultArtist {
+    -fx-text-fill: black;
+}
+
+.cross-line {
+    -fx-stroke: gray;
+}
