@@ -336,7 +336,7 @@ public class search {
                                     );
                                 } catch (NullPointerException ignored) {}
                             } else {
-                                searchData.getJSONObject(0).put("art", new File("app/img/song_default.png").toURI().toString());
+                                searchData.getJSONObject(i).put("art", getClass().getResource("app/img/song_default.png"));
                             }
 
                         }
@@ -376,7 +376,7 @@ public class search {
 
                         VBox songArtistContainer = new VBox(title, artist);
 
-                        StringBuilder metaInfoRaw = new StringBuilder(searchData.getJSONObject(i).getBoolean("album") ? "Song" : "Album");
+                        StringBuilder metaInfoRaw = new StringBuilder(searchData.getJSONObject(i).getBoolean("album") ? "Album" : "Song");
 
                         if (!searchData.getJSONObject(i).getString("year").isBlank())
                             metaInfoRaw.append(" | ").append(searchData.getJSONObject(i).getString("year"));
@@ -456,6 +456,9 @@ public class search {
         }
 
         public void run() {
+
+            if (Model.getInstance().settings.getSettingBool("data_saver"))
+                return;
 
             try {
                 Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + query).get();
