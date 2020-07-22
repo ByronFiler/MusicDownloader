@@ -19,7 +19,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -31,6 +30,7 @@ public class Model {
     public final search search = new search();
 
     public Model() {
+
         new Thread(() -> {
 
             JSONArray downloadHistory = download.getDownloadHistory();
@@ -229,6 +229,7 @@ public class Model {
     }
 
     public static class search {
+
         private BorderPane[] searchResults;
         private JSONArray searchResultsJson;
 
@@ -245,9 +246,11 @@ public class Model {
         public void setSearchResultsJson(JSONArray searchResultsJson) {
             this.searchResultsJson = searchResultsJson;
         }
+
     }
 
     public static class download{
+
         private volatile JSONArray downloadQueue = new JSONArray();
         private volatile JSONObject downloadObject = new JSONObject();
         private JSONArray downloadHistory = new JSONArray();
@@ -309,11 +312,9 @@ public class Model {
 
             // Adding all to history except history item to remove
             try {
-                for (int i = 0; i < downloadHistory.length(); i++) {
-                    if (!downloadHistory.getJSONObject(i).toString().equals(targetDeletion.toString())) {
+                for (int i = 0; i < downloadHistory.length(); i++)
+                    if (!downloadHistory.getJSONObject(i).toString().equals(targetDeletion.toString()))
                         newDownloadHistory.put(downloadHistory.getJSONObject(i));
-                    }
-                }
             } catch (JSONException e) {
                 Debug.error(null, "Failed to validate download history to remove element.", e.getCause());
             }
@@ -328,44 +329,19 @@ public class Model {
         }
 
         protected synchronized void setDownloadHistory(JSONArray downloadHistory) throws IOException{
-
-            ByteArrayInputStream fis = new ByteArrayInputStream(downloadHistory.toString().getBytes());
-            GZIPOutputStream gzipOS = new GZIPOutputStream(
-                    new FileOutputStream(
-                            new File("usr\\json\\downloads.gz")
-                    )
-            );
-
-            byte[] buffer = new byte[1024];
-            int len;
-            while((len=fis.read(buffer)) != -1)
-                gzipOS.write(buffer, 0, len);
-
-            gzipOS.close();
-            fis.close();
-
+            gzip.compressData(new ByteArrayInputStream(downloadHistory.toString().getBytes()), new File("usr\\json\\downloads.gz"));
             this.downloadHistory = downloadHistory;
-
         }
 
         private synchronized void refreshDownloadHistory() {
+
             try {
-                GZIPInputStream gis = new GZIPInputStream(
-                        new FileInputStream(
+
+                this.downloadHistory = new JSONArray(
+                        gzip.decompressFile(
                                 new File("usr\\json\\downloads.gz")
-                        )
+                        ).toString()
                 );
-                ByteArrayOutputStream fos = new ByteArrayOutputStream();
-
-                byte[] buffer = new byte[1024];
-                int len;
-                while((len = gis.read(buffer)) != -1)
-                    fos.write(buffer, 0, len);
-
-                fos.close();
-                gis.close();
-
-                this.downloadHistory = new JSONArray(fos.toString());
 
             } catch (IOException | JSONException e) {
                 try {
@@ -379,13 +355,9 @@ public class Model {
         }
 
         private class acquireDownloadFiles implements Runnable {
+
             final Thread thread;
             final JSONObject downloadData;
-
-            volatile JSONArray graphData = new JSONArray();
-            volatile String percentComplete = "0%";
-            volatile String eta = "Calculating...";
-            volatile String downloadSpeed = "Calculating...";
             volatile String song = "";
 
             public acquireDownloadFiles(JSONObject downloadData) {
@@ -498,55 +470,6 @@ public class Model {
                 String line;
                 String downloadedFile = "";
                 while ((line = reader.readLine()) != null) {
-
-                    try {
-
-                        if (line.contains("%") && !line.contains("in")) {
-
-                            /*
-                            // Getting ETA
-                            eta = line.split("ETA")[1].strip();
-
-                            // Getting download speed
-                            downloadSpeed = line.split("at")[1].split("at")[0].split("ETA")[0].strip();
-
-                            // Getting Progress
-                            percentComplete = line.substring(11).split("%")[0].strip() + "%";
-
-
-                             */
-
-                            // Getting graph data
-                            JSONObject lineGraphData = new JSONObject();
-                            switch (downloadSpeed.replaceAll("[^A-Za-z]+", "")) {
-                                case "MiBs":
-                                    lineGraphData.put("speed", Double.parseDouble(downloadSpeed.replaceAll("[^\\d.]", "")) * 1024 * 1024);
-                                    break;
-
-                                case "KiBs":
-                                    lineGraphData.put("speed", Double.parseDouble(downloadSpeed.replaceAll("[^\\d.]", "")) * 1024);
-                                    break;
-
-                                default:
-                                    lineGraphData.put("speed", Double.parseDouble(downloadSpeed.replaceAll("[^\\d.]", "")));
-                            }
-
-                            // Playtime: (Complete Songs Playtime) + (Playtime of Current Song * Percent Complete)
-                            lineGraphData.put("time", IntStream.of(Integer.parseInt(index)-1).mapToDouble(i -> {
-                                try {
-                                    return downloadObject.getJSONArray("songs").getJSONObject(i).getInt("playtime");
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                                return 0;
-                            }).sum() + (Double.parseDouble(percentComplete.replaceAll("[^\\d.]", "")) / 100) * downloadObject.getJSONArray("songs").getJSONObject(Integer.parseInt(index)-1).getDouble("playtime"));
-
-                            graphData.put(lineGraphData);
-                        }
-
-                    } catch (Exception e) {
-                        Debug.warn(null, "[" + e.getClass() + "] Failed to process line: " + line);
-                    }
 
                     // Sourcing name of downloaded file
                     if (line.contains("[ffmpeg]")) {
@@ -958,6 +881,40 @@ public class Model {
 
         public String getVersion() {
             return version;
+        }
+
+    }
+
+    private static class gzip {
+
+        static byte[] buffer = new byte[1024];
+        static int len;
+
+        static synchronized ByteArrayOutputStream decompressFile(File fileSource) throws IOException {
+
+            GZIPInputStream gis = new GZIPInputStream(new FileInputStream(fileSource));
+            ByteArrayOutputStream fos = new ByteArrayOutputStream();
+
+            while((len = gis.read(buffer)) != -1)
+                fos.write(buffer, 0, len);
+
+            fos.close();
+            gis.close();
+
+            return fos;
+
+        }
+
+        static synchronized void compressData(ByteArrayInputStream inData, File outFile) throws IOException {
+
+            GZIPOutputStream gzipOS = new GZIPOutputStream(new FileOutputStream(outFile));
+
+            int len;
+            while((len=inData.read(buffer)) != -1)
+                gzipOS.write(buffer, 0, len);
+
+            gzipOS.close();
+            inData.close();
         }
 
     }
