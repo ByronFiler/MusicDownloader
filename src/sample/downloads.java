@@ -38,12 +38,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.IntStream;
 
-// TODO
-// Fix lag when opening downloads while downloading something
-// Remove song eta feature
-
-// THE LAG IS BECAUSE I'M CALLING METHODS WHILE IT'S DOWNLOADING SOMETHING CAUSING IT TO FREEZE, HENCE SPAWN ACTUAL DOWNLOAD AS A SEPARATE THREAD OR SOMETHING
-
 public class downloads {
 
     @FXML AnchorPane root;
@@ -92,6 +86,7 @@ public class downloads {
                             Debug.trace(Thread.currentThread(), "Detected download completion in view.");
                             Platform.runLater(() -> {
                                 eventsViewTable.getItems().clear();
+                                eventViewSelector.getItems().clear();
                                 initialize();
                             });
                             this.cancel();

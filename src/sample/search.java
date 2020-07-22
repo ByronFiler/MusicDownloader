@@ -27,6 +27,7 @@ import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -35,7 +36,9 @@ import org.jsoup.select.Elements;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -51,18 +54,20 @@ public class search {
 
     @FXML private AnchorPane root;
 
+    @FXML private VBox searchContainer;
     @FXML private TextField search;
     @FXML private ProgressIndicator loadingIcon;
     @FXML private Text errorMessage;
     @FXML private ListView<HBox> autocompleteResults;
+
     @FXML private ImageView downloads;
     @FXML private ImageView settings;
 
     // Timer timerRotate;
-    Timer hideErrorMessage;
+    private Timer hideErrorMessage;
 
-    generateAutocomplete autoCompleteThread;
-    allMusicQuery searchThread;
+    private generateAutocomplete autoCompleteThread;
+    private allMusicQuery searchThread;
 
     @FXML
     private void initialize(){
@@ -141,19 +146,10 @@ public class search {
 
                     // Starting the new search thread
                     try {
-                        if (searchThread.working()) {
-
-                            // Search is already in progress, hence inform user
-                            errorMessage.setText("A Search is already in progress, please wait.");
-                            errorMessage.setVisible(true);
-                            hideErrorMessage();
-
-                        } else {
-
-                            // Search is not in progress, hence we can start a new one
+                        if (searchThread.working())
+                            error("A Search is already in progress, please wait.");
+                        else
                             throw new NullPointerException();
-
-                        }
                     } catch (NullPointerException ignored) {
 
                         // Start a new search
@@ -162,13 +158,8 @@ public class search {
 
                     }
 
-                } else {
-
-                    // Warn user search is too short
-                    errorMessage.setText("Query is too short, no results.");
-                    hideErrorMessage();
-
-                }
+                } else
+                    error("Query is too short, no results found.");
 
             }
 
@@ -184,7 +175,18 @@ public class search {
         }
     }
 
-    private void hideErrorMessage() {
+    private void error(String message) {
+
+        autocompleteResults.getItems().clear();
+        autocompleteResults.setVisible(false);
+
+        // Repositioning directly below search bar, taking autocomplete space
+        searchContainer.getChildren().remove(errorMessage);
+        searchContainer.getChildren().add(2, errorMessage);
+
+        errorMessage.setText(message);
+        errorMessage.setVisible(true);
+
         try {
             hideErrorMessage.cancel();
         } catch (NullPointerException ignored) {}
@@ -193,13 +195,18 @@ public class search {
         hideErrorMessage.schedule(new TimerTask() {
             @Override
             public void run() {
-                errorMessage.setVisible(false);
+                Platform.runLater(() -> {
+                    errorMessage.setVisible(false);
+                    searchContainer.getChildren().remove(errorMessage);
+                    searchContainer.getChildren().add(errorMessage);
+                });
             }
         }, 2000);
+
     }
 
     // Generating the full data for the search data
-    class allMusicQuery implements Runnable {
+    private class allMusicQuery implements Runnable {
 
         private final Thread thread;
         private final String query;
@@ -265,7 +272,7 @@ public class search {
                         // Art (Albums Only)
                         if (result.select("div.cover").size() > 0) {
                             String potentialAlbumArt = result.select("img.lazy").attr("data-original");
-                            resultData.put("art", potentialAlbumArt.isBlank() ? new File(getClass().getResource("app/img/album_default.png").getPath()).toURI().toString() : potentialAlbumArt);
+                            resultData.put("art", potentialAlbumArt.isEmpty() ? new File(getClass().getResource("app/img/album_default.png").getPath()).toURI().toString() : potentialAlbumArt);
                         }
 
                         // Link
@@ -300,7 +307,7 @@ public class search {
                                 // Album Art
                                 try {
                                     String potentialAlbumArt = songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https") && !songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").equals("https://cdn-gce.allmusic.com/images/lazy.gif") ? songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") : getClass().getResource("app/img/song_default.png").toURI().toString();
-                                    searchData.getJSONObject(i).put("art", potentialAlbumArt.isBlank() ? new File(getClass().getResource("app/img/song_default.png").getPath()).toURI().toString() : potentialAlbumArt);
+                                    searchData.getJSONObject(i).put("art", potentialAlbumArt.isEmpty() ? new File(getClass().getResource("app/img/song_default.png").getPath()).toURI().toString() : potentialAlbumArt);
                                 } catch (NullPointerException ignored) {
                                     searchData.getJSONObject(i).put("art", new File(getClass().getResource("app/img/song_default.png").getPath()).toURI().toString());
                                 } catch (URISyntaxException e) {
@@ -378,10 +385,10 @@ public class search {
 
                         StringBuilder metaInfoRaw = new StringBuilder(searchData.getJSONObject(i).getBoolean("album") ? "Album" : "Song");
 
-                        if (!searchData.getJSONObject(i).getString("year").isBlank())
+                        if (!searchData.getJSONObject(i).getString("year").isEmpty())
                             metaInfoRaw.append(" | ").append(searchData.getJSONObject(i).getString("year"));
 
-                        if (!searchData.getJSONObject(i).getString("genre").isBlank())
+                        if (!searchData.getJSONObject(i).getString("genre").isEmpty())
                             metaInfoRaw.append(" | ").append(searchData.getJSONObject(i).getString("genre"));
 
                         Label metaInfo = new Label(metaInfoRaw.toString());
@@ -424,11 +431,8 @@ public class search {
 
                 Debug.trace(thread, "No search results found for query: " + query);
                 Platform.runLater(() -> {
-                    // timerRotate.cancel();
                     loadingIcon.setVisible(false);
-
-                    errorMessage.setText("No Search Results Found");
-                    errorMessage.setVisible(true);
+                    error("No Search Results Found");
                 });
 
             }
@@ -438,7 +442,7 @@ public class search {
     }
 
     // Updating the UI with the autocomplete suggestions
-    class generateAutocomplete implements Runnable {
+    private class generateAutocomplete implements Runnable {
 
         private final Thread thread;
         private volatile boolean killRequest = false;
@@ -505,19 +509,19 @@ public class search {
                 }
 
                 // Add generated data to the search query
-                if (!killRequest && !search.getText().isBlank())
+                if (!killRequest && !search.getText().isEmpty())
                     Platform.runLater(() -> {
                         autocompleteResults.getItems().setAll(autocompleteResultsView);
                         autocompleteResults.setVisible(true);
                     });
 
-                if (search.getText().isBlank())
+                if (search.getText().isEmpty())
                     Platform.runLater(() -> {
                         autocompleteResults.getItems().clear();
                         autocompleteResults.setVisible(false);
                     });
 
-            } catch (IOException ignored) {
+            } catch (SocketException | UnknownHostException ignored) {
 
                 // Failed to connect, handling
                 Debug.warn(thread, "Error sending web request: https://www.allmusic.com/search/all/" + query);
@@ -526,14 +530,17 @@ public class search {
                     new awaitReconnection();
                 });
 
-            } catch (URISyntaxException ignored) {}
+            } catch (HttpStatusException ignored) {
+            } catch (URISyntaxException | IOException e) {
+                Debug.error(Thread.currentThread(), "Unknown exception when requesting user search.", e.getCause());
+            }
 
         }
 
     }
 
     // Check that when internet connection is lost, they must reconnect before doing anything else
-    public class awaitReconnection implements Runnable {
+    private class awaitReconnection implements Runnable {
 
         public awaitReconnection() {
             Thread thread = new Thread(this, "reconnection");
@@ -542,50 +549,43 @@ public class search {
 
         public void run() {
 
-            Timer connectionAttempt = new Timer();
-            TimerTask webRequest = new TimerTask() {
+            new Timer().schedule(new TimerTask() {
+
                 @Override
                 public void run() {
-                    boolean reconnected = false;
+
+                    Platform.runLater(() -> {
+                        autocompleteResults.getItems().clear();
+                        autocompleteResults.setVisible(false);
+
+                        searchContainer.getChildren().remove(errorMessage);
+                        searchContainer.getChildren().add(2, errorMessage);
+
+                        errorMessage.setText("Failed to connect, check internet access, awaiting reconnection...");
+                        errorMessage.setVisible(true);
+                    });
+
                     try {
 
-                        Platform.runLater(() -> errorMessage.setText("Attempting to reconnect..."));
-
                         if (InetAddress.getByName("allmusic.com").isReachable(1000)) {
-                            // Connection reestablished
+
                             Platform.runLater(() -> {
                                 search.setDisable(false);
                                 errorMessage.setVisible(false);
+
+                                searchContainer.getChildren().remove(errorMessage);
+                                searchContainer.getChildren().add(errorMessage);
                             });
                             Debug.trace(null, "Connection reestablished.");
-                            reconnected = true;
-                            connectionAttempt.cancel();
+                            this.cancel();
+
                         }
 
                     } catch (IOException ignored) {}
 
-                    if (!reconnected) {
-                        final int[] countDown = {Model.getInstance().settings.getSettingBool("data_saver") ? 60 : 10};
-                        Platform.runLater(() -> errorMessage.setVisible(true));
-                        Timer messageDisplay = new Timer();
-                        messageDisplay.schedule(new TimerTask() {
-                            @Override
-                            public void run() {
-                                if (countDown[0] == 0) {
-                                    errorMessage.setText("Connection failed, attempting to reconnect...");
-                                    messageDisplay.cancel();
-                                } else {
-                                    errorMessage.setText(String.format("Connection failed, attempting to reconnect in %s second%s...", countDown[0], countDown[0] == 1 ? "" : "s"));
-                                    countDown[0]--;
-                                }
-                            }
-                        }, 0, 1000);
-                    }
-
                 }
-            };
-            connectionAttempt.schedule(webRequest, 0, Model.getInstance().settings.getSettingBool("data_saver") ? 60 : 10 * 1000);
 
+            }, 0, 1000);
         }
 
     }

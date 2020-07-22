@@ -61,7 +61,7 @@
                   <Insets />
                </StackPane.margin>
                <center>
-                  <VBox alignment="CENTER" maxHeight="200.0" maxWidth="500.0" prefHeight="200.0" prefWidth="500.0" styleClass="searchContainer" BorderPane.alignment="CENTER">
+                  <VBox fx:id="searchContainer" alignment="CENTER" maxHeight="200.0" maxWidth="500.0" prefHeight="200.0" prefWidth="500.0" styleClass="searchContainer" BorderPane.alignment="CENTER">
                      <children>
                         <Label styleClass="title" text="Music Downloader">
                            <VBox.margin>
@@ -98,6 +98,9 @@
                            <font>
                               <Font name="Arial" size="16.0" />
                            </font>
+                           <VBox.margin>
+                              <Insets top="10.0" />
+                           </VBox.margin>
                         </Text>
                      </children>
                      <opaqueInsets>

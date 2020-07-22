@@ -503,6 +503,7 @@ public class Model {
 
                         if (line.contains("%") && !line.contains("in")) {
 
+                            /*
                             // Getting ETA
                             eta = line.split("ETA")[1].strip();
 
@@ -512,6 +513,8 @@ public class Model {
                             // Getting Progress
                             percentComplete = line.substring(11).split("%")[0].strip() + "%";
 
+
+                             */
 
                             // Getting graph data
                             JSONObject lineGraphData = new JSONObject();
