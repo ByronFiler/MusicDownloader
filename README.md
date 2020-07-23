@@ -20,13 +20,13 @@ Features:
   - Easily accessible downloads history and downloads client
 
 Gradle Dependencies
-  - Junit
-  - mp3agic
-  - commons-io
-  - Jsoup
-  - Org.JSON
-  - commons-codec
-  - controls-fx
-  - musicg
-  - jaudiotagger
-  - font-awesome
+  - [Junit](https://junit.org/)
+  - [mp3agic](https://github.com/mpatric/mp3agic)
+  - [commons-io](https://commons.apache.org/proper/commons-io/)
+  - [Jsoup](https://jsoup.org/)
+  - [Org.JSON](https://mvnrepository.com/artifact/org.json)
+  - [commons-codec](https://commons.apache.org/proper/commons-codec/)
+  - [controls-fx](https://github.com/controlsfx/controlsfx)
+  - [musicg](https://github.com/fracpete/musicg)
+  - [jaudiotagger](http://www.jthink.net/jaudiotagger/)
+  - [font-awesome](https://github.com/FortAwesome/Font-Awesome)
