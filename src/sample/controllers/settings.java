@@ -17,8 +17,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import sample.Debug;
-import sample.Model;
+import sample.utils.debug;
+import sample.model.Model;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -108,7 +108,7 @@ public class settings {
                     String.valueOf(getClass().getResource("../app/css/standard/settings.css"))
             );
 
-        Debug.trace(null, "Initialized settings view.");
+        debug.trace(null, "Initialized settings view.");
 
     }
 
@@ -123,7 +123,7 @@ public class settings {
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch (IOException e) {
-            Debug.error(null, "Missing FXML File: Search.fxml", e.getCause());
+            debug.error(null, "Missing FXML File: Search.fxml", e.getCause());
         }
 
     }
@@ -164,7 +164,7 @@ public class settings {
                 );
 
         } catch (JSONException e) {
-            Debug.error(null, "Error checking new settings for dark theme.", e.getCause());
+            debug.error(null, "Error checking new settings for dark theme.", e.getCause());
         }
 
         // Check if settings have been adjusted from default
@@ -196,7 +196,7 @@ public class settings {
             cancel.setText("Back");
         });
 
-        Debug.trace(null, "Updated settings file");
+        debug.trace(null, "Updated settings file");
     }
 
     private JSONObject getNewSettings() {
@@ -222,7 +222,7 @@ public class settings {
             settings.put("data_saver", dataSaverToggle.isSelected());
 
         } catch (JSONException e) {
-            Debug.error(null, "Failed to generate new settings.", e.getCause());
+            debug.error(null, "Failed to generate new settings.", e.getCause());
         }
 
         return settings;
@@ -250,12 +250,12 @@ public class settings {
                     try {
                         latestVersion.setText(jsonData.get("version").toString());
                     } catch (JSONException ignored) {
-                        Debug.warn(t, "Found data syntactically incorrect.");
+                        debug.warn(t, "Found data syntactically incorrect.");
                     }
                 });
 
             } catch (IOException | JSONException e) {
-                Debug.warn(t, "Failed to get latest version, connection issue.");
+                debug.warn(t, "Failed to get latest version, connection issue.");
                 new awaitReconnection();
                 Platform.runLater(() -> latestVersion.setText("Unknown"));
             }
@@ -319,7 +319,7 @@ public class settings {
 
             } catch (IOException ignored) {
 
-                Debug.warn(thread, "Failed to verify executable: " + executable);
+                debug.warn(thread, "Failed to verify executable: " + executable);
                 Platform.runLater(() -> element.setText("Not Configured"));
 
             }

@@ -1,4 +1,4 @@
-package sample;
+package sample.utils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -11,7 +11,7 @@ import java.util.Date;
 // Error should dump all messages to file without ASCII colours
 // Ascii colours should only be visible if the terminal allows it
 
-public class Debug {
+public class debug {
 
     // Debugging configuration, as it stands volatile is not needed but in future could be
     private static boolean debug = true;
@@ -33,7 +33,7 @@ public class Debug {
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
         if (debug){
-            synchronized ( Debug.class )
+            synchronized ( sample.utils.debug.class )
             {
                 if (t != null) {
 
@@ -70,7 +70,7 @@ public class Debug {
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
         if (debug){
-            synchronized ( Debug.class )
+            synchronized ( sample.utils.debug.class )
             {
                 if (t != null) {
 

@@ -32,8 +32,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import sample.Debug;
-import sample.Model;
+import sample.utils.debug;
+import sample.model.Model;
 
 import java.io.File;
 import java.io.IOException;
@@ -96,7 +96,7 @@ public class search {
                     String.valueOf(getClass().getResource("../app/css/standard/search.css"))
             );
 
-        Debug.trace(null, "Initialized search view.");
+        debug.trace(null, "Initialized search view.");
     }
 
     @FXML
@@ -108,7 +108,7 @@ public class search {
             mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch(IOException e) {
-            Debug.error(null, "FXML Error: downloads.fxml", e.getCause());
+            debug.error(null, "FXML Error: downloads.fxml", e.getCause());
         }
     }
 
@@ -122,7 +122,7 @@ public class search {
             mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch(IOException e) {
-            Debug.error(null, "Missing FXML File: Settings.fxml", e.getCause());
+            debug.error(null, "Missing FXML File: Settings.fxml", e.getCause());
         }
 
     }
@@ -238,7 +238,7 @@ public class search {
                     // timerRotate.cancel();
                     loadingIcon.setVisible(false);
 
-                    Debug.warn(thread, "Failed to connect to https://www.allmusic.com/search/all/" + query);
+                    debug.warn(thread, "Failed to connect to https://www.allmusic.com/search/all/" + query);
                     new awaitReconnection();
                 });
                 return;
@@ -283,7 +283,7 @@ public class search {
                         searchData.put(resultData);
 
                     } catch (JSONException e) {
-                        Debug.error(thread, "Failed to process search request JSON for https://www.allmusic.com/search/all/" + query, e.getCause());
+                        debug.error(thread, "Failed to process search request JSON for https://www.allmusic.com/search/all/" + query, e.getCause());
                     }
                 }
             }
@@ -313,7 +313,7 @@ public class search {
                                 } catch (NullPointerException ignored) {
                                     searchData.getJSONObject(i).put("art", new File(getClass().getResource("../app/img/song_default.png").getPath()).toURI().toString());
                                 } catch (URISyntaxException e) {
-                                    Debug.error(null, "URI Formation exception loading song default image.", e.getCause());
+                                    debug.error(null, "URI Formation exception loading song default image.", e.getCause());
                                 }
 
                                 // Year
@@ -350,12 +350,12 @@ public class search {
 
                         }
                     } catch (JSONException e) {
-                        Debug.error(thread, "Failed to process found search results.", e.getCause());
+                        debug.error(thread, "Failed to process found search results.", e.getCause());
                     } catch (IOException e) {
                         try {
-                            Debug.warn(thread, "Connection error on connecting to: " + searchData.getJSONObject(i).getString("link"));
+                            debug.warn(thread, "Connection error on connecting to: " + searchData.getJSONObject(i).getString("link"));
                         } catch (JSONException er) {
-                            Debug.error(thread, "Failed to process found search results.", e.getCause());
+                            debug.error(thread, "Failed to process found search results.", e.getCause());
                         }
                     }
 
@@ -410,7 +410,7 @@ public class search {
 
                     } catch (JSONException | IllegalArgumentException e) {
                         e.printStackTrace();
-                        Debug.error(thread, "Failed to generate table result", e.getCause());
+                        debug.error(thread, "Failed to generate table result", e.getCause());
                     }
                 }
 
@@ -426,12 +426,12 @@ public class search {
                     Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39)));
 
                 } catch (IOException e) {
-                    Debug.error(null, "FXML Error: Settings.fxml", e.getCause());
+                    debug.error(null, "FXML Error: Settings.fxml", e.getCause());
                 }
 
             } else {
 
-                Debug.trace(thread, "No search results found for query: " + query);
+                debug.trace(thread, "No search results found for query: " + query);
                 Platform.runLater(() -> {
                     loadingIcon.setVisible(false);
                     error("No Search Results Found");
@@ -506,7 +506,7 @@ public class search {
 
                         }
                     } catch (JSONException e) {
-                        Debug.warn(Thread.currentThread(), "Failed to parse JSON: " + String.format("{\"album\": %s, \"title\": \"%s\"}", result.select("div.cover").size() > 0, result.select("div.title").text().replaceAll("\"", "")));
+                        debug.warn(Thread.currentThread(), "Failed to parse JSON: " + String.format("{\"album\": %s, \"title\": \"%s\"}", result.select("div.cover").size() > 0, result.select("div.title").text().replaceAll("\"", "")));
                     }
                 }
 
@@ -526,7 +526,7 @@ public class search {
             } catch (SocketException | UnknownHostException ignored) {
 
                 // Failed to connect, handling
-                Debug.warn(thread, "Error sending web request: https://www.allmusic.com/search/all/" + query);
+                debug.warn(thread, "Error sending web request: https://www.allmusic.com/search/all/" + query);
                 Platform.runLater(() -> {
                     search.setDisable(true);
                     new awaitReconnection();
@@ -534,7 +534,7 @@ public class search {
 
             } catch (HttpStatusException ignored) {
             } catch (URISyntaxException | IOException e) {
-                Debug.error(Thread.currentThread(), "Unknown exception when requesting user search.", e.getCause());
+                debug.error(Thread.currentThread(), "Unknown exception when requesting user search.", e.getCause());
             }
 
         }
@@ -578,7 +578,7 @@ public class search {
                                 searchContainer.getChildren().remove(errorMessage);
                                 searchContainer.getChildren().add(errorMessage);
                             });
-                            Debug.trace(null, "Connection reestablished.");
+                            debug.trace(null, "Connection reestablished.");
                             this.cancel();
 
                         }

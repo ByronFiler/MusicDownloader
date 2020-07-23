@@ -25,8 +25,8 @@ import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import sample.Debug;
-import sample.Model;
+import sample.utils.debug;
+import sample.model.Model;
 
 import java.awt.*;
 import java.io.File;
@@ -76,7 +76,7 @@ public class downloads {
 
                     }
                 } catch (JSONException e) {
-                    Debug.error(null, "Error parsing JSON for download object.", e.getCause());
+                    debug.error(null, "Error parsing JSON for download object.", e.getCause());
                 }
 
                 // TimerTask to update and redraw if necessary
@@ -85,7 +85,7 @@ public class downloads {
                     public void run() {
 
                         if (Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString())) {
-                            Debug.trace(Thread.currentThread(), "Detected download completion in view.");
+                            debug.trace(Thread.currentThread(), "Detected download completion in view.");
                             Platform.runLater(() -> {
                                 eventsViewTable.getItems().clear();
                                 eventViewSelector.getItems().clear();
@@ -133,7 +133,7 @@ public class downloads {
                                     }
                                 }
                             } catch (JSONException e) {
-                                Debug.error(Thread.currentThread(), "Failed to parse JSON to update element result.", e.getCause());
+                                debug.error(Thread.currentThread(), "Failed to parse JSON to update element result.", e.getCause());
                             }
                         }
                     }
@@ -169,7 +169,7 @@ public class downloads {
 
                     }
                 } catch (JSONException e) {
-                    Debug.error(null, "Failed to parse data to draw planned queue items.", e.getCause());
+                    debug.error(null, "Failed to parse data to draw planned queue items.", e.getCause());
                 }
             }
 
@@ -186,7 +186,7 @@ public class downloads {
 
                     } catch (JSONException e) {
                         // Error for now, later handle it and make it a warning
-                        Debug.error(null, "Failed to parse JSON to draw downloads history.", e.getCause());
+                        debug.error(null, "Failed to parse JSON to draw downloads history.", e.getCause());
                     }
 
                 }
@@ -245,7 +245,7 @@ public class downloads {
                                 break;
 
                             default:
-                                Debug.error(null, "Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
+                                debug.error(null, "Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
                         }
                     } catch (NullPointerException ignored) {}
                 });
@@ -253,7 +253,7 @@ public class downloads {
             }
 
         } else {
-            Debug.warn(null, "Downloads was accessed without any downloads history, downloads in progress or any download queue items, this should not have h../appened.");
+            debug.warn(null, "Downloads was accessed without any downloads history, downloads in progress or any download queue items, this should not have h../appened.");
         }
 
         // Load style
@@ -263,7 +263,7 @@ public class downloads {
             root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/standard/downloads.css")));
 
 
-        Debug.trace(null, "Initialized downloads view.");
+        debug.trace(null, "Initialized downloads view.");
 
     }
 
@@ -277,7 +277,7 @@ public class downloads {
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch(IOException e) {
-            Debug.error(null, "FXML Error: search.fxml", e.getCause());
+            debug.error(null, "FXML Error: search.fxml", e.getCause());
         }
 
     }
@@ -323,7 +323,7 @@ public class downloads {
 
         } else {
 
-            Debug.warn(Thread.currentThread(), "Failed to use cached resource.");
+            debug.warn(Thread.currentThread(), "Failed to use cached resource.");
 
             // Sending the request causes lag, hence use as thread, only needs to be called once, in future can add network error handling but that seems excessive as of the moment
             try {
@@ -341,7 +341,7 @@ public class downloads {
                                 )
                         );
                     } catch (URISyntaxException er) {
-                        Debug.error(null, "Failed to set default album art.", er.getCause());
+                        debug.error(null, "Failed to set default album art.", er.getCause());
                     }
 
                     try {
@@ -357,16 +357,16 @@ public class downloads {
                             );
                         }
                     } catch (IOException e) {
-                        Debug.warn(null, "Failed to connect to allmusic to get album art, using default.");
+                        debug.warn(null, "Failed to connect to allmusic to get album art, using default.");
                     } catch (JSONException e) {
-                        Debug.error(null, "Failed to get art for loading resource.", e.getCause());
+                        debug.error(null, "Failed to get art for loading resource.", e.getCause());
                     }
                 }, "load-art");
                 loadAlbumArt.setDaemon(true);
                 loadAlbumArt.start();
 
             } catch (IndexOutOfBoundsException e) {
-                Debug.warn(null, "Internal error loading album art.");
+                debug.warn(null, "Internal error loading album art.");
             }
         }
 
@@ -480,7 +480,7 @@ public class downloads {
                     Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
                     mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth() - 16, mainWindow.getHeight() - 39));
                 } catch (IOException er) {
-                    Debug.error(null, "FXML Error: Downloads.fxml", er.getCause());
+                    debug.error(null, "FXML Error: Downloads.fxml", er.getCause());
                 }
 
             });

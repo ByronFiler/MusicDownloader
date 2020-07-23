@@ -10,8 +10,8 @@ import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import sample.Debug;
-import sample.Model;
+import sample.utils.debug;
+import sample.utils.gzip;
 
 import java.io.*;
 import java.net.URL;
@@ -29,7 +29,7 @@ public class download{
 
     public download() {
         refreshDownloadHistory();
-        Debug.trace(null, String.format("Found a download history of %s item%s.", downloadHistory.length(), downloadHistory.length() == 1 ? "" : "s"));
+        debug.trace(null, String.format("Found a download history of %s item%s.", downloadHistory.length(), downloadHistory.length() == 1 ? "" : "s"));
     }
 
     public synchronized JSONArray getDownloadHistory() {
@@ -49,14 +49,14 @@ public class download{
         if (downloadQueue.length() == 0 && !downloadObject.has("songs")) {
 
             // No downloads in progress or in queue, hence start a new download thread.
-            Debug.trace(null, "New download request received, queue is blank and hence will begin downloading...");
+            debug.trace(null, "New download request received, queue is blank and hence will begin downloading...");
 
             // For processing downloads, the progress must be viewed as started to work
             try {
                 for (int i = 0; i < queueItem.getJSONArray("songs").length(); i++)
                     queueItem.getJSONArray("songs").getJSONObject(i).put("completed", false);
             } catch (JSONException e) {
-                Debug.error(null, "Error updating downloads queue.", e.getCause());
+                debug.error(null, "Error updating downloads queue.", e.getCause());
             }
 
             downloadObject = queueItem;
@@ -65,7 +65,7 @@ public class download{
         } else {
 
             // Download already in progress, hence queue
-            Debug.trace(null, String.format("New download request received, adding to queue in position %s.", getDownloadQueue().length()+1));
+            debug.trace(null, String.format("New download request received, adding to queue in position %s.", getDownloadQueue().length()+1));
             downloadQueue.put(queueItem);
 
         }
@@ -87,20 +87,20 @@ public class download{
                 if (!downloadHistory.getJSONObject(i).toString().equals(targetDeletion.toString()))
                     newDownloadHistory.put(downloadHistory.getJSONObject(i));
         } catch (JSONException e) {
-            Debug.error(null, "Failed to validate download history to remove element.", e.getCause());
+            debug.error(null, "Failed to validate download history to remove element.", e.getCause());
         }
 
         // Rewriting the new history
         try {
             setDownloadHistory(newDownloadHistory);
         } catch (IOException e) {
-            Debug.error(null, "Error writing new download history.", e.getCause());
+            debug.error(null, "Error writing new download history.", e.getCause());
         }
 
     }
 
     public synchronized void setDownloadHistory(JSONArray downloadHistory) throws IOException{
-        Model.gzip.compressData(new ByteArrayInputStream(downloadHistory.toString().getBytes()), new File("usr\\json\\downloads.gz"));
+        gzip.compressData(new ByteArrayInputStream(downloadHistory.toString().getBytes()), new File("usr\\json\\downloads.gz"));
         this.downloadHistory = downloadHistory;
     }
 
@@ -109,7 +109,7 @@ public class download{
         try {
 
             this.downloadHistory = new JSONArray(
-                    Model.gzip.decompressFile(
+                    gzip.decompressFile(
                             new File("usr\\json\\downloads.gz")
                     ).toString()
             );
@@ -120,7 +120,7 @@ public class download{
                     if (!new File("usr\\json\\downloads.gz").createNewFile())
                         throw new IOException();
             } catch (IOException er) {
-                Debug.warn(null, "Failed to create new downloads history file.");
+                debug.warn(null, "Failed to create new downloads history file.");
             }
         }
     }
@@ -148,7 +148,7 @@ public class download{
                         new File("smp.mp3")
                 );
             } catch (IOException e) {
-                Debug.warn(thread, "Error connecting to: " + sampleFileSource);
+                debug.warn(thread, "Error connecting to: " + sampleFileSource);
                 // Handle reconnection
             }
 
@@ -158,7 +158,7 @@ public class download{
             } catch (Exception ignored) {} // Falsely throws an exception even on success
 
             if (!new File("smp.mp3").delete())
-                Debug.warn(thread, "Failed to delete : smp.mp3");
+                debug.warn(thread, "Failed to delete : smp.mp3");
 
             // Checking if the download file needs to be converted
 
@@ -176,15 +176,15 @@ public class download{
                 }
 
             } catch (ArrayIndexOutOfBoundsException ignored) {
-                Debug.warn(thread, "File is too large to be checked.");
+                debug.warn(thread, "File is too large to be checked.");
                 return 1;
             }
 
             // Deleting temporary files
             if (!new File("dl.wav").delete())
-                Debug.warn(thread, "Failed to delete file: dl.wav");
+                debug.warn(thread, "Failed to delete file: dl.wav");
             if (!new File("smp.wav").delete())
-                Debug.warn(thread, "Failed to delete file: smp.wav");
+                debug.warn(thread, "Failed to delete file: smp.wav");
 
             FingerprintSimilarityComputer fingerprint = new FingerprintSimilarityComputer(sampleData, downloadData);
             return fingerprint.getFingerprintsSimilarity().getScore();
@@ -203,7 +203,7 @@ public class download{
                         if (new File(folderRequest + "(" + i + ")").mkdir())
                             return folderRequest + "(" + i + ")";
                         else {
-                            Debug.error(thread, "Failed to create directory: " + folderRequest + "(" + i + ")", null);
+                            debug.error(thread, "Failed to create directory: " + folderRequest + "(" + i + ")", null);
                         }
                     }
                 }
@@ -211,7 +211,7 @@ public class download{
                 if (new File(folderRequest).mkdir())
                     return folderRequest;
                 else {
-                    Debug.error(thread, "Failed to create directory: " + folderRequest, null);
+                    debug.error(thread, "Failed to create directory: " + folderRequest, null);
                 }
             }
 
@@ -251,7 +251,7 @@ public class download{
 
             // Delete now useless bat
             if (!new File("exec.bat").delete())
-                Debug.warn(thread, "Failed to delete file: exec.bat");
+                debug.warn(thread, "Failed to delete file: exec.bat");
 
             // Validate
             if (Model.getInstance().settings.getSettingBool("advanced_validation")) {
@@ -260,7 +260,7 @@ public class download{
                         downloadedFile
                 );
 
-                Debug.trace(
+                debug.trace(
                         thread,
                         String.format(
                                 "Calculated downloaded validity of %s at %2.2f [%s]",
@@ -274,7 +274,7 @@ public class download{
 
                     // Delete downloaded files & sample
                     if (!new File(downloadedFile).delete()) {
-                        Debug.warn(thread, "Failed to delete: " + downloadedFile);
+                        debug.warn(thread, "Failed to delete: " + downloadedFile);
                     }
 
                     if (song.getJSONArray("source").length() > sourceDepth + 2) {
@@ -282,7 +282,7 @@ public class download{
                         downloadFile(song, format, sourceDepth + 1, index);
                         return;
                     } else {
-                        Debug.warn(thread, "Failed to find a song in sources that was found to be valid, inform user of failure.");
+                        debug.warn(thread, "Failed to find a song in sources that was found to be valid, inform user of failure.");
                     }
 
                 }
@@ -336,14 +336,14 @@ public class download{
 
                         // Delete old file
                         if (!new File(downloadedFile).delete()) {
-                            Debug.error(thread, "Failed to delete file: " + downloadedFile, new IOException().getCause());
+                            debug.error(thread, "Failed to delete file: " + downloadedFile, new IOException().getCause());
                         }
 
                     } catch (IOException | NotSupportedException e) {
                         e.printStackTrace();
                     }
                 } catch (InvalidDataException | UnsupportedTagException e) {
-                    Debug.warn(thread, "Failed to apply meta data to: " + downloadedFile);
+                    debug.warn(thread, "Failed to apply meta data to: " + downloadedFile);
                 }
 
             } else {
@@ -373,7 +373,7 @@ public class download{
                         new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
                 );
             } catch (IOException e) {
-                Debug.error(thread, "Failed to download album art.", e.getCause());
+                debug.error(thread, "Failed to download album art.", e.getCause());
             } catch (JSONException ignored) {}
 
             // Cache the album art
@@ -383,9 +383,9 @@ public class download{
                         Paths.get("usr\\cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg")
                 );
             } catch (JSONException ignored) {
-                Debug.warn(thread, "Failed to get JSON data to cache album art.");
+                debug.warn(thread, "Failed to get JSON data to cache album art.");
             } catch (IOException ignored) {
-                Debug.warn(thread, "Failed to cache album art.");
+                debug.warn(thread, "Failed to cache album art.");
             }
 
             // Download files
@@ -406,9 +406,9 @@ public class download{
                         );
                     } catch (IOException | JSONException e) {
                         try {
-                            Debug.error(thread, "Error downloading song: " + downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"), e.getCause());
+                            debug.error(thread, "Error downloading song: " + downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"), e.getCause());
                         } catch (JSONException er) {
-                            Debug.error(thread, "JSON Error downloading song", er.getCause());
+                            debug.error(thread, "JSON Error downloading song", er.getCause());
                         }
 
                     }
@@ -416,7 +416,7 @@ public class download{
                     // Update internal referencing
                     downloadObject.getJSONArray("songs").getJSONObject(i).put("completed", true);
 
-                    Debug.trace(
+                    debug.trace(
                             thread,
                             String.format(
                                     "Successfully downloaded \"%s\" (%s of %s)",
@@ -440,12 +440,12 @@ public class download{
                         additionalHistory.put(downloadHistory);
 
                     } catch (JSONException e) {
-                        Debug.warn(thread, "Failed to generate JSON for download history result.");
+                        debug.warn(thread, "Failed to generate JSON for download history result.");
                     }
 
                 }
             } catch (JSONException e) {
-                Debug.error(thread, "JSON Error when attempting to access songs to download.", e.getCause());
+                debug.error(thread, "JSON Error when attempting to access songs to download.", e.getCause());
             }
 
             // Updating the history
@@ -456,7 +456,7 @@ public class download{
                 setDownloadHistory(downloadHistory);
 
             } catch (JSONException | IOException e) {
-                Debug.error(Thread.currentThread(), "Failed to set new download history with current download.", e.getCause());
+                debug.error(Thread.currentThread(), "Failed to set new download history with current download.", e.getCause());
             }
 
             // Check if we should delete the album art
@@ -466,28 +466,28 @@ public class download{
                     // Delete album art always
                     case 0:
                         if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
-                            Debug.warn(thread, "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
+                            debug.warn(thread, "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
                         break;
 
                     // Delete for songs
                     case 1:
                         if (downloadObject.getJSONArray("songs").length() == 1)
                             if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
-                                Debug.warn(thread, "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
+                                debug.warn(thread, "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
                         break;
 
                     // Delete for albums
                     case 2:
                         if (downloadObject.getJSONArray("songs").length() > 1)
                             if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
-                                Debug.warn(thread, "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
+                                debug.warn(thread, "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
                         break;
 
                     default:
-                        Debug.error(Thread.currentThread(), "Unexpected value: " + Model.getInstance().settings.getSettingInt("save_album_art"), new IllegalStateException().getCause());
+                        debug.error(Thread.currentThread(), "Unexpected value: " + Model.getInstance().settings.getSettingInt("save_album_art"), new IllegalStateException().getCause());
                 }
             } catch (JSONException e) {
-                Debug.error(thread, "Failed to perform check to delete album art.", e.getCause());
+                debug.error(thread, "Failed to perform check to delete album art.", e.getCause());
             }
 
             // Move onto the next item if necessary
@@ -522,7 +522,7 @@ public class download{
                         }
 
                     } catch (JSONException e) {
-                        Debug.error(thread, "Failed to process queue.", e.getCause());
+                        debug.error(thread, "Failed to process queue.", e.getCause());
                     }
 
                 } else {

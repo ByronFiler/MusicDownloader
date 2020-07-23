@@ -6,6 +6,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import sample.utils.debug;
 
 import java.io.IOException;
 
@@ -34,7 +35,7 @@ public class Main extends Application {
         primaryStage.setTitle("Music Downloader");
         primaryStage.show();
 
-        Debug.trace(null, "Primary Stage Generated");
+        debug.trace(null, "Primary Stage Generated");
     }
 
 

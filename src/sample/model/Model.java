@@ -1,4 +1,4 @@
-package sample;
+package sample.model;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -6,18 +6,15 @@ import org.apache.commons.io.FilenameUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import sample.model.download;
-import sample.model.search;
-import sample.model.settings;
+import sample.utils.debug;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Objects;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 public class Model {
     private final static Model instance = new Model();
@@ -44,7 +41,7 @@ public class Model {
                         usedArtIds.add(downloadHistory.getJSONObject(i).getString("artId"));
                 }
             } catch (JSONException e) {
-                Debug.error(null, "Failed to parse download history for art IDs.", e.getCause());
+                debug.error(null, "Failed to parse download history for art IDs.", e.getCause());
             }
 
             for (File foundFile: Objects.requireNonNull(new File("usr/cached").listFiles())) {
@@ -99,7 +96,7 @@ public class Model {
 
                 } else {
                     if (!foundFile.delete())
-                        Debug.warn(null, "Failed to delete file: " + foundFile.getAbsolutePath());
+                        debug.warn(null, "Failed to delete file: " + foundFile.getAbsolutePath());
                     else
                         deletedFilesCount++;
                 }
@@ -107,7 +104,7 @@ public class Model {
             }
 
             if (deletedFilesCount > 0)
-                Debug.trace(Thread.currentThread(), String.format("Deleted %s non used file%s.", deletedFilesCount, deletedFilesCount == 1 ? "" : "s"));
+                debug.trace(Thread.currentThread(), String.format("Deleted %s non used file%s.", deletedFilesCount, deletedFilesCount == 1 ? "" : "s"));
 
             try {
 
@@ -133,7 +130,7 @@ public class Model {
                     deletedFilesCount = 0;
                     for (File deleteFile: deleteFiles) {
                         if (!deleteFile.delete())
-                            Debug.warn(Thread.currentThread(), "Failed to delete " + deleteFile.getAbsolutePath());
+                            debug.warn(Thread.currentThread(), "Failed to delete " + deleteFile.getAbsolutePath());
                         else
                             deletedFilesCount++;
                     }
@@ -157,17 +154,17 @@ public class Model {
                                     )
                             );
 
-                        Debug.trace(Thread.currentThread(), deletedFilesMessage.toString());
+                        debug.trace(Thread.currentThread(), deletedFilesMessage.toString());
 
                     }
 
                 } catch (IOException e) {
-                    Debug.warn(null, "Failed to write updated downloads history.");
+                    debug.warn(null, "Failed to write updated downloads history.");
                 }
 
 
             } catch (JSONException e) {
-                Debug.error(null, "Failed to rewrite JSON data for download queue optimisation.", e.getCause());
+                debug.error(null, "Failed to rewrite JSON data for download queue optimisation.", e.getCause());
             }
 
             // Start re-downloading missing files.
@@ -206,7 +203,7 @@ public class Model {
 
                 }
                 if (reacquiredFilesCount > 0) {
-                    Debug.trace(
+                    debug.trace(
                             Thread.currentThread(),
                             String.format("Reacquired %s file%s to cache.", reacquiredFilesCount, reacquiredFilesCount == 1 ? "" : "s")
                     );
@@ -215,7 +212,7 @@ public class Model {
                 }
 
             } catch (JSONException | IOException e) {
-                Debug.error(Thread.currentThread(), "Failed to get art for checking files to re-download.", e.getCause());
+                debug.error(Thread.currentThread(), "Failed to get art for checking files to re-download.", e.getCause());
             }
 
         }, "cache-optimiser").start();
@@ -224,39 +221,5 @@ public class Model {
 
     public static Model getInstance() {
         return instance;
-    }
-
-    public static class gzip {
-
-        static byte[] buffer = new byte[1024];
-        static int len;
-
-        public static synchronized ByteArrayOutputStream decompressFile(File fileSource) throws IOException {
-
-            GZIPInputStream gis = new GZIPInputStream(new FileInputStream(fileSource));
-            ByteArrayOutputStream fos = new ByteArrayOutputStream();
-
-            while((len = gis.read(buffer)) != -1)
-                fos.write(buffer, 0, len);
-
-            fos.close();
-            gis.close();
-
-            return fos;
-
-        }
-
-        public static synchronized void compressData(ByteArrayInputStream inData, File outFile) throws IOException {
-
-            GZIPOutputStream gzipOS = new GZIPOutputStream(new FileOutputStream(outFile));
-
-            int len;
-            while((len=inData.read(buffer)) != -1)
-                gzipOS.write(buffer, 0, len);
-
-            gzipOS.close();
-            inData.close();
-        }
-
     }
 }

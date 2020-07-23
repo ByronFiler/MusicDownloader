@@ -2,7 +2,7 @@ package sample.model;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import sample.Debug;
+import sample.utils.debug;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,7 +29,7 @@ public class settings {
         try {
             settings = new JSONObject(new Scanner(new File("usr\\json\\config.json")).useDelimiter("\\Z").next());
         } catch (FileNotFoundException | JSONException ignored) {
-            Debug.warn(null, "Failed to load user settings.");
+            debug.warn(null, "Failed to load user settings.");
             settings = defaultSettings;
             resetSettings();
         }
@@ -38,7 +38,7 @@ public class settings {
         try {
             version = new JSONObject(new Scanner(new File("src/sample/app/meta.json")).useDelimiter("\\Z").next()).get("version").toString();
         } catch (JSONException | FileNotFoundException e) {
-            Debug.warn(null, "Failed to locate version.");
+            debug.warn(null, "Failed to locate version.");
             version = null;
         }
 
@@ -58,7 +58,7 @@ public class settings {
             if (resetDirectories())
                 resetSettings();
             else
-                Debug.error(null, "Failed to reset settings.", e.getCause());
+                debug.error(null, "Failed to reset settings.", e.getCause());
         }
     }
 
@@ -70,13 +70,13 @@ public class settings {
         if (!Files.exists(Paths.get("usr\\cached"))) {
             wasUseful = true;
             if (!new File("usr\\cached").mkdirs())
-                Debug.error(null, "Failed to create non existing directory: usr\\cached", null);
+                debug.error(null, "Failed to create non existing directory: usr\\cached", null);
         }
 
         if (!Files.exists(Paths.get("usr\\json"))) {
             wasUseful = true;
             if (!new File("usr\\json").mkdirs())
-                Debug.error(null, "Failed to create non existing directory: usr\\json", null);
+                debug.error(null, "Failed to create non existing directory: usr\\json", null);
         }
 
         return wasUseful;
@@ -91,7 +91,7 @@ public class settings {
             this.settings = settings;
 
         } catch (IOException e) {
-            Debug.error(null, "Failed to update settings file.", e.getCause());
+            debug.error(null, "Failed to update settings file.", e.getCause());
         }
     }
 
@@ -112,10 +112,10 @@ public class settings {
 
             // Determine if it was my fault for using a bad key or settings for having bad data
             if (defaultSettings.has(key)) {
-                Debug.warn(null, "Failed to load correct settings, resetting settings.");
+                debug.warn(null, "Failed to load correct settings, resetting settings.");
                 resetSettings();
             } else {
-                Debug.error(null, "Invalid key specified in settings: " + key, e.getCause());
+                debug.error(null, "Invalid key specified in settings: " + key, e.getCause());
             }
 
             return null;

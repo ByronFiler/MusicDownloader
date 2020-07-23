@@ -25,8 +25,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import sample.Debug;
-import sample.Model;
+import sample.utils.debug;
+import sample.model.Model;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,7 +60,7 @@ public class results {
         else
             root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/standard/results.css")));
 
-        Debug.trace(null, "Initialized results view");
+        debug.trace(null, "Initialized results view");
     }
 
     @FXML
@@ -91,7 +91,7 @@ public class results {
 
             );
         } catch (JSONException e) {
-            Debug.warn(null, "Error generating basic data for queue addition.");
+            debug.warn(null, "Error generating basic data for queue addition.");
             Platform.runLater(() -> download.setDisable(true));
         }
 
@@ -124,7 +124,7 @@ public class results {
 
                 results.getSelectionModel().getSelectedItems().get(0).setRight(tickContainer);
             } catch (URISyntaxException e) {
-                Debug.error(null, "Failed to set tick to mark selected element.", e.getCause());
+                debug.error(null, "Failed to set tick to mark selected element.", e.getCause());
             }
 
             Platform.runLater(() -> download.setDisable(results.getSelectionModel().getSelectedIndex() == -1));
@@ -142,7 +142,7 @@ public class results {
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch (IOException e) {
-            Debug.error(null, "FXML Error with search.fxml", e.getCause());
+            debug.error(null, "FXML Error with search.fxml", e.getCause());
         }
 
     }
@@ -221,7 +221,7 @@ public class results {
                             return generateNewCacheArtId(downloadItems);
 
             } catch (JSONException e) {
-                Debug.error(null, "Failed to parse temporary data for ID generation.", e.getCause());
+                debug.error(null, "Failed to parse temporary data for ID generation.", e.getCause());
             }
 
             // Checking in downloads history
@@ -240,7 +240,7 @@ public class results {
             try {
                 youtubeSearch = Jsoup.connect("https://www.youtube.com/results?search_query=" + query).get();
             } catch (IOException e) {
-                Debug.warn(thread, "Error connecting to https://www.youtube.com/results?search_query=" + query);
+                debug.warn(thread, "Error connecting to https://www.youtube.com/results?search_query=" + query);
                 return new JSONArray();
                 // Await reconnection
             }
@@ -282,7 +282,7 @@ public class results {
                         );
                         searchDataExtracted.put(searchDataTemp);
                     } catch (JSONException e) {
-                        Debug.warn(null, "Failed to generate search data from query, from html response.");
+                        debug.warn(null, "Failed to generate search data from query, from html response.");
                     }
                 }
 
@@ -352,7 +352,7 @@ public class results {
                     }
 
                 } catch (JSONException e) {
-                    Debug.error(thread, "Failed to parse youtube results.", e.getCause());
+                    debug.error(thread, "Failed to parse youtube results.", e.getCause());
                 }
 
             }
@@ -363,7 +363,7 @@ public class results {
 
                     case 0:
                         // Unable to find a song which matched what we are looking for
-                        Debug.warn(thread, "Youtube does not have the this song, inform user of failure.");
+                        debug.warn(thread, "Youtube does not have the this song, inform user of failure.");
                         return new JSONArray();
 
                     case 1:
@@ -380,7 +380,7 @@ public class results {
                         return reducedData;
                 }
             } catch (JSONException e) {
-                Debug.error(thread, "Failed to sort songs data with data: " + searchDataExtracted, e.getCause());
+                debug.error(thread, "Failed to sort songs data with data: " + searchDataExtracted, e.getCause());
                 return new JSONArray();
             }
 
@@ -501,9 +501,9 @@ public class results {
 
             } catch (JSONException e) {
                 e.printStackTrace();
-                Debug.error(thread, "Error in JSON processing download item.", e.getCause());
+                debug.error(thread, "Error in JSON processing download item.", e.getCause());
             } catch (IOException e) {
-                Debug.warn(thread, "Connection error, attempting to reconnect.");
+                debug.warn(thread, "Connection error, attempting to reconnect.");
                 // Handle reconnection
             }
 
