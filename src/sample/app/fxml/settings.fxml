@@ -23,14 +23,14 @@
          <bottom>
             <BorderPane prefHeight="40.0" BorderPane.alignment="CENTER">
                <left>
-                  <Button fx:id="saveSettings" onMouseClicked="#saveSettings" mnemonicParsing="false" styleClass="confirm_button" prefHeight="40.0" prefWidth="80.0" text="Confirm" textAlignment="CENTER" BorderPane.alignment="CENTER" disable="true">
+                  <Button fx:id="saveSettings" onMouseClicked="#saveSettings" mnemonicParsing="false" styleClass="button, confirm_button" prefHeight="40.0" prefWidth="80.0" text="Confirm" textAlignment="CENTER" BorderPane.alignment="CENTER" disable="true">
                      <BorderPane.margin>
                         <Insets left="10.0"/>
                      </BorderPane.margin>
                   </Button>
                </left>
                <right>
-                  <Button fx:id="cancel" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="80.0" text="Back" BorderPane.alignment="CENTER">
+                  <Button fx:id="cancel" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="80.0" text="Back" BorderPane.alignment="CENTER" styleClass="button, back_button">
                      <BorderPane.margin>
                         <Insets right="10.0"/>
                      </BorderPane.margin>
@@ -42,7 +42,7 @@
             </BorderPane>
          </bottom>
          <top>
-            <VBox minWidth="0.0" pickOnBounds="false" prefHeight="650.0" prefWidth="323.0" spacing="20.0" styleClass="settingsContainer" BorderPane.alignment="CENTER">
+            <VBox minWidth="0.0" pickOnBounds="false" prefHeight="650.0" prefWidth="323.0" spacing="20.0" styleClass="result" BorderPane.alignment="CENTER">
                <BorderPane.margin>
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
                </BorderPane.margin>

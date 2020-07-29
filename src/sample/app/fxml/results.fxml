@@ -3,7 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<AnchorPane id="root" fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.controllers.results">
+<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.controllers.results" styleClass="root">
    <BorderPane prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="30.0">
       <top>
          <HBox prefHeight="31.0" prefWidth="540.0" BorderPane.alignment="CENTER">
@@ -13,11 +13,11 @@
       <bottom>
          <BorderPane prefHeight="40.0" prefWidth="540.0" BorderPane.alignment="CENTER">
             <right>
-               <Button styleClass="button" id="back_button" fx:id="cancel" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="120.0" text="Back" BorderPane.alignment="CENTER" />
+               <Button styleClass="button, back_button" fx:id="cancel" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="120.0" text="Back" BorderPane.alignment="CENTER" />
             </right>
             <left>
                <HBox prefHeight="100.0" prefWidth="176.0" BorderPane.alignment="CENTER">
-                  <Button styleClass="button" id="confirm_button" fx:id="download" disable="true" mnemonicParsing="false" onMouseClicked="#download" prefHeight="40.0" prefWidth="120.0" text="Download" />
+                  <Button styleClass="button, confirm_button" fx:id="download" disable="true" mnemonicParsing="false" onMouseClicked="#download" prefHeight="40.0" prefWidth="120.0" text="Download" />
 
                   <ProgressIndicator fx:id="queueAdditionProgress" visible="false" />
                </HBox>

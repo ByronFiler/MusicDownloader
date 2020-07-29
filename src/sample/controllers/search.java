@@ -82,7 +82,7 @@ public class search {
         if (Model.getInstance().settings.getSettingBool("dark_theme")) {
 
             root.getStylesheets().add(
-                    String.valueOf(getClass().getResource("../app/css/dark/search.css"))
+                    String.valueOf(getClass().getResource("../app/css/dark.css"))
             );
 
             ColorAdjust invert = new ColorAdjust();
@@ -93,7 +93,7 @@ public class search {
         }
         else
             root.getStylesheets().add(
-                    String.valueOf(getClass().getResource("../app/css/standard/search.css"))
+                    String.valueOf(getClass().getResource("../app/css/standard.css"))
             );
 
         debug.trace(null, "Initialized search view.");
@@ -394,7 +394,7 @@ public class search {
                             metaInfoRaw.append(" | ").append(searchData.getJSONObject(i).getString("genre"));
 
                         Label metaInfo = new Label(metaInfoRaw.toString());
-                        metaInfo.getStyleClass().add("resultMeta");
+                        metaInfo.getStyleClass().add("sub_text2");
 
                         textInfo.setTop(songArtistContainer);
                         textInfo.setBottom(metaInfo);
@@ -404,7 +404,7 @@ public class search {
                         left.getChildren().setAll(albumArt, textInfo);
 
                         searchResult.setLeft(left);
-                        searchResult.getStyleClass().add("resultContainer");
+                        searchResult.getStyleClass().add("result");
 
                         tableData[i] = searchResult;
 
@@ -483,7 +483,7 @@ public class search {
                             autocompleteDataRaw.put(searchResultRaw);
 
                             Label resultTitle = new Label(result.select("div.title").text().replaceAll("\"", ""));
-                            resultTitle.getStyleClass().add("autocompleteResult");
+                            resultTitle.getStyleClass().add("sub_text2");
 
                             ImageView resultIcon = new ImageView(
                                     new Image(

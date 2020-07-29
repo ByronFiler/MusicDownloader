@@ -258,9 +258,10 @@ public class downloads {
 
         // Load style
         if (Model.getInstance().settings.getSettingBool("dark_theme"))
-            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/dark/downloads.css")));
+            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/dark.css")));
+
         else
-            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/standard/downloads.css")));
+            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/standard.css")));
 
 
         debug.trace(null, "Initialized downloads view.");
@@ -501,7 +502,7 @@ public class downloads {
 
         result.setLeft(left);
         result.setRight(right);
-        result.getStyleClass().add("resultContainer");
+        result.getStyleClass().add("result");
 
         return result;
 

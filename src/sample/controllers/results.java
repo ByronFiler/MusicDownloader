@@ -55,10 +55,10 @@ public class results {
 
         // Set theme
         if (Model.getInstance().settings.getSettingBool("dark_theme"))
-            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/dark/results.css")));
+            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/dark.css")));
 
         else
-            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/standard/results.css")));
+            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/standard.css")));
 
         debug.trace(null, "Initialized results view");
     }
@@ -74,7 +74,7 @@ public class results {
             download.setDisable(true);
 
             cancel.setText("Cancel");
-            cancel.setId("cancel_button");
+            cancel.getStyleClass().set(1, "cancel_button");
             cancel.setOnMouseClicked(e -> queueAdder.kill());
 
             // Selected Item -> Selected Item Data -> Select Item Data in correctly positioned array -> JSON Data needed -> Spawn thread with data to generate a queue item
@@ -515,7 +515,7 @@ public class results {
                 downloadButtonCheck();
 
                 cancel.setText("Back");
-                cancel.setId("back_button");
+                cancel.getStyleClass().set(1, "back_button");
                 cancel.setOnMouseClicked(results.this::searchView);
             });
             completed = true;
