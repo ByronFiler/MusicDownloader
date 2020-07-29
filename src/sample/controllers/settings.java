@@ -123,7 +123,7 @@ public class settings {
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch (IOException e) {
-            debug.error(null, "Missing FXML File: Search.fxml", e.getCause());
+            debug.error(null, "Missing FXML File: Search.fxml", e);
         }
 
     }
@@ -164,7 +164,7 @@ public class settings {
                 );
 
         } catch (JSONException e) {
-            debug.error(null, "Error checking new settings for dark theme.", e.getCause());
+            debug.error(null, "Error checking new settings for dark theme.", e);
         }
 
         // Check if settings have been adjusted from default
@@ -222,7 +222,7 @@ public class settings {
             settings.put("data_saver", dataSaverToggle.isSelected());
 
         } catch (JSONException e) {
-            debug.error(null, "Failed to generate new settings.", e.getCause());
+            debug.error(null, "Failed to generate new settings.", e);
         }
 
         return settings;

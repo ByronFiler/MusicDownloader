@@ -1,9 +1,15 @@
 package sample.utils;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 //TODO
 // Still seems to provide the wrong source file in debugging
@@ -21,8 +27,9 @@ public class debug {
     // Console colours
     private static final String ANSI_RED = "\u001B[31m";
     private static final String ANSI_RESET = "\u001B[0m";
-    private static final String ANSI_GREEN = "\u001B[32m";
     private static final String ANSI_YELLOW = "\u001B[33m";
+
+    private static List<String> errorTrace = new ArrayList<>();
 
     public synchronized void set(boolean state)
     {
@@ -30,37 +37,37 @@ public class debug {
     }
 
     public static void trace(Thread t, String msg) {
+
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        String traceMessage;
 
         if (debug){
             synchronized ( sample.utils.debug.class )
             {
                 if (t != null) {
 
-                    // Debugging a thread
-                    System.out.println(
-                            String.format(
-                                    "DEBUG%s[%s: %d] @ %s: %s",
-                                        advancedDebug ? prettyExecutionTrace() : " ",
-                                        t.getName(),
-                                        t.getId(),
-                                        formatter.format(new Date()),
-                                        msg
-                            )
+                    traceMessage = String.format(
+                            "DEBUG%s[%s: %d] @ %s: %s",
+                            advancedDebug ? prettyExecutionTrace() : " ",
+                            t.getName(),
+                            t.getId(),
+                            formatter.format(new Date()),
+                            msg
                     );
 
                 } else {
 
                     // Debugging main thread
-                    System.out.println(
-                            String.format(
-                                    "DEBUG%s@ %s: %s",
-                                    advancedDebug ? prettyExecutionTrace() : " ",
-                                    formatter.format(new Date()),
-                                    msg
-                            )
+                    traceMessage = String.format(
+                        "DEBUG%s@ %s: %s",
+                        advancedDebug ? prettyExecutionTrace() : " ",
+                        formatter.format(new Date()),
+                        msg
                     );
                 }
+
+                System.out.println(traceMessage);
+                errorTrace.add(traceMessage);
             }
         }
     }
@@ -68,71 +75,89 @@ public class debug {
     public static synchronized void warn(Thread t, String msg) {
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        String traceMessage;
 
         if (debug){
             synchronized ( sample.utils.debug.class )
             {
                 if (t != null) {
 
-                    // Debugging a thread
-                    System.out.println(
-                            String.format(
-                                    ANSI_YELLOW + "WARNING%s[%s: %d] @ %s: %s" + ANSI_RESET,
-                                    advancedDebug ? prettyExecutionTrace() : " ",
-                                    t.getName(),
-                                    t.getId(),
-                                    formatter.format(new Date()),
-                                    msg
-                            )
-                    );
-
-                } else {
-
-                    // Debugging main thread
-                    System.out.println(
-                            String.format(
-                                    ANSI_YELLOW + "WARNING%s @ %s: %s" + ANSI_RESET,
-                                    advancedDebug ? prettyExecutionTrace() : " ",
-                                    formatter.format(new Date()),
-                                    msg
-                            )
-                    );
-                }
-            }
-        }
-
-    }
-
-    public static synchronized void error(Thread t, String msg, Throwable cause) {
-        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-
-        if (t != null) {
-
-            System.out.println(
-                    String.format(
-                            ANSI_RED + "ERROR%s[%s: %d] @ %s: %s" + ANSI_RESET,
+                    traceMessage = String.format(
+                            "WARNING%s[%s: %d] @ %s: %s",
                             advancedDebug ? prettyExecutionTrace() : " ",
                             t.getName(),
                             t.getId(),
                             formatter.format(new Date()),
                             msg
-                    )
+                    );
+
+                } else {
+
+                    traceMessage = String.format(
+                            "WARNING%s @ %s: %s",
+                            advancedDebug ? prettyExecutionTrace() : " ",
+                            formatter.format(new Date()),
+                            msg
+                    );
+                }
+
+                System.out.println(ANSI_YELLOW + traceMessage + ANSI_RESET);
+                errorTrace.add(traceMessage);
+            }
+        }
+
+    }
+
+    public static synchronized void error(Thread t, String msg, Exception cause) {
+
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        String traceMessage;
+
+        if (t != null) {
+
+            traceMessage = String.format(
+                    "ERROR%s[%s: %d] @ %s: %s",
+                    advancedDebug ? prettyExecutionTrace() : " ",
+                    t.getName(),
+                    t.getId(),
+                    formatter.format(new Date()),
+                    msg
             );
 
         } else {
 
-            System.out.println(
-                    String.format(
-                            ANSI_RED + "ERROR%s @ %s: %s" + ANSI_RESET,
-                            advancedDebug ? prettyExecutionTrace() : " ",
-                            formatter.format(new Date()),
-                            msg
-                    )
+            traceMessage = String.format(
+                    "ERROR%s @ %s: %s",
+                    advancedDebug ? prettyExecutionTrace() : " ",
+                    formatter.format(new Date()),
+                    msg
             );
 
         }
 
+        // Print
+        System.out.println(ANSI_RED + traceMessage + ANSI_RESET);
+        cause.printStackTrace();
         System.out.println("    Cause -> " + cause);
+
+        // Files
+        try {
+            FileWriter dump = new FileWriter(Instant.now().toEpochMilli() + "_crash.log");
+
+            StringWriter sw = new StringWriter();
+            cause.printStackTrace(new PrintWriter(sw));
+
+            dump.write(String.join("\n", errorTrace));
+            dump.write("\n" + traceMessage + "\n");
+            dump.write(sw.toString());
+            dump.write("\n    Cause -> " + cause);
+
+            dump.close();
+
+        } catch (IOException e) {
+            warn(t, "Failed to save trace.");
+        }
+
         System.exit(-1);
 
     }

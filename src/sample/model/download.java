@@ -56,7 +56,7 @@ public class download{
                 for (int i = 0; i < queueItem.getJSONArray("songs").length(); i++)
                     queueItem.getJSONArray("songs").getJSONObject(i).put("completed", false);
             } catch (JSONException e) {
-                debug.error(null, "Error updating downloads queue.", e.getCause());
+                debug.error(null, "Error updating downloads queue.", e);
             }
 
             downloadObject = queueItem;
@@ -87,14 +87,14 @@ public class download{
                 if (!downloadHistory.getJSONObject(i).toString().equals(targetDeletion.toString()))
                     newDownloadHistory.put(downloadHistory.getJSONObject(i));
         } catch (JSONException e) {
-            debug.error(null, "Failed to validate download history to remove element.", e.getCause());
+            debug.error(null, "Failed to validate download history to remove element.", e);
         }
 
         // Rewriting the new history
         try {
             setDownloadHistory(newDownloadHistory);
         } catch (IOException e) {
-            debug.error(null, "Error writing new download history.", e.getCause());
+            debug.error(null, "Error writing new download history.", e);
         }
 
     }
@@ -240,6 +240,7 @@ public class download{
 
             String line;
             String downloadedFile = "";
+
             while ((line = reader.readLine()) != null) {
 
                 // Sourcing name of downloaded file
@@ -336,7 +337,7 @@ public class download{
 
                         // Delete old file
                         if (!new File(downloadedFile).delete()) {
-                            debug.error(thread, "Failed to delete file: " + downloadedFile, new IOException().getCause());
+                            debug.error(thread, "Failed to delete file: " + downloadedFile, new IOException());
                         }
 
                     } catch (IOException | NotSupportedException e) {
@@ -373,7 +374,7 @@ public class download{
                         new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
                 );
             } catch (IOException e) {
-                debug.error(thread, "Failed to download album art.", e.getCause());
+                debug.error(thread, "Failed to download album art.", e);
             } catch (JSONException ignored) {}
 
             // Cache the album art
@@ -406,9 +407,9 @@ public class download{
                         );
                     } catch (IOException | JSONException e) {
                         try {
-                            debug.error(thread, "Error downloading song: " + downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"), e.getCause());
+                            debug.error(thread, "Error downloading song: " + downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"), e);
                         } catch (JSONException er) {
-                            debug.error(thread, "JSON Error downloading song", er.getCause());
+                            debug.error(thread, "JSON Error downloading song", er);
                         }
 
                     }
@@ -445,7 +446,7 @@ public class download{
 
                 }
             } catch (JSONException e) {
-                debug.error(thread, "JSON Error when attempting to access songs to download.", e.getCause());
+                debug.error(thread, "JSON Error when attempting to access songs to download.", e);
             }
 
             // Updating the history
@@ -456,7 +457,7 @@ public class download{
                 setDownloadHistory(downloadHistory);
 
             } catch (JSONException | IOException e) {
-                debug.error(Thread.currentThread(), "Failed to set new download history with current download.", e.getCause());
+                debug.error(Thread.currentThread(), "Failed to set new download history with current download.", e);
             }
 
             // Check if we should delete the album art
@@ -484,10 +485,10 @@ public class download{
                         break;
 
                     default:
-                        debug.error(Thread.currentThread(), "Unexpected value: " + Model.getInstance().settings.getSettingInt("save_album_art"), new IllegalStateException().getCause());
+                        debug.error(Thread.currentThread(), "Unexpected value: " + Model.getInstance().settings.getSettingInt("save_album_art"), new IllegalStateException());
                 }
             } catch (JSONException e) {
-                debug.error(thread, "Failed to perform check to delete album art.", e.getCause());
+                debug.error(thread, "Failed to perform check to delete album art.", e);
             }
 
             // Move onto the next item if necessary
@@ -522,7 +523,7 @@ public class download{
                         }
 
                     } catch (JSONException e) {
-                        debug.error(thread, "Failed to process queue.", e.getCause());
+                        debug.error(thread, "Failed to process queue.", e);
                     }
 
                 } else {

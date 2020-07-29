@@ -76,7 +76,7 @@ public class downloads {
 
                     }
                 } catch (JSONException e) {
-                    debug.error(null, "Error parsing JSON for download object.", e.getCause());
+                    debug.error(null, "Error parsing JSON for download object.", e);
                 }
 
                 // TimerTask to update and redraw if necessary
@@ -133,7 +133,7 @@ public class downloads {
                                     }
                                 }
                             } catch (JSONException e) {
-                                debug.error(Thread.currentThread(), "Failed to parse JSON to update element result.", e.getCause());
+                                debug.error(Thread.currentThread(), "Failed to parse JSON to update element result.", e);
                             }
                         }
                     }
@@ -169,7 +169,7 @@ public class downloads {
 
                     }
                 } catch (JSONException e) {
-                    debug.error(null, "Failed to parse data to draw planned queue items.", e.getCause());
+                    debug.error(null, "Failed to parse data to draw planned queue items.", e);
                 }
             }
 
@@ -186,7 +186,7 @@ public class downloads {
 
                     } catch (JSONException e) {
                         // Error for now, later handle it and make it a warning
-                        debug.error(null, "Failed to parse JSON to draw downloads history.", e.getCause());
+                        debug.error(null, "Failed to parse JSON to draw downloads history.", e);
                     }
 
                 }
@@ -277,7 +277,7 @@ public class downloads {
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch(IOException e) {
-            debug.error(null, "FXML Error: search.fxml", e.getCause());
+            debug.error(null, "FXML Error: search.fxml", e);
         }
 
     }
@@ -341,7 +341,7 @@ public class downloads {
                                 )
                         );
                     } catch (URISyntaxException er) {
-                        debug.error(null, "Failed to set default album art.", er.getCause());
+                        debug.error(null, "Failed to set default album art.", er);
                     }
 
                     try {
@@ -359,7 +359,7 @@ public class downloads {
                     } catch (IOException e) {
                         debug.warn(null, "Failed to connect to allmusic to get album art, using default.");
                     } catch (JSONException e) {
-                        debug.error(null, "Failed to get art for loading resource.", e.getCause());
+                        debug.error(null, "Failed to get art for loading resource.", e);
                     }
                 }, "load-art");
                 loadAlbumArt.setDaemon(true);
@@ -480,7 +480,7 @@ public class downloads {
                     Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
                     mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth() - 16, mainWindow.getHeight() - 39));
                 } catch (IOException er) {
-                    debug.error(null, "FXML Error: Downloads.fxml", er.getCause());
+                    debug.error(null, "FXML Error: Downloads.fxml", er);
                 }
 
             });

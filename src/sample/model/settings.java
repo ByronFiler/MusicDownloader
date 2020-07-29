@@ -58,7 +58,7 @@ public class settings {
             if (resetDirectories())
                 resetSettings();
             else
-                debug.error(null, "Failed to reset settings.", e.getCause());
+                debug.error(null, "Failed to reset settings.", e);
         }
     }
 
@@ -91,7 +91,7 @@ public class settings {
             this.settings = settings;
 
         } catch (IOException e) {
-            debug.error(null, "Failed to update settings file.", e.getCause());
+            debug.error(null, "Failed to update settings file.", e);
         }
     }
 
@@ -115,7 +115,7 @@ public class settings {
                 debug.warn(null, "Failed to load correct settings, resetting settings.");
                 resetSettings();
             } else {
-                debug.error(null, "Invalid key specified in settings: " + key, e.getCause());
+                debug.error(null, "Invalid key specified in settings: " + key, e);
             }
 
             return null;

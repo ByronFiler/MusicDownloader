@@ -41,7 +41,7 @@ public class Model {
                         usedArtIds.add(downloadHistory.getJSONObject(i).getString("artId"));
                 }
             } catch (JSONException e) {
-                debug.error(null, "Failed to parse download history for art IDs.", e.getCause());
+                debug.error(null, "Failed to parse download history for art IDs.", e);
             }
 
             for (File foundFile: Objects.requireNonNull(new File("usr/cached").listFiles())) {
@@ -164,7 +164,7 @@ public class Model {
 
 
             } catch (JSONException e) {
-                debug.error(null, "Failed to rewrite JSON data for download queue optimisation.", e.getCause());
+                debug.error(null, "Failed to rewrite JSON data for download queue optimisation.", e);
             }
 
             // Start re-downloading missing files.
@@ -212,7 +212,7 @@ public class Model {
                 }
 
             } catch (JSONException | IOException e) {
-                debug.error(Thread.currentThread(), "Failed to get art for checking files to re-download.", e.getCause());
+                debug.error(Thread.currentThread(), "Failed to get art for checking files to re-download.", e);
             }
 
         }, "cache-optimiser").start();

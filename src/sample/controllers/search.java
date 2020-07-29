@@ -108,7 +108,7 @@ public class search {
             mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch(IOException e) {
-            debug.error(null, "FXML Error: downloads.fxml", e.getCause());
+            debug.error(null, "FXML Error: downloads.fxml", e);
         }
     }
 
@@ -122,7 +122,7 @@ public class search {
             mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch(IOException e) {
-            debug.error(null, "Missing FXML File: Settings.fxml", e.getCause());
+            debug.error(null, "Missing FXML File: Settings.fxml", e);
         }
 
     }
@@ -283,7 +283,7 @@ public class search {
                         searchData.put(resultData);
 
                     } catch (JSONException e) {
-                        debug.error(thread, "Failed to process search request JSON for https://www.allmusic.com/search/all/" + query, e.getCause());
+                        debug.error(thread, "Failed to process search request JSON for https://www.allmusic.com/search/all/" + query, e);
                     }
                 }
             }
@@ -313,7 +313,7 @@ public class search {
                                 } catch (NullPointerException ignored) {
                                     searchData.getJSONObject(i).put("art", new File(getClass().getResource("../app/img/song_default.png").getPath()).toURI().toString());
                                 } catch (URISyntaxException e) {
-                                    debug.error(null, "URI Formation exception loading song default image.", e.getCause());
+                                    debug.error(null, "URI Formation exception loading song default image.", e);
                                 }
 
                                 // Year
@@ -350,12 +350,12 @@ public class search {
 
                         }
                     } catch (JSONException e) {
-                        debug.error(thread, "Failed to process found search results.", e.getCause());
+                        debug.error(thread, "Failed to process found search results.", e);
                     } catch (IOException e) {
                         try {
                             debug.warn(thread, "Connection error on connecting to: " + searchData.getJSONObject(i).getString("link"));
                         } catch (JSONException er) {
-                            debug.error(thread, "Failed to process found search results.", e.getCause());
+                            debug.error(thread, "Failed to process found search results.", e);
                         }
                     }
 
@@ -410,7 +410,7 @@ public class search {
 
                     } catch (JSONException | IllegalArgumentException e) {
                         e.printStackTrace();
-                        debug.error(thread, "Failed to generate table result", e.getCause());
+                        debug.error(thread, "Failed to generate table result", e);
                     }
                 }
 
@@ -426,7 +426,7 @@ public class search {
                     Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39)));
 
                 } catch (IOException e) {
-                    debug.error(null, "FXML Error: Settings.fxml", e.getCause());
+                    debug.error(null, "FXML Error: Settings.fxml", e);
                 }
 
             } else {
@@ -534,7 +534,7 @@ public class search {
 
             } catch (HttpStatusException ignored) {
             } catch (URISyntaxException | IOException e) {
-                debug.error(Thread.currentThread(), "Unknown exception when requesting user search.", e.getCause());
+                debug.error(Thread.currentThread(), "Unknown exception when requesting user search.", e);
             }
 
         }

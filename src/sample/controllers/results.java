@@ -124,7 +124,7 @@ public class results {
 
                 results.getSelectionModel().getSelectedItems().get(0).setRight(tickContainer);
             } catch (URISyntaxException e) {
-                debug.error(null, "Failed to set tick to mark selected element.", e.getCause());
+                debug.error(null, "Failed to set tick to mark selected element.", e);
             }
 
             Platform.runLater(() -> download.setDisable(results.getSelectionModel().getSelectedIndex() == -1));
@@ -142,7 +142,7 @@ public class results {
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch (IOException e) {
-            debug.error(null, "FXML Error with search.fxml", e.getCause());
+            debug.error(null, "FXML Error with search.fxml", e);
         }
 
     }
@@ -221,7 +221,7 @@ public class results {
                             return generateNewCacheArtId(downloadItems);
 
             } catch (JSONException e) {
-                debug.error(null, "Failed to parse temporary data for ID generation.", e.getCause());
+                debug.error(null, "Failed to parse temporary data for ID generation.", e);
             }
 
             // Checking in downloads history
@@ -352,7 +352,7 @@ public class results {
                     }
 
                 } catch (JSONException e) {
-                    debug.error(thread, "Failed to parse youtube results.", e.getCause());
+                    debug.error(thread, "Failed to parse youtube results.", e);
                 }
 
             }
@@ -380,7 +380,7 @@ public class results {
                         return reducedData;
                 }
             } catch (JSONException e) {
-                debug.error(thread, "Failed to sort songs data with data: " + searchDataExtracted, e.getCause());
+                debug.error(thread, "Failed to sort songs data with data: " + searchDataExtracted, e);
                 return new JSONArray();
             }
 
@@ -501,7 +501,7 @@ public class results {
 
             } catch (JSONException e) {
                 e.printStackTrace();
-                debug.error(thread, "Error in JSON processing download item.", e.getCause());
+                debug.error(thread, "Error in JSON processing download item.", e);
             } catch (IOException e) {
                 debug.warn(thread, "Connection error, attempting to reconnect.");
                 // Handle reconnection
