@@ -12,8 +12,6 @@ import java.util.Date;
 import java.util.List;
 
 //TODO
-// Still seems to provide the wrong source file in debugging
-// Error should print stack trace too
 // Error should dump all messages to file without ASCII colours
 // Ascii colours should only be visible if the terminal allows it
 
