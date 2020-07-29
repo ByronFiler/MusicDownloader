@@ -98,13 +98,11 @@ public class settings {
         // Load theme
         if (Model.getInstance().settings.getSettingBool("dark_theme"))
             root.getStylesheets().setAll(
-                    String.valueOf(getClass().getResource("../app/css/settings.css")),
                     String.valueOf(getClass().getResource("../app/css/dark/settings.css"))
             );
 
         else
             root.getStylesheets().setAll(
-                    String.valueOf(getClass().getResource("../app/css/settings.css")),
                     String.valueOf(getClass().getResource("../app/css/standard/settings.css"))
             );
 
@@ -116,7 +114,6 @@ public class settings {
     private void searchView(Event event) {
 
         try {
-
             AnchorPane searchView = FXMLLoader.load(getClass().getResource("../app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
@@ -153,14 +150,12 @@ public class settings {
 
             if (newSettings.getBoolean("dark_theme"))
                 root.getStylesheets().setAll(
-                        String.valueOf(getClass().getResource("../app/css/dark/settings.css")),
-                        String.valueOf(getClass().getResource("../app/css/settings.css"))
+                        String.valueOf(getClass().getResource("../app/css/dark/settings.css"))
                 );
 
             else
                 root.getStylesheets().setAll(
-                        String.valueOf(getClass().getResource("../app/css/standard/settings.css")),
-                        String.valueOf(getClass().getResource("../app/css/settings.css"))
+                        String.valueOf(getClass().getResource("../app/css/standard/settings.css"))
                 );
 
         } catch (JSONException e) {

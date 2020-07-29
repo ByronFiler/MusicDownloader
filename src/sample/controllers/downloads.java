@@ -382,10 +382,10 @@ public class downloads {
         BorderPane resultInformationContainer = new BorderPane();
 
         Label title = new Label(viewData.getString("title"));
-        title.getStyleClass().add("resultTitle");
+        title.getStyleClass().add("sub_title1");
 
         Label artist = new Label(viewData.getString("artist"));
-        artist.getStyleClass().add("resultArtist");
+        artist.getStyleClass().add("sub_title2");
 
         VBox songArtistContainer = new VBox(title, artist);
         songArtistContainer.setAlignment(Pos.TOP_LEFT);

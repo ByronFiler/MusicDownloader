@@ -8,12 +8,11 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
 
-<AnchorPane id="root" fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" stylesheets="@../css/downloads.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.controllers.downloads">
+<AnchorPane id="root" fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.controllers.downloads">
    <BorderPane prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="30.0">
       <top>
-         <Label id="title" text="Downloads" BorderPane.alignment="TOP_LEFT" />
+         <Label text="Downloads" BorderPane.alignment="TOP_LEFT" styleClass="title"/>
       </top>
       <center>
          <VBox fx:id="viewContainer" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
@@ -22,17 +21,13 @@
             </BorderPane.margin>
             <BorderPane prefHeight="30.0" prefWidth="540.0">
                <left>
-                  <Label fx:id="eventViewTitle" styleClass="subtext" underline="true" BorderPane.alignment="CENTER">
-                     <font>
-                        <Font size="18.0" />
-                     </font>
-                  </Label>
+                  <Label fx:id="eventViewTitle" styleClass="sub_title3" underline="true" BorderPane.alignment="CENTER"/>
                </left>
                <right>
                   <ComboBox fx:id="eventViewSelector" prefWidth="150.0" BorderPane.alignment="CENTER" />
                </right>
             </BorderPane>
-            <ListView id="downloadEventsView" fx:id="eventsViewTable" stylesheets="@../css/search.css" VBox.vgrow="ALWAYS" />
+            <ListView fx:id="eventsViewTable" VBox.vgrow="ALWAYS" styleClass="table"/>
          </VBox>
       </center>
       <bottom>

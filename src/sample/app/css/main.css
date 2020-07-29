@@ -1,0 +1,78 @@
+.hero_text{
+    -fx-font-family: "Arial Black";
+    -fx-font-size: 32px;
+}
+
+.title {
+    -fx-font-family: Arial;
+    -fx-font-size: 28px;
+}
+
+.sub_title1 {
+    -fx-font-weight: bold;
+    -fx-font-family: Arial;
+    -fx-font-size: 22px;
+}
+
+.sub_title2 {
+    -fx-font-family: arial;
+    -fx-font-size: 16px;
+    -fx-font-style: italic;
+}
+
+.sub_title3 {
+    -fx-font-size: 18px;
+    -fx-font-family: Arial;
+}
+
+.sub_text {
+    -fx-font-family: Arial;
+    -fx-font-size: 16px;
+}
+
+.list-cell {
+    -fx-background: transparent ;
+    -fx-background-color: transparent, -fx-background ;
+    -fx-background-insets: 0, 0 0 1 0 ;
+    -fx-table-cell-border-color: derive(-fx-color, 5%);
+}
+
+.table {
+    -fx-background-color: transparent;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-table-cell-border-color: transparent;
+    -fx-fill: transparent;
+    -fx-highlight-fill: transparent;
+}
+
+.cross-line {
+    -fx-stroke-width: 2px;
+}
+
+.button {
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+
+    -fx-text-fill: black;
+    -fx-font-family: "Arial";
+    -fx-font-weight: bold;
+}
+
+.confirm_button {
+    -fx-background-color: green;
+    -fx-text-fill: white;
+}
+
+.selector {
+    -fx-border-radius: 0;
+}
+
+.underline {
+    -fx-border-width : 0 0 1 0;
+}
+
+.searchBox {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}

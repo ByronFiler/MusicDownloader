@@ -378,10 +378,10 @@ public class search {
                         BorderPane textInfo = new BorderPane();
 
                         Label title = new Label(searchData.getJSONObject(i).getString("title"));
-                        title.getStyleClass().add("resultTitle");
+                        title.getStyleClass().add("sub_title1");
 
                         Label artist = new Label(searchData.getJSONObject(i).getString("artist"));
-                        artist.getStyleClass().add("resultArtist");
+                        artist.getStyleClass().add("sub_title2");
 
                         VBox songArtistContainer = new VBox(title, artist);
 

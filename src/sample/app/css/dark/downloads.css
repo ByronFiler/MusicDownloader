@@ -2,11 +2,11 @@
     -fx-background-color: #121212;
 }
 
-#title {
+.title {
     -fx-text-fill: #DADEDF;
 }
 
-.subtext {
+.sub_title3 {
     -fx-text-fill: #C1C7C9;
 }
 
@@ -14,11 +14,11 @@
     -fx-background-color: rgba(255, 255, 255, 0.06);
 }
 
-.resultTitle {
+.sub_title1 {
     -fx-text-fill: #DADEDF;
 }
 
-.resultArtist {
+.sub_title2 {
     -fx-text-fill: #C1C7C9;
 }
 

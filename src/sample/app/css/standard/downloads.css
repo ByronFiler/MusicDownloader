@@ -6,11 +6,11 @@
     -fx-background-color: rgba(10, 10, 10, 0.06);
 }
 
-.resultTitle {
+.sub_title1 {
     -fx-text-fill: black;
 }
 
-.resultArtist {
+.sub_title2 {
     -fx-text-fill: black;
 }
 

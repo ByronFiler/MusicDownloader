@@ -6,11 +6,11 @@
     -fx-background-color: rgba(10, 10, 10, 0.06);
 }
 
-.title {
+.sub_title1 {
     -fx-text-fill: black;
 }
 
-.setting {
+.sub_text {
     -fx-text-fill: black;
 }
 
