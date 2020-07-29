@@ -6,8 +6,6 @@ import java.util.Arrays;
 import java.util.Date;
 
 //TODO
-// Still seems to provide the wrong source file in debugging
-// Error should print stack trace too
 // Error should dump all messages to file without ASCII colours
 // Ascii colours should only be visible if the terminal allows it
 
