@@ -27,7 +27,9 @@ public class debug {
     private static final String ANSI_RESET = "\u001B[0m";
     private static final String ANSI_YELLOW = "\u001B[33m";
 
-    private static List<String> errorTrace = new ArrayList<>();
+    private static final List<String> errorTrace = new ArrayList<>();
+
+    private static final boolean useColours = !System.getProperty("os.name").startsWith("Windows");
 
     public synchronized void set(boolean state)
     {
@@ -99,7 +101,11 @@ public class debug {
                     );
                 }
 
-                System.out.println(ANSI_YELLOW + traceMessage + ANSI_RESET);
+                if (useColours)
+                    System.out.println(ANSI_YELLOW + traceMessage + ANSI_RESET);
+                else
+                    System.out.println(traceMessage);
+
                 errorTrace.add(traceMessage);
             }
         }
@@ -134,7 +140,11 @@ public class debug {
         }
 
         // Print
-        System.out.println(ANSI_RED + traceMessage + ANSI_RESET);
+        if (useColours)
+            System.out.println(ANSI_RED + traceMessage + ANSI_RESET);
+        else
+            System.out.println(traceMessage);
+
         cause.printStackTrace();
         System.out.println("    Cause -> " + cause);
 

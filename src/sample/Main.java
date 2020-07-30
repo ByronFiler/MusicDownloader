@@ -11,22 +11,19 @@ import sample.utils.debug;
 import java.io.IOException;
 
 // TODO
-
-// Once CSS files are finished merge into a single style sheet
-
 // Auto-zip setting
-// Handle the no youtube results strange error warning
 // Create temporary directory
 
 // Structure files & check about running
-// usr: All user created application data: config, download history, cache
 // tmp: Temporary files: youtube-dl raw downloads, temporary wav files, bat files
-// app: Core app files: css, fxml, images
 
 public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
+
+        System.out.println(System.getProperty("java.class.path"));
+
         FXMLLoader loader = new FXMLLoader(getClass().getResource("app/fxml/search.fxml"));
         Parent root = loader.load();
 
@@ -37,7 +34,6 @@ public class Main extends Application {
 
         debug.trace(null, "Primary Stage Generated");
     }
-
 
     public static void main(String[] args) {
         launch(args);
