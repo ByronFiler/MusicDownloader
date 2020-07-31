@@ -22,8 +22,6 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws IOException {
 
-        System.out.println(System.getProperty("java.class.path"));
-
         FXMLLoader loader = new FXMLLoader(getClass().getResource("app/fxml/search.fxml"));
         Parent root = loader.load();
 

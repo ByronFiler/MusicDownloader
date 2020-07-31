@@ -44,7 +44,7 @@ public class Model {
                 debug.error(null, "Failed to parse download history for art IDs.", e);
             }
 
-            for (File foundFile: Objects.requireNonNull(new File("usr/cached").listFiles())) {
+            for (File foundFile: Objects.requireNonNull(new File(System.getenv("APPDATA") + "\\MusicDownloader/cached").listFiles())) {
 
                 // Check the file is an image and is being used
                 if (FilenameUtils.getExtension(foundFile.getAbsolutePath()).equals("jpg") && usedArtIds.contains(FilenameUtils.removeExtension(foundFile.getName())) ) {
@@ -172,7 +172,7 @@ public class Model {
             try {
                 for (int i = 0; i < downloadHistory.length(); i++) {
 
-                    if (!Files.exists(Paths.get(String.format("usr\\cached\\%s.jpg", downloadHistory.getJSONObject(i).getString("artId"))))) {
+                    if (!Files.exists(Paths.get(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", downloadHistory.getJSONObject(i).getString("artId"))))) {
 
                         boolean alreadyPlanned = false;
                         if (downloadObjects.length() > 0) {
@@ -197,7 +197,7 @@ public class Model {
 
                     FileUtils.copyURLToFile(
                             new URL(downloadObjects.getJSONObject(i).getString("artUrl")),
-                            new File(String.format("usr\\cached\\%s.jpg", downloadObjects.getJSONObject(i).getString("artId")))
+                            new File(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", downloadObjects.getJSONObject(i).getString("artId")))
                     );
                     reacquiredFilesCount++;
 

@@ -309,12 +309,12 @@ public class downloads {
         // Preparing album art image: Cached Resource > Online Resource > Default
         ImageView albumArt = new ImageView();
 
-        if (Files.exists(Paths.get(String.format("usr\\cached\\%s.jpg", viewData.getString("artId"))))) {
+        if (Files.exists(Paths.get(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", viewData.getString("artId"))))) {
 
             // Cached album art exists, use that
             albumArt.setImage(
                     new Image(
-                            new File(String.format("usr\\cached\\%s.jpg", viewData.getString("artId"))).toURI().toString(),
+                            new File(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", viewData.getString("artId"))).toURI().toString(),
                             85,
                             85,
                             true,
