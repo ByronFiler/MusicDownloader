@@ -79,7 +79,11 @@ public class settings {
         new verifyExecutable("ffmpeg", ffmpeg);
 
         // Files
-        outputDirectory.setText(Model.getInstance().settings.getSetting("output_directory").equals("") ? System.getProperty("user.dir") : Model.getInstance().settings.getSetting("output_directory"));
+        outputDirectory.setText(
+                Model.getInstance().settings.getSetting("output_directory").equals("") ?
+                        System.getProperty("user.dir") :
+                        Model.getInstance().settings.getSetting("output_directory")
+        );
         musicFormat.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("music_format")));
         saveAlbumArt.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("save_album_art")));
         advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
@@ -245,7 +249,7 @@ public class settings {
         public void run() {
 
             try {
-                Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/src/sample/app/meta.json").get();
+                Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/app/meta.json").get();
                 JSONObject jsonData = new JSONObject(githubRequestLatestVersion.text());
                 Platform.runLater(() -> {
                     try {
