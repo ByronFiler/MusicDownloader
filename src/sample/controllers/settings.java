@@ -4,11 +4,13 @@ import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
@@ -20,8 +22,10 @@ import org.jsoup.nodes.Document;
 import sample.Main;
 import sample.model.Model;
 import sample.utils.debug;
+import sample.utils.install;
 
 import javax.swing.*;
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Timer;
@@ -32,37 +36,58 @@ import java.util.TimerTask;
 
 public class settings {
 
-    @FXML BorderPane root;
+    @FXML
+    BorderPane root;
 
     // Information
-    @FXML Label version;
-    @FXML Label latestVersion;
-    @FXML Label youtubeDl;
-    @FXML Label ffmpeg;
+    @FXML
+    Label version;
+    @FXML
+    Label latestVersion;
+    @FXML
+    Label youtubeDl;
+    @FXML
+    Label ffmpeg;
 
     // Files
-    @FXML Label outputDirectory;
-    @FXML BorderPane saveMusicLine;
-    @FXML Label outputDirectoryInfo;
-    @FXML ComboBox<String> musicFormat;
-    @FXML ComboBox<String> saveAlbumArt;
-    @FXML ToggleSwitch advancedValidationToggle;
+    @FXML
+    Label outputDirectory;
+    @FXML
+    BorderPane saveMusicLine;
+    @FXML
+    Label outputDirectoryInfo;
+    @FXML
+    ComboBox<String> musicFormat;
+    @FXML
+    ComboBox<String> saveAlbumArt;
+    @FXML
+    ToggleSwitch advancedValidationToggle;
 
     // Meta-Data application
-    @FXML ToggleSwitch albumArtToggle;
-    @FXML ToggleSwitch albumTitleToggle;
-    @FXML ToggleSwitch songTitleToggle;
-    @FXML ToggleSwitch artistToggle;
-    @FXML ToggleSwitch yearToggle;
-    @FXML ToggleSwitch trackNumberToggle;
+    @FXML
+    ToggleSwitch albumArtToggle;
+    @FXML
+    ToggleSwitch albumTitleToggle;
+    @FXML
+    ToggleSwitch songTitleToggle;
+    @FXML
+    ToggleSwitch artistToggle;
+    @FXML
+    ToggleSwitch yearToggle;
+    @FXML
+    ToggleSwitch trackNumberToggle;
 
-    // ../application Configuration
-    @FXML ToggleSwitch darkThemeToggle;
-    @FXML ToggleSwitch dataSaverToggle;
+    // application Configuration
+    @FXML
+    ToggleSwitch darkThemeToggle;
+    @FXML
+    ToggleSwitch dataSaverToggle;
 
     // Confirm / Cancel
-    @FXML Button saveSettings;
-    @FXML Button cancel;
+    @FXML
+    Button saveSettings;
+    @FXML
+    Button cancel;
 
     private JSONObject settings;
 
@@ -122,7 +147,7 @@ public class settings {
             AnchorPane searchView = FXMLLoader.load(Main.class.getResource("app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
-            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
+            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - 16, mainWindow.getHeight() - 39));
 
         } catch (IOException e) {
             debug.error(null, "Missing FXML File: Search.fxml", e);
@@ -142,7 +167,8 @@ public class settings {
             outputDirectory.setText(newFolder.getSelectedFile().getPath());
             validateConfirm();
 
-        } catch (NullPointerException ignored) {}
+        } catch (NullPointerException ignored) {
+        }
 
     }
 
@@ -240,7 +266,7 @@ public class settings {
 
         Thread t;
 
-        getLatestVersion (){
+        getLatestVersion() {
             t = new Thread(this, "get-latest-version");
             t.setDaemon(true);
             t.start();
@@ -289,7 +315,8 @@ public class settings {
                             new getLatestVersion();
                             connectionAttempt.cancel();
                         }
-                    } catch (IOException ignored) {}
+                    } catch (IOException ignored) {
+                    }
 
                 }
             }, 0, 1000);
@@ -323,13 +350,65 @@ public class settings {
                 Platform.runLater(() -> element.setText("Configured"));
 
             } catch (IOException ignored) {
-
                 debug.warn(thread, "Failed to verify executable: " + executable);
-                Platform.runLater(() -> element.setText("Not Configured"));
 
+                Platform.runLater(() -> {
+
+                    element.setText("Not Configured");
+
+                    if (System.getProperty("os.name").startsWith("Windows")) {
+
+                        // Installation requires admin permissions, hence verify the user is a admin, or inform them
+
+                        if (new File(System.getenv("ProgramFiles(X86)") + "\\test\\").mkdir() && new File(System.getenv("ProgramFiles(X86)") + "\\test\\").delete()) {
+                            element.setCursor(Cursor.HAND);
+                            element.setTooltip(new Tooltip("Click to configure"));
+                            element.setOnMouseClicked(e -> new manageInstall(executable, element));
+                        } else {
+                            element.setTooltip(new Tooltip("Easy installation requires elevated permissions, restart the program and try again."));
+                        }
+                    }
+                });
             }
 
         }
 
+        private static class manageInstall implements Runnable {
+
+            final String executable;
+            final Label element;
+
+            manageInstall(String executable, Label element) {
+                this.executable = executable;
+                this.element = element;
+
+                new Thread(this, "manage-install").start();
+            }
+
+            @Override
+            public void run() {
+
+                Platform.runLater(() -> element.setText("Configuring..."));
+
+                try {
+
+                    if (executable.equals("youtube-dl") ? install.getYoutubeDl() : install.getFFMPEG())
+                        Platform.runLater(() -> element.setText("Configured"));
+
+                    else
+                        Platform.runLater(() -> element.setText("Configure Manually"));
+
+                } catch (IOException e) {
+                    debug.warn(Thread.currentThread(), "Failed to configure due to likely permission issues, despite that it should be blocked.");
+                    Platform.runLater(() -> element.setText("Configure Manually"));
+                }
+
+                Platform.runLater(() -> {
+                    element.setCursor(Cursor.DEFAULT);
+                    element.setOnMouseClicked(null);
+                });
+            }
+        }
     }
+
 }
