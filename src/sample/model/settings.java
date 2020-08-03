@@ -2,6 +2,7 @@ package sample.model;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import sample.Main;
 import sample.utils.debug;
 
 import java.io.File;
@@ -36,8 +37,16 @@ public class settings {
 
         // Load the version
         try {
-            version = new JSONObject(new Scanner(new File("src/sample/app/meta.json")).useDelimiter("\\Z").next()).get("version").toString();
-        } catch (JSONException | FileNotFoundException e) {
+
+            version = new JSONObject(
+                    new Scanner(Main.class.getResourceAsStream("app/meta.json"))
+                            .useDelimiter("\\Z")
+                            .next()
+            )
+                    .get("version")
+                    .toString();
+
+        } catch (JSONException e) {
             debug.warn(null, "Failed to locate version.");
             version = null;
         }

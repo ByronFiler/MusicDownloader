@@ -17,8 +17,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import sample.utils.debug;
+import sample.Main;
 import sample.model.Model;
+import sample.utils.debug;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -98,12 +99,12 @@ public class settings {
         // Load theme
         if (Model.getInstance().settings.getSettingBool("dark_theme"))
             root.getStylesheets().setAll(
-                    String.valueOf(getClass().getResource("../app/css/dark.css"))
+                    String.valueOf(Main.class.getResource("app/css/dark.css"))
             );
 
         else
             root.getStylesheets().setAll(
-                    String.valueOf(getClass().getResource("../app/css/standard.css"))
+                    String.valueOf(Main.class.getResource("app/css/standard.css"))
             );
 
         debug.trace(null, "Initialized settings view.");
@@ -114,7 +115,7 @@ public class settings {
     private void searchView(Event event) {
 
         try {
-            AnchorPane searchView = FXMLLoader.load(getClass().getResource("../app/fxml/search.fxml"));
+            AnchorPane searchView = FXMLLoader.load(Main.class.getResource("app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
@@ -150,12 +151,12 @@ public class settings {
 
             if (newSettings.getBoolean("dark_theme"))
                 root.getStylesheets().setAll(
-                        String.valueOf(getClass().getResource("../app/css/dark.css"))
+                        String.valueOf(Main.class.getResource("app/css/dark.css"))
                 );
 
             else
                 root.getStylesheets().setAll(
-                        String.valueOf(getClass().getResource("../app/css/standard.css"))
+                        String.valueOf(Main.class.getResource("app/css/standard.css"))
                 );
 
         } catch (JSONException e) {

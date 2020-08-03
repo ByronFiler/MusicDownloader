@@ -22,11 +22,11 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws IOException {
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("app/fxml/search.fxml"));
+        FXMLLoader loader = new FXMLLoader(Main.class.getResource("app/fxml/search.fxml"));
         Parent root = loader.load();
 
         primaryStage.setScene(new Scene(root));
-        primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("app/img/icon.png")));
+        primaryStage.getIcons().add(new Image(Main.class.getResourceAsStream("app/img/icon.png")));
         primaryStage.setTitle("Music Downloader");
         primaryStage.show();
 

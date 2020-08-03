@@ -25,8 +25,9 @@ import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import sample.utils.debug;
+import sample.Main;
 import sample.model.Model;
+import sample.utils.debug;
 
 import java.awt.*;
 import java.io.File;
@@ -111,7 +112,7 @@ public class downloads {
                                                                 ((HBox) element.getRight()).getChildren().setAll(
                                                                         new ImageView(
                                                                                 new Image(
-                                                                                        getClass().getResource("../app/img/tick.png").toURI().toString(),
+                                                                                        Main.class.getResource("app/img/tick.png").toURI().toString(),
                                                                                         25,
                                                                                         25,
                                                                                         true,
@@ -258,10 +259,10 @@ public class downloads {
 
         // Load style
         if (Model.getInstance().settings.getSettingBool("dark_theme"))
-            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/dark.css")));
+            root.getStylesheets().add(String.valueOf(Main.class.getResource("app/css/dark.css")));
 
         else
-            root.getStylesheets().add(String.valueOf(getClass().getResource("../app/css/standard.css")));
+            root.getStylesheets().add(String.valueOf(Main.class.getResource("app/css/standard.css")));
 
 
         debug.trace(null, "Initialized downloads view.");
@@ -273,7 +274,7 @@ public class downloads {
 
         // Go to search page
         try {
-            Parent searchView = FXMLLoader.load(getClass().getResource("../app/fxml/search.fxml"));
+            Parent searchView = FXMLLoader.load(Main.class.getResource("app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
@@ -334,7 +335,7 @@ public class downloads {
                     try {
                         albumArt.setImage(
                                 new Image(
-                                        getClass().getResource("../app/img/song_default.png").toURI().toString(),
+                                        Main.class.getResource("app/img/song_default.png").toURI().toString(),
                                         85,
                                         85,
                                         true,
@@ -409,7 +410,7 @@ public class downloads {
                     right.getChildren().add(
                             new ImageView(
                                     new Image(
-                                            getClass().getResource("../app/img/icon.png").toURI().toString(),
+                                            Main.class.getResource("app/img/icon.png").toURI().toString(),
                                             25,
                                             25,
                                             true,
@@ -432,7 +433,7 @@ public class downloads {
                         right.getChildren().add(
                                 new ImageView(
                                         new Image(
-                                                getClass().getResource("../app/img/tick.png").toURI().toString(),
+                                                Main.class.getResource("app/img/tick.png").toURI().toString(),
                                                 25,
                                                 25,
                                                 true,
@@ -477,7 +478,7 @@ public class downloads {
                 Model.getInstance().download.deleteHistory(viewData);
 
                 try {
-                    Parent settingsView = FXMLLoader.load(getClass().getResource("../app/fxml/downloads.fxml"));
+                    Parent settingsView = FXMLLoader.load(Main.class.getResource("app/fxml/downloads.fxml"));
                     Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
                     mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth() - 16, mainWindow.getHeight() - 39));
                 } catch (IOException er) {
