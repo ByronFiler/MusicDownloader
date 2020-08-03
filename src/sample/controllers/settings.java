@@ -7,12 +7,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import org.controlsfx.control.ToggleSwitch;
 import org.json.JSONException;
@@ -40,54 +40,39 @@ public class settings {
     BorderPane root;
 
     // Information
-    @FXML
-    Label version;
-    @FXML
-    Label latestVersion;
-    @FXML
-    Label youtubeDl;
-    @FXML
-    Label ffmpeg;
+    @FXML Label version;
+    @FXML Label latestVersion;
+    @FXML Label youtubeDl;
+    @FXML Label ffmpeg;
+
+    @FXML HBox versionContainer;
+    @FXML HBox latestVersionContainer;
+    @FXML HBox youtubeDlContainer;
+    @FXML HBox ffmpegContainer;
 
     // Files
-    @FXML
-    Label outputDirectory;
-    @FXML
-    BorderPane saveMusicLine;
-    @FXML
-    Label outputDirectoryInfo;
-    @FXML
-    ComboBox<String> musicFormat;
-    @FXML
-    ComboBox<String> saveAlbumArt;
-    @FXML
-    ToggleSwitch advancedValidationToggle;
+    @FXML Label outputDirectory;
+    @FXML BorderPane saveMusicLine;
+    @FXML Label outputDirectoryInfo;
+    @FXML ComboBox<String> musicFormat;
+    @FXML ComboBox<String> saveAlbumArt;
+    @FXML ToggleSwitch advancedValidationToggle;
 
     // Meta-Data application
-    @FXML
-    ToggleSwitch albumArtToggle;
-    @FXML
-    ToggleSwitch albumTitleToggle;
-    @FXML
-    ToggleSwitch songTitleToggle;
-    @FXML
-    ToggleSwitch artistToggle;
-    @FXML
-    ToggleSwitch yearToggle;
-    @FXML
-    ToggleSwitch trackNumberToggle;
+    @FXML ToggleSwitch albumArtToggle;
+    @FXML ToggleSwitch albumTitleToggle;
+    @FXML ToggleSwitch songTitleToggle;
+    @FXML ToggleSwitch artistToggle;
+    @FXML ToggleSwitch yearToggle;
+    @FXML ToggleSwitch trackNumberToggle;
 
     // application Configuration
-    @FXML
-    ToggleSwitch darkThemeToggle;
-    @FXML
-    ToggleSwitch dataSaverToggle;
+    @FXML ToggleSwitch darkThemeToggle;
+    @FXML ToggleSwitch dataSaverToggle;
 
     // Confirm / Cancel
-    @FXML
-    Button saveSettings;
-    @FXML
-    Button cancel;
+    @FXML Button saveSettings;
+    @FXML Button cancel;
 
     private JSONObject settings;
 
@@ -98,10 +83,38 @@ public class settings {
         settings = Model.getInstance().settings.getSettings();
 
         // Information
+        if (Model.getInstance().settings.getVersion() == null) {
+            version.setText("Unknown");
+            versionContainer.getChildren().add(
+                    new ImageView(
+                            new Image(
+                                    Main.class.getResourceAsStream("app/img/warning.png"),
+                                    20,
+                                    20,
+                                    true,
+                                    true
+                            )
+                    )
+            );
+        } else {
+            version.setText(Model.getInstance().settings.getVersion());
+            versionContainer.getChildren().add(
+                    new ImageView(
+                            new Image(
+                                    Main.class.getResourceAsStream("app/img/tick.png"),
+                                    20,
+                                    20,
+                                    true,
+                                    true
+                            )
+                    )
+            );
+        }
+
         version.setText(Model.getInstance().settings.getVersion() == null ? "Unknown" : Model.getInstance().settings.getVersion());
         new getLatestVersion();
-        new verifyExecutable("youtube-dl", youtubeDl);
-        new verifyExecutable("ffmpeg", ffmpeg);
+        new verifyExecutable("youtube-dl", youtubeDl, youtubeDlContainer);
+        new verifyExecutable("ffmpeg", ffmpeg, ffmpegContainer);
 
         // Files
         outputDirectory.setText(
@@ -280,6 +293,18 @@ public class settings {
                 Platform.runLater(() -> {
                     try {
                         latestVersion.setText(jsonData.get("version").toString());
+                        latestVersionContainer.getChildren().add(
+                                new ImageView(
+                                    new Image(
+                                            Main.class.getResourceAsStream("app/img/tick.png"),
+                                            20,
+                                            20,
+                                            true,
+                                            true
+                                    )
+                            )
+                        );
+
                     } catch (JSONException ignored) {
                         debug.warn(t, "Found data syntactically incorrect.");
                     }
@@ -331,10 +356,12 @@ public class settings {
         private final Thread thread;
         private final String executable;
         private final Label element;
+        private final HBox elementContainer;
 
-        verifyExecutable(String executable, Label element) {
+        verifyExecutable(String executable, Label element, HBox elementContainer) {
             this.executable = executable;
             this.element = element;
+            this.elementContainer = elementContainer;
 
             thread = new Thread(this, "executable-execution");
             thread.setDaemon(true);
@@ -347,26 +374,46 @@ public class settings {
 
                 // Will throw an error if not setup
                 Runtime.getRuntime().exec(new String[]{executable});
-                Platform.runLater(() -> element.setText("Configured"));
+                Platform.runLater(() -> {
+                    element.setText("Configured");
+                    elementContainer.getChildren().add(
+                            new ImageView(
+                                    new Image(
+                                            Main.class.getResourceAsStream("app/img/tick.png"),
+                                            20,
+                                            20,
+                                            true,
+                                            true
+                                    )
+                            )
+                    );
+                });
 
             } catch (IOException ignored) {
                 debug.warn(thread, "Failed to verify executable: " + executable);
 
                 Platform.runLater(() -> {
-
                     element.setText("Not Configured");
+                    elementContainer.getChildren().add(
+                            new ImageView(
+                                new Image(
+                                        Main.class.getResourceAsStream("app/img/warning.png"),
+                                        20,
+                                        20,
+                                        true,
+                                        true
+                                )
+                        )
+                    );
 
+                    // Installation requires admin permissions, hence verify the user is a admin, or inform them
                     if (System.getProperty("os.name").startsWith("Windows")) {
-
-                        // Installation requires admin permissions, hence verify the user is a admin, or inform them
-
                         if (new File(System.getenv("ProgramFiles(X86)") + "\\test\\").mkdir() && new File(System.getenv("ProgramFiles(X86)") + "\\test\\").delete()) {
-                            element.setCursor(Cursor.HAND);
-                            element.setTooltip(new Tooltip("Click to configure"));
-                            element.setOnMouseClicked(e -> new manageInstall(executable, element));
-                        } else {
-                            element.setTooltip(new Tooltip("Easy installation requires elevated permissions, restart the program and try again."));
-                        }
+                            elementContainer.setCursor(Cursor.HAND);
+                            Tooltip.install(elementContainer, new Tooltip("Click to configure"));
+                            elementContainer.setOnMouseClicked(e -> new manageInstall(executable, element, elementContainer));
+                        } else
+                            Tooltip.install(elementContainer, new Tooltip("Easy installation requires elevated permissions, restart the program and try again."));
                     }
                 });
             }
@@ -377,10 +424,12 @@ public class settings {
 
             final String executable;
             final Label element;
+            final HBox elementContainer;
 
-            manageInstall(String executable, Label element) {
+            manageInstall(String executable, Label element, HBox elementContainer) {
                 this.executable = executable;
                 this.element = element;
+                this.elementContainer = elementContainer;
 
                 new Thread(this, "manage-install").start();
             }
@@ -388,23 +437,68 @@ public class settings {
             @Override
             public void run() {
 
+                ProgressIndicator x = new ProgressIndicator();
+                x.setMaxSize(20, 20);
+
                 Platform.runLater(() -> {
                     element.setText("Configuring...");
-                    element.setOnMouseClicked(null);
-                    element.setCursor(Cursor.DEFAULT);
+                    elementContainer.setOnMouseClicked(null);
+                    elementContainer.setCursor(Cursor.DEFAULT);
+                    elementContainer.getChildren().set(1, x);
                 });
 
                 try {
 
                     if (executable.equals("youtube-dl") ? install.getYoutubeDl() : install.getFFMPEG())
-                        Platform.runLater(() -> element.setText("Configured"));
+                        Platform.runLater(() -> {
+                            element.setText("Configured");
+                            elementContainer.getChildren().set(
+                                    1,
+                                    new ImageView(
+                                            new Image(
+                                                    Main.class.getResourceAsStream("app/img/tick.png"),
+                                                    20,
+                                                    20,
+                                                    true,
+                                                    true
+                                            )
+                                    )
+                            );
+                        });
 
                     else
-                        Platform.runLater(() -> element.setText("Configure Manually"));
+                        Platform.runLater(() -> {
+                            element.setText("Configure Manually");
+                            elementContainer.getChildren().set(
+                                    1,
+                                    new ImageView(
+                                            new Image(
+                                                    Main.class.getResourceAsStream("app/img/warning.png"),
+                                                    20,
+                                                    20,
+                                                    true,
+                                                    true
+                                            )
+                                    )
+                            );}
+                        );
 
                 } catch (IOException e) {
                     debug.warn(Thread.currentThread(), "Failed to configure due to likely permission issues, despite that it should be blocked.");
-                    Platform.runLater(() -> element.setText("Configure Manually"));
+                    Platform.runLater(() -> {element.setText("Configure Manually");
+                        elementContainer.getChildren().set(
+                                1,
+                                new ImageView(
+                                        new Image(
+                                                Main.class.getResourceAsStream("app/img/warning.png"),
+                                                20,
+                                                20,
+                                                true,
+                                                true
+                                        )
+                                )
+                        );
+                    });
                 }
             }
         }

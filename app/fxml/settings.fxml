@@ -61,7 +61,9 @@
                            <Label text="Version" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                         </left>
                         <right>
-                           <Label fx:id="version" text="Checking..." BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                           <HBox fx:id="versionContainer" spacing="5">
+                              <Label fx:id="version" text="Checking..." BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                           </HBox>
                         </right>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
@@ -69,7 +71,9 @@
                            <Label text="Latest Version" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                         </left>
                         <right>
-                           <Label fx:id="latestVersion" text="Checking..." BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                           <HBox fx:id="latestVersionContainer" spacing="5">
+                              <Label fx:id="latestVersion" text="Checking..." BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                           </HBox>
                         </right>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
@@ -77,7 +81,9 @@
                            <Label text="YouTube-DL Status" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                         </left>
                         <right>
-                           <Label fx:id="youtubeDl" text="Checking..." BorderPane.alignment="CENTER" styleClass="sub_text" />
+                           <HBox fx:id="youtubeDlContainer" spacing="5">
+                              <Label fx:id="youtubeDl" text="Checking..." BorderPane.alignment="CENTER" styleClass="sub_text" />
+                           </HBox>
                         </right>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
@@ -85,7 +91,9 @@
                            <Label text="FFMPEG Status" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                         </left>
                         <right>
-                           <Label fx:id="ffmpeg" text="Checking..." BorderPane.alignment="CENTER" styleClass="sub_text" />
+                           <HBox fx:id="ffmpegContainer" spacing="5">
+                              <Label fx:id="ffmpeg" text="Checking..." BorderPane.alignment="CENTER" styleClass="sub_text" />
+                           </HBox>
                         </right>
                      </BorderPane>
                   </VBox>
