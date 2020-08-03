@@ -388,7 +388,11 @@ public class settings {
             @Override
             public void run() {
 
-                Platform.runLater(() -> element.setText("Configuring..."));
+                Platform.runLater(() -> {
+                    element.setText("Configuring...");
+                    element.setOnMouseClicked(null);
+                    element.setCursor(Cursor.DEFAULT);
+                });
 
                 try {
 
@@ -402,11 +406,6 @@ public class settings {
                     debug.warn(Thread.currentThread(), "Failed to configure due to likely permission issues, despite that it should be blocked.");
                     Platform.runLater(() -> element.setText("Configure Manually"));
                 }
-
-                Platform.runLater(() -> {
-                    element.setCursor(Cursor.DEFAULT);
-                    element.setOnMouseClicked(null);
-                });
             }
         }
     }

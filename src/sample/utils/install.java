@@ -12,7 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-@SuppressWarnings("unused")
 public class install {
 
     public static boolean getYoutubeDl() throws IOException {
@@ -80,6 +79,7 @@ public class install {
 
     }
 
+    @SuppressWarnings("unused")
     private static synchronized void configure(String source) {
 
 
