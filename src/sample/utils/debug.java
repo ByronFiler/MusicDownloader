@@ -19,8 +19,8 @@ public class debug {
 
     // Debugging configuration, as it stands volatile is not needed but in future could be
     private static boolean debug = true;
-    private static boolean advancedDebug = true;
-    private static boolean advancedDebugConcise = true;
+    private static final boolean advancedDebug = true;
+    private static final boolean advancedDebugConcise = true;
 
     // Console colours
     private static final String ANSI_RED = "\u001B[31m";
@@ -31,6 +31,7 @@ public class debug {
 
     private static final boolean useColours = !System.getProperty("os.name").startsWith("Windows");
 
+    @SuppressWarnings("unused")
     public synchronized void set(boolean state)
     {
         debug = state;
