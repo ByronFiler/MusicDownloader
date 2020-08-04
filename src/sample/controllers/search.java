@@ -51,6 +51,7 @@ import java.util.TimerTask;
 // Continue testing connection drops: Control Panel\Network and Internet\Network Connections
 // Search data could also theoretically load songs since the request is already sent to save sending the requests again decreasing load speeds and web requests
 // Internal logic to search isn't great with error handling
+// For quicker general usability try and finish and let the youtube backend threads just complete the search results instead of making the user wait
 
 public class search {
 

@@ -1,31 +1,23 @@
 package sample.model;
 
-import com.mpatric.mp3agic.*;
-import com.musicg.fingerprint.FingerprintManager;
-import com.musicg.fingerprint.FingerprintSimilarityComputer;
-import com.musicg.wave.Wave;
-import javafx.application.Platform;
-import javazoom.jl.converter.Converter;
-import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import sample.utils.acquireDownloadFiles;
 import sample.utils.debug;
 import sample.utils.gzip;
 
-import java.io.*;
-import java.net.URL;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
 
 public class download{
 
     private volatile JSONArray downloadQueue = new JSONArray();
     private volatile JSONObject downloadObject = new JSONObject();
     private JSONArray downloadHistory = new JSONArray();
-    private final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
 
     public download() {
         refreshDownloadHistory();
@@ -60,7 +52,7 @@ public class download{
             }
 
             downloadObject = queueItem;
-            new acquireDownloadFiles(downloadObject);
+            new acquireDownloadFiles();
 
         } else {
 
@@ -104,6 +96,14 @@ public class download{
         this.downloadHistory = downloadHistory;
     }
 
+    public synchronized void setDownloadObject(JSONObject downloadObject) {
+        this.downloadObject = downloadObject;
+    }
+
+    public synchronized void setDownloadQueue(JSONArray downloadQueue) {
+        this.downloadQueue = downloadQueue;
+    }
+
     private synchronized void refreshDownloadHistory() {
 
         try {
@@ -125,6 +125,7 @@ public class download{
         }
     }
 
+    /*
     private class acquireDownloadFiles implements Runnable {
 
         final Thread thread;
@@ -532,5 +533,8 @@ public class download{
             });
 
         }
+
     }
+
+     */
 }

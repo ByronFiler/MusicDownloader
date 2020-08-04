@@ -215,7 +215,6 @@ public class results {
             // Checking in temporary data
             try {
                 for (int i = 0; i < downloadItems.length(); i++)
-
                     for (int j = 0; j < downloadItems.getJSONArray(i).length(); j++)
 
                         if (idExistsInData(downloadItems.getJSONArray(i).getJSONObject(j).getJSONArray("songs"), id))
