@@ -497,6 +497,7 @@ public class results {
                 if (!kill) {
                     downloadItem.put("metadata", metaData);
                     downloadItem.put("songs", songs);
+
                     Model.getInstance().download.updateDownloadQueue(downloadItem);
                 }
 
