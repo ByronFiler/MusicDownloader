@@ -292,8 +292,14 @@ public class downloads {
         viewData.put("id", source.getJSONArray("songs").getJSONObject(index).getString("id"));
         viewData.put("title", source.getJSONArray("songs").getJSONObject(index).getString("title"));
         viewData.put("directory", source.getJSONObject("metadata").getString("directory"));
-        viewData.put("artUrl", source.getJSONObject("metadata").getString("art")); // error
-        viewData.put("completed", source.getJSONArray("songs").getJSONObject(index).getBoolean("completed"));
+        viewData.put("artUrl", source.getJSONObject("metadata").getString("art"));
+
+        // TODO: Check if I can just do this on one line
+        if (source.getJSONArray("songs").getJSONObject(index).get("completed") == JSONObject.NULL)
+            viewData.put("completed", source.getJSONArray("songs").getJSONObject(index).get("completed"));
+
+        else
+            viewData.put("completed", source.getJSONArray("songs").getJSONObject(index).getBoolean("completed"));
 
         return viewData;
 
@@ -405,19 +411,26 @@ public class downloads {
             // This is a scheduled or completed download
             if (viewData.get("completed") == JSONObject.NULL) {
 
-                // Queued in the future, not current in progress for a download
                 try {
-                    right.getChildren().add(
-                            new ImageView(
-                                    new Image(
-                                            Main.class.getResource("app/img/icon.png").toURI().toString(),
-                                            25,
-                                            25,
-                                            true,
-                                            true
-                                    )
+                    ImageView scheduledIcon = new ImageView(
+                            new Image(
+                                    Main.class.getResource("app/img/scheduled.png").toURI().toString(),
+                                    25,
+                                    25,
+                                    true,
+                                    true
                             )
                     );
+                    scheduledIcon.setEffect(
+                            new ColorAdjust(
+                                    0,
+                                    0,
+                                    Model.getInstance().settings.getSettingBool("dark_theme") ? 1 : -1,
+                                    0
+                            )
+                    );
+
+                    right.getChildren().add(scheduledIcon);
                 } catch (URISyntaxException ignored) {}
 
 

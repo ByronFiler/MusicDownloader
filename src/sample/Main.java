@@ -16,6 +16,9 @@ import java.io.IOException;
 
 // Structure files & check about running
 // tmp: Temporary files: youtube-dl raw downloads, temporary wav files, bat files
+// Add different language options
+// Possibly some sort of automatic crash logging?
+// QUEUEING MULTIPLE ALBUMS DOESN'T INSTA CACHE RESOURCES CAUSING HUGE LAG, FIX ASAP
 
 public class Main extends Application {
 

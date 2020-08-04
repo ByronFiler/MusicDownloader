@@ -209,15 +209,22 @@ public class results {
 
         }
 
+        // TODO: Breaks with existing queue: FIX!
         private synchronized String generateNewSongId(JSONArray downloadItems) {
             String id = Double.toString(Math.random()).split("\\.")[1];
 
             // Checking in temporary data
+            System.out.println(downloadItems);
+
             try {
                 for (int i = 0; i < downloadItems.length(); i++)
-                    for (int j = 0; j < downloadItems.getJSONArray(i).length(); j++)
-
-                        if (idExistsInData(downloadItems.getJSONArray(i).getJSONObject(j).getJSONArray("songs"), id))
+                        if (idExistsInData(
+                                    downloadItems
+                                            .getJSONObject(i)
+                                            .getJSONArray("songs"),
+                                    id
+                            )
+                        )
                             return generateNewCacheArtId(downloadItems);
 
             } catch (JSONException e) {

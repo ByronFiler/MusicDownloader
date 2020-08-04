@@ -225,9 +225,6 @@ public class acquireDownloadFiles implements Runnable {
                 id3v2tag.setTrack(index);
 
                 try {
-
-                    System.out.println(song.getString("title"));
-
                     // Check if already exists, remove special characters
 
                     mp3Applicator.save(downloadObject.getJSONObject("metadata").getString("directory") + "\\" + song.getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_") + "." + format);
