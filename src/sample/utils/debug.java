@@ -14,6 +14,8 @@ import java.util.List;
 //TODO
 // Error should dump all messages to file without ASCII colours
 // Ascii colours should only be visible if the terminal allows it
+// Debug threads doesn't have a space between debug and message, fix
+// Add a silent debug option which will only save debug message to memory in-case of a crash
 
 public class debug {
 

@@ -41,6 +41,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.IntStream;
 
+// TODO: Extreme lag when downloading a very large album due to JavaFX issues, reconsider how entries are drawn
+
 public class downloads {
 
     @FXML AnchorPane root;
@@ -293,13 +295,7 @@ public class downloads {
         viewData.put("title", source.getJSONArray("songs").getJSONObject(index).getString("title"));
         viewData.put("directory", source.getJSONObject("metadata").getString("directory"));
         viewData.put("artUrl", source.getJSONObject("metadata").getString("art"));
-
-        // TODO: Check if I can just do this on one line
-        if (source.getJSONArray("songs").getJSONObject(index).get("completed") == JSONObject.NULL)
-            viewData.put("completed", source.getJSONArray("songs").getJSONObject(index).get("completed"));
-
-        else
-            viewData.put("completed", source.getJSONArray("songs").getJSONObject(index).getBoolean("completed"));
+        viewData.put("completed",  source.getJSONArray("songs").getJSONObject(index).get("completed"));
 
         return viewData;
 

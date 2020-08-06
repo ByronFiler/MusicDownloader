@@ -16,8 +16,10 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class acquireDownloadFiles implements Runnable {
 
@@ -111,6 +113,7 @@ public class acquireDownloadFiles implements Runnable {
 
     }
 
+    @SuppressWarnings({"StatementWithEmptyBody"})
     private synchronized void downloadFile(JSONObject song, String format, int sourceDepth, String index) throws IOException, JSONException {
 
         // Start download
@@ -130,17 +133,37 @@ public class acquireDownloadFiles implements Runnable {
         InputStream is = process.getInputStream();
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
 
+        // Console won't always print out a accurate file name
+
+        List<File> preexistingFiles = Arrays.asList(
+                Objects.requireNonNull(
+                        new File(System.getProperty("user.dir"))
+                                .listFiles()
+                )
+        );
+
         String line;
-        String downloadedFile = "";
+        while ((line = reader.readLine()) != null);
+        // Silent debug to not spam console
 
-        while ((line = reader.readLine()) != null) {
+        ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(System.getProperty("user.dir")).listFiles())));
+        currentFiles.removeAll(preexistingFiles);
 
-            // Sourcing name of downloaded file
-            if (line.contains("[ffmpeg]")) {
-                downloadedFile = line.substring(22);
-            }
+        if (currentFiles.size() != 1)
+            debug.error(
+                    Thread.currentThread(),
+                    String.format(
+                            "Expected 1 new files to have been created %s found, specifically %s.",
+                            currentFiles.size(),
+                            String.join(",", currentFiles.stream().map((File::getName)).toString())
+                    ),
+                    new IllegalArgumentException("Unexpected new files")
+            );
 
-        }
+        File downloadedFile = currentFiles.get(0);
+
+        if (downloadedFile == null)
+            throw new IOException("Failed to find downloaded file.");
 
         // Delete now useless bat
         if (!new File("exec.bat").delete())
@@ -148,9 +171,10 @@ public class acquireDownloadFiles implements Runnable {
 
         // Validate
         if (Model.getInstance().settings.getSettingBool("advanced_validation")) {
+
             float downloadValidity = evaluateDownloadValidity(
                     String.format("https://rovimusic.rovicorp.com/playback.mp3?c=%s=&f=I", song.getString("sample")),
-                    downloadedFile
+                    downloadedFile.getName()
             );
 
             debug.trace(
@@ -166,17 +190,17 @@ public class acquireDownloadFiles implements Runnable {
             if (downloadValidity <= 0.7) {
 
                 // Delete downloaded files & sample
-                if (!new File(downloadedFile).delete()) {
-                    debug.warn(Thread.currentThread(), "Failed to delete: " + downloadedFile);
-                }
+                if (!downloadedFile.delete())
+                    debug.warn(Thread.currentThread(), "Failed to delete: " + downloadedFile.getName());
 
                 if (song.getJSONArray("source").length() > sourceDepth + 2) {
+
                     // Can continue and move onto the next source
                     downloadFile(song, format, sourceDepth + 1, index);
                     return;
-                } else {
+
+                } else
                     debug.warn(Thread.currentThread(), "Failed to find a song in sources that was found to be valid, inform user of failure.");
-                }
 
             }
         }
@@ -230,7 +254,7 @@ public class acquireDownloadFiles implements Runnable {
                     mp3Applicator.save(downloadObject.getJSONObject("metadata").getString("directory") + "\\" + song.getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_") + "." + format);
 
                     // Delete old file
-                    if (!new File(downloadedFile).delete()) {
+                    if (!downloadedFile.delete()) {
                         debug.error(Thread.currentThread(), "Failed to delete file: " + downloadedFile, new IOException());
                     }
 
@@ -245,7 +269,7 @@ public class acquireDownloadFiles implements Runnable {
 
             // Just move & rename the file
             Files.move(
-                    Paths.get(downloadedFile),
+                    Paths.get(downloadedFile.getAbsolutePath()),
                     Paths.get(downloadObject.getJSONObject("metadata").getString("directory") + "\\" + song.getString("title") + "." + format)
             );
 
@@ -260,6 +284,8 @@ public class acquireDownloadFiles implements Runnable {
         try {
             downloadObject.getJSONObject("metadata").put("directory", generateFolder(downloadObject.getJSONObject("metadata").getString("directory")));
         } catch (JSONException ignored) {}
+
+        // TODO: Should be cached instantly then moved from the cache
 
         // Download the album art
         try {

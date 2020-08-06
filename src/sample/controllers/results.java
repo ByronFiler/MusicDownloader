@@ -38,13 +38,13 @@ import java.util.Objects;
 
 public class results {
 
-    @FXML public AnchorPane root;
+    @FXML private AnchorPane root;
 
-    @FXML public ListView<BorderPane> results;
+    @FXML private ListView<BorderPane> results;
 
-    @FXML public ProgressIndicator queueAdditionProgress;
-    @FXML public Button download;
-    @FXML public Button cancel;
+    @FXML private ProgressIndicator queueAdditionProgress;
+    @FXML private Button download;
+    @FXML private Button cancel;
 
     generateQueueItem queueAdder;
 
@@ -209,23 +209,14 @@ public class results {
 
         }
 
-        // TODO: Breaks with existing queue: FIX!
         private synchronized String generateNewSongId(JSONArray downloadItems) {
             String id = Double.toString(Math.random()).split("\\.")[1];
 
             // Checking in temporary data
-            System.out.println(downloadItems);
-
             try {
                 for (int i = 0; i < downloadItems.length(); i++)
-                        if (idExistsInData(
-                                    downloadItems
-                                            .getJSONObject(i)
-                                            .getJSONArray("songs"),
-                                    id
-                            )
-                        )
-                            return generateNewCacheArtId(downloadItems);
+                    if (idExistsInData(downloadItems.getJSONObject(i).getJSONArray("songs"), id))
+                        return generateNewCacheArtId(downloadItems);
 
             } catch (JSONException e) {
                 debug.error(null, "Failed to parse temporary data for ID generation.", e);
