@@ -28,6 +28,8 @@ import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -54,6 +56,7 @@ public class settings {
     @FXML Label outputDirectory;
     @FXML BorderPane saveMusicLine;
     @FXML Label outputDirectoryInfo;
+    @FXML HBox outputDirectoryContainer;
     @FXML ComboBox<String> musicFormat;
     @FXML ComboBox<String> saveAlbumArt;
     @FXML ToggleSwitch advancedValidationToggle;
@@ -117,14 +120,14 @@ public class settings {
         new verifyExecutable("ffmpeg", ffmpeg, ffmpegContainer);
 
         // Files
-        outputDirectory.setText(
-                Model.getInstance().settings.getSetting("output_directory").equals("") ?
-                        System.getProperty("user.dir") :
-                        Model.getInstance().settings.getSetting("output_directory")
-        );
+        String outputDirectoryRaw = Model.getInstance().settings.getSetting("output_directory").equals("") ?
+                System.getProperty("user.dir") :
+                Model.getInstance().settings.getSetting("output_directory");
+        outputDirectory.setText(outputDirectoryRaw);
         musicFormat.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("music_format")));
         saveAlbumArt.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("save_album_art")));
         advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
+        new validateDirectory(outputDirectoryRaw);
 
         // Meta-Data
         albumArtToggle.setSelected(Model.getInstance().settings.getSettingBool("album_art"));
@@ -178,6 +181,7 @@ public class settings {
             newFolder.showSaveDialog(null);
 
             outputDirectory.setText(newFolder.getSelectedFile().getPath());
+            new validateDirectory(newFolder.getSelectedFile().getPath());
             validateConfirm();
 
         } catch (NullPointerException ignored) {
@@ -347,6 +351,92 @@ public class settings {
             }, 0, 1000);
 
         }
+
+    }
+
+    // Validate directory to confirm
+    class validateDirectory implements Runnable {
+
+        String directory;
+
+        validateDirectory(String directory) {
+            this.directory = directory;
+
+            Thread thread = new Thread(this, "directory-validation");
+            thread.setDaemon(true);
+            thread.start();
+        }
+
+        public void run() {
+
+            // Check the actual directory, exists
+            if (!Files.exists(Paths.get(directory))) {
+
+                ImageView warningImage = new ImageView(new Image(
+                        Main.class.getResourceAsStream("app/img/warning.png"),
+                        25,
+                        25,
+                        true,
+                        true
+                ));
+                Tooltip.install(warningImage, new Tooltip("Failed to find the request directory, check it exists or select a new one."));
+
+                // Warn user
+                Platform.runLater(() ->
+                        outputDirectoryContainer
+                                .getChildren()
+                                .add(warningImage)
+                );
+
+                debug.trace(Thread.currentThread(), "Output directory was not found.");
+
+
+            } else {
+
+                // Check read/write perms
+                File checkerTempFile;
+
+                do {
+                    checkerTempFile = new File(directory + "\\" + Math.random());
+                } while (checkerTempFile.exists());
+
+                if (!checkerTempFile.mkdir() || !checkerTempFile.delete()) {
+
+                    ImageView warningImage = new ImageView(new Image(
+                            Main.class.getResourceAsStream("app/img/warning.png"),
+                            25,
+                            25,
+                            true,
+                            true
+                    ));
+
+                    Tooltip.install(warningImage, new Tooltip("The program does not have permissions to write to this directory, please restart with elevated permissions or select a different directory."));
+
+                    // Warn user
+                    Platform.runLater(() ->
+                        outputDirectoryContainer
+                                .getChildren()
+                                .add(warningImage)
+                    );
+
+                    debug.trace(Thread.currentThread(), "Output directory was found, but lacking write permissions.");
+
+                } else {
+
+                    Platform.runLater(() -> {
+                        if (outputDirectoryContainer.getChildren().size() > 1)
+                            outputDirectoryContainer.getChildren().setAll(outputDirectoryContainer.getChildren().get(0));
+                    });
+
+                }
+
+
+
+            }
+
+
+        }
+
 
     }
 

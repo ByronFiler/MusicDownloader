@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane id="root" fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="sample.controllers.downloads">
+   <BorderPane prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="30.0">
+      <top>
+         <Label text="Downloads" BorderPane.alignment="TOP_LEFT" styleClass="title"/>
+      </top>
+      <center>
+         <VBox fx:id="viewContainer" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+            <BorderPane.margin>
+               <Insets bottom="10.0" top="10.0" />
+            </BorderPane.margin>
+            <BorderPane prefHeight="30.0" prefWidth="540.0">
+               <left>
+                  <Label fx:id="eventViewTitle" styleClass="sub_title3" underline="true" BorderPane.alignment="CENTER"/>
+               </left>
+               <right>
+                  <ComboBox fx:id="eventViewSelector" prefWidth="150.0" BorderPane.alignment="CENTER" />
+               </right>
+            </BorderPane>
+            <ListView fx:id="eventsViewTable" VBox.vgrow="ALWAYS" styleClass="table"/>
+         </VBox>
+      </center>
+      <bottom>
+         <Button mnemonicParsing="false" onAction="#searchView" prefHeight="40.0" prefWidth="120.0" text="Back" BorderPane.alignment="BOTTOM_RIGHT" />
+      </bottom>
+   </BorderPane>
+</AnchorPane>
