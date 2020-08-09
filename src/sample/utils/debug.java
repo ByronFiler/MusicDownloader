@@ -39,6 +39,42 @@ public class debug {
         debug = state;
     }
 
+    public static void log(Thread t, String msg) {
+
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        String traceMessage;
+
+        if (debug) {
+            synchronized ( sample.utils.debug.class )
+            {
+                if (t != null) {
+
+                    traceMessage = String.format(
+                            "LOG%s[%s: %d] @ %s: %s",
+                            advancedDebug ? prettyExecutionTrace() : " ",
+                            t.getName(),
+                            t.getId(),
+                            formatter.format(new Date()),
+                            msg
+                    );
+
+                } else {
+
+                    // Debugging main thread
+                    traceMessage = String.format(
+                            "LOG%s@ %s: %s",
+                            advancedDebug ? prettyExecutionTrace() : " ",
+                            formatter.format(new Date()),
+                            msg
+                    );
+                }
+
+                errorTrace.add(traceMessage);
+            }
+        }
+
+    }
+
     public static void trace(Thread t, String msg) {
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");

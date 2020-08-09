@@ -33,6 +33,7 @@ public class acquireDownloadFiles implements Runnable {
         new Thread(this, "acquire-download-files").start();
     }
 
+    // TODO: Fix and write tests
     private float evaluateDownloadValidity (String sampleFileSource, String downloadedFile) {
 
         // Preparing sample: Downloading sample
@@ -91,9 +92,9 @@ public class acquireDownloadFiles implements Runnable {
             while (true) {
 
                 // File exists so move onto the next one
-                if (Files.exists(Paths.get(folderRequest + "(" + i + ")"))) {
+                if (Files.exists(Paths.get(folderRequest + "(" + i + ")")))
                     i++;
-                } else {
+                else {
                     if (new File(folderRequest + "(" + i + ")").mkdir())
                         return folderRequest + "(" + i + ")";
                     else {
@@ -113,7 +114,6 @@ public class acquireDownloadFiles implements Runnable {
 
     }
 
-    @SuppressWarnings({"StatementWithEmptyBody"})
     private synchronized void downloadFile(JSONObject song, String format, int sourceDepth, String index) throws IOException, JSONException {
 
         // Start download
@@ -143,7 +143,10 @@ public class acquireDownloadFiles implements Runnable {
         );
 
         String line;
-        while ((line = reader.readLine()) != null);
+        while ((line = reader.readLine()) != null)
+            debug.log(Thread.currentThread(), line);
+
+
         // Silent debug to not spam console
 
         ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(System.getProperty("user.dir")).listFiles())));

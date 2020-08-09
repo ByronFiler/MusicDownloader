@@ -36,12 +36,14 @@ import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.IntStream;
 
 // TODO: Extreme lag when downloading a very large album due to JavaFX issues, reconsider how entries are drawn
+// TODO: Modify results individual borderpane instead of calling self reloads for better performance
 
 public class downloads {
 
@@ -52,6 +54,8 @@ public class downloads {
     @FXML ComboBox<String> eventViewSelector;
     @FXML ListView<BorderPane> eventsViewTable;
 
+    ArrayList<BorderPane> downloadHistoriesView = new ArrayList<>();
+
     @FXML
     private void initialize() {
         JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
@@ -60,7 +64,6 @@ public class downloads {
 
         final BorderPane[][] currentDownloadsView = {new BorderPane[0]};
         BorderPane[] plannedDownloadsView = new BorderPane[0];
-        BorderPane[] downloadHistoriesView = new BorderPane[0];
 
         // Check what should be displayed
         if (downloadHistory.length() > 0 || downloadQueue.length() > 0 || downloadObject.length() > 0) {
@@ -84,11 +87,13 @@ public class downloads {
 
                 // TimerTask to update and redraw if necessary
                 new Timer().schedule(new TimerTask() {
+
                     @Override
                     public void run() {
 
+                        // Only handles a single item queued, issue
                         if (Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString())) {
-                            debug.trace(Thread.currentThread(), "Detected download completion in view.");
+                            debug.trace(Thread.currentThread(), "All pending downloads completed.");
                             Platform.runLater(() -> {
                                 eventsViewTable.getItems().clear();
                                 eventViewSelector.getItems().clear();
@@ -96,18 +101,17 @@ public class downloads {
                             });
                             this.cancel();
 
-                        } else {
-
+                        } else
                             try {
                                 for (int i = 0; i < Model.getInstance().download.getDownloadObject().getJSONArray("songs").length(); i++) {
 
                                     int workingCounter = 0;
-
                                     try {
                                         for (BorderPane element : eventsViewTable.getItems()) {
 
                                             try {
-                                                if (element.getId().equals("working")) {
+                                                if (element.getId().equals("working"))
+
                                                     if (workingCounter == i && Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
                                                         Platform.runLater(() -> {
                                                             try {
@@ -122,23 +126,19 @@ public class downloads {
                                                                                 )
                                                                         )
                                                                 );
-                                                            } catch (URISyntaxException e) {
-                                                                e.printStackTrace();
-                                                            }
+                                                                element.setId(null);
+                                                            } catch (URISyntaxException ignored) {}
                                                         });
-                                                }
-                                            } catch (NullPointerException ignored) {
-                                            }
+
+                                            } catch (NullPointerException ignored) {}
                                             workingCounter++;
 
                                         }
-                                    } catch (ConcurrentModificationException ignored) {
-                                    }
+                                    } catch (ConcurrentModificationException ignored) {}
                                 }
                             } catch (JSONException e) {
                                 debug.error(Thread.currentThread(), "Failed to parse JSON to update element result.", e);
                             }
-                        }
                     }
                 }, 0, 50);
 
@@ -150,9 +150,7 @@ public class downloads {
                 try {
                     plannedDownloadsView = new BorderPane[
                         (int) IntStream.of(
-                                IntStream
-                                        .range(0, downloadQueue.length())
-                                        .toArray()
+                                IntStream.range(0, downloadQueue.length()).toArray()
                         ).mapToLong(i -> {
                             try {
                                 return downloadQueue.getJSONObject(i).getJSONArray("songs").length();
@@ -165,7 +163,10 @@ public class downloads {
                         for (int j = 0; j < downloadQueue.getJSONObject(i).getJSONArray("songs").length(); j++) {
 
                             // Update the table & data
-                            eventsViewTable.getItems().add(generateViewResult(generateViewData(downloadQueue.getJSONObject(i), j)));
+                            eventsViewTable.getItems().add(
+                                    generateViewResult(generateViewData(downloadQueue.getJSONObject(i), j))
+                            );
+
                             plannedDownloadsView[k] = eventsViewTable.getItems().get(eventsViewTable.getItems().size()-1);
                             k++;
                         }
@@ -179,13 +180,14 @@ public class downloads {
             // Drawing download histories if they exist
             if (downloadHistory.length() > 0) {
                 eventViewSelector.getItems().add("Download History");
-                downloadHistoriesView = new BorderPane[downloadHistory.length()];
-                for (int i = 0; i < downloadHistory.length(); i++) {
 
+                for (int i = 0; i < downloadHistory.length(); i++) {
                     try {
                         // Update table & data
-                        eventsViewTable.getItems().add(generateViewResult(downloadHistory.getJSONObject(i)));
-                        downloadHistoriesView[i] = eventsViewTable.getItems().get(eventsViewTable.getItems().size()-1);
+                        eventsViewTable.getItems().add(
+                                generateViewResult(downloadHistory.getJSONObject(i))
+                        );
+                        downloadHistoriesView.add(eventsViewTable.getItems().get(eventsViewTable.getItems().size()-1));
 
                     } catch (JSONException e) {
                         // Error for now, later handle it and make it a warning
@@ -222,7 +224,8 @@ public class downloads {
                 // Handle changes
                 BorderPane[] finalCurrentDownloadsView = currentDownloadsView[0];
                 BorderPane[] finalPlannedDownloadsView = plannedDownloadsView;
-                BorderPane[] finalDownloadHistoriesView = downloadHistoriesView;
+                ArrayList<BorderPane> finalDownloadHistoriesView = downloadHistoriesView;
+
                 eventViewSelector.setOnAction(e -> {
                     try {
                         eventViewTitle.setText(eventViewSelector.getSelectionModel().getSelectedItem());
@@ -287,7 +290,6 @@ public class downloads {
     }
 
     private JSONObject generateViewData(JSONObject source, int index) throws JSONException {
-
         JSONObject viewData = new JSONObject();
         viewData.put("artId", source.getJSONObject("metadata").getString("artId"));
         viewData.put("artist", source.getJSONObject("metadata").getString("artist"));
@@ -298,11 +300,9 @@ public class downloads {
         viewData.put("completed",  source.getJSONArray("songs").getJSONObject(index).get("completed"));
 
         return viewData;
-
     }
 
     private BorderPane generateViewResult(JSONObject viewData) throws JSONException{
-
         BorderPane result = new BorderPane();
         result.setCursor(Cursor.HAND);
 
@@ -463,7 +463,6 @@ public class downloads {
         } else {
 
             // This is a history result, should have a box to delete the history item
-
             Line crossLine0 = new Line(20, 0, 0, 20);
             crossLine0.getStyleClass().add("cross-line");
 
@@ -483,18 +482,14 @@ public class downloads {
             });
 
             crossBox.setOnMouseClicked(event -> {
+                // Removing from view
+                this.eventsViewTable.getItems().remove(result);
+                this.downloadHistoriesView.remove(result);
 
+                // Removing from data
                 Model.getInstance().download.deleteHistory(viewData);
-
-                try {
-                    Parent settingsView = FXMLLoader.load(Main.class.getResource("app/fxml/downloads.fxml"));
-                    Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
-                    mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth() - 16, mainWindow.getHeight() - 39));
-                } catch (IOException er) {
-                    debug.error(null, "FXML Error: Downloads.fxml", er);
-                }
-
             });
+
             result.setOnMouseClicked(event -> {
                 try {
                     Desktop.getDesktop().open(new File(viewData.getString("directory")));
