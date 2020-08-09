@@ -29,6 +29,15 @@
     -fx-font-size: 16px;
 }
 
+.sub_text2 {
+    -fx-font-size: 12px;
+}
+
+.sub_text3 {
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+}
+
 .list-cell {
     -fx-background: transparent ;
     -fx-background-color: transparent, -fx-background ;

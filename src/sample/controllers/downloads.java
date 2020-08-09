@@ -6,8 +6,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Cursor;
 import javafx.scene.*;
+import javafx.scene.Cursor;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -304,7 +304,7 @@ public class downloads {
 
     private BorderPane generateViewResult(JSONObject viewData) throws JSONException{
         BorderPane result = new BorderPane();
-        result.setCursor(Cursor.HAND);
+        BorderPane resultInformationContainer = new BorderPane();
 
         // Left: Album Art, Song Title, Artist, Status & Padding
         HBox left = new HBox();
@@ -376,14 +376,32 @@ public class downloads {
 
         // Greyscale if downloaded & files don't exist
         if (!Files.exists(Paths.get(viewData.getString("directory"))) && !viewData.has("completed")) {
+
+            // TODO: Explore UI design with and without this, it's a bit tacky
             // Greyscale the album art
             albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
 
             // Use default cursor as directory can't be opened
-            result.setCursor(Cursor.DEFAULT);
-        }
+            left.setCursor(Cursor.DEFAULT);
 
-        BorderPane resultInformationContainer = new BorderPane();
+            Label missingWarning = new Label("Files Moved or Deleted");
+            missingWarning.getStyleClass().add("sub_text3");
+
+            resultInformationContainer.setBottom(missingWarning);
+
+        } else {
+            left.setCursor(Cursor.HAND);
+            left.setOnMouseClicked(event -> {
+                try {
+                    Desktop.getDesktop().open(new File(viewData.getString("directory")));
+                } catch (IOException | JSONException | IllegalArgumentException ignored) {
+                    left.setCursor(Cursor.DEFAULT);
+                    left.setOnMouseClicked(null);
+
+                    // TODO: Should really redraw, set greyscale & warning or something here if the files have disappeared
+                }
+            });
+        }
 
         Label title = new Label(viewData.getString("title"));
         title.getStyleClass().add("sub_title1");
@@ -395,6 +413,7 @@ public class downloads {
         songArtistContainer.setAlignment(Pos.TOP_LEFT);
 
         resultInformationContainer.setTop(songArtistContainer);
+
         resultInformationContainer.setPadding(new Insets(0, 0, 0, 5));
 
         left.getChildren().addAll(albumArt, resultInformationContainer);
@@ -429,12 +448,9 @@ public class downloads {
                     right.getChildren().add(scheduledIcon);
                 } catch (URISyntaxException ignored) {}
 
-
-
             } else {
 
                 result.setId("working");
-
                 if (viewData.getBoolean("completed")) {
 
                     // In queue and downloaded (Green Tick)
@@ -470,16 +486,16 @@ public class downloads {
             crossLine1.getStyleClass().add("cross-line");
 
             Group crossBox = new Group(crossLine0, crossLine1);
-
-            crossBox.setOnMouseEntered(e -> {
+            right.setOnMouseEntered(e -> {
                 crossLine0.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.RED : Color.BLACK);
                 crossLine1.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.RED : Color.BLACK);
             });
 
-            crossBox.setOnMouseExited(e -> {
+            right.setOnMouseExited(e -> {
                 crossLine0.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.rgb(193, 199, 201) : Color.GRAY);
                 crossLine1.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.rgb(193, 199, 201) : Color.GRAY);
             });
+            right.setCursor(Cursor.HAND);
 
             crossBox.setOnMouseClicked(event -> {
                 // Removing from view
@@ -490,17 +506,10 @@ public class downloads {
                 Model.getInstance().download.deleteHistory(viewData);
             });
 
-            result.setOnMouseClicked(event -> {
-                try {
-                    Desktop.getDesktop().open(new File(viewData.getString("directory")));
-                } catch (IOException | JSONException | IllegalArgumentException ignored) {
-                    result.setCursor(Cursor.DEFAULT);
-                    result.setOnMouseClicked(null);
-                }
-            });
             right.getChildren().add(crossBox);
 
         }
+
         right.setPadding(new Insets(0, 10, 0, 0));
         right.setAlignment(Pos.CENTER);
         right.setMaxWidth(40);
