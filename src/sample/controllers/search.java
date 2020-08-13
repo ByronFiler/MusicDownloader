@@ -4,7 +4,6 @@ import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -35,6 +34,7 @@ import org.jsoup.select.Elements;
 import sample.Main;
 import sample.model.Model;
 import sample.utils.debug;
+import sample.utils.result;
 
 import java.io.File;
 import java.io.IOException;
@@ -208,6 +208,9 @@ public class search {
     }
 
     // Generating the full data for the search data
+
+    // TODO: Use result class instead of this custom
+
     private class allMusicQuery implements Runnable {
 
         private final Thread thread;
@@ -361,30 +364,6 @@ public class search {
 
                     // Add as processed element to table data
                     try {
-
-                        BorderPane searchResult = new BorderPane();
-                        HBox left = new HBox();
-
-                        ImageView albumArt = new ImageView(
-                                new Image(
-                                        searchData.getJSONObject(i).getString("art"),
-                                        75,
-                                        75,
-                                        true,
-                                        true
-                                )
-                        );
-
-                        BorderPane textInfo = new BorderPane();
-
-                        Label title = new Label(searchData.getJSONObject(i).getString("title"));
-                        title.getStyleClass().add("sub_title1");
-
-                        Label artist = new Label(searchData.getJSONObject(i).getString("artist"));
-                        artist.getStyleClass().add("sub_title2");
-
-                        VBox songArtistContainer = new VBox(title, artist);
-
                         StringBuilder metaInfoRaw = new StringBuilder(searchData.getJSONObject(i).getBoolean("album") ? "Album" : "Song");
 
                         if (!searchData.getJSONObject(i).getString("year").isEmpty())
@@ -393,20 +372,15 @@ public class search {
                         if (!searchData.getJSONObject(i).getString("genre").isEmpty())
                             metaInfoRaw.append(" | ").append(searchData.getJSONObject(i).getString("genre"));
 
-                        Label metaInfo = new Label(metaInfoRaw.toString());
-                        metaInfo.getStyleClass().add("sub_text2");
-
-                        textInfo.setTop(songArtistContainer);
-                        textInfo.setBottom(metaInfo);
-
-                        textInfo.setPadding(new Insets(0, 0, 0, 5));
-
-                        left.getChildren().setAll(albumArt, textInfo);
-
-                        searchResult.setLeft(left);
-                        searchResult.getStyleClass().add("result");
-
-                        tableData[i] = searchResult;
+                        result searchResult = new result(
+                                null,
+                                searchData.getJSONObject(i).getString("art"),
+                                true,
+                                searchData.getJSONObject(i).getString("title"),
+                                searchData.getJSONObject(i).getString("artist")
+                        );
+                        searchResult.applyWarning(metaInfoRaw.toString());
+                        tableData[i] = searchResult.getView();
 
                     } catch (JSONException | IllegalArgumentException e) {
                         e.printStackTrace();

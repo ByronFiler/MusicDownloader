@@ -808,15 +808,5 @@ public class downloads {
             view.setRight(right);
 
         }
-
-        private void applyWarning(String warningMessage) {
-
-            Label warning = new Label(warningMessage);
-            warning.getStyleClass().add("sub_text3");
-
-            leftTextContainer.setBottom(warning);
-            view.setLeft(new HBox(albumArt, leftTextContainer));
-
-        }
     }
 }

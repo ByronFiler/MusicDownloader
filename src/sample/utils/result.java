@@ -41,7 +41,7 @@ public class result {
 
         right = new HBox();
 
-        if (Files.exists(Paths.get(localArtResource))) {
+        if (localArtResource != null && Files.exists(Paths.get(localArtResource))) {
 
             albumArt.setImage(
                     new Image(
@@ -89,6 +89,16 @@ public class result {
 
     public synchronized BorderPane getView() {
         return view;
+    }
+
+    public void applyWarning(String warningMessage) {
+
+        Label warning = new Label(warningMessage);
+        warning.getStyleClass().add("sub_text3");
+
+        leftTextContainer.setBottom(warning);
+        view.setLeft(new HBox(albumArt, leftTextContainer));
+
     }
 
     private void fetchRemoteResource(String remoteArtResource) {
