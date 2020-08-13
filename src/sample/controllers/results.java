@@ -366,7 +366,7 @@ public class results {
 
                     case 1:
                         // Only one element, hence doesn't need to be sorted
-                        return new JSONArray(searchDataExtracted.getJSONObject(0).getString("watch_id"));
+                        return new JSONArray("[" + searchDataExtracted.getJSONObject(0).getString("watch_id") + "]");
 
                     default:
                         // Quick-sort remaining and return

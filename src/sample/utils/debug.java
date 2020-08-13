@@ -16,6 +16,7 @@ import java.util.List;
 // Ascii colours should only be visible if the terminal allows it
 // Debug threads doesn't have a space between debug and message, fix
 // Add a silent debug option which will only save debug message to memory in-case of a crash
+// Crash should provide some hardware information & connection, and should put crash in a separate directory
 
 public class debug {
 

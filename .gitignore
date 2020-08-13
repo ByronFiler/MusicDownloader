@@ -11,4 +11,5 @@
 *.part
 *.mp3
 *.webm
+*.log
 !meta.json

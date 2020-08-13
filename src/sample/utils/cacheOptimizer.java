@@ -35,9 +35,8 @@ public class cacheOptimizer implements Runnable{
 
         try {
             for (int i = 0; i < downloadHistory.length(); i++) {
-
-                if (!usedArtIds.contains(downloadHistory.getJSONObject(i).getString("artId")))
-                    usedArtIds.add(downloadHistory.getJSONObject(i).getString("artId"));
+                if (!usedArtIds.contains(downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId")))
+                    usedArtIds.add(downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId"));
             }
         } catch (JSONException e) {
             debug.error(Thread.currentThread(), "Failed to parse download history for art IDs.", e);
@@ -107,19 +106,11 @@ public class cacheOptimizer implements Runnable{
 
         try {
 
-            for (int i = 0; i < renameRequests.length(); i++) {
+            for (int i = 0; i < renameRequests.length(); i++)
+                for (int j = 0; j < downloadHistory.length(); j++)
 
-                for (int j = 0; j < downloadHistory.length(); j++) {
-
-                    if (downloadHistory.getJSONObject(j).getString("artId").equals(renameRequests.getJSONObject(i).getString("original"))) {
-
-                        downloadHistory.getJSONObject(j).put("artId", renameRequests.getJSONObject(i).getString("new"));
-
-                    }
-
-                }
-
-            }
+                    if (downloadHistory.getJSONObject(j).getJSONObject("metadata").getString("artId").equals(renameRequests.getJSONObject(i).getString("original")))
+                        downloadHistory.getJSONObject(j).getJSONObject("metadata").put("artId", renameRequests.getJSONObject(i).getString("new"));
 
             try {
 
@@ -171,15 +162,15 @@ public class cacheOptimizer implements Runnable{
         try {
             for (int i = 0; i < downloadHistory.length(); i++) {
 
-                if (!Files.exists(Paths.get(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", downloadHistory.getJSONObject(i).getString("artId"))))) {
+                if (!Files.exists(Paths.get(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId"))))) {
 
                     boolean alreadyPlanned = false;
                     if (downloadObjects.length() > 0) {
                         for (int j = 0; j < downloadObjects.length(); j++) {
 
-                            if (downloadObjects.getJSONObject(j).getString("artUrl").equals(downloadHistory.getJSONObject(i).getString("artUrl"))) {
+                            if (downloadObjects.getJSONObject(j).getJSONObject("metadata").getString("art").equals(downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("art"))) {
                                 alreadyPlanned = true;
-                                downloadHistory.getJSONObject(j).put("artId", downloadObjects.getJSONObject(j).getString("artId"));
+                                downloadHistory.getJSONObject(j).put("artId", downloadObjects.getJSONObject(j).getJSONObject("metadata").getString("artId"));
                             }
 
                         }
@@ -195,8 +186,8 @@ public class cacheOptimizer implements Runnable{
             for (int i = 0; i < downloadObjects.length(); i++) {
 
                 FileUtils.copyURLToFile(
-                        new URL(downloadObjects.getJSONObject(i).getString("artUrl")),
-                        new File(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", downloadObjects.getJSONObject(i).getString("artId")))
+                        new URL(downloadObjects.getJSONObject(i).getJSONObject("metadata").getString("art")),
+                        new File(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", downloadObjects.getJSONObject(i).getJSONObject("metadata").getString("artId")))
                 );
                 reacquiredFilesCount++;
 

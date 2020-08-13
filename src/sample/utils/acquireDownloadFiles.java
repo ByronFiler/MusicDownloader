@@ -27,8 +27,6 @@ public class acquireDownloadFiles implements Runnable {
     private final JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
     private final JSONArray downloadQueue = Model.getInstance().download.getDownloadQueue();
 
-    private final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
-
     public acquireDownloadFiles() {
         new Thread(this, "acquire-download-files").start();
     }
@@ -313,16 +311,21 @@ public class acquireDownloadFiles implements Runnable {
         }
 
         // Download files
-        JSONArray additionalHistory = new JSONArray();
+        JSONObject newHistory = new JSONObject();
         try {
 
+            // Preparing history data structure
+            newHistory.put("metadata", downloadObject.getJSONObject("metadata"));
+            JSONArray songs = new JSONArray();
+
+            // Working the download
             for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
 
                 // Will call it's self recursively until it exhausts possible files or succeeds
                 try {
                     downloadFile(
                             downloadObject.getJSONArray("songs").getJSONObject(i),
-                            songReferences.get(Model.getInstance().settings.getSettingInt("music_format")),
+                            resources.songReferences.get(Model.getInstance().settings.getSettingInt("music_format")),
                             0,
                             String.valueOf(i+1)
                     );
@@ -348,36 +351,26 @@ public class acquireDownloadFiles implements Runnable {
                         )
                 );
 
-                // Updating the downloads history
-                try {
+                JSONObject newSongHistory = new JSONObject();
+                newSongHistory.put("title", downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"));
+                newSongHistory.put("id", downloadObject.getJSONArray("songs").getJSONObject(i).getString("id"));
 
-                    JSONObject downloadHistory = new JSONObject();
-                    downloadHistory.put("title", downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"));
-                    downloadHistory.put("artist", downloadObject.getJSONObject("metadata").getString("artist"));
-                    downloadHistory.put("artUrl", downloadObject.getJSONObject("metadata").getString("art"));
-                    downloadHistory.put("artId", downloadObject.getJSONObject("metadata").getString("artId"));
-                    downloadHistory.put("directory", downloadObject.getJSONObject("metadata").getString("directory"));
-                    downloadHistory.put("id", downloadObject.getJSONArray("songs").getJSONObject(i).getString("id"));
-
-                    additionalHistory.put(downloadHistory);
-
-                } catch (JSONException e) {
-                    debug.warn(Thread.currentThread(), "Failed to generate JSON for download history result.");
-                }
+                songs.put(newSongHistory);
 
             }
+
+            newHistory.put("songs", songs);
+
+
         } catch (JSONException e) {
             debug.error(Thread.currentThread(), "JSON Error when attempting to access songs to download.", e);
         }
 
         // Updating the history
         try {
-            for (int i = 0; i < additionalHistory.length(); i++)
-                downloadHistory.put(additionalHistory.getJSONObject(i));
-
+            downloadHistory.put(newHistory);
             Model.getInstance().download.setDownloadHistory(downloadHistory);
-
-        } catch (JSONException | IOException e) {
+        } catch (IOException e) {
             debug.error(Thread.currentThread(), "Failed to set new download history with current download.", e);
         }
 
