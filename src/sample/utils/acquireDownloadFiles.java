@@ -233,10 +233,10 @@ public class acquireDownloadFiles implements Runnable {
 
                 // Applying remaining data
                 if (Model.getInstance().settings.getSettingBool("album_title"))
-                    id3v2tag.setTitle(downloadObject.getJSONObject("metadata").getString("album"));
+                    id3v2tag.setTitle(song.getString("title"));
 
                 if (Model.getInstance().settings.getSettingBool("song_title"))
-                    id3v2tag.setAlbum(song.getString("title"));
+                    id3v2tag.setAlbum(downloadObject.getJSONObject("metadata").getString("album"));
 
                 if (Model.getInstance().settings.getSettingBool("artist")) {
                     id3v2tag.setArtist(downloadObject.getJSONObject("metadata").getString("artist"));
