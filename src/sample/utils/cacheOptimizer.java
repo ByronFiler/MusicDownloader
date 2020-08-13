@@ -27,6 +27,19 @@ public class cacheOptimizer implements Runnable{
 
     @Override
     public void run() {
+
+        // Clearing temporary files
+        if (Files.exists(Paths.get(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\"))) {
+            try {
+                File tempFiles = new File(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\");
+                int preexistingFiles = Objects.requireNonNull(tempFiles.listFiles()).length;
+                FileUtils.deleteDirectory(new File(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\"));
+                debug.trace(Thread.currentThread(), String.format("Deleted %s temporary files.", preexistingFiles));
+            } catch (IOException e) {
+                debug.warn(Thread.currentThread(), "Failed to delete temp directory.");
+            }
+        }
+
         ArrayList<String> usedArtIds = new ArrayList<>();
         ArrayList<File> deleteFiles = new ArrayList<>();
         JSONArray filesData = new JSONArray();

@@ -115,7 +115,11 @@ public class acquireDownloadFiles implements Runnable {
     private synchronized void downloadFile(JSONObject song, String format, int sourceDepth, String index) throws IOException, JSONException {
 
         // Start download
-        FileWriter batCreator = new FileWriter("exec.bat");
+        if (!Files.exists(Paths.get(System.getenv("APPDATA") + "\\MusicDownloader\\temp")))
+            if (!new File(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\").mkdirs())
+                debug.error(Thread.currentThread(), "Failed to create temp directory in music downloader app data.", new IOException());
+
+        FileWriter batCreator = new FileWriter(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\exec.bat");
         batCreator.write(
                 String.format(
                         "youtube-dl --extract-audio --audio-format %s --ignore-errors --retries 10 https://www.youtube.com/watch?v=%s",
@@ -125,18 +129,17 @@ public class acquireDownloadFiles implements Runnable {
         );
         batCreator.close();
 
-        ProcessBuilder builder = new ProcessBuilder("exec.bat");
+        ProcessBuilder builder = new ProcessBuilder(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\exec.bat");
+        builder.directory(new File(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\"));
         builder.redirectErrorStream(true);
         Process process = builder.start();
         InputStream is = process.getInputStream();
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
 
         // Console won't always print out a accurate file name
-
         List<File> preexistingFiles = Arrays.asList(
                 Objects.requireNonNull(
-                        new File(System.getProperty("user.dir"))
-                                .listFiles()
+                        new File(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\").listFiles()
                 )
         );
 
@@ -144,10 +147,8 @@ public class acquireDownloadFiles implements Runnable {
         while ((line = reader.readLine()) != null)
             debug.log(Thread.currentThread(), line);
 
-
         // Silent debug to not spam console
-
-        ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(System.getProperty("user.dir")).listFiles())));
+        ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\").listFiles())));
         currentFiles.removeAll(preexistingFiles);
 
         if (currentFiles.size() != 1)
@@ -167,7 +168,7 @@ public class acquireDownloadFiles implements Runnable {
             throw new IOException("Failed to find downloaded file.");
 
         // Delete now useless bat
-        if (!new File("exec.bat").delete())
+        if (!new File(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\exec.bat").delete())
             debug.warn(Thread.currentThread(), "Failed to delete file: exec.bat");
 
         // Validate
@@ -251,7 +252,6 @@ public class acquireDownloadFiles implements Runnable {
 
                 try {
                     // Check if already exists, remove special characters
-
                     mp3Applicator.save(downloadObject.getJSONObject("metadata").getString("directory") + "\\" + song.getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_") + "." + format);
 
                     // Delete old file

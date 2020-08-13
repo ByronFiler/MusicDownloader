@@ -115,7 +115,7 @@ public class settings {
         }
 
         version.setText(Model.getInstance().settings.getVersion() == null ? "Unknown" : Model.getInstance().settings.getVersion());
-        new getLatestVersion();
+        new getLatestVersion(false);
         new verifyExecutable("youtube-dl", youtubeDl, youtubeDlContainer);
         new verifyExecutable("ffmpeg", ffmpeg, ffmpegContainer);
 
@@ -281,18 +281,20 @@ public class settings {
     // Sends a web-request to the github to check the latest version available
     class getLatestVersion implements Runnable {
 
-        Thread t;
+        private final boolean suppressWarning;
 
-        getLatestVersion() {
-            t = new Thread(this, "get-latest-version");
-            t.setDaemon(true);
-            t.start();
+        getLatestVersion(boolean suppressWarning) {
+            this.suppressWarning = suppressWarning;
+
+            Thread thread = new Thread(this, "get-latest-version");
+            thread.setDaemon(true);
+            thread.start();
         }
 
         public void run() {
 
             try {
-                Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/app/meta.json").get();
+                Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/src/sample/app/meta.json").get();
                 JSONObject jsonData = new JSONObject(githubRequestLatestVersion.text());
                 Platform.runLater(() -> {
                     try {
@@ -306,18 +308,35 @@ public class settings {
                                             true,
                                             true
                                     )
-                            )
+                                )
                         );
 
                     } catch (JSONException ignored) {
-                        debug.warn(t, "Found data syntactically incorrect.");
+                        debug.warn(Thread.currentThread(), "Found data syntactically incorrect.");
                     }
                 });
 
             } catch (IOException | JSONException e) {
-                debug.warn(t, "Failed to get latest version, connection issue.");
+                if (!suppressWarning) {
+                    debug.warn(Thread.currentThread(), "Failed to get latest version, connection issue.");
+                    Platform.runLater(() -> {
+                        latestVersion.setText("Unknown");
+                        latestVersionContainer.getChildren().clear();
+                        latestVersionContainer.getChildren().addAll(
+                                latestVersion,
+                                new ImageView(
+                                        new Image(
+                                                Main.class.getResourceAsStream("app/img/warning.png"),
+                                                20,
+                                                20,
+                                                true,
+                                                true
+                                        )
+                                )
+                        );
+                    });
+                }
                 new awaitReconnection();
-                Platform.runLater(() -> latestVersion.setText("Unknown"));
             }
         }
 
@@ -341,7 +360,7 @@ public class settings {
                 public void run() {
                     try {
                         if (InetAddress.getByName("github.com").isReachable(1000)) {
-                            new getLatestVersion();
+                            new getLatestVersion(true);
                             connectionAttempt.cancel();
                         }
                     } catch (IOException ignored) {
