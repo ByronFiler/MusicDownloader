@@ -42,8 +42,6 @@ import java.util.TimerTask;
 
 /*
 TODO
- - Finishing download doesn't clear previous albums
- - Test with an actual download(s)
  - Support clean transitions between queued future downloads and current downloads ending, reconsider data structs
  - Commit
  - In future also write actual tests for this
@@ -339,9 +337,6 @@ public class downloads {
 
         // TODO: Could be controlled via a default setting
         albumsView();
-
-        System.out.println(eventsViewTable.getItems().size());
-
         debug.trace(null, "Initialized downloads view.");
 
     }
@@ -459,8 +454,8 @@ public class downloads {
                         "Switched to albums view, displaying %s element%s out of %s (%.0f%%), using \"%s\" view.",
                         eventsViewTable.getItems().size(),
                         eventsViewTable.getItems().size() == 1 ? "" : "s",
-                        (1 + plannedDownloadsViewAlbums.size() + downloadHistoriesViewAlbums.size()),
-                        ((double) eventsViewTable.getItems().size() / (double) (1 + plannedDownloadsViewAlbums.size() + downloadHistoriesViewAlbums.size())) * 100,
+                        (currentDownloadsViewAlbums.size() + plannedDownloadsViewAlbums.size() + downloadHistoriesViewAlbums.size()),
+                        ((double) eventsViewTable.getItems().size() / (double) (currentDownloadsViewAlbums.size() + plannedDownloadsViewAlbums.size() + downloadHistoriesViewAlbums.size())) * 100,
                         eventViewSelector.isVisible() ? eventViewSelector.getSelectionModel().getSelectedItem() : "All"
                 )
         );

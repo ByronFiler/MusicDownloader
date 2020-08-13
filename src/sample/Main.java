@@ -24,6 +24,9 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
+
+        debug.error(Thread.currentThread(), "Test", new Exception());
+
         FXMLLoader loader = new FXMLLoader(Main.class.getResource("app/fxml/search.fxml"));
         Parent root = loader.load();
 
