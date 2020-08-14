@@ -35,13 +35,11 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.ConcurrentModificationException;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 /*
 TODO
+ - Allow dragging and dropping of history gz files and folders to generate history
  - Support clean transitions between queued future downloads and current downloads ending, reconsider data structs
  - Commit
  - In future also write actual tests for this
@@ -71,76 +69,34 @@ public class downloads {
     ArrayList<BorderPane> plannedDownloadsView = new ArrayList<>();
     ArrayList<BorderPane> plannedDownloadsViewAlbums = new ArrayList<>();
 
+    JSONObject metadataReference = new JSONObject();
+
     @FXML
     private void initialize() {
-
-        JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
-        JSONArray downloadQueue = Model.getInstance().download.getDownloadQueue();
-        JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
+        final JSONArray[] downloadHistory = {Model.getInstance().download.getDownloadHistory()};
+        final JSONArray[] downloadQueue = {Model.getInstance().download.getDownloadQueue()};
+        final JSONObject[] downloadObject = {Model.getInstance().download.getDownloadObject()};
 
         // Check what should be displayed
-        if (downloadHistory.length() > 0 || downloadQueue.length() > 0 || downloadObject.length() > 0) {
+        if (downloadHistory[0].length() > 0 || downloadQueue[0].length() > 0 || downloadObject[0].length() > 0) {
 
             // Drawing current downloads if they exist
-            if (downloadObject.has("metadata")) {
+            if (downloadObject[0].has("metadata")) {
 
                 eventViewSelector.getItems().add("Currently Downloading");
                 try {
-
-                    if (!Files.exists(Paths.get(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId")))))
+                    if (!Files.exists(Paths.get(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", downloadObject[0].getJSONObject("metadata").getString("artId")))))
                         debug.warn(
                                 Thread.currentThread(),
                                 String.format(
                                         "Failed to used cached resources for album: \"%s\", containing %s song%s.",
-                                        downloadObject.getJSONObject("metadata").getString("album"),
-                                        downloadObject.getJSONArray("songs").length(),
-                                        downloadObject.getJSONArray("songs").length() == 1 ? "" : "s"
+                                        downloadObject[0].getJSONObject("metadata").getString("album"),
+                                        downloadObject[0].getJSONArray("songs").length(),
+                                        downloadObject[0].getJSONArray("songs").length() == 1 ? "" : "s"
                                 )
                         );
 
-                    downloadResult currentDownloadViewAlbumBuilder = new downloadResult(
-                            String.format(
-                                    "%s\\MusicDownloader\\cached\\%s.jpg",
-                                    System.getenv("APPDATA"),
-                                    downloadObject.getJSONObject("metadata").getString("artId")
-                            ),
-                            downloadObject.getJSONObject("metadata").getString("art"),
-                            downloadObject.getJSONObject("metadata").getString("album"),
-                            downloadObject.getJSONObject("metadata").getString("artist")
-                    );
-
-                    double completed = 0;
-                    for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++)
-                        if (downloadObject.getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
-                            completed++;
-
-                    currentDownloadViewAlbumBuilder.setCurrentlyDownloading(
-                            completed / downloadObject.getJSONArray("songs").length()
-                    );
-
-                    currentDownloadsViewAlbums.add(currentDownloadViewAlbumBuilder.getView());
-
-                    for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
-                        downloadResult currentDownloadViewSongBuilder = new downloadResult(
-                                String.format(
-                                        "%s\\MusicDownloader\\cached\\%s.jpg",
-                                        System.getenv("APPDATA"),
-                                        downloadObject.getJSONObject("metadata").getString("artId")
-                                ),
-                                downloadObject.getJSONObject("metadata").getString("art"),
-                                downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
-                                downloadObject.getJSONObject("metadata").getString("artist")
-                        );
-
-                        if (downloadObject.getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
-                            currentDownloadViewSongBuilder.setCompleted();
-
-                        else
-                            currentDownloadViewSongBuilder.setCurrentlyDownloading(-1);
-
-                        currentDownloadsView.add(currentDownloadViewSongBuilder.getView());
-                    }
-
+                    generateCurrent(downloadObject[0]);
 
                     if (albumViewSelectorWrapper.isVisible())
                         eventsViewTable.getItems().addAll(currentDownloadsViewAlbums);
@@ -151,6 +107,11 @@ public class downloads {
                     debug.error(null, "Error parsing JSON for download object.", e);
                 }
 
+                try {
+                    metadataReference = downloadObject[0].getJSONObject("metadata");
+                } catch (JSONException e) {
+                    debug.error(Thread.currentThread(), "Failed to load metadata for rendering albums on the fly.", e);
+                }
                 // TimerTask to update and redraw if necessary
                 new Timer().schedule(new TimerTask() {
 
@@ -183,115 +144,126 @@ public class downloads {
 
                             this.cancel();
 
-                        } else
+                        } else {
 
                             try {
-                                for (int i = 0; i < Model.getInstance().download.getDownloadObject().getJSONArray("songs").length(); i++) {
+                                if (
+                                        metadataReference.toString().equals(
+                                                Model
+                                                        .getInstance()
+                                                        .download
+                                                        .getDownloadObject()
+                                                        .getJSONObject("metadata")
+                                                        .toString()
+                                        )
+                                ) {
+                                    for (int i = 0; i < Model.getInstance().download.getDownloadObject().getJSONArray("songs").length(); i++) {
 
-                                    int workingCounter = 0;
-                                    try {
-                                        for (BorderPane element : currentDownloadsView) {
-                                            try {
-                                                if (workingCounter == i && Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
-                                                    Platform.runLater(() -> {
-                                                        try {
-                                                            ((HBox) element.getRight()).getChildren().setAll(
-                                                                    new ImageView(
-                                                                            new Image(
-                                                                                    Main.class.getResource("app/img/tick.png").toURI().toString(),
-                                                                                    25,
-                                                                                    25,
-                                                                                    true,
-                                                                                    true
-                                                                            )
-                                                                    )
-                                                            );
-                                                        } catch (URISyntaxException ignored) {}
-                                                    });
-                                            } catch (NullPointerException ignored) {}
-                                            workingCounter++;
+                                        int workingCounter = 0;
+                                        try {
+                                            for (BorderPane element : currentDownloadsView) {
+                                                try {
+                                                    if (workingCounter == i && Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
+                                                        Platform.runLater(() -> {
+                                                            try {
+                                                                ((HBox) element.getRight()).getChildren().setAll(
+                                                                        new ImageView(
+                                                                                new Image(
+                                                                                        Main.class.getResource("app/img/tick.png").toURI().toString(),
+                                                                                        25,
+                                                                                        25,
+                                                                                        true,
+                                                                                        true
+                                                                                )
+                                                                        )
+                                                                );
+                                                            } catch (URISyntaxException ignored) {
+                                                            }
+                                                        });
+                                                } catch (NullPointerException ignored) {
+                                                }
+                                                workingCounter++;
+                                            }
+                                        } catch (ConcurrentModificationException ignored) {
                                         }
-                                    } catch (ConcurrentModificationException ignored) {}
-                                }
+                                    }
 
-                                double completed = 0;
-                                for (int i = 0; i < Model.getInstance().download.getDownloadObject().getJSONArray("songs").length(); i++) {
-                                    if (Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
-                                        completed++;
-                                }
+                                    double completed = 0;
+                                    for (int i = 0; i < Model.getInstance().download.getDownloadObject().getJSONArray("songs").length(); i++) {
+                                        if (Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
+                                            completed++;
+                                    }
 
-                                double percentComplete = completed / (double) Model.getInstance().download.getDownloadObject().getJSONArray("songs").length();
+                                    double percentComplete = completed / (double) Model.getInstance().download.getDownloadObject().getJSONArray("songs").length();
 
-                                // Updating array item and view item (if it is use)
-                                if ( ((ProgressIndicator) ((HBox) currentDownloadsViewAlbums.get(0).getRight()).getChildren().get(0)).getProgress() != percentComplete)
+                                    // Updating array item and view item (if it is use)
+                                    if (((ProgressIndicator) ((HBox) currentDownloadsViewAlbums.get(0).getRight()).getChildren().get(0)).getProgress() != percentComplete)
+                                        Platform.runLater(() -> {
+                                            ((ProgressIndicator) ((HBox) currentDownloadsViewAlbums.get(0).getRight()).getChildren().get(0)).setProgress(percentComplete);
+                                            /*
+                                            for (BorderPane item: eventsViewTable.getItems())
+                                                if (item.getId().equals("workingAlbum"))
+                                                    ((ProgressIndicator) ((HBox) item.getRight()).getChildren().get(0)).setProgress(percentComplete);
+
+                                             */
+                                        });
+
+                                } else {
+
+                                    debug.trace(Thread.currentThread(), "Current download completed, switching to next item in queue.");
+
+                                    // Download Object has changed, update the model accordingly
+                                    metadataReference = Model.getInstance().download.getDownloadObject().getJSONObject("metadata");
+
+                                    // Clear all ArrayLists (think view should be done automatically, test and see anyway)
+                                    downloadObject[0] = Model.getInstance().download.getDownloadObject();
+                                    downloadQueue[0] = Model.getInstance().download.getDownloadQueue();
+                                    downloadHistory[0] = Model.getInstance().download.getDownloadHistory();
+
+                                    // Build the new current
+                                    generateCurrent(downloadObject[0]);
+                                    buildDownloadQueueView(downloadQueue[0]);
+                                    renderDownloadHistory(downloadHistory[0]);
+
+                                    // Prevent users being left on a blank screen if we run out of queued elements
                                     Platform.runLater(() -> {
-                                        ((ProgressIndicator) ((HBox) currentDownloadsViewAlbums.get(0).getRight()).getChildren().get(0)).setProgress(percentComplete);
-                                        /*
-                                        for (BorderPane item: eventsViewTable.getItems())
-                                            if (item.getId().equals("workingAlbum"))
-                                                ((ProgressIndicator) ((HBox) item.getRight()).getChildren().get(0)).setProgress(percentComplete);
+                                        if (eventViewSelector.getSelectionModel().getSelectedItem().equals("Download Queue") && plannedDownloadsViewAlbums.size() == 0)
+                                            eventViewSelector.getSelectionModel().select(1);
 
-                                         */
+                                        eventViewSelector.getItems().setAll("All", "Currently Downloading", "Download History");
+                                        if (plannedDownloadsViewAlbums.size() > 0)
+                                            eventViewSelector.getItems().add("Download Queue");
+
+                                        eventsViewTable.getItems().clear();
+                                        albumsView();
                                     });
+                                }
 
                             } catch (JSONException e) {
                                 debug.error(Thread.currentThread(), "Failed to parse JSON to update element result.", e);
                             }
+
+                        }
                     }
                 }, 0, 50);
 
             }
 
             // Drawing planned downloads if they exist
-            if (downloadQueue.length() > 0) {
+            if (downloadQueue[0].length() > 0) {
 
                 eventViewSelector.getItems().add("Download Queue");
                 try {
-                    for (int i = 0; i < downloadQueue.length(); i++) {
-                        checkForCache(downloadQueue, i);
-
-                        for (int j = 0; j < downloadQueue.getJSONObject(i).getJSONArray("songs").length(); j++) {
-
-                            // Update the table & data
-                            downloadResult plannedDownloadSongBuilder = new downloadResult(
-                                    String.format(
-                                            "%s\\MusicDownloader\\cached\\%s.jpg",
-                                            System.getenv("APPDATA"),
-                                            downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")
-                                    ),
-                                    downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("art"),
-                                    downloadQueue.getJSONObject(i).getJSONArray("songs").getJSONObject(j).getString("title"),
-                                    downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artist")
-                            );
-                            plannedDownloadSongBuilder.setScheduledDownload();
-
-                            plannedDownloadsView.add(plannedDownloadSongBuilder.getView());
-                        }
-
-                        downloadResult plannedDownloadAlbumBuilder = new downloadResult(
-                                String.format(
-                                    "%s\\MusicDownloader\\cached\\%s.jpg",
-                                    System.getenv("APPDATA"),
-                                        downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")
-                                ),
-                                downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("art"),
-                                downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("album"),
-                                downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artist")
-                        );
-                        plannedDownloadAlbumBuilder.setScheduledDownload();
-                        plannedDownloadsViewAlbums.add(plannedDownloadAlbumBuilder.getView());
-
-                    }
+                    buildDownloadQueueView(downloadQueue[0]);
                 } catch (JSONException e) {
                     debug.error(null, "Failed to parse data to draw planned queue items.", e);
                 }
             }
 
             // Drawing download histories if they exist
-            if (downloadHistory.length() > 0) {
+            if (downloadHistory[0].length() > 0) {
                 eventViewSelector.getItems().add("Download History");
-
-                renderDownloadHistory(downloadHistory);
+                renderDownloadHistory(downloadHistory[0]);
             }
 
             // Evaluate whether to decide to hide the current download info-box and the combobox
@@ -341,11 +313,106 @@ public class downloads {
 
     }
 
+    private void buildDownloadQueueView(JSONArray downloadQueue) throws JSONException {
+
+        plannedDownloadsView.clear();
+        plannedDownloadsViewAlbums.clear();
+
+        for (int i = 0; i < downloadQueue.length(); i++) {
+            checkForCache(downloadQueue, i);
+
+            for (int j = 0; j < downloadQueue.getJSONObject(i).getJSONArray("songs").length(); j++) {
+
+                // Update the table & data
+                downloadResult plannedDownloadSongBuilder = new downloadResult(
+                        String.format(
+                                "%s\\MusicDownloader\\cached\\%s.jpg",
+                                System.getenv("APPDATA"),
+                                downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")
+                        ),
+                        downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("art"),
+                        downloadQueue.getJSONObject(i).getJSONArray("songs").getJSONObject(j).getString("title"),
+                        downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artist")
+                );
+                plannedDownloadSongBuilder.setScheduledDownload();
+
+                plannedDownloadsView.add(plannedDownloadSongBuilder.getView());
+            }
+
+            downloadResult plannedDownloadAlbumBuilder = new downloadResult(
+                    String.format(
+                            "%s\\MusicDownloader\\cached\\%s.jpg",
+                            System.getenv("APPDATA"),
+                            downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")
+                    ),
+                    downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("art"),
+                    downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("album"),
+                    downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artist")
+            );
+            plannedDownloadAlbumBuilder.setScheduledDownload();
+            plannedDownloadsViewAlbums.add(plannedDownloadAlbumBuilder.getView());
+
+        }
+    }
+
+    private void generateCurrent(JSONObject downloadObject) throws JSONException {
+        currentDownloadsView.clear();
+        currentDownloadsViewAlbums.clear();
+
+        downloadResult currentDownloadViewAlbumBuilder = new downloadResult(
+                String.format(
+                        "%s\\MusicDownloader\\cached\\%s.jpg",
+                        System.getenv("APPDATA"),
+                        downloadObject.getJSONObject("metadata").getString("artId")
+                ),
+                downloadObject.getJSONObject("metadata").getString("art"),
+                downloadObject.getJSONObject("metadata").getString("album"),
+                downloadObject.getJSONObject("metadata").getString("artist")
+        );
+
+
+        double completed = 0;
+        for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++)
+            if (downloadObject.getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
+                completed++;
+
+        currentDownloadViewAlbumBuilder.setCurrentlyDownloading(
+                completed / downloadObject.getJSONArray("songs").length()
+        );
+
+        currentDownloadsViewAlbums.add(currentDownloadViewAlbumBuilder.getView());
+
+        for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
+
+            downloadResult currentDownloadViewSongBuilder = new downloadResult(
+                    String.format(
+                            "%s\\MusicDownloader\\cached\\%s.jpg",
+                            System.getenv("APPDATA"),
+                            downloadObject.getJSONObject("metadata").getString("artId")
+                    ),
+                    downloadObject.getJSONObject("metadata").getString("art"),
+                    downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
+                    downloadObject.getJSONObject("metadata").getString("artist")
+            );
+
+            if (downloadObject.getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
+                currentDownloadViewSongBuilder.setCompleted();
+
+            else
+                currentDownloadViewSongBuilder.setCurrentlyDownloading(-1);
+
+            currentDownloadsView.add(currentDownloadViewSongBuilder.getView());
+
+        }
+    }
+
     private void renderDownloadHistory(JSONArray downloadHistory) {
+        downloadHistoriesView.clear();
+        downloadHistoriesViewAlbums.clear();
+
         for (int i = 0; i < downloadHistory.length(); i++) {
 
             try {
-
                 checkForCache(downloadHistory, i);
 
                 // Generating songs
@@ -411,6 +478,33 @@ public class downloads {
             );
     }
 
+    private void updateViewSelection() {
+        switch (eventViewSelector.getSelectionModel().getSelectedItem()) {
+
+            case "All":
+                eventsViewTable.getItems().clear();
+                eventsViewTable.getItems().addAll(currentDownloadsViewAlbums);
+                eventsViewTable.getItems().addAll(plannedDownloadsViewAlbums);
+                eventsViewTable.getItems().addAll(downloadHistoriesViewAlbums);
+                break;
+
+            case "Currently Downloading":
+                eventsViewTable.getItems().setAll(currentDownloadsViewAlbums);
+                break;
+
+            case "Download Queue":
+                eventsViewTable.getItems().setAll(plannedDownloadsViewAlbums);
+                break;
+
+            case "Download History":
+                eventsViewTable.getItems().setAll(downloadHistoriesViewAlbums);
+                break;
+
+            default:
+                debug.error(null, "Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
+        }
+    }
+
     @FXML
     public void searchView(Event event) {
 
@@ -426,7 +520,8 @@ public class downloads {
 
     }
 
-    @FXML void albumsView() {
+    @FXML
+    public void albumsView() {
         albumViewSelectorWrapper.getStyleClass().setAll("underline2");
         songViewSelectorWrapper.getStyleClass().setAll();
 
@@ -461,34 +556,8 @@ public class downloads {
         );
     }
 
-    private void updateViewSelection() {
-        switch (eventViewSelector.getSelectionModel().getSelectedItem()) {
-
-            case "All":
-                eventsViewTable.getItems().clear();
-                eventsViewTable.getItems().addAll(currentDownloadsViewAlbums);
-                eventsViewTable.getItems().addAll(plannedDownloadsViewAlbums);
-                eventsViewTable.getItems().addAll(downloadHistoriesViewAlbums);
-                break;
-
-            case "Currently Downloading":
-                eventsViewTable.getItems().setAll(currentDownloadsViewAlbums);
-                break;
-
-            case "Download Queue":
-                eventsViewTable.getItems().setAll(plannedDownloadsViewAlbums);
-                break;
-
-            case "Download History":
-                eventsViewTable.getItems().setAll(downloadHistoriesViewAlbums);
-                break;
-
-            default:
-                debug.error(null, "Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
-        }
-    }
-
-    @FXML void songsView() {
+    @FXML
+    public void songsView() {
 
         albumViewSelectorWrapper.getStyleClass().setAll();
         songViewSelectorWrapper.getStyleClass().setAll("underline2");
