@@ -138,7 +138,8 @@ public class downloads {
                                 downloadHistoriesViewAlbums.clear();
 
                                 renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
-                                albumsView();
+                                if (albumViewSelectorWrapper.getStyleClass().size() > 0) albumsView();
+                                else songsView();
 
                             });
 
@@ -235,7 +236,8 @@ public class downloads {
                                             eventViewSelector.getItems().add("Download Queue");
 
                                         eventsViewTable.getItems().clear();
-                                        albumsView();
+                                        if (albumViewSelectorWrapper.getStyleClass().size() > 0) albumsView();
+                                        else songsView();
                                     });
                                 }
 

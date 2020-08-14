@@ -24,6 +24,7 @@ public class result {
     protected final HBox left;
     protected final ImageView albumArt;
     protected final BorderPane leftTextContainer;
+    protected final BorderPane imageContainer;
 
     protected HBox right;
 
@@ -35,6 +36,10 @@ public class result {
             String artist
     ) {
         view = new BorderPane();
+
+        imageContainer = new BorderPane();
+        imageContainer.setMinSize(85, 85);
+        imageContainer.setPrefSize(85, 85);
 
         albumArt = new ImageView();
         leftTextContainer = new BorderPane();
@@ -81,7 +86,9 @@ public class result {
         right.setAlignment(Pos.CENTER);
         right.setMaxWidth(40);
 
-        left = new HBox(albumArt, leftTextContainer);
+        imageContainer.getChildren().add(albumArt);
+
+        left = new HBox(imageContainer, leftTextContainer);
 
         view.setLeft(left);
         view.getStyleClass().add("result");
@@ -97,7 +104,7 @@ public class result {
         warning.getStyleClass().add("sub_text3");
 
         leftTextContainer.setBottom(warning);
-        view.setLeft(new HBox(albumArt, leftTextContainer));
+        view.setLeft(new HBox(imageContainer, leftTextContainer));
 
     }
 
