@@ -81,7 +81,7 @@ public class download{
                 for (int i = 0; i < queueItem.getJSONArray("songs").length(); i++)
                     queueItem.getJSONArray("songs").getJSONObject(i).put("completed", false);
             } catch (JSONException e) {
-                debug.error(null, "Error updating downloads queue.", e);
+                debug.error(Thread.currentThread(), "Error updating downloads queue.", e);
             }
 
             downloadObject = queueItem;

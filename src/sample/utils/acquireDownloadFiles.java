@@ -21,11 +21,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+/*
+TODO
+ Album art should be cached instantly when added to queue
+ Album art file shouldn't be moved to the download file until after the songs have been loaded, apply to metadata via byte stream or some such
+ Then instead of deleting album art options, write to disk, this minimises fileIO and redundant web requests
+ */
+
 public class acquireDownloadFiles implements Runnable {
 
-    private final JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
+    private JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
     private final JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
-    private final JSONArray downloadQueue = Model.getInstance().download.getDownloadQueue();
+    private JSONArray downloadQueue = Model.getInstance().download.getDownloadQueue();
 
     public acquireDownloadFiles() {
         new Thread(this, "acquire-download-files").start();
@@ -281,9 +288,33 @@ public class acquireDownloadFiles implements Runnable {
     @Override
     public void run() {
 
+        try {
+            debug.trace(
+                    Thread.currentThread(),
+                    String.format(
+                            "Downloading %s by %s, %s item%s left in queue.",
+                            downloadObject.getJSONObject("metadata").getString("album"),
+                            downloadObject.getJSONObject("metadata").getString("artist"),
+                            downloadQueue.length(),
+                            downloadQueue.length() == 1 ? "" : "s"
+                    )
+            );
+        } catch (JSONException e) {
+            debug.error(Thread.currentThread(), "Failed to get download object or queue information to debug.", e);
+        }
+
         // Making the folder to contain the downloads
         try {
-            downloadObject.getJSONObject("metadata").put("directory", generateFolder(downloadObject.getJSONObject("metadata").getString("directory")));
+            downloadObject
+                    .getJSONObject("metadata")
+                    .put(
+                            "directory",
+                            generateFolder(
+                                    downloadObject
+                                            .getJSONObject("metadata")
+                                            .getString("directory")
+                            )
+                    );
         } catch (JSONException ignored) {}
 
         // TODO: Should be cached instantly then moved from the cache
@@ -344,7 +375,7 @@ public class acquireDownloadFiles implements Runnable {
                 debug.trace(
                         Thread.currentThread(),
                         String.format(
-                                "Successfully downloaded \"%s\" (%s of %s)",
+                                "Downloaded \"%s\" (%s of %s)",
                                 downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
                                 i+1,
                                 downloadObject.getJSONArray("songs").length()
@@ -407,43 +438,50 @@ public class acquireDownloadFiles implements Runnable {
 
         // Move onto the next item if necessary
         Platform.runLater(() -> {
+
             if (downloadQueue.length() > 0) {
+
                 try {
 
-                    // Spawning new thread
-                    Model.getInstance().download.setDownloadObject(downloadQueue.getJSONObject(0));
+                    debug.trace(
+                            Thread.currentThread(),
+                            String.format(
+                                "Found %s items left in queue processing and starting new download...",
+                                    downloadQueue.length()
+                            )
+                    );
 
-                    // Marking it now as primed to download
+                    // Creating new download object by marking songs for downloads controller
+                    downloadObject = downloadQueue.getJSONObject(0);
                     for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++)
                         downloadObject.getJSONArray("songs").getJSONObject(i).put("completed", false);
 
+                    // Updating the model
                     Model.getInstance().download.setDownloadObject(downloadObject);
+
+                    // Updating the queue
+                    if (downloadQueue.length() == 1)
+                        downloadQueue = new JSONArray();
+
+                    else {
+
+                        JSONArray newQueue = new JSONArray();
+                        for (int i = 1; i < newQueue.length(); i++)
+                            newQueue.put(downloadQueue.get(i));
+
+                        downloadQueue = newQueue;
+                    }
+                    Model.getInstance().download.setDownloadQueue(downloadQueue);
 
                     // Starting the new download
                     new acquireDownloadFiles();
-
-                    // Update queue
-                    if (downloadQueue.length() > 1) {
-
-                        // Move queued item to the model and respawn this thread.
-                        JSONArray newQueue = new JSONArray();
-                        for (int i = 1; i < downloadQueue.length(); i++)
-                            newQueue.put(downloadQueue.getJSONObject(i));
-
-                        Model.getInstance().download.setDownloadQueue(newQueue);
-
-                    } else {
-
-                        // Queue had only one item, hence has now been cleared
-                        Model.getInstance().download.setDownloadQueue(new JSONArray());
-
-                    }
 
                 } catch (JSONException e) {
                     debug.error(Thread.currentThread(), "Failed to process queue.", e);
                 }
 
             } else {
+                debug.trace(Thread.currentThread(), "Found 0 items remaining in queue, waiting for next download to start.");
                 Model.getInstance().download.setDownloadObject(new JSONObject());
             }
         });
