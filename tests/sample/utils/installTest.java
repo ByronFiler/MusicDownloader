@@ -1,6 +1,7 @@
 package sample.utils;
 
 import org.junit.jupiter.api.Test;
+import sample.utils.io.install;
 
 import java.io.File;
 import java.io.IOException;

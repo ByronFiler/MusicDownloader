@@ -1,4 +1,4 @@
-package sample.utils;
+package sample.utils.io;
 
 import java.io.*;
 import java.util.zip.GZIPInputStream;

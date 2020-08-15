@@ -1,4 +1,4 @@
-package sample.utils;
+package sample.utils.app;
 
 import java.util.Arrays;
 import java.util.List;

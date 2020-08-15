@@ -26,9 +26,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import sample.Main;
-import sample.utils.debug;
+import sample.utils.app.debug;
 import sample.model.Model;
-import sample.utils.resources;
+import sample.utils.app.resources;
 
 import java.io.File;
 import java.io.IOException;

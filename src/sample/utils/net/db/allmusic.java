@@ -1,4 +1,4 @@
-package sample.utils.net;
+package sample.utils.net.db;
 
 import javafx.scene.layout.BorderPane;
 import org.json.JSONArray;
@@ -8,8 +8,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import sample.Main;
-import sample.utils.debug;
-import sample.utils.result;
+import sample.utils.app.debug;
+import sample.utils.fx.result;
 
 import java.io.File;
 import java.io.IOException;
@@ -169,7 +169,7 @@ public class allmusic {
     @SuppressWarnings("unused")
     public static class song {
 
-
+        
 
     }
 

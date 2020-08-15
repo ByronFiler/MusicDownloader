@@ -3,8 +3,8 @@ package sample.model;
 import org.json.JSONException;
 import org.json.JSONObject;
 import sample.Main;
-import sample.utils.debug;
-import sample.utils.resources;
+import sample.utils.app.debug;
+import sample.utils.app.resources;
 
 import java.io.File;
 import java.io.FileNotFoundException;

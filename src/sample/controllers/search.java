@@ -33,8 +33,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import sample.Main;
 import sample.model.Model;
-import sample.utils.debug;
-import sample.utils.net.allmusic;
+import sample.utils.app.debug;
+import sample.utils.net.db.allmusic;
 
 import java.io.IOException;
 import java.net.InetAddress;

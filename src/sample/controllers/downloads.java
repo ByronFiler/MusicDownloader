@@ -25,9 +25,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import sample.Main;
 import sample.model.Model;
-import sample.utils.debug;
-import sample.utils.resources;
-import sample.utils.result;
+import sample.utils.app.debug;
+import sample.utils.app.resources;
+import sample.utils.fx.result;
 
 import java.awt.*;
 import java.io.File;

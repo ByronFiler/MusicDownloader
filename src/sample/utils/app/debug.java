@@ -1,4 +1,4 @@
-package sample.utils;
+package sample.utils.app;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -45,7 +45,7 @@ public class debug {
         String traceMessage;
 
         if (debug) {
-            synchronized ( sample.utils.debug.class )
+            synchronized ( sample.utils.app.debug.class )
             {
                 if (t != null) {
 
@@ -81,7 +81,7 @@ public class debug {
         String traceMessage;
 
         if (debug){
-            synchronized ( sample.utils.debug.class )
+            synchronized ( sample.utils.app.debug.class )
             {
                 if (t != null) {
 
@@ -117,7 +117,7 @@ public class debug {
         String traceMessage;
 
         if (debug){
-            synchronized ( sample.utils.debug.class )
+            synchronized ( sample.utils.app.debug.class )
             {
                 if (t != null) {
 

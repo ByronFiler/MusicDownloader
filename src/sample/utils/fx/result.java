@@ -1,4 +1,4 @@
-package sample.utils;
+package sample.utils.fx;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -9,6 +9,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import sample.Main;
+import sample.utils.app.debug;
 
 import java.io.File;
 import java.io.IOException;

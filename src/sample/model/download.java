@@ -3,10 +3,10 @@ package sample.model;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import sample.utils.acquireDownloadFiles;
-import sample.utils.debug;
-import sample.utils.gzip;
-import sample.utils.resources;
+import sample.utils.io.acquireDownloadFiles;
+import sample.utils.app.debug;
+import sample.utils.io.gzip;
+import sample.utils.app.resources;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;

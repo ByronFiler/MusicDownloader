@@ -1,6 +1,6 @@
 package sample.model;
 
-import sample.utils.cacheOptimizer;
+import sample.utils.io.cacheOptimizer;
 
 public class Model {
     private final static Model instance = new Model();

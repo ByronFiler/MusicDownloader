@@ -3,6 +3,7 @@ package sample.utils;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
+import sample.utils.io.gzip;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;

@@ -1,4 +1,4 @@
-package sample.utils;
+package sample.utils.io;
 
 import com.mpatric.mp3agic.*;
 import com.musicg.fingerprint.FingerprintManager;
@@ -12,6 +12,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import sample.model.Model;
+import sample.utils.app.debug;
+import sample.utils.app.resources;
 
 import java.io.*;
 import java.net.URL;

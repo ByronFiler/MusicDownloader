@@ -21,8 +21,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import sample.Main;
 import sample.model.Model;
-import sample.utils.debug;
-import sample.utils.install;
+import sample.utils.app.debug;
+import sample.utils.io.install;
 
 import javax.swing.*;
 import java.io.File;

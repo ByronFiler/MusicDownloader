@@ -6,14 +6,15 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
-import sample.utils.debug;
+import sample.utils.app.debug;
 
 import java.io.IOException;
 
 /*
 TODO
  Add different language options
- Support different search clients, make allmusic work into a class
+ Support different search databases: https://en.wikipedia.org/wiki/List_of_online_music_databases
+ Support different video sources: Dailymotion, Vimeo, Flickr, Metacafe
  */
 
 public class Main extends Application {
