@@ -14,7 +14,6 @@ import java.io.IOException;
 TODO
  Add different language options
  Support different search clients, make allmusic work into a class
- Resources should contain a link to the application folder, save constant function calls and make os compatibility simpler
  */
 
 public class Main extends Application {

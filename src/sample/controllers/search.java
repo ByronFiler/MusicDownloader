@@ -34,9 +34,8 @@ import org.jsoup.select.Elements;
 import sample.Main;
 import sample.model.Model;
 import sample.utils.debug;
-import sample.utils.result;
+import sample.utils.net.allmusic;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -46,13 +45,13 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-// TODO
-// Losing connection mid-search generates a partially completed results table, don't let this happen
-// Continue testing connection drops: Control Panel\Network and Internet\Network Connections
-// Search data could also theoretically load songs since the request is already sent to save sending the requests again decreasing load speeds and web requests
-// Internal logic to search isn't great with error handling
-// For quicker general usability try and finish and let the youtube backend threads just complete the search results instead of making the user wait
-
+/*
+TODO
+ - Losing connection mid-search generates a partially completed results table, don't let this happen
+ - Continue testing connection drops: Control Panel\Network and Internet\Network Connections
+ - Search data could also theoretically load songs since the request is already sent to save sending the requests again decreasing load speeds and web requests
+ - For quicker general usability try and finish and let the youtube backend threads just complete the search results instead of making the user wait
+ */
 public class search {
 
     @FXML private AnchorPane root;
@@ -70,7 +69,7 @@ public class search {
     private Timer hideErrorMessage;
 
     private generateAutocomplete autoCompleteThread;
-    private allMusicQuery searchThread;
+    private boolean searchQueryActive = false;
 
     @FXML
     private void initialize() {
@@ -147,17 +146,46 @@ public class search {
                 if (search.getText().length() > 1) {
 
                     // Starting the new search thread
-                    try {
-                        if (searchThread.working())
-                            error("A Search is already in progress, please wait.");
-                        else
-                            throw new NullPointerException();
-                    } catch (NullPointerException ignored) {
-
-                        // Start a new search
-                        searchThread = new allMusicQuery(e, search.getText() + e.getText());
+                    if (searchQueryActive) error("A Search is already in progress, please wait.");
+                    else {
                         loadingIcon.setVisible(true);
+                        searchQueryActive = true;
 
+                        Thread queryThread = new Thread(() -> {
+                            allmusic.search searcher = new allmusic.search(search.getText() + e.getText());
+
+                            try {
+                                searcher.query();
+                                if (!Model.getInstance().settings.getSettingBool("data_saver"))
+                                    searcher.getSongAlbumArt();
+
+                                Model.getInstance().search.setSearchResults(searcher.buildView().toArray(new BorderPane[0]));
+                                Model.getInstance().search.setSearchResultsJson(searcher.getSearchResultsData());
+
+                                try {
+                                    Parent resultsView = FXMLLoader.load(Main.class.getResource("app/fxml/results.fxml"));
+                                    Stage mainWindow = (Stage) ((Node) e.getSource()).getScene().getWindow();
+
+                                    Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39)));
+
+                                } catch (IOException er) {
+                                    debug.error(null, "FXML Error: Settings.fxml", er);
+                                }
+
+                            } catch (IOException er) {
+                                Platform.runLater(() -> {
+
+                                    loadingIcon.setVisible(false);
+                                    searchQueryActive = false;
+
+                                    debug.warn(Thread.currentThread(), "Failed to connect to " + allmusic.baseDomain + allmusic.search.searchExtension + search.getText() + e.getText());
+                                    new awaitReconnection();
+                                });
+                            }
+
+                        });
+                        queryThread.setDaemon(true);
+                        queryThread.start();
                     }
 
                 } else
@@ -204,214 +232,6 @@ public class search {
                 });
             }
         }, 2000);
-
-    }
-
-    // Generating the full data for the search data
-    private class allMusicQuery implements Runnable {
-
-        private final Thread thread;
-        private final String query;
-        private final KeyEvent event;
-
-        allMusicQuery (KeyEvent event, String query){
-            this.query = query;
-            this.event = event;
-
-            thread = new Thread(this, "query");
-            thread.setDaemon(true);
-            thread.start();
-        }
-
-        public boolean working() {
-            return thread.isAlive();
-        }
-
-        public void run() {
-            Document doc;
-
-            // Attempting connection
-            try {
-                doc = Jsoup.connect("https://www.allmusic.com/search/all/" + query).get();
-            } catch (IOException e) {
-
-                Platform.runLater(() -> {
-                    // timerRotate.cancel();
-                    loadingIcon.setVisible(false);
-
-                    debug.warn(thread, "Failed to connect to https://www.allmusic.com/search/all/" + query);
-                    new awaitReconnection();
-                });
-                return;
-            }
-
-            // Extracting basic data from search
-            JSONArray searchData = new JSONArray();
-
-            for (Element result: doc.select("ul.search-results").select("li"))
-            {
-
-                // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
-                if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740) {
-                    JSONObject resultData = new JSONObject();
-
-                    // Handling The Title, If it's a song it has "" surround it, which it to be removed
-                    try {
-                        // Title
-                        resultData.put("title", result.select("div.title").text().replaceAll("\"", ""));
-
-                        // Artist
-                        resultData.put("artist", result.select("h4").text().hashCode() == 2582837 ? result.select("div.performers").select("a").text() : result.select("div.artist").text());
-
-                        // Year (Albums Only)
-                        resultData.put("year", result.select("div.year").text());
-
-                        // Genre (Albums Only)
-                        resultData.put("genre", result.select("div.genres").text());
-
-                        // Type
-                        resultData.put("album", result.select("div.cover").size() > 0);
-
-                        // Art (Albums Only)
-                        if (result.select("div.cover").size() > 0) {
-                            String potentialAlbumArt = result.select("img.lazy").attr("data-original");
-                            resultData.put("art", potentialAlbumArt.isEmpty() ? new File(Main.class.getResource("app/img/album_default.png").getPath()).toURI().toString() : potentialAlbumArt);
-                        }
-
-                        // Link
-                        resultData.put("link", result.select("div.title").select("a").attr("href"));
-
-                        searchData.put(resultData);
-
-                    } catch (JSONException e) {
-                        debug.error(thread, "Failed to process search request JSON for https://www.allmusic.com/search/all/" + query, e);
-                    }
-                }
-            }
-
-            if (searchData.length() > 0) {
-
-                BorderPane[] tableData = new BorderPane[searchData.length()];
-
-                // Adding remaining data & preparing data for table
-                for (int i = 0; i < searchData.length(); i++) {
-
-                    // Gathering additional data for JSON object
-                    try {
-                        if (!searchData.getJSONObject(i).getBoolean("album")) {
-
-                            if (!Model.getInstance().settings.getSettingBool("data_saver")) {
-
-                                // Finding: Album Art Link, Year and Genre
-
-                                // Reading information page
-                                Document songDataPage = Jsoup.connect(searchData.getJSONObject(i).getString("link")).get();
-
-                                // Album Art
-                                try {
-                                    String potentialAlbumArt = songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https") && !songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").equals("https://cdn-gce.allmusic.com/images/lazy.gif") ? songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") : Main.class.getResource("app/img/song_default.png").toURI().toString();
-                                    searchData.getJSONObject(i).put("art", potentialAlbumArt.isEmpty() ? new File(Main.class.getResource("app/img/song_default.png").getPath()).toURI().toString() : potentialAlbumArt);
-                                } catch (NullPointerException ignored) {
-                                    searchData.getJSONObject(i).put("art", new File(Main.class.getResource("app/img/song_default.png").getPath()).toURI().toString());
-                                } catch (URISyntaxException e) {
-                                    debug.error(null, "URI Formation exception loading song default image.", e);
-                                }
-
-                                // Year
-                                try {
-                                    if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4)
-                                        searchData.getJSONObject(i).put("year", songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear"));
-                                } catch (NullPointerException ignored) {}
-
-                                // Genre
-                                try {
-                                    searchData.getJSONObject(i).put(
-                                            "genre",
-                                            songDataPage
-                                                    .selectFirst("div.song_genres")
-                                                    .selectFirst("div.middle")
-                                                    .selectFirst("a")
-                                                    .text()
-                                                    .split("\\(")[0]
-                                                    .substring(
-                                                            0,
-                                                            songDataPage
-                                                                    .selectFirst("div.song_genres")
-                                                                    .selectFirst("div.middle")
-                                                                    .selectFirst("a")
-                                                                    .text()
-                                                                    .split("\\(")[0]
-                                                                    .length() - 1
-                                                    )
-                                    );
-                                } catch (NullPointerException ignored) {}
-                            } else {
-                                searchData.getJSONObject(i).put("art", Main.class.getResource("app/img/song_default.png"));
-                            }
-
-                        }
-                    } catch (JSONException e) {
-                        debug.error(thread, "Failed to process found search results.", e);
-                    } catch (IOException e) {
-                        try {
-                            debug.warn(thread, "Connection error on connecting to: " + searchData.getJSONObject(i).getString("link"));
-                        } catch (JSONException er) {
-                            debug.error(thread, "Failed to process found search results.", e);
-                        }
-                    }
-
-                    // Add as processed element to table data
-                    try {
-                        StringBuilder metaInfoRaw = new StringBuilder(searchData.getJSONObject(i).getBoolean("album") ? "Album" : "Song");
-
-                        if (!searchData.getJSONObject(i).getString("year").isEmpty())
-                            metaInfoRaw.append(" | ").append(searchData.getJSONObject(i).getString("year"));
-
-                        if (!searchData.getJSONObject(i).getString("genre").isEmpty())
-                            metaInfoRaw.append(" | ").append(searchData.getJSONObject(i).getString("genre"));
-
-                        result searchResult = new result(
-                                null,
-                                searchData.getJSONObject(i).getString("art"),
-                                true,
-                                searchData.getJSONObject(i).getString("title"),
-                                searchData.getJSONObject(i).getString("artist")
-                        );
-                        searchResult.applyWarning(metaInfoRaw.toString());
-                        tableData[i] = searchResult.getView();
-
-                    } catch (JSONException | IllegalArgumentException e) {
-                        e.printStackTrace();
-                        debug.error(thread, "Failed to generate table result", e);
-                    }
-                }
-
-                // Sending processed data to the model
-                Model.getInstance().search.setSearchResults(tableData);
-                Model.getInstance().search.setSearchResultsJson(searchData);
-
-                // Changing scene to results-view
-                try {
-                    Parent resultsView = FXMLLoader.load(Main.class.getResource("app/fxml/results.fxml"));
-                    Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
-                    Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39)));
-
-                } catch (IOException e) {
-                    debug.error(null, "FXML Error: Settings.fxml", e);
-                }
-
-            } else {
-
-                debug.trace(thread, "No search results found for query: " + query);
-                Platform.runLater(() -> {
-                    loadingIcon.setVisible(false);
-                    error("No Search Results Found");
-                });
-
-            }
-
-        }
 
     }
 
