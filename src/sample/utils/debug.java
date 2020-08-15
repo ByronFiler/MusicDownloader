@@ -233,8 +233,8 @@ public class debug {
                 allmusicReachable ? "Yes" : "No"
         );
 
-        if (!Files.exists(Paths.get(System.getenv("APPDATA") + "\\MusicDownloader\\crashes\\"))) {
-            if (!new File(System.getenv("APPDATA") + "\\MusicDownloader\\crashes\\").mkdirs()) {
+        if (!Files.exists(Paths.get(resources.applicationData + "crashes\\"))) {
+            if (!new File(resources.applicationData + "crashes\\").mkdirs()) {
                 warn(Thread.currentThread(), "Failed to create directory to save crashes");
                 System.exit(-2);
             }
@@ -249,8 +249,8 @@ public class debug {
                         new BufferedOutputStream(
                                 new FileOutputStream(
                                         String.format(
-                                                "%s\\MusicDownloader\\crashes\\%s_crash.tar.gz",
-                                                System.getenv("APPDATA"),
+                                                "%scrashes\\%s_crash.tar.gz",
+                                                resources.applicationData,
                                                 Instant.now().toEpochMilli()
                                         )
                                 )

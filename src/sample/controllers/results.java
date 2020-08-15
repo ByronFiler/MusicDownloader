@@ -28,6 +28,7 @@ import org.jsoup.select.Elements;
 import sample.Main;
 import sample.utils.debug;
 import sample.model.Model;
+import sample.utils.resources;
 
 import java.io.File;
 import java.io.IOException;
@@ -183,7 +184,7 @@ public class results {
             } catch (JSONException ignored) {}
 
             // Checking if it exists in existing cached arts
-            for (File cachedArt: Objects.requireNonNull(new File(System.getenv("APPDATA") + "\\MusicDownloader\\cached").listFiles())) {
+            for (File cachedArt: Objects.requireNonNull(new File(resources.applicationData + "cached").listFiles())) {
                 if (cachedArt.isFile() && cachedArt.getName().split("\\.")[1].equals("jpg") && cachedArt.getName().split("\\.")[0].equals(id)) {
                     // Our generated ID already exists in the files, generate a new one
                     return generateNewCacheArtId(downloadItems);

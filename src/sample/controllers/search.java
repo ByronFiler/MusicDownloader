@@ -73,7 +73,7 @@ public class search {
     private allMusicQuery searchThread;
 
     @FXML
-    private void initialize(){
+    private void initialize() {
         // Theoretically no way this could change via normal use of the program, but if user starts a download, waits for it to finish and clears file, downloads page needs a check to prevent
         if (Model.getInstance().download.downloadsAccessible())
             downloads.setVisible(true);
@@ -208,9 +208,6 @@ public class search {
     }
 
     // Generating the full data for the search data
-
-    // TODO: Use result class instead of this custom
-
     private class allMusicQuery implements Runnable {
 
         private final Thread thread;
@@ -222,6 +219,7 @@ public class search {
             this.event = event;
 
             thread = new Thread(this, "query");
+            thread.setDaemon(true);
             thread.start();
         }
 

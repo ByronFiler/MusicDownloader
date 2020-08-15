@@ -29,12 +29,14 @@ public class cacheOptimizer implements Runnable{
     public void run() {
 
         // Clearing temporary files
-        if (Files.exists(Paths.get(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\"))) {
+        if (Files.exists(Paths.get(resources.applicationData + "temp\\"))) {
             try {
-                File tempFiles = new File(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\");
+                File tempFiles = new File(resources.applicationData + "temp\\");
                 int preexistingFiles = Objects.requireNonNull(tempFiles.listFiles()).length;
-                FileUtils.deleteDirectory(new File(System.getenv("APPDATA") + "\\MusicDownloader\\temp\\"));
+
+                FileUtils.deleteDirectory(new File(resources.applicationData + "temp\\"));
                 debug.trace(Thread.currentThread(), String.format("Deleted %s temporary files.", preexistingFiles));
+
             } catch (IOException e) {
                 debug.warn(Thread.currentThread(), "Failed to delete temp directory.");
             }
@@ -55,7 +57,7 @@ public class cacheOptimizer implements Runnable{
             debug.error(Thread.currentThread(), "Failed to parse download history for art IDs.", e);
         }
 
-        for (File foundFile: Objects.requireNonNull(new File(System.getenv("APPDATA") + "\\MusicDownloader/cached").listFiles())) {
+        for (File foundFile: Objects.requireNonNull(new File(resources.applicationData + "cached").listFiles())) {
 
             // Check the file is an image and is being used
             if (FilenameUtils.getExtension(foundFile.getAbsolutePath()).equals("jpg") && usedArtIds.contains(FilenameUtils.removeExtension(foundFile.getName())) ) {
@@ -175,7 +177,17 @@ public class cacheOptimizer implements Runnable{
         try {
             for (int i = 0; i < downloadHistory.length(); i++) {
 
-                if (!Files.exists(Paths.get(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId"))))) {
+                if (
+                        !Files.exists(
+                                Paths.get(
+                                        String.format(
+                                                "%scached\\%s.jpg",
+                                                resources.applicationData,
+                                                downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId")
+                                        )
+                                )
+                        )
+                ) {
 
                     boolean alreadyPlanned = false;
                     if (downloadObjects.length() > 0) {
@@ -200,7 +212,11 @@ public class cacheOptimizer implements Runnable{
 
                 FileUtils.copyURLToFile(
                         new URL(downloadObjects.getJSONObject(i).getJSONObject("metadata").getString("art")),
-                        new File(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", downloadObjects.getJSONObject(i).getJSONObject("metadata").getString("artId")))
+                        new File(String.format(
+                                "%scached\\%s.jpg",
+                                resources.applicationData,
+                                downloadObjects.getJSONObject(i).getJSONObject("metadata").getString("artId")
+                        ))
                 );
                 reacquiredFilesCount++;
 

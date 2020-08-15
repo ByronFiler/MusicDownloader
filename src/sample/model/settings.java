@@ -4,6 +4,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import sample.Main;
 import sample.utils.debug;
+import sample.utils.resources;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,7 +29,7 @@ public class settings {
 
         // Load users actual settings
         try {
-            settings = new JSONObject(new Scanner(new File(System.getenv("APPDATA") + "\\MusicDownloader\\json\\config.json")).useDelimiter("\\Z").next());
+            settings = new JSONObject(new Scanner(new File(resources.applicationData + "json\\config.json")).useDelimiter("\\Z").next());
         } catch (FileNotFoundException | JSONException ignored) {
             debug.warn(null, "Failed to load user settings.");
             settings = defaultSettings;
@@ -57,7 +58,7 @@ public class settings {
 
         try {
 
-            FileWriter newConfig = new FileWriter(System.getenv("APPDATA") + "\\MusicDownloader\\json\\config.json");
+            FileWriter newConfig = new FileWriter(resources.applicationData + "json\\config.json");
             newConfig.write(defaultSettings.toString());
             newConfig.close();
 
@@ -76,16 +77,16 @@ public class settings {
         boolean wasUseful = false;
 
         // Checking for non existing folders
-        if (!Files.exists(Paths.get(System.getenv("APPDATA") + "\\MusicDownloader\\cached"))) {
+        if (!Files.exists(Paths.get(resources.applicationData + "cached\\"))) {
             wasUseful = true;
-            if (!new File(System.getenv("APPDATA") + "\\MusicDownloader\\cached").mkdirs())
-                debug.error(null, "Failed to create non existing directory: " + System.getenv("APPDATA") + "\\MusicDownloader\\cached", null);
+            if (!new File(resources.applicationData + "cached").mkdirs())
+                debug.error(null, "Failed to create non existing directory: " + resources.applicationData + "cached", null);
         }
 
-        if (!Files.exists(Paths.get(System.getenv("APPDATA") + "\\MusicDownloader\\json"))) {
+        if (!Files.exists(Paths.get(resources.applicationData + "json"))) {
             wasUseful = true;
-            if (!new File(System.getenv("APPDATA") + "\\MusicDownloader\\json").mkdirs())
-                debug.error(null, "Failed to create non existing directory: " + System.getenv("APPDATA") + "\\MusicDownloader\\json", null);
+            if (!new File(resources.applicationData + "json").mkdirs())
+                debug.error(null, "Failed to create non existing directory: " + resources.applicationData + "json", null);
         }
 
         return wasUseful;
@@ -93,7 +94,7 @@ public class settings {
 
     public void saveSettings(JSONObject settings) {
         try {
-            FileWriter settingsFile = new FileWriter(System.getenv("APPDATA") + "\\MusicDownloader/json/config.json");
+            FileWriter settingsFile = new FileWriter(resources.applicationData + "json/config.json");
             settingsFile.write(settings.toString());
             settingsFile.close();
 

@@ -85,7 +85,17 @@ public class downloads {
 
                 eventViewSelector.getItems().add("Currently Downloading");
                 try {
-                    if (!Files.exists(Paths.get(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", downloadObject[0].getJSONObject("metadata").getString("artId")))))
+                    if (
+                            !Files.exists(
+                                    Paths.get(
+                                            String.format(
+                                                    "%scached\\%s.jpg",
+                                                    resources.applicationData,
+                                                    downloadObject[0].getJSONObject("metadata").getString("artId")
+                                            )
+                                    )
+                            )
+                    )
                         debug.warn(
                                 Thread.currentThread(),
                                 String.format(
@@ -328,8 +338,8 @@ public class downloads {
                 // Update the table & data
                 downloadResult plannedDownloadSongBuilder = new downloadResult(
                         String.format(
-                                "%s\\MusicDownloader\\cached\\%s.jpg",
-                                System.getenv("APPDATA"),
+                                "%scached\\%s.jpg",
+                                resources.applicationData,
                                 downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")
                         ),
                         downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("art"),
@@ -343,8 +353,8 @@ public class downloads {
 
             downloadResult plannedDownloadAlbumBuilder = new downloadResult(
                     String.format(
-                            "%s\\MusicDownloader\\cached\\%s.jpg",
-                            System.getenv("APPDATA"),
+                            "%scached\\%s.jpg",
+                            resources.applicationData,
                             downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")
                     ),
                     downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("art"),
@@ -363,8 +373,8 @@ public class downloads {
 
         downloadResult currentDownloadViewAlbumBuilder = new downloadResult(
                 String.format(
-                        "%s\\MusicDownloader\\cached\\%s.jpg",
-                        System.getenv("APPDATA"),
+                        "%scached\\%s.jpg",
+                        resources.applicationData,
                         downloadObject.getJSONObject("metadata").getString("artId")
                 ),
                 downloadObject.getJSONObject("metadata").getString("art"),
@@ -388,8 +398,8 @@ public class downloads {
 
             downloadResult currentDownloadViewSongBuilder = new downloadResult(
                     String.format(
-                            "%s\\MusicDownloader\\cached\\%s.jpg",
-                            System.getenv("APPDATA"),
+                            "%scached\\%s.jpg",
+                            resources.applicationData,
                             downloadObject.getJSONObject("metadata").getString("artId")
                     ),
                     downloadObject.getJSONObject("metadata").getString("art"),
@@ -423,8 +433,8 @@ public class downloads {
                 // Generating albums
                 downloadResult downloadHistoryAlbumBuilder = new downloadResult(
                         String.format(
-                                "%s\\MusicDownloader\\cached\\%s.jpg",
-                                System.getenv("APPDATA"),
+                                "%scached\\%s.jpg",
+                                resources.applicationData,
                                 downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId")
                         ),
                         downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("art"),
@@ -450,8 +460,8 @@ public class downloads {
 
             downloadResult downloadHistorySongBuilder = new downloadResult(
                     String.format(
-                            "%s\\MusicDownloader\\cached\\%s.jpg",
-                            System.getenv("APPDATA"),
+                            "%scached\\%s.jpg",
+                            resources.applicationData,
                             downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId")
                     ),
                     downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("art"),
@@ -468,7 +478,7 @@ public class downloads {
     }
 
     private void checkForCache(JSONArray downloadQueue, int i) throws JSONException {
-        if (!Files.exists(Paths.get(String.format(System.getenv("APPDATA") + "\\MusicDownloader\\cached\\%s.jpg", downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")))))
+        if (!Files.exists(Paths.get(String.format(resources.applicationData + "cached\\%s.jpg", downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")))))
             debug.warn(
                     Thread.currentThread(),
                     String.format(

@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import sample.utils.acquireDownloadFiles;
 import sample.utils.debug;
 import sample.utils.gzip;
+import sample.utils.resources;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -140,7 +141,10 @@ public class download{
     }
 
     public synchronized void setDownloadHistory(JSONArray downloadHistory) throws IOException{
-        gzip.compressData(new ByteArrayInputStream(downloadHistory.toString().getBytes()), new File(System.getenv("APPDATA") + "\\MusicDownloader\\json\\downloads.gz"));
+        gzip.compressData(
+                new ByteArrayInputStream(downloadHistory.toString().getBytes()),
+                new File(resources.applicationData + "json\\downloads.gz")
+        );
         this.downloadHistory = downloadHistory;
     }
 
@@ -157,14 +161,14 @@ public class download{
         try {
             this.downloadHistory = new JSONArray(
                     gzip.decompressFile(
-                            new File(System.getenv("APPDATA") + "\\MusicDownloader\\json\\downloads.gz")
+                            new File(resources.applicationData + "json\\downloads.gz")
                     ).toString()
             );
 
         } catch (IOException | JSONException e) {
             try {
-                if (!Files.exists(Paths.get(System.getenv("APPDATA") + "\\MusicDownloader\\json\\downloads.gz")))
-                    if (!new File(System.getenv("APPDATA") + "\\MusicDownloader\\json\\downloads.gz").createNewFile())
+                if (!Files.exists(Paths.get(resources.applicationData + "json\\downloads.gz")))
+                    if (!new File(resources.applicationData + "json\\downloads.gz").createNewFile())
                         throw new IOException();
             } catch (IOException er) {
                 debug.warn(null, "Failed to create new downloads history file.");
