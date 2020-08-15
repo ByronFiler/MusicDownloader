@@ -25,12 +25,6 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.HttpStatusException;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import sample.Main;
 import sample.model.Model;
 import sample.utils.app.debug;
@@ -39,7 +33,6 @@ import sample.utils.net.db.allmusic;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Timer;
@@ -155,9 +148,9 @@ public class search {
                             allmusic.search searcher = new allmusic.search(search.getText() + e.getText());
 
                             try {
-                                searcher.query();
+                                searcher.query(Model.getInstance().settings.getSettingBool("data_saver"));
                                 if (!Model.getInstance().settings.getSettingBool("data_saver"))
-                                    searcher.getSongAlbumArt();
+                                    searcher.getSongExternalInformation();
 
                                 Model.getInstance().search.setSearchResults(searcher.buildView().toArray(new BorderPane[0]));
                                 Model.getInstance().search.setSearchResultsJson(searcher.getSearchResultsData());
@@ -178,7 +171,7 @@ public class search {
                                     loadingIcon.setVisible(false);
                                     searchQueryActive = false;
 
-                                    debug.warn(Thread.currentThread(), "Failed to connect to " + allmusic.baseDomain + allmusic.search.searchExtension + search.getText() + e.getText());
+                                    debug.warn(Thread.currentThread(), "Failed to connect to " + allmusic.baseDomain + allmusic.search.subdirectory + search.getText() + e.getText());
                                     new awaitReconnection();
                                 });
                             }
@@ -259,47 +252,37 @@ public class search {
                 return;
 
             try {
-                Document doc = Jsoup.connect("https://www.allmusic.com/search/all/" + query).get();
+                allmusic.search autocompleteSearch = new allmusic.search(query);
+                autocompleteSearch.query(true);
+                JSONArray autocompleteProcessedResults = autocompleteSearch.getSearchResultsData();
                 ArrayList<HBox> autocompleteResultsView = new ArrayList<>();
-                Elements results = doc.select("ul.search-results").select("li");
-                JSONArray autocompleteDataRaw = new JSONArray();
 
-                for (Element result: results)
-                {
+                try {
+                    for (int i = 0; i < autocompleteProcessedResults.length(); i++) {
+                        Label resultTitle = new Label(autocompleteProcessedResults.getJSONObject(i).getString("title"));
+                        resultTitle.getStyleClass().add("sub_text2");
 
-                    try {
-                        JSONObject searchResultRaw = new JSONObject(String.format("{\"album\": %s, \"title\": \"%s\"}", result.select("div.cover").size() > 0, result.select("div.title").text().replaceAll("\"", "")));
+                        ImageView resultIcon = new ImageView(
+                                new Image(
+                                        autocompleteProcessedResults.getJSONObject(i).getString("art"),
+                                        25,
+                                        25,
+                                        true,
+                                        true
+                                )
+                        );
 
-                        // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
-                        if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740 && !autocompleteDataRaw.toString().contains(searchResultRaw.toString())) {
-                            autocompleteDataRaw.put(searchResultRaw);
+                        if (Model.getInstance().settings.getSettingBool("dark_theme"))
+                            resultIcon.setEffect(new ColorAdjust(0, 0, 1, 0));
 
-                            Label resultTitle = new Label(result.select("div.title").text().replaceAll("\"", ""));
-                            resultTitle.getStyleClass().add("sub_text2");
+                        HBox autocompleteResultView = new HBox(10, resultIcon, resultTitle);
+                        autocompleteResultView.setOnMouseClicked(e -> search.setText(((Label) (autocompleteResultView.getChildren().get(1))).getText()));
+                        autocompleteResultView.setCursor(Cursor.HAND);
 
-                            ImageView resultIcon = new ImageView(
-                                    new Image(
-                                            Main.class.getResource(result.select("div.cover").size() > 0 ? "app/img/album_default.png" : "app/img/song_default.png").toURI().toString(),
-                                            25,
-                                            25,
-                                            true,
-                                            true
-                                    )
-                            );
-
-                            if (Model.getInstance().settings.getSettingBool("dark_theme"))
-                                resultIcon.setEffect(new ColorAdjust(0, 0, 1, 0));
-
-                            HBox autocompleteResultView = new HBox(10, resultIcon, resultTitle);
-                            autocompleteResultView.setOnMouseClicked(e -> search.setText( ((Label) (autocompleteResultView.getChildren().get(1))) .getText()));
-                            autocompleteResultView.setCursor(Cursor.HAND);
-
-                            autocompleteResultsView.add(autocompleteResultView);
-
-                        }
-                    } catch (JSONException e) {
-                        debug.warn(Thread.currentThread(), "Failed to parse JSON: " + String.format("{\"album\": %s, \"title\": \"%s\"}", result.select("div.cover").size() > 0, result.select("div.title").text().replaceAll("\"", "")));
+                        autocompleteResultsView.add(autocompleteResultView);
                     }
+                } catch (JSONException e) {
+                    debug.error(Thread.currentThread(), "Error processing JSON to generate autocomplete results.", e);
                 }
 
                 // Add generated data to the search query
@@ -323,9 +306,7 @@ public class search {
                     search.setDisable(true);
                     new awaitReconnection();
                 });
-
-            } catch (HttpStatusException ignored) {
-            } catch (URISyntaxException | IOException e) {
+            } catch (IOException e) {
                 debug.error(Thread.currentThread(), "Unknown exception when requesting user search.", e);
             }
 

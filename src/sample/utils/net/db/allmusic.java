@@ -26,13 +26,13 @@ public class allmusic {
         private final String searchQuery;
         private final JSONArray searchResultsData = new JSONArray();
 
-        public static final String searchExtension = "search/all/";
+        public static final String subdirectory = "search/all/";
 
         public search(String query) {
-            this.searchQuery = baseDomain +  searchExtension + query;
+            this.searchQuery = baseDomain + subdirectory + query;
         }
 
-        public void query() throws IOException {
+        public void query(Boolean useDefaultIcons) throws IOException {
 
             Document doc = Jsoup.connect(searchQuery).get();
 
@@ -50,11 +50,17 @@ public class allmusic {
                         resultData.put("year", result.select("div.year").text());
                         resultData.put("genre", result.select("div.genres").text());
                         resultData.put("album", result.select("div.cover").size() > 0);
-                        resultData.put("link", result.select("div.title").select("a").attr("href"));
+                        resultData.put("link", result.select("div.title").select("a").attr("href")); // TODO: Remove in future
+                        resultData.put("allmusicId", result.select("div.title").select("a").attr("href").split("/")[4]);
 
                         if (result.select("div.cover").size() > 0) {
                             String potentialAlbumArt = result.select("img.lazy").attr("data-original");
-                            resultData.put("art", potentialAlbumArt.isEmpty() ? new File(Main.class.getResource("app/img/album_default.png").getPath()).toURI().toString() : potentialAlbumArt);
+                            resultData.put(
+                                    "art",
+                                    potentialAlbumArt.isEmpty() || useDefaultIcons ?
+                                            new File(Main.class.getResource("app/img/album_default.png").getPath()).toURI().toString() :
+                                            potentialAlbumArt
+                            );
                         } else {
                             try {
                                 resultData.put("art", Main.class.getResource("app/img/song_default.png").toURI().toString());
@@ -72,57 +78,18 @@ public class allmusic {
             }
         }
 
-        public void getSongAlbumArt() throws IOException {
+        public void getSongExternalInformation() throws IOException {
 
             try {
-                for (int i = 0; i < searchResultsData.length(); i++) {
+                for (int i = 0; i < searchResultsData.length(); i++)
                     if (!searchResultsData.getJSONObject(i).getBoolean("album")) {
-                        Document songDataPage = Jsoup.connect(searchResultsData.getJSONObject(i).getString("link")).get();
+                        song songProcessor = new song(searchResultsData.getJSONObject(i).getString("allmusicId"));
+                        songProcessor.load();
 
-                        // Album Art
-                        try {
-                            String potentialAlbumArt = songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") != null && songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").startsWith("https") && !songDataPage.selectFirst("td.cover").selectFirst("img").attr("src").equals("https://cdn-gce.allmusic.com/images/lazy.gif") ? songDataPage.selectFirst("td.cover").selectFirst("img").attr("src") : Main.class.getResource("app/img/song_default.png").toURI().toString();
-                            searchResultsData.getJSONObject(i).put("art", potentialAlbumArt.isEmpty() ? new File(Main.class.getResource("app/img/song_default.png").getPath()).toURI().toString() : potentialAlbumArt);
-                        } catch (NullPointerException ignored) {
-                            searchResultsData.getJSONObject(i).put("art", new File(Main.class.getResource("app/img/song_default.png").getPath()).toURI().toString());
-                        } catch (URISyntaxException e) {
-                            debug.error(null, "URI Formation exception loading song default image.", e);
-                        }
-
-                        // Year
-                        try {
-                            if (songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4)
-                                searchResultsData.getJSONObject(i).put("year", songDataPage.selectFirst("p.song-release-year-text").attr("data-releaseyear"));
-                        } catch (NullPointerException ignored) {
-                        }
-
-                        try {
-                            // Genre
-                            searchResultsData.getJSONObject(i).put(
-                                    "genre",
-                                    songDataPage
-                                            .selectFirst("div.song_genres")
-                                            .selectFirst("div.middle")
-                                            .selectFirst("a")
-                                            .text()
-                                            .split("\\(")[0]
-                                            .substring(
-                                                    0,
-                                                    songDataPage
-                                                            .selectFirst("div.song_genres")
-                                                            .selectFirst("div.middle")
-                                                            .selectFirst("a")
-                                                            .text()
-                                                            .split("\\(")[0]
-                                                            .length() - 1
-                                            )
-                            );
-                        } catch (NullPointerException ignored) {
-                        }
-
-
+                        searchResultsData.getJSONObject(i).put("art", songProcessor.getAlbumArt());
+                        searchResultsData.getJSONObject(i).put("year", songProcessor.getYear());
+                        searchResultsData.getJSONObject(i).put("genre", songProcessor.getGenre());
                     }
-                }
             } catch (JSONException e) {
                 debug.error(Thread.currentThread(), "Failed to parse data to get song album art.", e);
             }
@@ -166,11 +133,74 @@ public class allmusic {
         }
     }
 
-    @SuppressWarnings("unused")
     public static class song {
 
-        
+        public static final String subdirectory = "song/";
 
+        private final String pageUrl;
+        private Document doc = null;
+
+        public song(String id) {
+            this.pageUrl = baseDomain + subdirectory + id;
+        }
+
+        public void load() throws IOException {
+
+            doc = Jsoup.connect(pageUrl).get();
+
+        }
+
+        public String getYear() {
+            if (doc == null) throw new IllegalArgumentException();
+
+            if (doc.selectFirst("p.song-release-year-text").attr("data-releaseyear").length() == 4)
+                return doc.selectFirst("p.song-release-year-text").attr("data-releaseyear");
+
+            else return "";
+        }
+
+        public String getAlbumArt() {
+            if (doc == null) throw new IllegalArgumentException();
+
+            String albumArtSource = doc.selectFirst("td.cover").selectFirst("img").attr("src");
+
+            try {
+                if (albumArtSource.isEmpty())
+                    return Main.class.getResource("app/img/song_default.png").toURI().toString();
+
+                else return albumArtSource;
+
+            } catch (URISyntaxException e) {
+                debug.error(Thread.currentThread(), "Failed to load song default.", e);
+            }
+            return "";
+        }
+
+        public String getGenre() {
+            if (doc == null) throw new IllegalArgumentException();
+
+            if (doc.hasClass("div.song_genres"))
+
+                return doc
+                        .selectFirst("div.song_genres")
+                        .selectFirst("div.middle")
+                        .selectFirst("a")
+                        .text()
+                        .split("\\(")[0]
+                        .substring(
+                                0,
+                                doc
+                                        .selectFirst("div.song_genres")
+                                        .selectFirst("div.middle")
+                                        .selectFirst("a")
+                                        .text()
+                                        .split("\\(")[0]
+                                        .length() - 1
+                        );
+
+            else
+                return "";
+        }
     }
 
     @SuppressWarnings("unused")
