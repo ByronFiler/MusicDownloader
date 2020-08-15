@@ -13,4 +13,6 @@ public class resources {
 
     public static final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
 
+    public static final String applicationData = System.getenv("APPDATA") + "\\MusicDownloader\\";
+
 }

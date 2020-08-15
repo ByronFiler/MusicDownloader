@@ -6,6 +6,7 @@ import com.musicg.fingerprint.FingerprintSimilarityComputer;
 import com.musicg.wave.Wave;
 import javafx.application.Platform;
 import javazoom.jl.converter.Converter;
+import javazoom.jl.decoder.JavaLayerException;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,9 +24,10 @@ import java.util.Objects;
 
 /*
 TODO
- Album art should be cached instantly when added to queue
+ Album art should be cached instantly when added to queue, not here (due to queued items that aren't being downloaded requiring web requests in downloads client)
  Album art file shouldn't be moved to the download file until after the songs have been loaded, apply to metadata via byte stream or some such
  Then instead of deleting album art options, write to disk, this minimises fileIO and redundant web requests
+ Download history should include a file md5, creation time, and source, and meta could include a link to the allmusic source?
  */
 
 public class acquireDownloadFiles implements Runnable {
@@ -38,53 +40,62 @@ public class acquireDownloadFiles implements Runnable {
         new Thread(this, "acquire-download-files").start();
     }
 
-    // TODO: Fix and write tests
     private float evaluateDownloadValidity (String sampleFileSource, String downloadedFile) {
 
-        // Preparing sample: Downloading sample
+        if (!Files.exists(Paths.get(resources.applicationData + "temp")))
+            if (!new File(resources.applicationData + "temp").mkdirs())
+                debug.error(Thread.currentThread(), "Failed to create temp file directory for validation.", new IOException());
+
+        // Preparing sample: Downloading sample & Converting
+        InputStream mp3Source = null;
         try {
-            FileUtils.copyURLToFile(
-                    new URL(sampleFileSource),
-                    new File("smp.mp3")
+            mp3Source = new URL(sampleFileSource).openStream();
+            new Converter().convert(
+                    mp3Source,
+                    resources.applicationData + "temp\\sample.wav",
+                    null,
+                    null
             );
+            new Converter().convert(
+                    downloadedFile,
+                    resources.applicationData + "temp\\source.wav"
+            );
+
+        } catch (FileNotFoundException e) {
+            debug.warn(Thread.currentThread(), "Failed to find file to run check on.");
         } catch (IOException e) {
             debug.warn(Thread.currentThread(), "Error connecting to: " + sampleFileSource);
-            // Handle reconnection
+            e.printStackTrace();
+            System.exit(-1);
+        } catch (JavaLayerException e) {
+            debug.warn(Thread.currentThread(), "Error processing given data for conversion.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }finally {
+            try {
+                if (mp3Source != null) mp3Source.close();
+            } catch (IOException e) {
+                debug.error(Thread.currentThread(), "Failed to close remote sample source stream.", e);
+            }
         }
 
-        // Preparing sample: Converting to comparable wav format from mp3 & deleting old mp3
-        try {
-            new Converter().convert("smp.mp3", "smp.wav");
-        } catch (Exception ignored) {} // Falsely throws an exception even on success
-
-        if (!new File("smp.mp3").delete())
-            debug.warn(Thread.currentThread(), "Failed to delete : smp.mp3");
-
         // Checking if the download file needs to be converted
+        byte[] sampleData;
+        byte[] downloadData;
 
-        byte[] sampleData = new byte[0];
-        byte[] downloadData = new byte[0];
         try {
-            try {
-                downloadData = new FingerprintManager().extractFingerprint(new Wave(downloadedFile));
-                sampleData = new FingerprintManager().extractFingerprint(new Wave("smp.wav"));
-            } catch (Exception e) {
-                try {
-                    new Converter().convert(downloadedFile, "dl.wav");
-                    downloadData = new FingerprintManager().extractFingerprint(new Wave("dl.wav"));
-                } catch (Exception ignored) {} // Always errors even on success, ignored
-            }
-
+            downloadData = new FingerprintManager().extractFingerprint(new Wave(resources.applicationData + "temp\\source.wav"));
+            sampleData = new FingerprintManager().extractFingerprint(new Wave(resources.applicationData + "temp\\sample.wav"));
         } catch (ArrayIndexOutOfBoundsException ignored) {
             debug.warn(Thread.currentThread(), "File is too large to be checked.");
             return 1;
         }
 
         // Deleting temporary files
-        if (!new File("dl.wav").delete())
-            debug.warn(Thread.currentThread(), "Failed to delete file: dl.wav");
-        if (!new File("smp.wav").delete())
-            debug.warn(Thread.currentThread(), "Failed to delete file: smp.wav");
+        if (!new File(resources.applicationData + "temp\\source.wav").delete())
+            debug.warn(Thread.currentThread(), "Failed to delete source.wav");
+        if (!new File(resources.applicationData + "temp\\sample.wav").delete())
+            debug.warn(Thread.currentThread(), "Failed to delete sample.wav");
 
         FingerprintSimilarityComputer fingerprint = new FingerprintSimilarityComputer(sampleData, downloadData);
         return fingerprint.getFingerprintsSimilarity().getScore();
@@ -183,7 +194,7 @@ public class acquireDownloadFiles implements Runnable {
 
             float downloadValidity = evaluateDownloadValidity(
                     String.format("https://rovimusic.rovicorp.com/playback.mp3?c=%s=&f=I", song.getString("sample")),
-                    downloadedFile.getName()
+                    downloadedFile.getAbsolutePath()
             );
 
             debug.trace(
