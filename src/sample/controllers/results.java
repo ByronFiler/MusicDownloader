@@ -24,11 +24,11 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import sample.Main;
-import sample.utils.app.debug;
 import sample.model.Model;
+import sample.utils.app.debug;
 import sample.utils.app.resources;
+import sample.utils.net.db.allmusic;
 
 import java.io.File;
 import java.io.IOException;
@@ -410,12 +410,15 @@ public class results {
         }
 
         public void run() {
+
             JSONObject downloadItem = new JSONObject();
+
             JSONArray songs = new JSONArray();
-            JSONObject metaData = new JSONObject();
+            JSONObject metadata = new JSONObject();
 
             try {
-                // All existing downloads object for reference in creating unique IDs
+
+                // Getting other download items for the purpose of ID validation
                 JSONArray collectiveDownloadsObjects = new JSONArray();
                 if (Model.getInstance().download.getDownloadQueue().length() > 0)
                     collectiveDownloadsObjects.put(Model.getInstance().download.getDownloadQueue());
@@ -423,12 +426,92 @@ public class results {
                 if (Model.getInstance().download.getDownloadObject().length() > 0)
                     collectiveDownloadsObjects.put(Model.getInstance().download.getDownloadObject());
 
-                metaData.put("art", basicData.getString("art"));
+                // Metadata: Shared
+                metadata.put("artId", generateNewCacheArtId(collectiveDownloadsObjects));
+                metadata.put("artist", basicData.getJSONObject("data").getString("artist"));
+
+                // Additional data revealed either by query or additional request already sent
+                if (basicData.getJSONObject("data").getBoolean("album") || !Model.getInstance().settings.getSettingBool("data_saver")) {
+
+                    metadata.put("art", basicData.getJSONObject("data").getString("art"));
+                    metadata.put("year", basicData.getJSONObject("data").getString("year"));
+                    metadata.put("genre", basicData.getJSONObject("data").getString("genre"));
+
+                } else {
+
+                    // Additional connection required to get album id & metadata
+                    allmusic.song songTraceLinkLoader = new allmusic.song(basicData.getJSONObject("view").getString("allmusicSongId"));
+                    songTraceLinkLoader.load();
+
+                    metadata.put("art", songTraceLinkLoader.getAlbumArt());
+                    metadata.put("year", songTraceLinkLoader.getYear());
+                    metadata.put("genre", songTraceLinkLoader.getGenre());
+
+                    basicData.getJSONObject("data").put("allmusicAlbumId", songTraceLinkLoader.getAlbumId());
+                }
+
+                // Extract relevant data from the album
+                allmusic.album albumProcessor = new allmusic.album(basicData.getJSONObject("data").getString("allmusicAlbumId"));
+                albumProcessor.load();
+
+                StringBuilder outputDirectory = new StringBuilder(Model.getInstance().settings.getSetting("output_directory"));
+                if (basicData.getJSONObject("data").getBoolean("album"))
+                    outputDirectory.append("\\").append(albumProcessor.getAlbum());
+
+                metadata.put("directory", outputDirectory.toString());
+
+                metadata.put("album", albumProcessor.getAlbum());
+                metadata.put("playtime", albumProcessor.getPlaytime());
+
+                for (allmusic.album.song song: albumProcessor.getSongs()) {
+
+                    JSONObject jSong = new JSONObject();
+
+                    jSong.put("position", albumProcessor.getSongs().indexOf(song) + 1);
+                    jSong.put("id", generateNewSongId(collectiveDownloadsObjects));
+                    jSong.put("completed", JSONObject.NULL);
+
+                    jSong.put(
+                            "source",
+                            getSource(
+                                    metadata.get("artist") + " " + song.getTitle(),
+                                    song.getPlaytime()
+                            )
+                    );
+
+                    jSong.put("playtime", song.getPlaytime());
+                    jSong.put("title", song.getTitle());
+                    jSong.put("sample", song.getSample() == null ? JSONObject.NULL : song.getSample());
+
+                    songs.put(jSong);
+
+                }
+
+
+
+                if (!kill) {
+                    downloadItem.put("metadata", metadata);
+                    downloadItem.put("songs", songs);
+
+                    Model.getInstance().download.updateDownloadQueue(downloadItem);
+                }
+
+            } catch (JSONException e) {
+                debug.error(thread, "Error in JSON processing download item.", e);
+            }
+            catch (IOException e) {
+                debug.warn(thread, "Connection error, attempting to reconnect.");
+                // TODO:  Handle reconnection
+            }
+
+            /*
+                // All existing downloads object for reference in creating unique IDs
                 metaData.put("artist", basicData.get("artist"));
                 metaData.put("artId", generateNewCacheArtId(collectiveDownloadsObjects));
                 metaData.put("year", basicData.getString("year"));
                 metaData.put("genre", basicData.getString("genre"));
                 metaData.put("playtime", 0);
+                metaData.put("art", basicData.getString("foundArt"));
 
                 Elements trackResults;
                 if (!basicData.getBoolean("album")) {
@@ -440,11 +523,9 @@ public class results {
                     metaData.put("directory", Model.getInstance().settings.getSetting("output_directory"));
 
                     // Requires additional work to get the album data we want, takes time so we check twice, otherwise excessive wait
-                    if (!kill)
-                        songDataRequest = Jsoup.connect(basicData.getString("link")).get();
+                    if (!kill) songDataRequest = Jsoup.connect(basicData.getString("link")).get();
 
-                    if (!kill)
-                        albumDataRequest = Jsoup.connect(Objects.requireNonNull(songDataRequest).selectFirst("div.title").selectFirst("a").attr("href")).get();
+                    if (!kill) albumDataRequest = Jsoup.connect(Objects.requireNonNull(songDataRequest).selectFirst("div.title").selectFirst("a").attr("href")).get();
 
                     // Get album title
                     metaData.put("album", Objects.requireNonNull(albumDataRequest).selectFirst("h1.album-title").text());
@@ -463,9 +544,7 @@ public class results {
                 }
 
                 for (Element track: trackResults) {
-
-                    if (kill)
-                        break;
+                    if (kill) break;
 
                     if ( (!basicData.getBoolean("album") && track.selectFirst("div.title").selectFirst("a").text().equals(basicData.getString("title"))) || basicData.getBoolean("album")) {
                         JSONObject newSong = new JSONObject();
@@ -491,21 +570,7 @@ public class results {
 
                     }
                 }
-
-                if (!kill) {
-                    downloadItem.put("metadata", metaData);
-                    downloadItem.put("songs", songs);
-
-                    Model.getInstance().download.updateDownloadQueue(downloadItem);
-                }
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-                debug.error(thread, "Error in JSON processing download item.", e);
-            } catch (IOException e) {
-                debug.warn(thread, "Connection error, attempting to reconnect.");
-                // Handle reconnection
-            }
+             */
 
             // Restore buttons to default
             Platform.runLater(() -> {
@@ -584,7 +649,6 @@ public class results {
                 return searchDataExtracted;
             }
         }
-
     }
 
 }

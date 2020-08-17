@@ -259,12 +259,12 @@ public class search {
 
                 try {
                     for (int i = 0; i < autocompleteProcessedResults.length(); i++) {
-                        Label resultTitle = new Label(autocompleteProcessedResults.getJSONObject(i).getString("title"));
+                        Label resultTitle = new Label(autocompleteProcessedResults.getJSONObject(i).getJSONObject("view").getString("title"));
                         resultTitle.getStyleClass().add("sub_text2");
 
                         ImageView resultIcon = new ImageView(
                                 new Image(
-                                        autocompleteProcessedResults.getJSONObject(i).getString("art"),
+                                        autocompleteProcessedResults.getJSONObject(i).getJSONObject("view").getString("art"),
                                         25,
                                         25,
                                         true,
@@ -276,7 +276,14 @@ public class search {
                             resultIcon.setEffect(new ColorAdjust(0, 0, 1, 0));
 
                         HBox autocompleteResultView = new HBox(10, resultIcon, resultTitle);
-                        autocompleteResultView.setOnMouseClicked(e -> search.setText(((Label) (autocompleteResultView.getChildren().get(1))).getText()));
+                        int finalI = i;
+                        autocompleteResultView.setOnMouseClicked(e -> {
+                            try {
+                                search.setText(autocompleteProcessedResults.getJSONObject(finalI).getString("title"));
+                            } catch (JSONException er) {
+                                debug.error(Thread.currentThread(), "Failed to set autocomplete result.", er);
+                            }
+                        });
                         autocompleteResultView.setCursor(Cursor.HAND);
 
                         autocompleteResultsView.add(autocompleteResultView);
