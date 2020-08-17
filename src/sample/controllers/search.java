@@ -66,9 +66,6 @@ public class search {
 
     @FXML
     private void initialize() {
-        // Theoretically no way this could change via normal use of the program, but if user starts a download, waits for it to finish and clears file, downloads page needs a check to prevent
-        if (Model.getInstance().download.downloadsAccessible())
-            downloads.setVisible(true);
 
         // Loading in CSS
         if (Model.getInstance().settings.getSettingBool("dark_theme")) {
@@ -149,6 +146,8 @@ public class search {
 
                             try {
                                 searcher.query(Model.getInstance().settings.getSettingBool("data_saver"));
+
+                                // Can open each song page and find relevant album to display album art, and other information such as genre and year which isn't given in a default search
                                 if (!Model.getInstance().settings.getSettingBool("data_saver"))
                                     searcher.getSongExternalInformation();
 

@@ -325,6 +325,7 @@ public class allmusic {
 
     }
 
+    @SuppressWarnings("unused")
     public static class artist {
 
 

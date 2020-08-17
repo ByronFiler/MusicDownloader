@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.*;
 import javafx.scene.control.ComboBox;
@@ -39,9 +40,6 @@ import java.util.*;
 
 /*
 TODO
- - Allow dragging and dropping of history gz files and folders to generate history
- - Support clean transitions between queued future downloads and current downloads ending, reconsider data structs
- - Commit
  - In future also write actual tests for this
  */
 
@@ -209,15 +207,7 @@ public class downloads {
 
                                     // Updating array item and view item (if it is use)
                                     if (((ProgressIndicator) ((HBox) currentDownloadsViewAlbums.get(0).getRight()).getChildren().get(0)).getProgress() != percentComplete)
-                                        Platform.runLater(() -> {
-                                            ((ProgressIndicator) ((HBox) currentDownloadsViewAlbums.get(0).getRight()).getChildren().get(0)).setProgress(percentComplete);
-                                            /*
-                                            for (BorderPane item: eventsViewTable.getItems())
-                                                if (item.getId().equals("workingAlbum"))
-                                                    ((ProgressIndicator) ((HBox) item.getRight()).getChildren().get(0)).setProgress(percentComplete);
-
-                                             */
-                                        });
+                                        Platform.runLater(() -> ((ProgressIndicator) ((HBox) currentDownloadsViewAlbums.get(0).getRight()).getChildren().get(0)).setProgress(percentComplete));
 
                                 } else {
 
@@ -318,11 +308,9 @@ public class downloads {
         else
             root.getStylesheets().add(String.valueOf(Main.class.getResource("app/css/standard.css")));
 
-
-        // TODO: Could be controlled via a default setting
-        albumsView();
+        if (eventsViewTable.getItems().size() > 0) albumsView();
+        else defaultView();
         debug.trace(null, "Initialized downloads view.");
-
     }
 
     private void buildDownloadQueueView(JSONArray downloadQueue) throws JSONException {
@@ -517,6 +505,36 @@ public class downloads {
         }
     }
 
+    private void defaultView() {
+
+        albumViewSelectorWrapper.setVisible(false);
+        songViewSelectorWrapper.setVisible(false);
+
+        viewContainer.getChildren().clear();
+        viewContainer.setAlignment(Pos.CENTER);
+
+        Label defaultMessage = new Label("Files you download appear here");
+        defaultMessage.getStyleClass().add("sub_title1");
+
+        ImageView iconImage = new ImageView(
+                new Image(
+                        Main.class.getResourceAsStream("app/img/icon.png"),
+                        50,
+                        50,
+                        true,
+                        true
+                )
+        );
+        iconImage.setEffect(new ColorAdjust(0, 0, 1, 0));
+
+        VBox defaultInfoContainer = new VBox(defaultMessage, iconImage);
+        defaultInfoContainer.setAlignment(Pos.CENTER);
+        defaultInfoContainer.setPadding(new javafx.geometry.Insets(0, 0, 40, 0));
+
+        viewContainer.getChildren().setAll(defaultInfoContainer);
+
+    }
+
     @FXML
     public void searchView(Event event) {
 
@@ -548,11 +566,8 @@ public class downloads {
         }
 
         eventViewSelector.setOnAction(e -> {
-            try {
-
-                eventViewTitle.setText(eventViewSelector.getSelectionModel().getSelectedItem());
-                updateViewSelection();
-            } catch (NullPointerException ignored) {}
+            eventViewTitle.setText(eventViewSelector.getSelectionModel().getSelectedItem());
+            updateViewSelection();
         });
 
         debug.trace(
@@ -769,9 +784,7 @@ public class downloads {
                 if (foundFiles == 0) {
                     applyWarning("All Files moved or deleted.");
                     albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
-
                     view.setLeft(new HBox(albumArt, leftTextContainer));
-
 
                 } else {
 
@@ -815,6 +828,7 @@ public class downloads {
                         debug.error(Thread.currentThread(), "Failed to parse JSON to render new download history for songs.", er);
                     }
 
+                    if (eventsViewTable.getItems().size() == 0) Platform.runLater(downloads.this::defaultView);
 
                 });
 
@@ -881,6 +895,9 @@ public class downloads {
                     } catch (JSONException er) {
                         debug.error(Thread.currentThread(), "Failed to parse JSON to redraw albums.", er);
                     }
+
+                    if (eventsViewTable.getItems().size() == 0) Platform.runLater(downloads.this::defaultView);
+
                 });
 
             }

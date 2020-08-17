@@ -342,7 +342,7 @@ public class acquireDownloadFiles implements Runnable {
             debug.error(Thread.currentThread(), "Failed to download album art.", e);
         } catch (JSONException ignored) {}
 
-        // Cache the album art
+        // TODO: Should be done when adding to queue, cache the album art
         try {
             Files.copy(
                     Paths.get(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg"),

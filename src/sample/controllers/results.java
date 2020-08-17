@@ -345,9 +345,7 @@ public class results {
                                 searchDataExtracted.put(searchDataTemp);
                             }
 
-                        } catch (JSONException ignored) {
-
-                        } // Youtube adds random elements that are tricky to handle and are best ignored
+                        } catch (JSONException ignored) {} // Youtube adds random elements that are tricky to handle and are best ignored
                     }
 
                 } catch (JSONException e) {
@@ -410,7 +408,6 @@ public class results {
         }
 
         public void run() {
-
             JSONObject downloadItem = new JSONObject();
 
             JSONArray songs = new JSONArray();
