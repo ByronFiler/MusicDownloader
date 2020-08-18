@@ -154,7 +154,7 @@ public class allmusic {
                             searchResultsData.getJSONObject(i).getJSONObject("view").getString("artist")
                     );
 
-                    resultBuilder.applyWarning(searchResultsData.getJSONObject(i).getJSONObject("view").getString("meta"));
+                    resultBuilder.setSubtext(searchResultsData.getJSONObject(i).getJSONObject("view").getString("meta"));
                     viewResults.add(resultBuilder.getView());
                 }
             } catch (JSONException e) {

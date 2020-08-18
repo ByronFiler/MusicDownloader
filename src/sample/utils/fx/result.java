@@ -99,7 +99,7 @@ public class result {
         return view;
     }
 
-    public void applyWarning(String warningMessage) {
+    public void setSubtext(String warningMessage) {
 
         Label warning = new Label(warningMessage);
         warning.getStyleClass().add("sub_text3");

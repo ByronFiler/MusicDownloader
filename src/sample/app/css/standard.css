@@ -28,6 +28,10 @@
     -fx-text-fill: black;
 }
 
+.sub_text3 {
+    -fx-text-fill: black;
+}
+
 /* Table Containers */
 .result {
     -fx-background-color: rgba(10, 10, 10, 0.06);

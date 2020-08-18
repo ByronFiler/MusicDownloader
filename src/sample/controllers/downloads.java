@@ -785,14 +785,14 @@ public class downloads {
                 }
 
                 if (foundFiles == 0) {
-                    applyWarning("All Files moved or deleted.");
+                    setSubtext("All Files moved or deleted.");
                     albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
                     view.setLeft(new HBox(albumArt, leftTextContainer));
 
                 } else {
 
                     if (foundFiles != downloadObject.getJSONArray("songs").length())
-                        applyWarning((downloadObject.getJSONArray("songs").length() - foundFiles) + " Files moved or deleted.");
+                        setSubtext((downloadObject.getJSONArray("songs").length() - foundFiles) + " Files moved or deleted.");
 
                     left.setCursor(Cursor.HAND);
                     left.setOnMouseClicked(event -> {
@@ -803,7 +803,7 @@ public class downloads {
                             left.setOnMouseClicked(null);
 
                             albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
-                            applyWarning("All Files moved or deleted.");
+                            setSubtext("All Files moved or deleted.");
                         }
                     });
 
@@ -855,7 +855,7 @@ public class downloads {
 
                 if (foundFile == null) {
 
-                    applyWarning("File moved or deleted.");
+                    setSubtext("File moved or deleted.");
                     albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
 
                     view.setLeft(new HBox(albumArt, leftTextContainer));
@@ -871,7 +871,7 @@ public class downloads {
                             left.setOnMouseClicked(null);
 
                             albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
-                            applyWarning("Files moved or deleted.");
+                            setSubtext("Files moved or deleted.");
                         }
                     });
                 }
