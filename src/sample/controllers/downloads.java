@@ -525,7 +525,10 @@ public class downloads {
                         true
                 )
         );
-        iconImage.setEffect(new ColorAdjust(0, 0, 1, 0));
+
+
+        if (Model.getInstance().settings.getSettingBool("dark_theme"))
+            iconImage.setEffect(new ColorAdjust(0, 0, 1, 0));
 
         VBox defaultInfoContainer = new VBox(defaultMessage, iconImage);
         defaultInfoContainer.setAlignment(Pos.CENTER);
