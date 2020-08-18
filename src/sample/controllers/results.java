@@ -6,10 +6,12 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.Image;
@@ -17,6 +19,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -41,6 +44,7 @@ public class results {
 
     @FXML private AnchorPane root;
 
+    @FXML private VBox centerContainer;
     @FXML private ListView<BorderPane> results;
 
     @FXML private ProgressIndicator queueAdditionProgress;
@@ -150,7 +154,7 @@ public class results {
     }
 
     // TODO: Add network error handling
-    class generateQueueItem implements Runnable{
+    class generateQueueItem implements Runnable {
 
         private final Thread thread;
         private final JSONObject basicData;
@@ -501,80 +505,42 @@ public class results {
                 // TODO:  Handle reconnection
             }
 
-            /*
-                // All existing downloads object for reference in creating unique IDs
-                metaData.put("artist", basicData.get("artist"));
-                metaData.put("artId", generateNewCacheArtId(collectiveDownloadsObjects));
-                metaData.put("year", basicData.getString("year"));
-                metaData.put("genre", basicData.getString("genre"));
-                metaData.put("playtime", 0);
-                metaData.put("art", basicData.getString("foundArt"));
-
-                Elements trackResults;
-                if (!basicData.getBoolean("album")) {
-
-                    Document songDataRequest = null;
-                    Document albumDataRequest = null;
-
-                    // Different output directory
-                    metaData.put("directory", Model.getInstance().settings.getSetting("output_directory"));
-
-                    // Requires additional work to get the album data we want, takes time so we check twice, otherwise excessive wait
-                    if (!kill) songDataRequest = Jsoup.connect(basicData.getString("link")).get();
-
-                    if (!kill) albumDataRequest = Jsoup.connect(Objects.requireNonNull(songDataRequest).selectFirst("div.title").selectFirst("a").attr("href")).get();
-
-                    // Get album title
-                    metaData.put("album", Objects.requireNonNull(albumDataRequest).selectFirst("h1.album-title").text());
-                    trackResults = albumDataRequest.select("tr.track");
-
-                } else {
-
-                    // Directory created is the name of the album
-                    metaData.put("directory", Model.getInstance().settings.getSetting("output_directory") + "\\" + basicData.get("title"));
-
-                    // Add the album title we want
-                    metaData.put("album", basicData.getString("title"));
-
-                    // Contains the direct link to the album we want
-                    trackResults = Jsoup.connect(basicData.getString("link")).get().select("tr.track");
-                }
-
-                for (Element track: trackResults) {
-                    if (kill) break;
-
-                    if ( (!basicData.getBoolean("album") && track.selectFirst("div.title").selectFirst("a").text().equals(basicData.getString("title"))) || basicData.getBoolean("album")) {
-                        JSONObject newSong = new JSONObject();
-                        newSong.put("title", track.select("div.title").text());
-                        newSong.put("position", trackResults.indexOf(track) +1);
-                        newSong.put("id", generateNewSongId(collectiveDownloadsObjects));
-                        newSong.put("source", getSource(
-                                        metaData.get("artist") + " " + track.select("div.title").text(),
-                                        timeConversion(track.select("td.time").text())
-                                )
-                        );
-                        newSong.put("completed", JSONObject.NULL);
-
-                        try {
-                            String sampleSource = track.selectFirst("a.audio-player").attr("data-sample-url");
-                            newSong.put("sample", sampleSource.substring(46, sampleSource.length()-5));
-                        } catch (NullPointerException ignored) {}
-
-                        metaData.put("playtime", metaData.getInt("playtime") + timeConversion(track.select("td.time").text()));
-                        newSong.put("playtime", timeConversion(track.select("td.time").text()));
-
-                        songs.put(newSong);
-
-                    }
-                }
-             */
-
             // Restore buttons to default
             Platform.runLater(() -> {
                 queueAdditionProgress.setVisible(false);
 
                 download.setText("Download");
                 downloadButtonCheck();
+
+                Label linkPart0;
+                if (Model.getInstance().download.getDownloadQueue().length() > 0)
+                    linkPart0 = new Label(String.format("Added to download queue, in position %s, view progress in", Model.getInstance().download.getDownloadObject().length()));
+
+                else linkPart0 = new Label("Download started, view progress in ");
+
+                linkPart0.getStyleClass().add("sub_text");
+
+                Label linkPart1 = new Label("Downloads");
+                linkPart1.setUnderline(true);
+                linkPart1.setCursor(Cursor.HAND);
+                linkPart1.setOnMouseClicked(e -> {
+                    try {
+                        Parent searchView = FXMLLoader.load(Main.class.getResource("app/fxml/downloads.fxml"));
+                        Stage mainWindow = (Stage) ((Node) e.getSource()).getScene().getWindow();
+
+                        mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
+
+                    } catch (IOException er) {
+                        debug.error(null, "FXML Error with downloads.fxml", er);
+                    }
+                });
+                linkPart1.getStyleClass().add("sub_text");
+
+                Platform.runLater(() -> {
+                    centerContainer.setPadding(new Insets(0, 0, 20, 0));
+                    centerContainer.setSpacing(20);
+                    centerContainer.getChildren().setAll(results, new HBox(linkPart0, linkPart1));
+                });
 
                 cancel.setText("Back");
                 cancel.getStyleClass().set(1, "back_button");
