@@ -139,29 +139,20 @@ public class acquireDownloadFiles implements Runnable {
             if (!new File(resources.applicationData + "temp").mkdirs())
                 debug.error(Thread.currentThread(), "Failed to create temp directory in music downloader app data.", new IOException());
 
-        FileWriter batCreator = new FileWriter(resources.applicationData + "temp\\exec.bat");
-        batCreator.write(
-                String.format(
-                        "youtube-dl --extract-audio --audio-format %s --ignore-errors --retries 10 https://www.youtube.com/watch?v=%s",
-                        format,
-                        song.getJSONArray("source").getString(sourceDepth)
-                )
-        );
-        batCreator.close();
-
-        ProcessBuilder builder = new ProcessBuilder(resources.applicationData + "temp\\exec.bat");
-        builder.directory(new File(resources.applicationData + "temp"));
-        builder.redirectErrorStream(true);
-        Process process = builder.start();
-        InputStream is = process.getInputStream();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-
         // Console won't always print out a accurate file name
         List<File> preexistingFiles = Arrays.asList(
                 Objects.requireNonNull(
                         new File(resources.applicationData + "temp").listFiles()
                 )
         );
+
+        ProcessBuilder builder = new ProcessBuilder("C:\\Program Files (x86)\\youtube-dl\\youtube-dl.exe");
+        builder.command("youtube-dl", "--extract-audio", "--audio-format", format, "--ignore-errors", "--retries", "10", "https://www.youtube.com/watch?v=" + song.getJSONArray("source").getString(sourceDepth));
+        builder.directory(new File(resources.applicationData + "temp"));
+        builder.redirectErrorStream(true);
+        Process process = builder.start();
+        InputStream is = process.getInputStream();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
 
         String line;
         while ((line = reader.readLine()) != null)
@@ -186,10 +177,6 @@ public class acquireDownloadFiles implements Runnable {
 
         if (downloadedFile == null)
             throw new IOException("Failed to find downloaded file.");
-
-        // Delete now useless bat
-        if (!new File(resources.applicationData + "temp\\exec.bat").delete())
-            debug.warn(Thread.currentThread(), "Failed to delete file: exec.bat");
 
         // Validate
         if (Model.getInstance().settings.getSettingBool("advanced_validation")) {
