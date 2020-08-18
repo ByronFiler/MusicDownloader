@@ -50,6 +50,11 @@
     -fx-border-color : black;
 }
 
+.combo-box .list-cell
+{
+    -fx-text-fill: black;
+}
+
 /* Page Sections */
 .searchContainer {
     -fx-background-color: #F5F5F5;
