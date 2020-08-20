@@ -1,5 +1,6 @@
-package MusicDownloader.utils.net.source;
+package MusicDownloader.utils.net.source.sites;
 
+import MusicDownloader.utils.net.source.source;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

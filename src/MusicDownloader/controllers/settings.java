@@ -1,5 +1,9 @@
 package MusicDownloader.controllers;
 
+import MusicDownloader.Main;
+import MusicDownloader.model.Model;
+import MusicDownloader.utils.app.debug;
+import MusicDownloader.utils.io.install;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -19,10 +23,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import MusicDownloader.Main;
-import MusicDownloader.model.Model;
-import MusicDownloader.utils.app.debug;
-import MusicDownloader.utils.io.install;
 
 import javax.swing.*;
 import java.io.File;
@@ -116,8 +116,8 @@ public class settings {
 
         version.setText(Model.getInstance().settings.getVersion() == null ? "Unknown" : Model.getInstance().settings.getVersion());
         new getLatestVersion(false);
-        new verifyExecutable("youtube-dl", youtubeDl, youtubeDlContainer);
-        new verifyExecutable("ffmpeg", ffmpeg, ffmpegContainer);
+        new verifyExecutable(System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\youtube-dl.exe", youtubeDl, youtubeDlContainer);
+        new verifyExecutable(System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\ffmpeg.exe", ffmpeg, ffmpegContainer);
 
         // Files
         String outputDirectoryRaw = Model.getInstance().settings.getSetting("output_directory").equals("") ?
@@ -294,7 +294,7 @@ public class settings {
         public void run() {
 
             try {
-                Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/src/sample/app/meta.json").get();
+                Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/src/MusicDownloader/app/meta.json").get();
                 JSONObject jsonData = new JSONObject(githubRequestLatestVersion.text());
                 Platform.runLater(() -> {
                     try {
@@ -363,8 +363,7 @@ public class settings {
                             new getLatestVersion(true);
                             connectionAttempt.cancel();
                         }
-                    } catch (IOException ignored) {
-                    }
+                    } catch (IOException ignored) {}
 
                 }
             }, 0, 1000);
@@ -463,12 +462,12 @@ public class settings {
     static class verifyExecutable implements Runnable {
 
         private final Thread thread;
-        private final String executable;
+        private final String executablePath;
         private final Label element;
         private final HBox elementContainer;
 
-        verifyExecutable(String executable, Label element, HBox elementContainer) {
-            this.executable = executable;
+        verifyExecutable(String executablePath, Label element, HBox elementContainer) {
+            this.executablePath = executablePath;
             this.element = element;
             this.elementContainer = elementContainer;
 
@@ -482,7 +481,8 @@ public class settings {
             try {
 
                 // Will throw an error if not setup
-                Runtime.getRuntime().exec(new String[]{executable});
+                new ProcessBuilder(executablePath, "--version").start();
+
                 Platform.runLater(() -> {
                     element.setText("Configured");
                     elementContainer.getChildren().add(
@@ -499,7 +499,8 @@ public class settings {
                 });
 
             } catch (IOException ignored) {
-                debug.warn(thread, "Failed to verify executable: " + executable);
+                ignored.printStackTrace();
+                debug.warn(thread, "Failed to verify executable: " + executablePath);
 
                 Platform.runLater(() -> {
                     element.setText("Not Configured");
@@ -520,7 +521,7 @@ public class settings {
                         if (new File(System.getenv("ProgramFiles(X86)") + "\\test\\").mkdir() && new File(System.getenv("ProgramFiles(X86)") + "\\test\\").delete()) {
                             elementContainer.setCursor(Cursor.HAND);
                             Tooltip.install(elementContainer, new Tooltip("Click to configure"));
-                            elementContainer.setOnMouseClicked(e -> new manageInstall(executable, element, elementContainer));
+                            elementContainer.setOnMouseClicked(e -> new manageInstall(executablePath, element, elementContainer));
                         } else
                             Tooltip.install(elementContainer, new Tooltip("Easy installation requires elevated permissions, restart the program and try again."));
                     }

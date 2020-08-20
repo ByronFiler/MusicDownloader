@@ -1,4 +1,4 @@
-package MusicDownloader.utils.net.db;
+package MusicDownloader.utils.net.db.sites;
 
 import javafx.scene.layout.BorderPane;
 import org.json.JSONArray;
@@ -22,7 +22,7 @@ public class allmusic {
 
     public static final String baseDomain = "https://www.allmusic.com/";
 
-    public static class search {
+    public static class search implements MusicDownloader.utils.net.db.search {
 
         private final String searchQuery;
         private final JSONArray searchResultsData = new JSONArray();
@@ -33,6 +33,36 @@ public class allmusic {
             this.searchQuery = baseDomain + subdirectory + query;
         }
 
+        public void getSongExternalInformation() throws IOException {
+
+            try {
+                for (int i = 0; i < searchResultsData.length(); i++)
+
+                    if (!searchResultsData.getJSONObject(i).getJSONObject("data").getBoolean("album")) {
+                        song songProcessor = new song(searchResultsData.getJSONObject(i).getJSONObject("data").getString("allmusicSongId"));
+                        songProcessor.load();
+
+                        searchResultsData.getJSONObject(i).getJSONObject("data").put("art", songProcessor.getAlbumArt());
+                        searchResultsData.getJSONObject(i).getJSONObject("data").put("year", songProcessor.getYear());
+                        searchResultsData.getJSONObject(i).getJSONObject("data").put("genre", songProcessor.getGenre());
+                        searchResultsData.getJSONObject(i).getJSONObject("data").put("allmusicAlbumId", songProcessor.getAlbumId());
+
+                        searchResultsData.getJSONObject(i).getJSONObject("view").put("art", songProcessor.getAlbumArt());
+
+                        StringBuilder metaInfoRaw = new StringBuilder("Song");
+                        if (!searchResultsData.getJSONObject(i).getJSONObject("data").getString("year").isEmpty()) metaInfoRaw.append(" | ").append(searchResultsData.getJSONObject(i).getJSONObject("data").getString("year"));
+                        if (!searchResultsData.getJSONObject(i).getJSONObject("data").getString("genre").isEmpty()) metaInfoRaw.append(" | ").append(searchResultsData.getJSONObject(i).getJSONObject("data").getString("genre"));
+
+                        searchResultsData.getJSONObject(i).getJSONObject("view").put("meta", metaInfoRaw.toString());
+
+                    }
+            } catch (JSONException e) {
+                debug.error(Thread.currentThread(), "Failed to parse data to get song album art.", e);
+            }
+
+        }
+
+        @Override
         public void query(Boolean useDefaultIcons) throws IOException {
 
             Document doc = Jsoup.connect(searchQuery).get();
@@ -112,35 +142,7 @@ public class allmusic {
             }
         }
 
-        public void getSongExternalInformation() throws IOException {
-
-            try {
-                for (int i = 0; i < searchResultsData.length(); i++)
-
-                    if (!searchResultsData.getJSONObject(i).getJSONObject("data").getBoolean("album")) {
-                        song songProcessor = new song(searchResultsData.getJSONObject(i).getJSONObject("data").getString("allmusicSongId"));
-                        songProcessor.load();
-
-                        searchResultsData.getJSONObject(i).getJSONObject("data").put("art", songProcessor.getAlbumArt());
-                        searchResultsData.getJSONObject(i).getJSONObject("data").put("year", songProcessor.getYear());
-                        searchResultsData.getJSONObject(i).getJSONObject("data").put("genre", songProcessor.getGenre());
-                        searchResultsData.getJSONObject(i).getJSONObject("data").put("allmusicAlbumId", songProcessor.getAlbumId());
-
-                        searchResultsData.getJSONObject(i).getJSONObject("view").put("art", songProcessor.getAlbumArt());
-
-                        StringBuilder metaInfoRaw = new StringBuilder("Song");
-                        if (!searchResultsData.getJSONObject(i).getJSONObject("data").getString("year").isEmpty()) metaInfoRaw.append(" | ").append(searchResultsData.getJSONObject(i).getJSONObject("data").getString("year"));
-                        if (!searchResultsData.getJSONObject(i).getJSONObject("data").getString("genre").isEmpty()) metaInfoRaw.append(" | ").append(searchResultsData.getJSONObject(i).getJSONObject("data").getString("genre"));
-
-                        searchResultsData.getJSONObject(i).getJSONObject("view").put("meta", metaInfoRaw.toString());
-
-                    }
-            } catch (JSONException e) {
-                debug.error(Thread.currentThread(), "Failed to parse data to get song album art.", e);
-            }
-
-        }
-
+        @Override
         public ArrayList<BorderPane> buildView() {
             ArrayList<BorderPane> viewResults = new ArrayList<>();
 
@@ -164,12 +166,13 @@ public class allmusic {
             return viewResults;
         }
 
+        @Override
         public JSONArray getSearchResultsData() {
             return searchResultsData;
         }
     }
 
-    public static class song {
+    public static class song implements MusicDownloader.utils.net.db.song {
 
         public static final String subdirectory = "song/";
 
@@ -244,7 +247,7 @@ public class allmusic {
         }
     }
 
-    public static class album {
+    public static class album implements MusicDownloader.utils.net.db.album {
 
         public static final String subdirectory = "album/";
 
@@ -256,23 +259,27 @@ public class allmusic {
             this.pageUrl = baseDomain + subdirectory + identifier;
         }
 
+        @Override
         public void load() throws IOException {
             this.doc = Jsoup.connect(pageUrl).get();
 
             for (Element albumResult: doc.select("tr.track")) songs.add(new song(albumResult));
         }
 
+        @Override
         public String getAlbum() {
             if (doc == null) throw new IllegalCallerException();
 
             return Objects.requireNonNull(doc).selectFirst("h1.album-title").text();
         }
 
+        @Override
         public ArrayList<song> getSongs() {
             if (doc == null) throw new IllegalCallerException();
             return songs;
         }
 
+        @Override
         public int getPlaytime() {
             return songs.stream().mapToInt(song::getPlaytime).sum();
         }

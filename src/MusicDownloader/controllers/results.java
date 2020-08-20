@@ -28,8 +28,8 @@ import MusicDownloader.Main;
 import MusicDownloader.model.Model;
 import MusicDownloader.utils.app.debug;
 import MusicDownloader.utils.app.resources;
-import MusicDownloader.utils.net.db.allmusic;
-import MusicDownloader.utils.net.source.youtube;
+import MusicDownloader.utils.net.db.sites.allmusic;
+import MusicDownloader.utils.net.source.sites.youtube;
 
 import java.io.File;
 import java.io.IOException;

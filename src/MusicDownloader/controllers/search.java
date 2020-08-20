@@ -28,7 +28,7 @@ import org.json.JSONException;
 import MusicDownloader.Main;
 import MusicDownloader.model.Model;
 import MusicDownloader.utils.app.debug;
-import MusicDownloader.utils.net.db.allmusic;
+import MusicDownloader.utils.net.db.sites.allmusic;
 
 import java.io.IOException;
 import java.net.InetAddress;
