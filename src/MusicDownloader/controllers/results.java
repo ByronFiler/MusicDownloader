@@ -1,5 +1,11 @@
 package MusicDownloader.controllers;
 
+import MusicDownloader.Main;
+import MusicDownloader.model.Model;
+import MusicDownloader.utils.app.debug;
+import MusicDownloader.utils.app.resources;
+import MusicDownloader.utils.net.db.sites.allmusic;
+import MusicDownloader.utils.net.source.sites.youtube;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -10,10 +16,7 @@ import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
@@ -24,12 +27,6 @@ import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import MusicDownloader.Main;
-import MusicDownloader.model.Model;
-import MusicDownloader.utils.app.debug;
-import MusicDownloader.utils.app.resources;
-import MusicDownloader.utils.net.db.sites.allmusic;
-import MusicDownloader.utils.net.source.sites.youtube;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +42,7 @@ public class results {
     @FXML private VBox centerContainer;
     @FXML private ListView<BorderPane> results;
 
+    @FXML private HBox downloadButtonContainer;
     @FXML private ProgressIndicator queueAdditionProgress;
     @FXML private Button download;
     @FXML private Button cancel;
@@ -59,10 +57,40 @@ public class results {
 
         // Set theme
         if (Model.getInstance().settings.getSettingBool("dark_theme"))
-            root.getStylesheets().add(String.valueOf(Main.class.getResource("app/css/dark.css")));
+            root.getStylesheets().add(
+                    String.valueOf(
+                            Main.class.getResource("app/css/dark.css")
+                    )
+            );
 
         else
-            root.getStylesheets().add(String.valueOf(Main.class.getResource("app/css/standard.css")));
+            root.getStylesheets().add(
+                String.valueOf(
+                        Main.class.getResource("app/css/standard.css")
+                )
+            );
+
+        try {
+            new ProcessBuilder(System.getenv("ProgramFiles(X86)") + "/youtube-dl/youtube-dl.exe", "--version").start();
+            new ProcessBuilder(System.getenv("ProgramFiles(X86)") + "/youtube-dl/ffmpeg.exe", "--version").start();
+        } catch (IOException ignored) {
+            downloadButtonContainer.getChildren().setAll(
+                    download,
+                    new ImageView(
+                            new Image(
+                                    Main.class.getResourceAsStream("app/img/warning.png"),
+                                    40,
+                                    40,
+                                    true,
+                                    true
+                            )
+                    )
+            );
+            downloadButtonContainer.setSpacing(5);
+            Tooltip.install(downloadButtonContainer, new Tooltip("Missing components to download files, check settings for details."));
+
+            results.setOnMouseClicked(null);
+        }
 
         debug.trace(null, "Initialized results view");
     }
@@ -71,7 +99,6 @@ public class results {
     public void download() {
 
         try {
-
             queueAdditionProgress.setVisible(true);
 
             download.setText("Adding to queue...");
@@ -104,14 +131,12 @@ public class results {
     @FXML
     public void downloadButtonCheck() {
 
+        // Verify executable
         try {
-            if (queueAdder.isDead())
-                throw new NullPointerException();
+            if (queueAdder.isDead()) throw new NullPointerException();
         } catch (NullPointerException ignored) {
 
-            for (BorderPane searchResult: results.getItems()) {
-                searchResult.setRight(null);
-            }
+            for (BorderPane searchResult: results.getItems()) searchResult.setRight(null);
             try {
 
                 HBox tickContainer = new HBox(new ImageView(
@@ -133,6 +158,7 @@ public class results {
 
             Platform.runLater(() -> download.setDisable(results.getSelectionModel().getSelectedIndex() == -1));
         }
+
     }
 
     @FXML
@@ -241,10 +267,8 @@ public class results {
             try {
                 youtubeParser.load();
             } catch (IOException e) {
-                e.printStackTrace();
-                System.exit(0);
                 debug.warn(thread, "Error connecting to https://www.youtube.com/results?search_query=" + query);
-                return new JSONArray();
+                return null;
                 // TODO: Await reconnection
             }
 
@@ -279,21 +303,6 @@ public class results {
 
 
 
-        }
-
-        private int timeConversion(String stringTime) {
-
-            String[] songDataBreak = stringTime.split(":");
-
-            int songLenSec = 0;
-
-            for (int i = songDataBreak.length-1; i >= 0; i--) {
-                // Time * 60^^Index ie
-                // 01:27 -> 27:01 -> ((27)*60^^0) + ((1)*60^^1) -> 87
-                songLenSec += (Double.parseDouble(songDataBreak[Math.abs(i-songDataBreak.length+1)]) * Math.pow(60, i));
-            }
-
-            return songLenSec;
         }
 
         public void kill() {
