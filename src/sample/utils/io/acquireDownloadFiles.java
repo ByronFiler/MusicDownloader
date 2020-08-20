@@ -132,6 +132,7 @@ public class acquireDownloadFiles implements Runnable {
 
     }
 
+    // TODO: IO Exception when youtube-dl is not configured, do not let happen
     private synchronized void downloadFile(JSONObject song, String format, int sourceDepth, String index) throws IOException, JSONException {
 
         // Start download
