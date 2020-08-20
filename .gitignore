@@ -1,7 +1,7 @@
 /out
-/downloads
 /target
 /.idea
+/src/META-INF
 *.class
 *.DS_Store
 *.txt
