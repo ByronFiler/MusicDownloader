@@ -83,11 +83,11 @@ public class youtube implements source {
 
             // If youtube gives a bad response, just retry
             if (contents.length() < 10) {
-                debug.warn(Thread.currentThread(), "Youtube sent a bad response, resent request.");
+                debug.warn("Youtube sent a bad response, resent request.");
                 try {
                     load();
                 } catch (IOException e) {
-                    debug.warn(Thread.currentThread(), "Failed to connect to youtube get results.");
+                    debug.warn("Failed to connect to youtube get results.");
                 }
             }
 
@@ -126,7 +126,7 @@ public class youtube implements source {
             }
 
         } catch (JSONException e) {
-            debug.error(Thread.currentThread(), "Failed to parse youtube results.", e);
+            debug.error("Failed to parse youtube results.", e);
         }
 
     }
@@ -166,7 +166,7 @@ public class youtube implements source {
                 );
                 results.put(searchDataTemp);
             } catch (JSONException e) {
-                debug.warn(null, "Failed to generate search data from query, from html response.");
+                debug.warn("Failed to generate search data from query, from html response.");
             }
         }
 

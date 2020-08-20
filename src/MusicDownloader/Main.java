@@ -29,7 +29,7 @@ public class Main extends Application {
         primaryStage.setTitle("Music Downloader");
         primaryStage.show();
 
-        debug.trace(null, "Primary Stage Generated");
+        debug.trace("Primary Stage Generated");
     }
 
     public static void main(String[] args) {

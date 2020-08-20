@@ -129,7 +129,7 @@ public class result {
 
         } catch (IOException e) {
 
-            debug.warn(null, "Failed to connect to allmusic to get album art, using default.");
+            debug.warn("Failed to connect to allmusic to get album art, using default.");
 
             if (albumArt.getImage() == null)
                 useFallbackAlbumArt();
@@ -150,7 +150,7 @@ public class result {
                     )
             );
         } catch (URISyntaxException er) {
-            debug.error(null, "Failed to set default album art.", er);
+            debug.error("Failed to set default album art.", er);
         }
 
     }

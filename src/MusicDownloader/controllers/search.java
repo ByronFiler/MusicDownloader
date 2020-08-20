@@ -85,7 +85,7 @@ public class search {
                     String.valueOf(Main.class.getResource("app/css/standard.css"))
             );
 
-        debug.trace(null, "Initialized search view.");
+        debug.trace("Initialized search view.");
     }
 
     @FXML
@@ -97,7 +97,7 @@ public class search {
             mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch(IOException e) {
-            debug.error(null, "FXML Error: downloads.fxml", e);
+            debug.error("FXML Error: downloads.fxml", e);
         }
     }
 
@@ -111,7 +111,7 @@ public class search {
             mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch(IOException e) {
-            debug.error(null, "Missing FXML File: Settings.fxml", e);
+            debug.error("Missing FXML File: Settings.fxml", e);
         }
 
     }
@@ -161,7 +161,7 @@ public class search {
                                     Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView, mainWindow.getWidth()-16, mainWindow.getHeight()-39)));
 
                                 } catch (IOException er) {
-                                    debug.error(null, "FXML Error: Settings.fxml", er);
+                                    debug.error("FXML Error: Settings.fxml", er);
                                 }
 
                             } catch (IOException er) {
@@ -170,7 +170,7 @@ public class search {
                                     loadingIcon.setVisible(false);
                                     searchQueryActive = false;
 
-                                    debug.warn(Thread.currentThread(), "Failed to connect to " + allmusic.baseDomain + allmusic.search.subdirectory + search.getText() + e.getText());
+                                    debug.warn("Failed to connect to " + allmusic.baseDomain + allmusic.search.subdirectory + search.getText() + e.getText());
                                     new awaitReconnection();
                                 });
                             }
@@ -280,7 +280,7 @@ public class search {
                             try {
                                 search.setText(autocompleteProcessedResults.getJSONObject(finalI).getString("title"));
                             } catch (JSONException er) {
-                                debug.error(Thread.currentThread(), "Failed to set autocomplete result.", er);
+                                debug.error("Failed to set autocomplete result.", er);
                             }
                         });
                         autocompleteResultView.setCursor(Cursor.HAND);
@@ -288,7 +288,7 @@ public class search {
                         autocompleteResultsView.add(autocompleteResultView);
                     }
                 } catch (JSONException e) {
-                    debug.error(Thread.currentThread(), "Error processing JSON to generate autocomplete results.", e);
+                    debug.error("Error processing JSON to generate autocomplete results.", e);
                 }
 
                 // Add generated data to the search query
@@ -307,13 +307,13 @@ public class search {
             } catch (SocketException | UnknownHostException ignored) {
 
                 // Failed to connect, handling
-                debug.warn(thread, "Error sending web request: https://www.allmusic.com/search/all/" + query);
+                debug.trace("Error sending web request: https://www.allmusic.com/search/all/" + query);
                 Platform.runLater(() -> {
                     search.setDisable(true);
                     new awaitReconnection();
                 });
             } catch (IOException e) {
-                debug.error(Thread.currentThread(), "Unknown exception when requesting user search.", e);
+                debug.error("Unknown exception when requesting user search.", e);
             }
 
         }
@@ -357,7 +357,7 @@ public class search {
                                 searchContainer.getChildren().remove(errorMessage);
                                 searchContainer.getChildren().add(errorMessage);
                             });
-                            debug.trace(null, "Connection reestablished.");
+                            debug.trace("Connection reestablished.");
                             this.cancel();
 
                         }

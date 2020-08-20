@@ -95,7 +95,6 @@ public class downloads {
                             )
                     )
                         debug.warn(
-                                Thread.currentThread(),
                                 String.format(
                                         "Failed to used cached resources for album: \"%s\", containing %s song%s.",
                                         downloadObject[0].getJSONObject("metadata").getString("album"),
@@ -112,13 +111,13 @@ public class downloads {
                         eventsViewTable.getItems().addAll(currentDownloadsView);
 
                 } catch (JSONException e) {
-                    debug.error(null, "Error parsing JSON for download object.", e);
+                    debug.error("Error parsing JSON for download object.", e);
                 }
 
                 try {
                     metadataReference = downloadObject[0].getJSONObject("metadata");
                 } catch (JSONException e) {
-                    debug.error(Thread.currentThread(), "Failed to load metadata for rendering albums on the fly.", e);
+                    debug.error("Failed to load metadata for rendering albums on the fly.", e);
                 }
                 // TimerTask to update and redraw if necessary
                 new Timer().schedule(new TimerTask() {
@@ -128,7 +127,7 @@ public class downloads {
 
                         // Only handles a single item queued, issue
                         if (Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString())) {
-                            debug.trace(Thread.currentThread(), "All pending downloads completed.");
+                            debug.trace("All pending downloads completed.");
 
                             Platform.runLater(() -> {
                                 eventsViewTable.getItems().clear();
@@ -211,7 +210,7 @@ public class downloads {
 
                                 } else {
 
-                                    debug.trace(Thread.currentThread(), "Current download completed, switching to next item in queue.");
+                                    debug.trace("Current download completed, switching to next item in queue.");
 
                                     // Download Object has changed, update the model accordingly
                                     metadataReference = Model.getInstance().download.getDownloadObject().getJSONObject("metadata");
@@ -242,7 +241,7 @@ public class downloads {
                                 }
 
                             } catch (JSONException e) {
-                                debug.error(Thread.currentThread(), "Failed to parse JSON to update element result.", e);
+                                debug.error("Failed to parse JSON to update element result.", e);
                             }
 
                         }
@@ -258,7 +257,7 @@ public class downloads {
                 try {
                     buildDownloadQueueView(downloadQueue[0]);
                 } catch (JSONException e) {
-                    debug.error(null, "Failed to parse data to draw planned queue items.", e);
+                    debug.error("Failed to parse data to draw planned queue items.", e);
                 }
             }
 
@@ -295,7 +294,7 @@ public class downloads {
             }
 
         } else {
-            debug.warn(null, "Downloads was accessed without any downloads history, downloads in progress or any download queue items, this should not have happened.");
+            debug.warn("Downloads was accessed without any downloads history, downloads in progress or any download queue items, this should not have happened.");
         }
 
         // Load style
@@ -310,7 +309,7 @@ public class downloads {
 
         if (eventsViewTable.getItems().size() > 0) albumsView();
         else defaultView();
-        debug.trace(null, "Initialized downloads view.");
+        debug.trace("Initialized downloads view.");
     }
 
     private void buildDownloadQueueView(JSONArray downloadQueue) throws JSONException {
@@ -437,7 +436,7 @@ public class downloads {
 
             } catch (JSONException e) {
                 // Error for now, later handle it and make it a warning
-                debug.error(null, "Failed to parse JSON to draw downloads history.", e);
+                debug.error("Failed to parse JSON to draw downloads history.", e);
             }
 
         }
@@ -468,7 +467,6 @@ public class downloads {
     private void checkForCache(JSONArray downloadQueue, int i) throws JSONException {
         if (!Files.exists(Paths.get(String.format(resources.applicationData + "cached\\%s.jpg", downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")))))
             debug.warn(
-                    Thread.currentThread(),
                     String.format(
                             "Failed to used cached resources for album: \"%s\", containing %s song%s.",
                             downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("album"),
@@ -501,7 +499,7 @@ public class downloads {
                 break;
 
             default:
-                debug.error(null, "Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
+                debug.error("Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
         }
     }
 
@@ -548,7 +546,7 @@ public class downloads {
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch(IOException e) {
-            debug.error(null, "FXML Error: search.fxml", e);
+            debug.error("FXML Error: search.fxml", e);
         }
 
     }
@@ -574,7 +572,6 @@ public class downloads {
         });
 
         debug.trace(
-                Thread.currentThread(),
                 String.format(
                         "Switched to albums view, displaying %s element%s out of %s (%.0f%%), using \"%s\" view.",
                         eventsViewTable.getItems().size(),
@@ -621,7 +618,7 @@ public class downloads {
                     break;
 
                 default:
-                    debug.error(null, "Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
+                    debug.error("Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
             }
 
         } else {
@@ -657,13 +654,12 @@ public class downloads {
                         break;
 
                     default:
-                        debug.error(null, "Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
+                        debug.error("Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
                 }
             } catch (NullPointerException ignored) {}
         });
 
         debug.trace(
-                Thread.currentThread(),
                 String.format(
                         "Switched to songs view, displaying %.0f element%s out of %.0f (%.0f%%), using \"%s\" view.",
                         usedElements,
@@ -708,7 +704,7 @@ public class downloads {
                 );
                 view.setRight(right);
             } catch (URISyntaxException e) {
-                debug.error(Thread.currentThread(), "Failed to load tick for rendering albums.", e);
+                debug.error("Failed to load tick for rendering albums.", e);
             }
         }
 
@@ -736,7 +732,7 @@ public class downloads {
                 view.setRight(right);
 
             } catch (URISyntaxException e) {
-                debug.error(Thread.currentThread(), "Failed to load path to for scheduled icon.", e);
+                debug.error("Failed to load path to for scheduled icon.", e);
             }
 
         }
@@ -817,7 +813,7 @@ public class downloads {
                         for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++)
                             Model.getInstance().download.deleteHistory(downloadObject.getJSONArray("songs").getJSONObject(i));
                     } catch (JSONException er) {
-                        debug.error(Thread.currentThread(), "Failed to parse songs to delete history album.", er);
+                        debug.error("Failed to parse songs to delete history album.", er);
                     }
 
                     try {
@@ -828,7 +824,7 @@ public class downloads {
                             buildSongHistory(downloadHistory, i);
                         }
                     } catch (JSONException er) {
-                        debug.error(Thread.currentThread(), "Failed to parse JSON to render new download history for songs.", er);
+                        debug.error("Failed to parse JSON to render new download history for songs.", er);
                     }
 
                     if (eventsViewTable.getItems().size() == 0) Platform.runLater(downloads.this::defaultView);
@@ -883,7 +879,7 @@ public class downloads {
                     try {
                         Model.getInstance().download.deleteHistory(downloadObject.getJSONArray("songs").getJSONObject(songIndex));
                     } catch (JSONException er) {
-                        debug.error(Thread.currentThread(), "Failed to parse songs to delete history album.", er);
+                        debug.error("Failed to parse songs to delete history album.", er);
                     }
 
 
@@ -896,7 +892,7 @@ public class downloads {
                         }
 
                     } catch (JSONException er) {
-                        debug.error(Thread.currentThread(), "Failed to parse JSON to redraw albums.", er);
+                        debug.error("Failed to parse JSON to redraw albums.", er);
                     }
 
                     if (eventsViewTable.getItems().size() == 0) Platform.runLater(downloads.this::defaultView);

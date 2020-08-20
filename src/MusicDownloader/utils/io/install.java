@@ -20,7 +20,7 @@ public class install {
 
         // Windows only as of now
         if (!System.getProperty("os.name").startsWith("Windows")) {
-            debug.warn(null, "Youtube-DL installation only supported on windows currently.");
+            debug.warn("Youtube-DL installation only supported on windows currently.");
             return false;
         }
 
@@ -59,7 +59,7 @@ public class install {
 
         // Delete irrelevant files
         if (!new File(System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\ffmpeg.zip").delete())
-            debug.warn(null, "Failed to delete: " + System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\ffmpeg.zip");
+            debug.warn("Failed to delete: " + System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\ffmpeg.zip");
 
 
         // Test

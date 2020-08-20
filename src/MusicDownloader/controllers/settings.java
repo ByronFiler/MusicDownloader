@@ -152,7 +152,7 @@ public class settings {
                     String.valueOf(Main.class.getResource("app/css/standard.css"))
             );
 
-        debug.trace(null, "Initialized settings view.");
+        debug.trace("Initialized settings view.");
 
     }
 
@@ -166,7 +166,7 @@ public class settings {
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - 16, mainWindow.getHeight() - 39));
 
         } catch (IOException e) {
-            debug.error(null, "Missing FXML File: Search.fxml", e);
+            debug.error("Missing FXML File: Search.fxml", e);
         }
 
     }
@@ -207,7 +207,7 @@ public class settings {
                 );
 
         } catch (JSONException e) {
-            debug.error(null, "Error checking new settings for dark theme.", e);
+            debug.error("Error checking new settings for dark theme.", e);
         }
 
         // Check if settings have been adjusted from default
@@ -244,7 +244,7 @@ public class settings {
             cancel.setText("Back");
         });
 
-        debug.trace(null, "Updated settings file");
+        debug.trace("Updated settings file");
     }
 
     private JSONObject getNewSettings() {
@@ -270,7 +270,7 @@ public class settings {
             settings.put("data_saver", dataSaverToggle.isSelected());
 
         } catch (JSONException e) {
-            debug.error(null, "Failed to generate new settings.", e);
+            debug.error("Failed to generate new settings.", e);
         }
 
         return settings;
@@ -312,13 +312,13 @@ public class settings {
                         );
 
                     } catch (JSONException ignored) {
-                        debug.warn(Thread.currentThread(), "Found data syntactically incorrect.");
+                        debug.warn("Found data syntactically incorrect.");
                     }
                 });
 
             } catch (IOException | JSONException e) {
                 if (!suppressWarning) {
-                    debug.warn(Thread.currentThread(), "Failed to get latest version, connection issue.");
+                    debug.warn("Failed to get latest version, connection issue.");
                     Platform.runLater(() -> {
                         latestVersion.setText("Unknown");
                         latestVersionContainer.getChildren().clear();
@@ -406,7 +406,7 @@ public class settings {
                                 .add(warningImage)
                 );
 
-                debug.trace(Thread.currentThread(), "Output directory was not found.");
+                debug.trace("Output directory was not found.");
 
 
             } else {
@@ -437,7 +437,7 @@ public class settings {
                                 .add(warningImage)
                     );
 
-                    debug.trace(Thread.currentThread(), "Output directory was found, but lacking write permissions.");
+                    debug.trace("Output directory was found, but lacking write permissions.");
 
                 } else {
 
@@ -479,7 +479,6 @@ public class settings {
         public void run() {
 
             try {
-
                 // Will throw an error if not setup
                 new ProcessBuilder(executablePath, "--version").start();
 
@@ -500,7 +499,7 @@ public class settings {
 
             } catch (IOException ignored) {
                 ignored.printStackTrace();
-                debug.warn(thread, "Failed to verify executable: " + executablePath);
+                debug.warn("Failed to verify executable: " + executablePath);
 
                 Platform.runLater(() -> {
                     element.setText("Not Configured");
@@ -594,7 +593,7 @@ public class settings {
                         );
 
                 } catch (IOException e) {
-                    debug.warn(Thread.currentThread(), "Failed to configure due to likely permission issues, despite that it should be blocked.");
+                    debug.warn("Failed to configure due to likely permission issues, despite that it should be blocked.");
                     Platform.runLater(() -> {element.setText("Configure Manually");
                         elementContainer.getChildren().set(
                                 1,

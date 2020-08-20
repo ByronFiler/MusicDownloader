@@ -92,7 +92,7 @@ public class results {
             results.setOnMouseClicked(null);
         }
 
-        debug.trace(null, "Initialized results view");
+        debug.trace("Initialized results view");
     }
 
     @FXML
@@ -122,7 +122,7 @@ public class results {
 
             );
         } catch (JSONException e) {
-            debug.warn(null, "Error generating basic data for queue addition.");
+            debug.warn("Error generating basic data for queue addition.");
             Platform.runLater(() -> download.setDisable(true));
         }
 
@@ -153,7 +153,7 @@ public class results {
 
                 results.getSelectionModel().getSelectedItems().get(0).setRight(tickContainer);
             } catch (URISyntaxException e) {
-                debug.error(null, "Failed to set tick to mark selected element.", e);
+                debug.error("Failed to set tick to mark selected element.", e);
             }
 
             Platform.runLater(() -> download.setDisable(results.getSelectionModel().getSelectedIndex() == -1));
@@ -172,7 +172,7 @@ public class results {
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
         } catch (IOException e) {
-            debug.error(null, "FXML Error with search.fxml", e);
+            debug.error("FXML Error with search.fxml", e);
         }
 
     }
@@ -248,7 +248,7 @@ public class results {
                         return generateNewCacheArtId(downloadItems);
 
             } catch (JSONException e) {
-                debug.error(null, "Failed to parse temporary data for ID generation.", e);
+                debug.error("Failed to parse temporary data for ID generation.", e);
             }
 
             // Checking in downloads history
@@ -267,7 +267,7 @@ public class results {
             try {
                 youtubeParser.load();
             } catch (IOException e) {
-                debug.warn(thread, "Error connecting to https://www.youtube.com/results?search_query=" + query);
+                debug.warn("Error connecting to https://www.youtube.com/results?search_query=" + query);
                 return null;
                 // TODO: Await reconnection
             }
@@ -279,7 +279,7 @@ public class results {
 
                     case 0:
                         // Unable to find a song which matched what we are looking for
-                        debug.warn(thread, "Youtube does not have the this song, inform user of failure.");
+                        debug.warn("Youtube does not have the this song, inform user of failure.");
                         return new JSONArray();
 
                     case 1:
@@ -296,7 +296,7 @@ public class results {
                         return reducedData;
                 }
             } catch (JSONException e) {
-                debug.error(thread, "Failed to sort songs data with data: " + searchDataExtracted, e);
+                debug.error("Failed to sort songs data with data: " + searchDataExtracted, e);
                 return new JSONArray();
             }
 
@@ -400,10 +400,10 @@ public class results {
                 }
 
             } catch (JSONException e) {
-                debug.error(thread, "Error in JSON processing download item.", e);
+                debug.error("Error in JSON processing download item.", e);
             }
             catch (IOException e) {
-                debug.warn(thread, "Connection error, attempting to reconnect.");
+                debug.warn("Connection error, attempting to reconnect.");
                 // TODO:  Handle reconnection
             }
 
@@ -433,7 +433,7 @@ public class results {
                         mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
 
                     } catch (IOException er) {
-                        debug.error(null, "FXML Error with downloads.fxml", er);
+                        debug.error("FXML Error with downloads.fxml", er);
                     }
                 });
                 linkPart1.getStyleClass().add("sub_text");

@@ -31,7 +31,7 @@ public class settings {
         try {
             settings = new JSONObject(new Scanner(new File(resources.applicationData + "json\\config.json")).useDelimiter("\\Z").next());
         } catch (FileNotFoundException | JSONException ignored) {
-            debug.warn(null, "Failed to load user settings.");
+            debug.warn("Failed to load user settings.");
             settings = defaultSettings;
             resetSettings();
         }
@@ -48,7 +48,7 @@ public class settings {
                     .toString();
 
         } catch (JSONException e) {
-            debug.warn(null, "Failed to locate version.");
+            debug.warn("Failed to locate version.");
             version = null;
         }
 
@@ -68,7 +68,7 @@ public class settings {
             if (resetDirectories())
                 resetSettings();
             else
-                debug.error(null, "Failed to reset settings.", e);
+                debug.error("Failed to reset settings.", e);
         }
     }
 
@@ -80,13 +80,13 @@ public class settings {
         if (!Files.exists(Paths.get(resources.applicationData + "cached\\"))) {
             wasUseful = true;
             if (!new File(resources.applicationData + "cached").mkdirs())
-                debug.error(null, "Failed to create non existing directory: " + resources.applicationData + "cached", null);
+                debug.error("Failed to create non existing directory: " + resources.applicationData + "cached", null);
         }
 
         if (!Files.exists(Paths.get(resources.applicationData + "json"))) {
             wasUseful = true;
             if (!new File(resources.applicationData + "json").mkdirs())
-                debug.error(null, "Failed to create non existing directory: " + resources.applicationData + "json", null);
+                debug.error("Failed to create non existing directory: " + resources.applicationData + "json", null);
         }
 
         return wasUseful;
@@ -101,7 +101,7 @@ public class settings {
             this.settings = settings;
 
         } catch (IOException e) {
-            debug.error(null, "Failed to update settings file.", e);
+            debug.error("Failed to update settings file.", e);
         }
     }
 
@@ -122,10 +122,10 @@ public class settings {
 
             // Determine if it was my fault for using a bad key or settings for having bad data
             if (defaultSettings.has(key)) {
-                debug.warn(null, "Failed to load correct settings, resetting settings.");
+                debug.warn("Failed to load correct settings, resetting settings.");
                 resetSettings();
             } else {
-                debug.error(null, "Invalid key specified in settings: " + key, e);
+                debug.error("Invalid key specified in settings: " + key, e);
             }
 
             return null;

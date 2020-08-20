@@ -46,7 +46,7 @@ public class acquireDownloadFiles implements Runnable {
 
         if (!Files.exists(Paths.get(resources.applicationData + "temp")))
             if (!new File(resources.applicationData + "temp").mkdirs())
-                debug.error(Thread.currentThread(), "Failed to create temp file directory for validation.", new IOException());
+                debug.error("Failed to create temp file directory for validation.", new IOException());
 
         // Preparing sample: Downloading sample & Converting
         InputStream mp3Source = null;
@@ -64,20 +64,20 @@ public class acquireDownloadFiles implements Runnable {
             );
 
         } catch (FileNotFoundException e) {
-            debug.warn(Thread.currentThread(), "Failed to find file to run check on.");
+            debug.warn("Failed to find file to run check on.");
         } catch (IOException e) {
-            debug.warn(Thread.currentThread(), "Error connecting to: " + sampleFileSource);
+            debug.warn("Error connecting to: " + sampleFileSource);
             e.printStackTrace();
             System.exit(-1);
         } catch (JavaLayerException e) {
-            debug.warn(Thread.currentThread(), "Error processing given data for conversion.");
+            debug.warn("Error processing given data for conversion.");
         } catch (Exception e) {
             e.printStackTrace();
         }finally {
             try {
                 if (mp3Source != null) mp3Source.close();
             } catch (IOException e) {
-                debug.error(Thread.currentThread(), "Failed to close remote sample source stream.", e);
+                debug.error("Failed to close remote sample source stream.", e);
             }
         }
 
@@ -89,15 +89,15 @@ public class acquireDownloadFiles implements Runnable {
             downloadData = new FingerprintManager().extractFingerprint(new Wave(resources.applicationData + "temp\\source.wav"));
             sampleData = new FingerprintManager().extractFingerprint(new Wave(resources.applicationData + "temp\\sample.wav"));
         } catch (ArrayIndexOutOfBoundsException ignored) {
-            debug.warn(Thread.currentThread(), "File is too large to be checked.");
+            debug.warn("File is too large to be checked.");
             return 1;
         }
 
         // Deleting temporary files
         if (!new File(resources.applicationData + "temp\\source.wav").delete())
-            debug.warn(Thread.currentThread(), "Failed to delete source.wav");
+            debug.warn("Failed to delete source.wav");
         if (!new File(resources.applicationData + "temp\\sample.wav").delete())
-            debug.warn(Thread.currentThread(), "Failed to delete sample.wav");
+            debug.warn("Failed to delete sample.wav");
 
         FingerprintSimilarityComputer fingerprint = new FingerprintSimilarityComputer(sampleData, downloadData);
         return fingerprint.getFingerprintsSimilarity().getScore();
@@ -116,7 +116,7 @@ public class acquireDownloadFiles implements Runnable {
                     if (new File(folderRequest + "(" + i + ")").mkdir())
                         return folderRequest + "(" + i + ")";
                     else {
-                        debug.error(Thread.currentThread(), "Failed to create directory: " + folderRequest + "(" + i + ")", null);
+                        debug.error("Failed to create directory: " + folderRequest + "(" + i + ")", null);
                     }
                 }
             }
@@ -124,7 +124,7 @@ public class acquireDownloadFiles implements Runnable {
             if (new File(folderRequest).mkdir())
                 return folderRequest;
             else {
-                debug.error(Thread.currentThread(), "Failed to create directory: " + folderRequest, null);
+                debug.error("Failed to create directory: " + folderRequest, null);
             }
         }
 
@@ -137,7 +137,7 @@ public class acquireDownloadFiles implements Runnable {
         // Start download
         if (!Files.exists(Paths.get(resources.applicationData + "temp")))
             if (!new File(resources.applicationData + "temp").mkdirs())
-                debug.error(Thread.currentThread(), "Failed to create temp directory in music downloader app data.", new IOException());
+                debug.error("Failed to create temp directory in music downloader app data.", new IOException());
 
         // Console won't always print out a accurate file name
         List<File> preexistingFiles = Arrays.asList(
@@ -164,7 +164,6 @@ public class acquireDownloadFiles implements Runnable {
 
         if (currentFiles.size() != 1)
             debug.error(
-                    Thread.currentThread(),
                     String.format(
                             "Expected 1 new files to have been created %s found, specifically %s.",
                             currentFiles.size(),
@@ -187,7 +186,6 @@ public class acquireDownloadFiles implements Runnable {
             );
 
             debug.trace(
-                    Thread.currentThread(),
                     String.format(
                             "Calculated downloaded validity of %s at %2.2f [%s]",
                             song.getString("title"),
@@ -200,7 +198,7 @@ public class acquireDownloadFiles implements Runnable {
 
                 // Delete downloaded files & sample
                 if (!downloadedFile.delete())
-                    debug.warn(Thread.currentThread(), "Failed to delete: " + downloadedFile.getName());
+                    debug.warn("Failed to delete: " + downloadedFile.getName());
 
                 if (song.getJSONArray("source").length() > sourceDepth + 2) {
 
@@ -209,7 +207,7 @@ public class acquireDownloadFiles implements Runnable {
                     return;
 
                 } else
-                    debug.warn(Thread.currentThread(), "Failed to find a song in sources that was found to be valid, inform user of failure.");
+                    debug.warn("Failed to find a song in sources that was found to be valid, inform user of failure.");
 
             }
         }
@@ -263,14 +261,14 @@ public class acquireDownloadFiles implements Runnable {
 
                     // Delete old file
                     if (!downloadedFile.delete()) {
-                        debug.error(Thread.currentThread(), "Failed to delete file: " + downloadedFile, new IOException());
+                        debug.error("Failed to delete file: " + downloadedFile, new IOException());
                     }
 
                 } catch (IOException | NotSupportedException e) {
                     e.printStackTrace();
                 }
             } catch (InvalidDataException | UnsupportedTagException e) {
-                debug.warn(Thread.currentThread(), "Failed to apply meta data to: " + downloadedFile);
+                debug.warn("Failed to apply meta data to: " + downloadedFile);
             }
 
         } else {
@@ -290,7 +288,6 @@ public class acquireDownloadFiles implements Runnable {
 
         try {
             debug.trace(
-                    Thread.currentThread(),
                     String.format(
                             "Downloading %s by %s, %s item%s left in queue.",
                             downloadObject.getJSONObject("metadata").getString("album"),
@@ -300,7 +297,7 @@ public class acquireDownloadFiles implements Runnable {
                     )
             );
         } catch (JSONException e) {
-            debug.error(Thread.currentThread(), "Failed to get download object or queue information to debug.", e);
+            debug.error("Failed to get download object or queue information to debug.", e);
         }
 
         // Making the folder to contain the downloads
@@ -326,7 +323,7 @@ public class acquireDownloadFiles implements Runnable {
                     new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
             );
         } catch (IOException e) {
-            debug.error(Thread.currentThread(), "Failed to download album art.", e);
+            debug.error("Failed to download album art.", e);
         } catch (JSONException ignored) {}
 
         // TODO: Should be done when adding to queue, cache the album art
@@ -336,9 +333,9 @@ public class acquireDownloadFiles implements Runnable {
                     Paths.get(resources.applicationData + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg")
             );
         } catch (JSONException ignored) {
-            debug.warn(Thread.currentThread(), "Failed to get JSON data to cache album art.");
+            debug.warn("Failed to get JSON data to cache album art.");
         } catch (IOException ignored) {
-            debug.warn(Thread.currentThread(), "Failed to cache album art.");
+            debug.warn("Failed to cache album art.");
         }
 
         // Download files
@@ -362,9 +359,9 @@ public class acquireDownloadFiles implements Runnable {
                     );
                 } catch (IOException | JSONException e) {
                     try {
-                        debug.error(Thread.currentThread(), "Error downloading song: " + downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"), e);
+                        debug.error("Error downloading song: " + downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"), e);
                     } catch (JSONException er) {
-                        debug.error(Thread.currentThread(), "JSON Error downloading song", er);
+                        debug.error("JSON Error downloading song", er);
                     }
 
                 }
@@ -373,7 +370,6 @@ public class acquireDownloadFiles implements Runnable {
                 downloadObject.getJSONArray("songs").getJSONObject(i).put("completed", true);
 
                 debug.trace(
-                        Thread.currentThread(),
                         String.format(
                                 "Downloaded \"%s\" (%s of %s)",
                                 downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
@@ -394,7 +390,7 @@ public class acquireDownloadFiles implements Runnable {
 
 
         } catch (JSONException e) {
-            debug.error(Thread.currentThread(), "JSON Error when attempting to access songs to download.", e);
+            debug.error("JSON Error when attempting to access songs to download.", e);
         }
 
         // Updating the history
@@ -402,7 +398,7 @@ public class acquireDownloadFiles implements Runnable {
             downloadHistory.put(newHistory);
             Model.getInstance().download.setDownloadHistory(downloadHistory);
         } catch (IOException e) {
-            debug.error(Thread.currentThread(), "Failed to set new download history with current download.", e);
+            debug.error("Failed to set new download history with current download.", e);
         }
 
         // Check if we should delete the album art
@@ -412,28 +408,28 @@ public class acquireDownloadFiles implements Runnable {
                 // Delete album art always
                 case 0:
                     if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
-                        debug.warn(Thread.currentThread(), "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
+                        debug.warn("Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
                     break;
 
                 // Delete for songs
                 case 1:
                     if (downloadObject.getJSONArray("songs").length() == 1)
                         if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
-                            debug.warn(Thread.currentThread(), "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
+                            debug.warn("Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
                     break;
 
                 // Delete for albums
                 case 2:
                     if (downloadObject.getJSONArray("songs").length() > 1)
                         if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
-                            debug.warn(Thread.currentThread(), "Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
+                            debug.warn("Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
                     break;
 
                 default:
-                    debug.error(Thread.currentThread(), "Unexpected value: " + Model.getInstance().settings.getSettingInt("save_album_art"), new IllegalStateException());
+                    debug.error("Unexpected value: " + Model.getInstance().settings.getSettingInt("save_album_art"), new IllegalStateException());
             }
         } catch (JSONException e) {
-            debug.error(Thread.currentThread(), "Failed to perform check to delete album art.", e);
+            debug.error("Failed to perform check to delete album art.", e);
         }
 
         // Move onto the next item if necessary
@@ -444,7 +440,6 @@ public class acquireDownloadFiles implements Runnable {
                 try {
 
                     debug.trace(
-                            Thread.currentThread(),
                             String.format(
                                 "Found %s items left in queue processing and starting new download...",
                                     downloadQueue.length()
@@ -477,11 +472,11 @@ public class acquireDownloadFiles implements Runnable {
                     new acquireDownloadFiles();
 
                 } catch (JSONException e) {
-                    debug.error(Thread.currentThread(), "Failed to process queue.", e);
+                    debug.error("Failed to process queue.", e);
                 }
 
             } else {
-                debug.trace(Thread.currentThread(), "Found 0 items remaining in queue, waiting for next download to start.");
+                debug.trace("Found 0 items remaining in queue, waiting for next download to start.");
                 Model.getInstance().download.setDownloadObject(new JSONObject());
             }
         });

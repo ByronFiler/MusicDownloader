@@ -75,7 +75,7 @@ public class debug {
 
     }
 
-    public static void trace(Thread t, String msg) {
+    public static void trace(String msg) {
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         String traceMessage;
@@ -83,27 +83,14 @@ public class debug {
         if (debug){
             synchronized ( MusicDownloader.utils.app.debug.class )
             {
-                if (t != null) {
-
-                    traceMessage = String.format(
-                            "DEBUG%s[%s: %d] @ %s: %s",
-                            advancedDebug ? prettyExecutionTrace() : " ",
-                            t.getName(),
-                            t.getId(),
-                            formatter.format(new Date()),
-                            msg
-                    );
-
-                } else {
-
-                    // Debugging main thread
-                    traceMessage = String.format(
-                        "DEBUG%s@ %s: %s",
+                traceMessage = String.format(
+                        "DEBUG%s[%s: %d] @ %s: %s",
                         advancedDebug ? prettyExecutionTrace() : " ",
+                        Thread.currentThread().getName(),
+                        Thread.currentThread().getId(),
                         formatter.format(new Date()),
                         msg
-                    );
-                }
+                );
 
                 System.out.println(traceMessage);
                 errorTrace.add(traceMessage);
@@ -111,7 +98,7 @@ public class debug {
         }
     }
 
-    public static synchronized void warn(Thread t, String msg) {
+    public static synchronized void warn(String msg) {
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         String traceMessage;
@@ -119,31 +106,19 @@ public class debug {
         if (debug){
             synchronized ( MusicDownloader.utils.app.debug.class )
             {
-                if (t != null) {
 
-                    traceMessage = String.format(
-                            "WARNING%s[%s: %d] @ %s: %s",
-                            advancedDebug ? prettyExecutionTrace() : " ",
-                            t.getName(),
-                            t.getId(),
-                            formatter.format(new Date()),
-                            msg
-                    );
+                traceMessage = String.format(
+                        "WARNING%s[%s: %d] @ %s: %s",
+                        advancedDebug ? prettyExecutionTrace() : " ",
+                        Thread.currentThread().getName(),
+                        Thread.currentThread().getId(),
+                        formatter.format(new Date()),
+                        msg
+                );
 
-                } else {
+                if (useColours) System.out.println(ANSI_YELLOW + traceMessage + ANSI_RESET);
 
-                    traceMessage = String.format(
-                            "WARNING%s @ %s: %s",
-                            advancedDebug ? prettyExecutionTrace() : " ",
-                            formatter.format(new Date()),
-                            msg
-                    );
-                }
-
-                if (useColours)
-                    System.out.println(ANSI_YELLOW + traceMessage + ANSI_RESET);
-                else
-                    System.out.println(traceMessage);
+                else System.out.println(traceMessage);
 
                 errorTrace.add(traceMessage);
             }
@@ -151,32 +126,17 @@ public class debug {
 
     }
 
-    public static synchronized void error(Thread t, String msg, Exception cause) {
+    public static synchronized void error(String msg, Exception cause) {
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-        String traceMessage;
-
-        if (t != null) {
-
-            traceMessage = String.format(
-                    "ERROR%s[%s: %d] @ %s: %s",
-                    advancedDebug ? prettyExecutionTrace() : " ",
-                    t.getName(),
-                    t.getId(),
-                    formatter.format(new Date()),
-                    msg
-            );
-
-        } else {
-
-            traceMessage = String.format(
-                    "ERROR%s @ %s: %s",
-                    advancedDebug ? prettyExecutionTrace() : " ",
-                    formatter.format(new Date()),
-                    msg
-            );
-
-        }
+        String traceMessage = String.format(
+                "ERROR%s[%s: %d] @ %s: %s",
+                advancedDebug ? prettyExecutionTrace() : " ",
+                Thread.currentThread().getName(),
+                Thread.currentThread().getId(),
+                formatter.format(new Date()),
+                msg
+        );
 
         errorTrace.add(traceMessage);
 
@@ -195,29 +155,21 @@ public class debug {
 
         try {
             youtubeReachable = InetAddress.getByName("youtube.com").isReachable(1000);
-        } catch (IOException ignored) {
-            youtubeReachable = false;
-        }
+        } catch (IOException ignored) { youtubeReachable = false; }
 
         try {
             allmusicReachable = InetAddress.getByName("allmusic.com").isReachable(1000);
-        } catch (IOException ignored) {
-            allmusicReachable = false;
-        }
+        } catch (IOException ignored) { allmusicReachable = false; }
 
         try {
             Runtime.getRuntime().exec(new String[]{"youtube-dl"});
             youtubeDlConfigured = true;
-        } catch (IOException ignored) {
-            youtubeDlConfigured = false;
-        }
+        } catch (IOException ignored) { youtubeDlConfigured = false; }
 
         try {
             Runtime.getRuntime().exec(new String[]{"ffmpeg"});
             ffmpegConfigured = true;
-        } catch (IOException ignored) {
-            ffmpegConfigured = false;
-        }
+        } catch (IOException ignored) { ffmpegConfigured = false; }
 
 
         String systemInformation = String.format("Hardware\nProcessor: %s (%s Core%s)\nMemory %s used of %s Available JVM\n\nSoftware\nOperating System: %s\nFFMPEG Configured: %s\nYoutube-DL Configured: %s\n\nConnections\nYoutube Reachable: %s\nAllMusic Reachable: %s\n",
@@ -235,7 +187,7 @@ public class debug {
 
         if (!Files.exists(Paths.get(resources.applicationData + "crashes\\"))) {
             if (!new File(resources.applicationData + "crashes\\").mkdirs()) {
-                warn(Thread.currentThread(), "Failed to create directory to save crashes");
+                warn("Failed to create directory to save crashes");
                 System.exit(-2);
             }
         }
@@ -282,7 +234,7 @@ public class debug {
 
         } catch (IOException e) {
 
-            warn(Thread.currentThread(), "Failed to write crash log.");
+            warn("Failed to write crash log.");
 
         }
 

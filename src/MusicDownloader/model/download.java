@@ -40,11 +40,10 @@ public class download{
                 for (int i = 0; i < downloadHistory.length(); i++)
                     songCount += downloadHistory.getJSONObject(i).getJSONArray("songs").length();
             } catch (JSONException e) {
-                debug.error(Thread.currentThread(), "Failed to process JSON to calculate downloads song count.", e);
+                debug.error("Failed to process JSON to calculate downloads song count.", e);
             }
 
             debug.trace(
-                    Thread.currentThread(),
                     String.format(
                             "Found a download history of %s album%s and %.0f song%s.",
                             downloadHistory.length(),
@@ -54,7 +53,7 @@ public class download{
                     )
             );
         } else {
-            debug.trace(Thread.currentThread(), "Did not any existing download history.");
+            debug.trace("Did not any existing download history.");
         }
     }
 
@@ -75,14 +74,14 @@ public class download{
         if (downloadQueue.length() == 0 && !downloadObject.has("songs")) {
 
             // No downloads in progress or in queue, hence start a new download thread.
-            debug.trace(null, "New download request received, queue is blank and hence will begin downloading...");
+            debug.trace("New download request received, queue is blank and hence will begin downloading...");
 
             // For processing downloads, the progress must be viewed as started to work
             try {
                 for (int i = 0; i < queueItem.getJSONArray("songs").length(); i++)
                     queueItem.getJSONArray("songs").getJSONObject(i).put("completed", false);
             } catch (JSONException e) {
-                debug.error(Thread.currentThread(), "Error updating downloads queue.", e);
+                debug.error("Error updating downloads queue.", e);
             }
 
             downloadObject = queueItem;
@@ -91,7 +90,7 @@ public class download{
         } else {
 
             // Download already in progress, hence queue
-            debug.trace(null, String.format("New download request received, adding to queue in position %s.", getDownloadQueue().length()+1));
+            debug.trace(String.format("New download request received, adding to queue in position %s.", getDownloadQueue().length()+1));
             downloadQueue.put(queueItem);
 
         }
@@ -128,14 +127,14 @@ public class download{
             }
 
         } catch (JSONException e) {
-            debug.error(null, "Failed to validate download history to remove element.", e);
+            debug.error("Failed to validate download history to remove element.", e);
         }
 
         // Rewriting the new history
         try {
             setDownloadHistory(newDownloadHistory);
         } catch (IOException e) {
-            debug.error(null, "Error writing new download history.", e);
+            debug.error("Error writing new download history.", e);
         }
 
     }
@@ -171,7 +170,7 @@ public class download{
                     if (!new File(resources.applicationData + "json\\downloads.gz").createNewFile())
                         throw new IOException();
             } catch (IOException er) {
-                debug.warn(null, "Failed to create new downloads history file.");
+                debug.warn("Failed to create new downloads history file.");
             }
         }
     }

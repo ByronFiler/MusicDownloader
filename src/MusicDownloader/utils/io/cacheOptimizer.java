@@ -37,10 +37,10 @@ public class cacheOptimizer implements Runnable{
                 int preexistingFiles = Objects.requireNonNull(tempFiles.listFiles()).length;
 
                 FileUtils.deleteDirectory(new File(resources.applicationData + "temp\\"));
-                debug.trace(Thread.currentThread(), String.format("Deleted %s temporary files.", preexistingFiles));
+                debug.trace(String.format("Deleted %s temporary files.", preexistingFiles));
 
             } catch (IOException e) {
-                debug.warn(Thread.currentThread(), "Failed to delete temp directory.");
+                debug.warn("Failed to delete temp directory.");
             }
         }
 
@@ -56,7 +56,7 @@ public class cacheOptimizer implements Runnable{
                     usedArtIds.add(downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId"));
             }
         } catch (JSONException e) {
-            debug.error(Thread.currentThread(), "Failed to parse download history for art IDs.", e);
+            debug.error("Failed to parse download history for art IDs.", e);
         }
 
         for (File foundFile: Objects.requireNonNull(new File(resources.applicationData + "cached").listFiles())) {
@@ -106,12 +106,12 @@ public class cacheOptimizer implements Runnable{
 
 
                 } catch (IOException | JSONException e) {
-                    debug.error(Thread.currentThread(), "Error processing file.", e);
+                    debug.error("Error processing file.", e);
                 }
 
             } else {
                 if (!foundFile.delete())
-                    debug.warn(null, "Failed to delete file: " + foundFile.getAbsolutePath());
+                    debug.warn("Failed to delete file: " + foundFile.getAbsolutePath());
                 else
                     deletedFilesCount++;
             }
@@ -119,7 +119,7 @@ public class cacheOptimizer implements Runnable{
         }
 
         if (deletedFilesCount > 0)
-            debug.trace(Thread.currentThread(), String.format("Deleted %s non used file%s.", deletedFilesCount, deletedFilesCount == 1 ? "" : "s"));
+            debug.trace(String.format("Deleted %s non used file%s.", deletedFilesCount, deletedFilesCount == 1 ? "" : "s"));
 
         try {
 
@@ -137,7 +137,7 @@ public class cacheOptimizer implements Runnable{
                 deletedFilesCount = 0;
                 for (File deleteFile: deleteFiles) {
                     if (!deleteFile.delete())
-                        debug.warn(Thread.currentThread(), "Failed to delete " + deleteFile.getAbsolutePath());
+                        debug.warn("Failed to delete " + deleteFile.getAbsolutePath());
                     else
                         deletedFilesCount++;
                 }
@@ -161,17 +161,17 @@ public class cacheOptimizer implements Runnable{
                                 )
                         );
 
-                    debug.trace(Thread.currentThread(), deletedFilesMessage.toString());
+                    debug.trace(deletedFilesMessage.toString());
 
                 }
 
             } catch (IOException e) {
-                debug.warn(null, "Failed to write updated downloads history.");
+                debug.warn("Failed to write updated downloads history.");
             }
 
 
         } catch (JSONException e) {
-            debug.error(null, "Failed to rewrite JSON data for download queue optimisation.", e);
+            debug.error("Failed to rewrite JSON data for download queue optimisation.", e);
         }
 
         // Start re-downloading missing files.
@@ -225,7 +225,6 @@ public class cacheOptimizer implements Runnable{
             }
             if (reacquiredFilesCount > 0) {
                 debug.trace(
-                        Thread.currentThread(),
                         String.format("Reacquired %s file%s to cache.", reacquiredFilesCount, reacquiredFilesCount == 1 ? "" : "s")
                 );
 
@@ -233,7 +232,7 @@ public class cacheOptimizer implements Runnable{
             }
 
         } catch (JSONException | IOException e) {
-            debug.error(Thread.currentThread(), "Failed to get art for checking files to re-download.", e);
+            debug.error("Failed to get art for checking files to re-download.", e);
         }
     }
 }

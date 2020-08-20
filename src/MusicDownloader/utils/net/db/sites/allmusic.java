@@ -57,7 +57,7 @@ public class allmusic {
 
                     }
             } catch (JSONException e) {
-                debug.error(Thread.currentThread(), "Failed to parse data to get song album art.", e);
+                debug.error("Failed to parse data to get song album art.", e);
             }
 
         }
@@ -124,7 +124,7 @@ public class allmusic {
                                 applicationData.put("art", Main.class.getResource("app/img/song_default.png").toURI().toString());
 
                             } catch (URISyntaxException e) {
-                                debug.error(Thread.currentThread(), "Failed to get default icon for song.", e);
+                                debug.error("Failed to get default icon for song.", e);
                             }
                         }
 
@@ -134,9 +134,9 @@ public class allmusic {
                         searchResultsData.put(resultData);
 
                     } catch (JSONException e) {
-                        debug.error(Thread.currentThread(), "Failed to process search request JSON for" + searchQuery, e);
+                        debug.error("Failed to process search request JSON for" + searchQuery, e);
                     } catch (ArrayIndexOutOfBoundsException e) {
-                        debug.warn(Thread.currentThread(), "Unknown URL: " + result.select("div.title").select("a").attr("href"));
+                        debug.warn("Unknown URL: " + result.select("div.title").select("a").attr("href"));
                     }
                 }
             }
@@ -160,7 +160,7 @@ public class allmusic {
                     viewResults.add(resultBuilder.getView());
                 }
             } catch (JSONException e) {
-                debug.error(Thread.currentThread(), "Failed to parse JSON to build search results view.", e);
+                debug.error("Failed to parse JSON to build search results view.", e);
             }
 
             return viewResults;
@@ -208,7 +208,7 @@ public class allmusic {
                 else return albumArtSource;
 
             } catch (URISyntaxException e) {
-                debug.error(Thread.currentThread(), "Failed to load song default.", e);
+                debug.error("Failed to load song default.", e);
             }
             return "";
         }
