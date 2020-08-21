@@ -304,10 +304,9 @@ public class downloads {
             songViewSelector.setEffect(new ColorAdjust(0, 0, 1, 0));
         }
 
-        else
-            root.getStylesheets().add(String.valueOf(Main.class.getResource("app/css/standard.css")));
+        else root.getStylesheets().add(String.valueOf(Main.class.getResource("app/css/standard.css")));
 
-        if (eventsViewTable.getItems().size() > 0) albumsView();
+        if (currentDownloadsView.size() > 0 || downloadHistoriesView.size() > 0) albumsView();
         else defaultView();
         debug.trace("Initialized downloads view.");
     }

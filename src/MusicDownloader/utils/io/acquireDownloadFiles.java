@@ -1,5 +1,8 @@
 package MusicDownloader.utils.io;
 
+import MusicDownloader.model.Model;
+import MusicDownloader.utils.app.debug;
+import MusicDownloader.utils.app.resources;
 import com.mpatric.mp3agic.*;
 import com.musicg.fingerprint.FingerprintManager;
 import com.musicg.fingerprint.FingerprintSimilarityComputer;
@@ -11,9 +14,6 @@ import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import MusicDownloader.model.Model;
-import MusicDownloader.utils.app.debug;
-import MusicDownloader.utils.app.resources;
 
 import java.io.*;
 import java.net.URL;
@@ -37,6 +37,8 @@ public class acquireDownloadFiles implements Runnable {
     private JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
     private final JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
     private JSONArray downloadQueue = Model.getInstance().download.getDownloadQueue();
+
+    private byte[] albumArt;
 
     public acquireDownloadFiles() {
         new Thread(this, "acquire-download-files").start();
@@ -165,7 +167,7 @@ public class acquireDownloadFiles implements Runnable {
         if (currentFiles.size() != 1)
             debug.error(
                     String.format(
-                            "Expected 1 new files to have been created %s found, specifically %s.",
+                            "Expected 1 new file to have been created, %s found, specifically %s.",
                             currentFiles.size(),
                             String.join(",", currentFiles.stream().map((File::getName)).toString())
                     ),
@@ -174,8 +176,7 @@ public class acquireDownloadFiles implements Runnable {
 
         File downloadedFile = currentFiles.get(0);
 
-        if (downloadedFile == null)
-            throw new IOException("Failed to find downloaded file.");
+        if (downloadedFile == null) throw new IOException("Failed to find downloaded file.");
 
         // Validate
         if (Model.getInstance().settings.getSettingBool("advanced_validation")) {
@@ -223,18 +224,7 @@ public class acquireDownloadFiles implements Runnable {
 
                 if (Model.getInstance().settings.getSettingBool("album_art")) {
                     // Could break this up into mb loads
-
-                    RandomAccessFile art = new RandomAccessFile(
-                            new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg"),
-                            "r"
-                    );
-
-                    byte[] bytes;
-                    bytes = new byte[(int) art.length()]; // Maybe make this 1024
-                    art.read(bytes);
-                    art.close();
-
-                    id3v2tag.setAlbumImage(bytes, "image/jpg");
+                    id3v2tag.setAlbumImage(albumArt, "image/jpg");
                 }
 
                 // Applying remaining data
@@ -314,28 +304,32 @@ public class acquireDownloadFiles implements Runnable {
                     );
         } catch (JSONException ignored) {}
 
-        // TODO: Should be cached instantly then moved from the cache
-
-        // Download the album art
+        // Loading album art
         try {
-            FileUtils.copyURLToFile(
-                    new URL(downloadObject.getJSONObject("metadata").getString("art")),
-                    new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
-            );
-        } catch (IOException e) {
-            debug.error("Failed to download album art.", e);
-        } catch (JSONException ignored) {}
+            if (Files.exists(Paths.get(resources.applicationData + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))))) {
 
-        // TODO: Should be done when adding to queue, cache the album art
-        try {
-            Files.copy(
-                    Paths.get(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg"),
-                    Paths.get(resources.applicationData + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg")
-            );
-        } catch (JSONException ignored) {
-            debug.warn("Failed to get JSON data to cache album art.");
-        } catch (IOException ignored) {
-            debug.warn("Failed to cache album art.");
+                try {
+                    this.albumArt = Files.readAllBytes(Paths.get(resources.applicationData + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
+                } catch (IOException e) {
+                    debug.error("Failed to read all bytes, album art was likely a corrupt download.", e);
+                }
+            } else {
+
+                debug.warn("Failed to use cached album art, should've already been in cache if downloading, reacquiring file.");
+                try {
+                    FileUtils.copyURLToFile(
+                            new URL(downloadObject.getJSONObject("metadata").getString("art")),
+                            new File(resources.applicationData + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId")))
+                    );
+                    this.albumArt = Files.readAllBytes(Paths.get(resources.applicationData + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
+                } catch (IOException e) {
+                    debug.error("Failed to connect and download album art.", e);
+                    // TODO: Handle reconnection
+                }
+
+            }
+        } catch (JSONException e) {
+            debug.error("Failed to load JSON data when reading album art.", e);
         }
 
         // Download files
@@ -402,34 +396,47 @@ public class acquireDownloadFiles implements Runnable {
         }
 
         // Check if we should delete the album art
+        // TODO: Change number settings
         try {
             switch (Model.getInstance().settings.getSettingInt("save_album_art")) {
 
                 // Delete album art always
                 case 0:
-                    if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
-                        debug.warn("Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
                     break;
 
-                // Delete for songs
+                // Keep For Albums
                 case 1:
-                    if (downloadObject.getJSONArray("songs").length() == 1)
-                        if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
-                            debug.warn("Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
+                    if (downloadObject.getJSONArray("songs").length() > 1)
+                        FileUtils.copyFile(
+                                new File(resources.applicationData + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
+                                new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
+                        );
                     break;
 
-                // Delete for albums
+                // Keep for songs
                 case 2:
-                    if (downloadObject.getJSONArray("songs").length() > 1)
-                        if (!new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg").delete())
-                            debug.warn("Failed to delete: " + downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg");
+                    if (downloadObject.getJSONArray("songs").length() == 1)
+                        FileUtils.copyFile(
+                                new File(resources.applicationData + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
+                                new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
+                        );
+                    break;
+
+                // Keep always
+                case 3:
+                    FileUtils.copyFile(
+                            new File(resources.applicationData + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
+                            new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
+                    );
                     break;
 
                 default:
                     debug.error("Unexpected value: " + Model.getInstance().settings.getSettingInt("save_album_art"), new IllegalStateException());
             }
         } catch (JSONException e) {
-            debug.error("Failed to perform check to delete album art.", e);
+            debug.error("Failed to perform check to copy album art to download.", e);
+        } catch (IOException e) {
+            debug.warn("Failed to copy album art into downloads folder.");
         }
 
         // Move onto the next item if necessary

@@ -1,5 +1,9 @@
 package MusicDownloader.controllers;
 
+import MusicDownloader.Main;
+import MusicDownloader.model.Model;
+import MusicDownloader.utils.app.debug;
+import MusicDownloader.utils.net.db.sites.allmusic;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -25,10 +29,6 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
-import MusicDownloader.Main;
-import MusicDownloader.model.Model;
-import MusicDownloader.utils.app.debug;
-import MusicDownloader.utils.net.db.sites.allmusic;
 
 import java.io.IOException;
 import java.net.InetAddress;

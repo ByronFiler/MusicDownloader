@@ -24,6 +24,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,6 +32,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -313,6 +315,7 @@ public class results {
             return completed;
         }
 
+        @Override
         public void run() {
             JSONObject downloadItem = new JSONObject();
 
@@ -351,6 +354,19 @@ public class results {
                     metadata.put("genre", songTraceLinkLoader.getGenre());
 
                     basicData.getJSONObject("data").put("allmusicAlbumId", songTraceLinkLoader.getAlbumId());
+                }
+
+                // Downloading the album art to cache to prevent album art not being loaded if multiple items are in queue
+                try {
+                    FileUtils.copyURLToFile(
+                            new URL(metadata.getString("art")),
+                            new File(resources.applicationData + String.format("cached\\%s.jpg", metadata.getString("artId")))
+                    );
+                } catch (IOException e) {
+                    debug.error("Failed to download album art.", e);
+                    // TODO: Handle connection
+                } catch (JSONException e) {
+                    debug.error("JSON Error when downloading album art.", e);
                 }
 
                 // Extract relevant data from the album
