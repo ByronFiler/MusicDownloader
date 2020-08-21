@@ -1,5 +1,10 @@
 package MusicDownloader.controllers;
 
+import MusicDownloader.Main;
+import MusicDownloader.model.Model;
+import MusicDownloader.utils.app.debug;
+import MusicDownloader.utils.app.resources;
+import MusicDownloader.utils.fx.result;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -24,11 +29,6 @@ import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import MusicDownloader.Main;
-import MusicDownloader.model.Model;
-import MusicDownloader.utils.app.debug;
-import MusicDownloader.utils.app.resources;
-import MusicDownloader.utils.fx.result;
 
 import java.awt.*;
 import java.io.File;
@@ -36,7 +36,10 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /*
 TODO
@@ -72,6 +75,7 @@ public class downloads {
 
     @FXML
     private void initialize() {
+
         final JSONArray[] downloadHistory = {Model.getInstance().download.getDownloadHistory()};
         final JSONArray[] downloadQueue = {Model.getInstance().download.getDownloadQueue()};
         final JSONObject[] downloadObject = {Model.getInstance().download.getDownloadObject()};
@@ -89,7 +93,7 @@ public class downloads {
                                     Paths.get(
                                             String.format(
                                                     "%scached\\%s.jpg",
-                                                    resources.applicationData,
+                                                    resources.getInstance().getApplicationData(),
                                                     downloadObject[0].getJSONObject("metadata").getString("artId")
                                             )
                                     )
@@ -186,22 +190,22 @@ public class downloads {
                                                                                 )
                                                                         )
                                                                 );
-                                                            } catch (URISyntaxException ignored) {
-                                                            }
+                                                            } catch (URISyntaxException ignored) {}
                                                         });
-                                                } catch (NullPointerException ignored) {
-                                                }
+                                                } catch (NullPointerException ignored) {}
                                                 workingCounter++;
                                             }
-                                        } catch (ConcurrentModificationException ignored) {
-                                        }
+                                        } catch (ConcurrentModificationException ignored) {}
                                     }
 
                                     double completed = 0;
                                     for (int i = 0; i < Model.getInstance().download.getDownloadObject().getJSONArray("songs").length(); i++) {
-                                        if (Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
+                                        if (Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed")) {
                                             completed++;
+                                        }
                                     }
+
+                                    // Calculate time remaining and update
 
                                     double percentComplete = completed / (double) Model.getInstance().download.getDownloadObject().getJSONArray("songs").length();
 
@@ -326,7 +330,7 @@ public class downloads {
                 downloadResult plannedDownloadSongBuilder = new downloadResult(
                         String.format(
                                 "%scached\\%s.jpg",
-                                resources.applicationData,
+                                resources.getInstance().getApplicationData(),
                                 downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")
                         ),
                         downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("art"),
@@ -341,7 +345,7 @@ public class downloads {
             downloadResult plannedDownloadAlbumBuilder = new downloadResult(
                     String.format(
                             "%scached\\%s.jpg",
-                            resources.applicationData,
+                            resources.getInstance().getApplicationData(),
                             downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")
                     ),
                     downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("art"),
@@ -361,7 +365,7 @@ public class downloads {
         downloadResult currentDownloadViewAlbumBuilder = new downloadResult(
                 String.format(
                         "%scached\\%s.jpg",
-                        resources.applicationData,
+                        resources.getInstance().getApplicationData(),
                         downloadObject.getJSONObject("metadata").getString("artId")
                 ),
                 downloadObject.getJSONObject("metadata").getString("art"),
@@ -386,7 +390,7 @@ public class downloads {
             downloadResult currentDownloadViewSongBuilder = new downloadResult(
                     String.format(
                             "%scached\\%s.jpg",
-                            resources.applicationData,
+                            resources.getInstance().getApplicationData(),
                             downloadObject.getJSONObject("metadata").getString("artId")
                     ),
                     downloadObject.getJSONObject("metadata").getString("art"),
@@ -421,7 +425,7 @@ public class downloads {
                 downloadResult downloadHistoryAlbumBuilder = new downloadResult(
                         String.format(
                                 "%scached\\%s.jpg",
-                                resources.applicationData,
+                                resources.getInstance().getApplicationData(),
                                 downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId")
                         ),
                         downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("art"),
@@ -448,7 +452,7 @@ public class downloads {
             downloadResult downloadHistorySongBuilder = new downloadResult(
                     String.format(
                             "%scached\\%s.jpg",
-                            resources.applicationData,
+                            resources.getInstance().getApplicationData(),
                             downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId")
                     ),
                     downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("art"),
@@ -465,7 +469,7 @@ public class downloads {
     }
 
     private void checkForCache(JSONArray downloadQueue, int i) throws JSONException {
-        if (!Files.exists(Paths.get(String.format(resources.applicationData + "cached\\%s.jpg", downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")))))
+        if (!Files.exists(Paths.get(String.format(resources.getInstance().getApplicationData() + "cached\\%s.jpg", downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")))))
             debug.warn(
                     String.format(
                             "Failed to used cached resources for album: \"%s\", containing %s song%s.",

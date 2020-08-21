@@ -1,10 +1,10 @@
 package MusicDownloader.model;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import MusicDownloader.Main;
 import MusicDownloader.utils.app.debug;
 import MusicDownloader.utils.app.resources;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,7 +29,7 @@ public class settings {
 
         // Load users actual settings
         try {
-            settings = new JSONObject(new Scanner(new File(resources.applicationData + "json\\config.json")).useDelimiter("\\Z").next());
+            settings = new JSONObject(new Scanner(new File(resources.getInstance().getApplicationData() + "json\\config.json")).useDelimiter("\\Z").next());
         } catch (FileNotFoundException | JSONException ignored) {
             debug.warn("Failed to load user settings.");
             settings = defaultSettings;
@@ -58,7 +58,7 @@ public class settings {
 
         try {
 
-            FileWriter newConfig = new FileWriter(resources.applicationData + "json\\config.json");
+            FileWriter newConfig = new FileWriter(resources.getInstance().getApplicationData() + "json\\config.json");
             newConfig.write(defaultSettings.toString());
             newConfig.close();
 
@@ -77,16 +77,16 @@ public class settings {
         boolean wasUseful = false;
 
         // Checking for non existing folders
-        if (!Files.exists(Paths.get(resources.applicationData + "cached\\"))) {
+        if (!Files.exists(Paths.get(resources.getInstance().getApplicationData() + "cached\\"))) {
             wasUseful = true;
-            if (!new File(resources.applicationData + "cached").mkdirs())
-                debug.error("Failed to create non existing directory: " + resources.applicationData + "cached", null);
+            if (!new File(resources.getInstance().getApplicationData() + "cached").mkdirs())
+                debug.error("Failed to create non existing directory: " + resources.getInstance().getApplicationData() + "cached", null);
         }
 
-        if (!Files.exists(Paths.get(resources.applicationData + "json"))) {
+        if (!Files.exists(Paths.get(resources.getInstance().getApplicationData() + "json"))) {
             wasUseful = true;
-            if (!new File(resources.applicationData + "json").mkdirs())
-                debug.error("Failed to create non existing directory: " + resources.applicationData + "json", null);
+            if (!new File(resources.getInstance().getApplicationData() + "json").mkdirs())
+                debug.error("Failed to create non existing directory: " + resources.getInstance().getApplicationData() + "json", null);
         }
 
         return wasUseful;
@@ -94,7 +94,7 @@ public class settings {
 
     public void saveSettings(JSONObject settings) {
         try {
-            FileWriter settingsFile = new FileWriter(resources.applicationData + "json/config.json");
+            FileWriter settingsFile = new FileWriter(resources.getInstance().getApplicationData() + "json/config.json");
             settingsFile.write(settings.toString());
             settingsFile.close();
 

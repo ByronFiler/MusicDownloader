@@ -1,10 +1,9 @@
 package MusicDownloader.utils.io;
 
+import MusicDownloader.utils.app.debug;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.jsoup.Jsoup;
-import MusicDownloader.utils.app.debug;
-import MusicDownloader.utils.app.resources;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +15,9 @@ import java.nio.file.Paths;
 
 public class install {
 
+    public static final String YOUTUBE_DL_SOURCE = "https://youtube-dl.org/downloads/latest/youtube-dl.exe";
+    public static final String FFMPEG_SOURCE = "https://ffmpeg.zeranoe.com/builds/win64/static/";
+
     public static boolean getYoutubeDl() throws IOException {
 
         // Windows only as of now
@@ -26,7 +28,7 @@ public class install {
 
         // Need to check OS to determine where to install it and to install
         FileUtils.copyURLToFile(
-                new URL(resources.YOUTUBE_DL_SOURCE),
+                new URL(YOUTUBE_DL_SOURCE),
                 new File(System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\youtube-dl.exe")
         );
 
@@ -38,11 +40,11 @@ public class install {
     }
 
     public static boolean getFFMPEG() throws IOException {
-        String packageVersion = Jsoup.connect(resources.FFMPEG_SOURCE).get().select("a").get(1).attr("href");
+        String packageVersion = Jsoup.connect(FFMPEG_SOURCE).get().select("a").get(1).attr("href");
 
         // Downloading zip
         FileUtils.copyURLToFile(
-                new URL(resources.FFMPEG_SOURCE + packageVersion),
+                new URL(FFMPEG_SOURCE + packageVersion),
                 new File(System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\ffmpeg.zip")
         );
 

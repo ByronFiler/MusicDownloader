@@ -19,6 +19,7 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -43,8 +44,8 @@ public class acquireDownloadFiles implements Runnable {
 
     private float evaluateDownloadValidity (String sampleFileSource, String downloadedFile) {
 
-        if (!Files.exists(Paths.get(resources.applicationData + "temp")))
-            if (!new File(resources.applicationData + "temp").mkdirs())
+        if (!Files.exists(Paths.get(resources.getInstance().getApplicationData() + "temp")))
+            if (!new File(resources.getInstance().getApplicationData() + "temp").mkdirs())
                 debug.error("Failed to create temp file directory for validation.", new IOException());
 
         // Preparing sample: Downloading sample & Converting
@@ -53,13 +54,13 @@ public class acquireDownloadFiles implements Runnable {
             mp3Source = new URL(sampleFileSource).openStream();
             new Converter().convert(
                     mp3Source,
-                    resources.applicationData + "temp\\sample.wav",
+                    resources.getInstance().getApplicationData() + "temp\\sample.wav",
                     null,
                     null
             );
             new Converter().convert(
                     downloadedFile,
-                    resources.applicationData + "temp\\source.wav"
+                    resources.getInstance().getApplicationData() + "temp\\source.wav"
             );
 
         } catch (FileNotFoundException e) {
@@ -85,17 +86,17 @@ public class acquireDownloadFiles implements Runnable {
         byte[] downloadData;
 
         try {
-            downloadData = new FingerprintManager().extractFingerprint(new Wave(resources.applicationData + "temp\\source.wav"));
-            sampleData = new FingerprintManager().extractFingerprint(new Wave(resources.applicationData + "temp\\sample.wav"));
+            downloadData = new FingerprintManager().extractFingerprint(new Wave(resources.getInstance().getApplicationData() + "temp\\source.wav"));
+            sampleData = new FingerprintManager().extractFingerprint(new Wave(resources.getInstance().getApplicationData() + "temp\\sample.wav"));
         } catch (ArrayIndexOutOfBoundsException ignored) {
             debug.warn("File is too large to be checked.");
             return 1;
         }
 
         // Deleting temporary files
-        if (!new File(resources.applicationData + "temp\\source.wav").delete())
+        if (!new File(resources.getInstance().getApplicationData() + "temp\\source.wav").delete())
             debug.warn("Failed to delete source.wav");
-        if (!new File(resources.applicationData + "temp\\sample.wav").delete())
+        if (!new File(resources.getInstance().getApplicationData() + "temp\\sample.wav").delete())
             debug.warn("Failed to delete sample.wav");
 
         FingerprintSimilarityComputer fingerprint = new FingerprintSimilarityComputer(sampleData, downloadData);
@@ -134,20 +135,20 @@ public class acquireDownloadFiles implements Runnable {
     private synchronized void downloadFile(JSONObject song, String format, int sourceDepth, String index) throws IOException, JSONException {
 
         // Start download
-        if (!Files.exists(Paths.get(resources.applicationData + "temp")))
-            if (!new File(resources.applicationData + "temp").mkdirs())
+        if (!Files.exists(Paths.get(resources.getInstance().getApplicationData() + "temp")))
+            if (!new File(resources.getInstance().getApplicationData() + "temp").mkdirs())
                 debug.error("Failed to create temp directory in music downloader app data.", new IOException());
 
         // Console won't always print out a accurate file name
         List<File> preexistingFiles = Arrays.asList(
                 Objects.requireNonNull(
-                        new File(resources.applicationData + "temp").listFiles()
+                        new File(resources.getInstance().getApplicationData() + "temp").listFiles()
                 )
         );
 
         ProcessBuilder builder = new ProcessBuilder("C:\\Program Files (x86)\\youtube-dl\\youtube-dl.exe");
         builder.command("youtube-dl", "--extract-audio", "--audio-format", format, "--ignore-errors", "--retries", "10", "https://www.youtube.com/watch?v=" + song.getJSONArray("source").getString(sourceDepth));
-        builder.directory(new File(resources.applicationData + "temp"));
+        builder.directory(new File(resources.getInstance().getApplicationData() + "temp"));
         builder.redirectErrorStream(true);
         Process process = builder.start();
         InputStream is = process.getInputStream();
@@ -158,7 +159,7 @@ public class acquireDownloadFiles implements Runnable {
             debug.log(Thread.currentThread(), line);
 
         // Silent debug to not spam console
-        ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(resources.applicationData + "temp\\").listFiles())));
+        ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(resources.getInstance().getApplicationData() + "temp\\").listFiles())));
         currentFiles.removeAll(preexistingFiles);
 
         // TODO: Happens rarely, likely due to a youtube-dl renaming process, consider awaiting for maybe 50 or 100ms?
@@ -302,10 +303,10 @@ public class acquireDownloadFiles implements Runnable {
 
         // Loading album art
         try {
-            if (Files.exists(Paths.get(resources.applicationData + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))))) {
+            if (Files.exists(Paths.get(resources.getInstance().getApplicationData() + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))))) {
 
                 try {
-                    this.albumArt = Files.readAllBytes(Paths.get(resources.applicationData + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
+                    this.albumArt = Files.readAllBytes(Paths.get(resources.getInstance().getApplicationData() + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
                 } catch (IOException e) {
                     debug.error("Failed to read all bytes, album art was likely a corrupt download.", e);
                 }
@@ -315,9 +316,9 @@ public class acquireDownloadFiles implements Runnable {
                 try {
                     FileUtils.copyURLToFile(
                             new URL(downloadObject.getJSONObject("metadata").getString("art")),
-                            new File(resources.applicationData + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId")))
+                            new File(resources.getInstance().getApplicationData() + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId")))
                     );
-                    this.albumArt = Files.readAllBytes(Paths.get(resources.applicationData + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
+                    this.albumArt = Files.readAllBytes(Paths.get(resources.getInstance().getApplicationData() + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
                 } catch (IOException e) {
                     debug.error("Failed to connect and download album art.", e);
                     // TODO: Handle reconnection
@@ -335,6 +336,21 @@ public class acquireDownloadFiles implements Runnable {
             // Preparing history data structure
             newHistory.put("metadata", downloadObject.getJSONObject("metadata"));
             JSONArray songs = new JSONArray();
+
+            JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
+            downloadObject.put(
+                    "metadata",
+                    Model
+                        .getInstance()
+                        .download
+                        .getDownloadObject()
+                        .getJSONObject("metadata")
+                        .put(
+                                "downloadStarted",
+                                Instant.now().toEpochMilli()
+                        )
+            );
+            Model.getInstance().download.setDownloadObject(downloadObject);
 
             // Working the download
             for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
@@ -358,6 +374,7 @@ public class acquireDownloadFiles implements Runnable {
 
                 // Update internal referencing
                 downloadObject.getJSONArray("songs").getJSONObject(i).put("completed", true);
+                downloadObject.getJSONArray("songs").getJSONObject(i).put("downloadCompleted", Instant.now().toEpochMilli());
 
                 debug.trace(
                         String.format(
@@ -373,7 +390,6 @@ public class acquireDownloadFiles implements Runnable {
                 newSongHistory.put("id", downloadObject.getJSONArray("songs").getJSONObject(i).getString("id"));
 
                 songs.put(newSongHistory);
-
             }
 
             newHistory.put("songs", songs);
@@ -404,7 +420,7 @@ public class acquireDownloadFiles implements Runnable {
                 case 1:
                     if (downloadObject.getJSONArray("songs").length() > 1)
                         FileUtils.copyFile(
-                                new File(resources.applicationData + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
+                                new File(resources.getInstance().getApplicationData() + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
                                 new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
                         );
                     break;
@@ -413,7 +429,7 @@ public class acquireDownloadFiles implements Runnable {
                 case 2:
                     if (downloadObject.getJSONArray("songs").length() == 1)
                         FileUtils.copyFile(
-                                new File(resources.applicationData + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
+                                new File(resources.getInstance().getApplicationData() + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
                                 new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
                         );
                     break;
@@ -421,7 +437,7 @@ public class acquireDownloadFiles implements Runnable {
                 // Keep always
                 case 3:
                     FileUtils.copyFile(
-                            new File(resources.applicationData + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
+                            new File(resources.getInstance().getApplicationData() + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
                             new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
                     );
                     break;

@@ -2,18 +2,38 @@ package MusicDownloader.utils.app;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.jar.JarException;
 
 public class resources {
-
-    // Windows only, should consider other OSs and how to do it, via separate vars or JSON?
-    public static final String YOUTUBE_DL_SOURCE = "https://youtube-dl.org/downloads/latest/youtube-dl.exe";
-
-    // Again windows64 only, should be able to look for different OS variants in future
-    public static final String FFMPEG_SOURCE = "https://ffmpeg.zeranoe.com/builds/win64/static/";
-
+    private final static resources instance = new resources();
     public static final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
 
-    // Windows Only, other OSs will need a separate path
-    public static final String applicationData = System.getenv("APPDATA") + "\\MusicDownloader\\";
+    private String applicationData = null;
+
+    public resources() {
+
+        String os = System.getProperty("os.name").toLowerCase();
+
+        if (os.contains("win"))
+            applicationData = System.getenv("APPDATA") + "/MusicDownloader/";
+
+        else if (os.contains("mac"))
+            applicationData = "./Library/Preferences/MusicDownloader/";
+
+        else if (os.contains("nix") || os.contains("nux") || os.contains("aix"))
+            debug.error("Linux is currently, unsupported.", new JarException());
+
+        else debug.error("Unsupported operating system.", new JarException());
+
+    }
+
+    public String getApplicationData() {
+        return Objects.requireNonNull(applicationData);
+    }
+
+    public static resources getInstance() {
+        return instance;
+    }
 
 }

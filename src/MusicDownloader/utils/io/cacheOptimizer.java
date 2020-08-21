@@ -1,14 +1,14 @@
 package MusicDownloader.utils.io;
 
+import MusicDownloader.model.Model;
+import MusicDownloader.utils.app.debug;
+import MusicDownloader.utils.app.resources;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import MusicDownloader.model.Model;
-import MusicDownloader.utils.app.debug;
-import MusicDownloader.utils.app.resources;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,12 +31,12 @@ public class cacheOptimizer implements Runnable {
     public void run() {
 
         // Clearing temporary files
-        if (Files.exists(Paths.get(resources.applicationData + "temp\\"))) {
+        if (Files.exists(Paths.get(resources.getInstance().getApplicationData() + "temp\\"))) {
             try {
-                File tempFiles = new File(resources.applicationData + "temp\\");
+                File tempFiles = new File(resources.getInstance().getApplicationData() + "temp\\");
                 int preexistingFiles = Objects.requireNonNull(tempFiles.listFiles()).length;
 
-                FileUtils.deleteDirectory(new File(resources.applicationData + "temp\\"));
+                FileUtils.deleteDirectory(new File(resources.getInstance().getApplicationData() + "temp\\"));
                 debug.trace(String.format("Deleted %s temporary files.", preexistingFiles));
 
             } catch (IOException e) {
@@ -59,7 +59,7 @@ public class cacheOptimizer implements Runnable {
             debug.error("Failed to parse download history for art IDs.", e);
         }
 
-        for (File foundFile: Objects.requireNonNull(new File(resources.applicationData + "cached").listFiles())) {
+        for (File foundFile: Objects.requireNonNull(new File(resources.getInstance().getApplicationData() + "cached").listFiles())) {
 
             // Check the file is an image and is being used
             if (FilenameUtils.getExtension(foundFile.getAbsolutePath()).equals("jpg") && usedArtIds.contains(FilenameUtils.removeExtension(foundFile.getName())) ) {
@@ -184,7 +184,7 @@ public class cacheOptimizer implements Runnable {
                                 Paths.get(
                                         String.format(
                                                 "%scached\\%s.jpg",
-                                                resources.applicationData,
+                                                resources.getInstance().getApplicationData(),
                                                 downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId")
                                         )
                                 )
@@ -216,7 +216,7 @@ public class cacheOptimizer implements Runnable {
                         new URL(downloadObjects.getJSONObject(i).getJSONObject("metadata").getString("art")),
                         new File(String.format(
                                 "%scached\\%s.jpg",
-                                resources.applicationData,
+                                resources.getInstance().getApplicationData(),
                                 downloadObjects.getJSONObject(i).getJSONObject("metadata").getString("artId")
                         ))
                 );

@@ -214,7 +214,7 @@ public class results {
             } catch (JSONException ignored) {}
 
             // Checking if it exists in existing cached arts
-            for (File cachedArt: Objects.requireNonNull(new File(resources.applicationData + "cached").listFiles())) {
+            for (File cachedArt: Objects.requireNonNull(new File(resources.getInstance().getApplicationData() + "cached").listFiles())) {
                 if (cachedArt.isFile() && cachedArt.getName().split("\\.")[1].equals("jpg") && cachedArt.getName().split("\\.")[0].equals(id)) {
                     // Our generated ID already exists in the files, generate a new one
                     return generateNewCacheArtId(downloadItems);
@@ -360,7 +360,7 @@ public class results {
                 try {
                     FileUtils.copyURLToFile(
                             new URL(metadata.getString("art")),
-                            new File(resources.applicationData + String.format("cached\\%s.jpg", metadata.getString("artId")))
+                            new File(resources.getInstance().getApplicationData() + String.format("cached\\%s.jpg", metadata.getString("artId")))
                     );
                 } catch (IOException e) {
                     debug.error("Failed to download album art.", e);

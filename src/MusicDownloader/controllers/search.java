@@ -44,6 +44,7 @@ TODO
  - Continue testing connection drops: Control Panel\Network and Internet\Network Connections
  - Search data could also theoretically load songs since the request is already sent to save sending the requests again decreasing load speeds and web requests
  - For quicker general usability try and finish and let the youtube backend threads just complete the search results instead of making the user wait
+ - Stop allowing duplicates in the autocomplete
  */
 public class search {
 
