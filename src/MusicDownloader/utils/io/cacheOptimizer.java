@@ -18,7 +18,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class cacheOptimizer implements Runnable{
+public class cacheOptimizer implements Runnable {
 
     private final JSONArray downloadHistory;
 

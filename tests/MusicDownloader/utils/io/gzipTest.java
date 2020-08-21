@@ -1,9 +1,8 @@
-package MusicDownloader.utils;
+package MusicDownloader.utils.io;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
-import MusicDownloader.utils.io.gzip;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -20,7 +19,7 @@ class gzipTest {
 
             Assert.assertEquals(
                     1636506029,
-                    gzip.decompressFile(new File("tests/resources/downloads.gz")).hashCode()
+                    gzip.decompressFile(new File("tests/resources/downloads0.gz")).hashCode()
             );
 
         } catch (IOException e) {

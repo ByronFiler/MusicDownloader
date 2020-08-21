@@ -41,6 +41,7 @@ import java.util.*;
 /*
 TODO
  - In future also write actual tests for this
+ - Songs could have a button to reacquire if missing?
  */
 
 public class downloads {
@@ -799,6 +800,8 @@ public class downloads {
 
                             albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
                             setSubtext("All Files moved or deleted.");
+
+                            renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
                         }
                     });
 
@@ -819,9 +822,7 @@ public class downloads {
                         JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
                         downloadHistoriesView.clear();
 
-                        for (int i = 0; i < downloadHistory.length(); i++) {
-                            buildSongHistory(downloadHistory, i);
-                        }
+                        for (int i = 0; i < downloadHistory.length(); i++) buildSongHistory(downloadHistory, i);
                     } catch (JSONException er) {
                         debug.error("Failed to parse JSON to render new download history for songs.", er);
                     }
@@ -864,9 +865,12 @@ public class downloads {
                         } catch (IOException | IllegalArgumentException ignored) {
                             left.setCursor(Cursor.DEFAULT);
                             left.setOnMouseClicked(null);
-
                             albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
                             setSubtext("Files moved or deleted.");
+
+                            // Rebuild song download histories
+                            renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
+
                         }
                     });
                 }

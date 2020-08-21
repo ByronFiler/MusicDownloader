@@ -26,9 +26,6 @@ import java.util.Objects;
 
 /*
 TODO
- Album art should be cached instantly when added to queue, not here (due to queued items that aren't being downloaded requiring web requests in downloads client)
- Album art file shouldn't be moved to the download file until after the songs have been loaded, apply to metadata via byte stream or some such
- Then instead of deleting album art options, write to disk, this minimises fileIO and redundant web requests
  Download history should include a file md5, creation time, and source, and meta could include a link to the allmusic source?
  */
 
@@ -164,12 +161,11 @@ public class acquireDownloadFiles implements Runnable {
         ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(resources.applicationData + "temp\\").listFiles())));
         currentFiles.removeAll(preexistingFiles);
 
+        // TODO: Happens rarely, likely due to a youtube-dl renaming process, consider awaiting for maybe 50 or 100ms?
         if (currentFiles.size() != 1)
             debug.error(
                     String.format(
-                            "Expected 1 new file to have been created, %s found, specifically %s.",
-                            currentFiles.size(),
-                            String.join(",", currentFiles.stream().map((File::getName)).toString())
+                            "Expected 1 new file to have been created, %s found.", currentFiles.size()
                     ),
                     new IllegalArgumentException("Unexpected new files")
             );

@@ -1,7 +1,6 @@
-package MusicDownloader.utils;
+package MusicDownloader.utils.io;
 
 import org.junit.jupiter.api.Test;
-import MusicDownloader.utils.io.install;
 
 import java.io.File;
 import java.io.IOException;
