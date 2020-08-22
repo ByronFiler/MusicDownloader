@@ -39,6 +39,12 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+/*
+TODO
+ - Remove the title and replace it with a new search box
+ - Consider thread loading the album art
+ */
+
 public class results {
 
     @FXML private AnchorPane root;

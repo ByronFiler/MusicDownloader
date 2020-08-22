@@ -30,6 +30,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.jsoup.HttpStatusException;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -164,6 +165,15 @@ public class search {
                                 } catch (IOException er) {
                                     debug.error("FXML Error: Settings.fxml", er);
                                 }
+
+                            } catch (HttpStatusException ignored) {
+
+                                Platform.runLater(() -> {
+                                    loadingIcon.setVisible(false);
+                                    searchQueryActive = false;
+
+                                    error("No results found.");
+                                });
 
                             } catch (IOException er) {
                                 Platform.runLater(() -> {
@@ -313,6 +323,8 @@ public class search {
                     search.setDisable(true);
                     new awaitReconnection();
                 });
+            } catch (HttpStatusException ignored) {
+                // Malformed request
             } catch (IOException e) {
                 debug.error("Unknown exception when requesting user search.", e);
             }

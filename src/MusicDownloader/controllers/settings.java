@@ -81,7 +81,7 @@ public class settings {
     private JSONObject settings;
 
     @FXML
-    private void initialize() {
+    protected void initialize() {
 
         // Prepare settings information from model data
         settings = Model.getInstance().settings.getSettings();
