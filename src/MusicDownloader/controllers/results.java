@@ -75,8 +75,8 @@ public class results {
             );
 
         try {
-            new ProcessBuilder(System.getenv("ProgramFiles(X86)") + "/youtube-dl/youtube-dl.exe", "--version").start();
-            new ProcessBuilder(System.getenv("ProgramFiles(X86)") + "/youtube-dl/ffmpeg.exe", "--version").start();
+            new ProcessBuilder(resources.getInstance().getYoutubeDlExecutable(), "--version").start();
+            new ProcessBuilder(resources.getInstance().getFfmpegExecutable(), "--version").start();
         } catch (IOException ignored) {
             downloadButtonContainer.getChildren().setAll(
                     download,
@@ -173,7 +173,7 @@ public class results {
             Parent searchView = FXMLLoader.load(Main.class.getResource("app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
-            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
+            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - resources.getInstance().getWindowResizeHeight()));
 
         } catch (IOException e) {
             debug.error("FXML Error with search.fxml", e);
@@ -452,7 +452,7 @@ public class results {
                         Parent searchView = FXMLLoader.load(Main.class.getResource("app/fxml/downloads.fxml"));
                         Stage mainWindow = (Stage) ((Node) e.getSource()).getScene().getWindow();
 
-                        mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
+                        mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - resources.getInstance().getWindowResizeHeight()));
 
                     } catch (IOException er) {
                         debug.error("FXML Error with downloads.fxml", er);

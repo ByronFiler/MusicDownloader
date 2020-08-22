@@ -298,8 +298,6 @@ public class downloads {
 
             }
 
-        } else {
-            debug.warn("Downloads was accessed without any downloads history, downloads in progress or any download queue items, this should not have happened.");
         }
 
         // Load style
@@ -547,7 +545,7 @@ public class downloads {
         try {
             Parent searchView = FXMLLoader.load(Main.class.getResource("app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth()-16, mainWindow.getHeight()-39));
+            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - resources.getInstance().getWindowResizeHeight()));
 
         } catch(IOException e) {
             debug.error("FXML Error: search.fxml", e);

@@ -3,6 +3,7 @@ package MusicDownloader.controllers;
 import MusicDownloader.Main;
 import MusicDownloader.model.Model;
 import MusicDownloader.utils.app.debug;
+import MusicDownloader.utils.app.resources;
 import MusicDownloader.utils.io.install;
 import javafx.application.Platform;
 import javafx.event.Event;
@@ -116,8 +117,9 @@ public class settings {
 
         version.setText(Model.getInstance().settings.getVersion() == null ? "Unknown" : Model.getInstance().settings.getVersion());
         new getLatestVersion(false);
-        new verifyExecutable(System.getenv("ProgramFiles(X86)") + "/youtube-dl/youtube-dl.exe", youtubeDl, youtubeDlContainer);
-        new verifyExecutable(System.getenv("ProgramFiles(X86)") + "/youtube-dl/ffmpeg.exe", ffmpeg, ffmpegContainer);
+        new verifyExecutable(resources.getInstance().getYoutubeDlExecutable(), youtubeDl, youtubeDlContainer);
+        new verifyExecutable(resources.getInstance().getFfmpegExecutable(), ffmpeg, ffmpegContainer);
+
 
         // Files
         String outputDirectoryRaw = Model.getInstance().settings.getSetting("output_directory").equals("") ?
@@ -163,7 +165,7 @@ public class settings {
             AnchorPane searchView = FXMLLoader.load(Main.class.getResource("app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
-            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - 16, mainWindow.getHeight() - 39));
+            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - resources.getInstance().getWindowResizeHeight()));
 
         } catch (IOException e) {
             debug.error("Missing FXML File: Search.fxml", e);

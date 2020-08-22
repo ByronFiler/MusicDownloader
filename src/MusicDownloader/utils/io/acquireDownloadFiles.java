@@ -146,7 +146,7 @@ public class acquireDownloadFiles implements Runnable {
                 )
         );
 
-        ProcessBuilder builder = new ProcessBuilder("C:\\Program Files (x86)/youtube-dl/youtube-dl.exe");
+        ProcessBuilder builder = new ProcessBuilder(resources.getInstance().getYoutubeDlExecutable());
         builder.command("youtube-dl", "--extract-audio", "--audio-format", format, "--ignore-errors", "--retries", "10", "https://www.youtube.com/watch?v=" + song.getJSONArray("source").getString(sourceDepth));
         builder.directory(new File(resources.getInstance().getApplicationData() + "temp"));
         builder.redirectErrorStream(true);
@@ -159,7 +159,7 @@ public class acquireDownloadFiles implements Runnable {
             debug.log(Thread.currentThread(), line);
 
         // Silent debug to not spam console
-        ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(resources.getInstance().getApplicationData() + "temp\\").listFiles())));
+        ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(resources.getInstance().getApplicationData() + "temp").listFiles())));
         currentFiles.removeAll(preexistingFiles);
 
         // TODO: Happens rarely, likely due to a youtube-dl renaming process, consider awaiting for maybe 50 or 100ms?
@@ -244,7 +244,7 @@ public class acquireDownloadFiles implements Runnable {
 
                 try {
                     // Check if already exists, remove special characters
-                    mp3Applicator.save(downloadObject.getJSONObject("metadata").getString("directory") + "\\" + song.getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_") + "." + format);
+                    mp3Applicator.save(downloadObject.getJSONObject("metadata").getString("directory") + "/" + song.getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_") + "." + format);
 
                     // Delete old file
                     if (!downloadedFile.delete()) {
@@ -252,7 +252,7 @@ public class acquireDownloadFiles implements Runnable {
                     }
 
                 } catch (IOException | NotSupportedException e) {
-                    e.printStackTrace();
+                    debug.warn("Failed to apply metadata.");
                 }
             } catch (InvalidDataException | UnsupportedTagException e) {
                 debug.warn("Failed to apply meta data to: " + downloadedFile);
@@ -263,7 +263,7 @@ public class acquireDownloadFiles implements Runnable {
             // Just move & rename the file
             Files.move(
                     Paths.get(downloadedFile.getAbsolutePath()),
-                    Paths.get(downloadObject.getJSONObject("metadata").getString("directory") + "\\" + song.getString("title") + "." + format)
+                    Paths.get(downloadObject.getJSONObject("metadata").getString("directory") + "/" + song.getString("title") + "." + format)
             );
 
         }
@@ -303,10 +303,10 @@ public class acquireDownloadFiles implements Runnable {
 
         // Loading album art
         try {
-            if (Files.exists(Paths.get(resources.getInstance().getApplicationData() + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))))) {
+            if (Files.exists(Paths.get(resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))))) {
 
                 try {
-                    this.albumArt = Files.readAllBytes(Paths.get(resources.getInstance().getApplicationData() + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
+                    this.albumArt = Files.readAllBytes(Paths.get(resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
                 } catch (IOException e) {
                     debug.error("Failed to read all bytes, album art was likely a corrupt download.", e);
                 }
@@ -316,9 +316,9 @@ public class acquireDownloadFiles implements Runnable {
                 try {
                     FileUtils.copyURLToFile(
                             new URL(downloadObject.getJSONObject("metadata").getString("art")),
-                            new File(resources.getInstance().getApplicationData() + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId")))
+                            new File(resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", downloadObject.getJSONObject("metadata").getString("artId")))
                     );
-                    this.albumArt = Files.readAllBytes(Paths.get(resources.getInstance().getApplicationData() + String.format("cached\\%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
+                    this.albumArt = Files.readAllBytes(Paths.get(resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
                 } catch (IOException e) {
                     debug.error("Failed to connect and download album art.", e);
                     // TODO: Handle reconnection
@@ -420,8 +420,8 @@ public class acquireDownloadFiles implements Runnable {
                 case 1:
                     if (downloadObject.getJSONArray("songs").length() > 1)
                         FileUtils.copyFile(
-                                new File(resources.getInstance().getApplicationData() + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
-                                new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
+                                new File(resources.getInstance().getApplicationData() + "cached/" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
+                                new File(downloadObject.getJSONObject("metadata").getString("directory") + "/art.jpg")
                         );
                     break;
 
@@ -429,16 +429,16 @@ public class acquireDownloadFiles implements Runnable {
                 case 2:
                     if (downloadObject.getJSONArray("songs").length() == 1)
                         FileUtils.copyFile(
-                                new File(resources.getInstance().getApplicationData() + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
-                                new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
+                                new File(resources.getInstance().getApplicationData() + "cached/" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
+                                new File(downloadObject.getJSONObject("metadata").getString("directory") + "/art.jpg")
                         );
                     break;
 
                 // Keep always
                 case 3:
                     FileUtils.copyFile(
-                            new File(resources.getInstance().getApplicationData() + "cached\\" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
-                            new File(downloadObject.getJSONObject("metadata").getString("directory") + "\\art.jpg")
+                            new File(resources.getInstance().getApplicationData() + "cached/" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
+                            new File(downloadObject.getJSONObject("metadata").getString("directory") + "/art.jpg")
                     );
                     break;
 

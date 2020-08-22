@@ -185,8 +185,8 @@ public class debug {
                 allmusicReachable ? "Yes" : "No"
         );
 
-        if (!Files.exists(Paths.get(resources.getInstance().getApplicationData() + "crashes\\"))) {
-            if (!new File(resources.getInstance().getApplicationData() + "crashes\\").mkdirs()) {
+        if (!Files.exists(Paths.get(resources.getInstance().getApplicationData() + "crashes"))) {
+            if (!new File(resources.getInstance().getApplicationData() + "crashes").mkdirs()) {
                 warn("Failed to create directory to save crashes");
                 System.exit(-2);
             }
@@ -201,7 +201,7 @@ public class debug {
                         new BufferedOutputStream(
                                 new FileOutputStream(
                                         String.format(
-                                                "%scrashes\\%s_crash.tar.gz",
+                                                "%scrashes/%s_crash.tar.gz",
                                                 resources.getInstance().getApplicationData(),
                                                 Instant.now().toEpochMilli()
                                         )

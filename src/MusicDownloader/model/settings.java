@@ -25,20 +25,14 @@ public class settings {
         } catch (JSONException ignored) {}
 
         // Check for app directory, make if it doesn't exist
-        if (!Files.exists(Paths.get(resources.getInstance().getApplicationData()))) {
-
-            System.out.println(new File(resources.getInstance().getApplicationData()).canWrite());
-
+        if (!Files.exists(Paths.get(resources.getInstance().getApplicationData())))
             if (!new File(resources.getInstance().getApplicationData()).mkdirs())
                 debug.error("Failed to create application files.", new IOException());
-
-        }
 
         // Load users actual settings
         try {
             settings = new JSONObject(new Scanner(new File(resources.getInstance().getApplicationData() + "json/config.json")).useDelimiter("\\Z").next());
             debug.trace("Found user settings.");
-            System.out.println(settings.toString());
         } catch (FileNotFoundException | JSONException ignored) {
             debug.warn("Failed to load user settings.");
             settings = defaultSettings;
@@ -105,14 +99,6 @@ public class settings {
             if (!Files.exists(Paths.get(resources.getInstance().getApplicationData() + "json")))
                 if (!new File(resources.getInstance().getApplicationData() + "json").mkdirs())
                     debug.error("Failed to create json folder in user data.", new IOException());
-
-            System.out.println(settings);
-
-            System.out.println(
-                    new Scanner(new FileReader(resources.getInstance().getApplicationData() + "json/config.json"))
-                        .useDelimiter("\\Z")
-                        .next()
-            );
 
             FileWriter settingsFile = new FileWriter(resources.getInstance().getApplicationData() + "json/config.json");
             settingsFile.write(settings.toString());
