@@ -263,7 +263,11 @@ public class allmusic {
         public void load() throws IOException {
             this.doc = Jsoup.connect(pageUrl).get();
 
-            for (Element albumResult: doc.select("tr.track")) songs.add(new song(albumResult));
+            for (Element albumResult: doc.select("tr.track")) {
+                song foundSong = new song(albumResult);
+
+                if (foundSong.isValid()) songs.add(foundSong);
+            }
         }
 
         @Override
@@ -306,14 +310,19 @@ public class allmusic {
             private final String sample;
 
             public song(Element track) {
-                this.title = track.select("div.title").text();
-                this.playtime = timeConversion(track.select("td.time").text());
+                if (!track.select("div.title").text().isEmpty())
+                    this.title = track.select("div.title").text();
+                else this.title = null;
+
+                if (!track.select("td.time").text().isEmpty())
+                    this.playtime = timeConversion(track.select("td.time").text());
+                else this.playtime = -1;
 
                 if (track.select("a.audio-player").size() > 0) {
                     String sampleSource = track.selectFirst("a.audio-player").attr("data-sample-url");
                     this.sample = sampleSource.substring(46, sampleSource.length() - 5);
-                } else this.sample = null;
-
+                }
+                else this.sample = null;
             }
 
             public int getPlaytime() {
@@ -326,6 +335,10 @@ public class allmusic {
 
             public String getSample() {
                 return sample;
+            }
+
+            public boolean isValid() {
+                return this.playtime != -1 && this.title != null && !this.title.isEmpty();
             }
 
         }
