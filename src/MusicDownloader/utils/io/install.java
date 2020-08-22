@@ -29,7 +29,7 @@ public class install {
         // Need to check OS to determine where to install it and to install
         FileUtils.copyURLToFile(
                 new URL(YOUTUBE_DL_SOURCE),
-                new File(System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\youtube-dl.exe")
+                new File(System.getenv("ProgramFiles(X86)") + "/youtube-dl/youtube-dl.exe")
         );
 
         // Should catch network exception
@@ -45,23 +45,23 @@ public class install {
         // Downloading zip
         FileUtils.copyURLToFile(
                 new URL(FFMPEG_SOURCE + packageVersion),
-                new File(System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\ffmpeg.zip")
+                new File(System.getenv("ProgramFiles(X86)") + "/youtube-dl/ffmpeg.zip")
         );
 
         // Unzipping and extract relevant files
-        Path zipFile = Paths.get(System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\ffmpeg.zip");
+        Path zipFile = Paths.get(System.getenv("ProgramFiles(X86)") + "/youtube-dl/ffmpeg.zip");
 
         for (String file: new String[]{"ffmpeg.exe", "ffplay.exe", "ffprobe.exe"})
             try (java.nio.file.FileSystem fileSystem = FileSystems.newFileSystem(zipFile, null)) {
                 Files.copy(
-                        fileSystem.getPath(FilenameUtils.removeExtension(packageVersion) + "\\bin\\" + file),
-                        Paths.get(System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\" + file)
+                        fileSystem.getPath(FilenameUtils.removeExtension(packageVersion) + "/bin/" + file),
+                        Paths.get(System.getenv("ProgramFiles(X86)") + "/youtube-dl/" + file)
                 );
             }
 
         // Delete irrelevant files
-        if (!new File(System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\ffmpeg.zip").delete())
-            debug.warn("Failed to delete: " + System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\ffmpeg.zip");
+        if (!new File(System.getenv("ProgramFiles(X86)") + "/youtube-dl/ffmpeg.zip").delete())
+            debug.warn("Failed to delete: " + System.getenv("ProgramFiles(X86)") + "/youtube-dl/ffmpeg.zip");
 
 
         // Test

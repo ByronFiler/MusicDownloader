@@ -92,7 +92,7 @@ public class downloads {
                             !Files.exists(
                                     Paths.get(
                                             String.format(
-                                                    "%scached\\%s.jpg",
+                                                    "%scached/%s.jpg",
                                                     resources.getInstance().getApplicationData(),
                                                     downloadObject[0].getJSONObject("metadata").getString("artId")
                                             )
@@ -329,7 +329,7 @@ public class downloads {
                 // Update the table & data
                 downloadResult plannedDownloadSongBuilder = new downloadResult(
                         String.format(
-                                "%scached\\%s.jpg",
+                                "%scached/%s.jpg",
                                 resources.getInstance().getApplicationData(),
                                 downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")
                         ),
@@ -344,7 +344,7 @@ public class downloads {
 
             downloadResult plannedDownloadAlbumBuilder = new downloadResult(
                     String.format(
-                            "%scached\\%s.jpg",
+                            "%scached/%s.jpg",
                             resources.getInstance().getApplicationData(),
                             downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")
                     ),
@@ -364,7 +364,7 @@ public class downloads {
 
         downloadResult currentDownloadViewAlbumBuilder = new downloadResult(
                 String.format(
-                        "%scached\\%s.jpg",
+                        "%scached/%s.jpg",
                         resources.getInstance().getApplicationData(),
                         downloadObject.getJSONObject("metadata").getString("artId")
                 ),
@@ -389,7 +389,7 @@ public class downloads {
 
             downloadResult currentDownloadViewSongBuilder = new downloadResult(
                     String.format(
-                            "%scached\\%s.jpg",
+                            "%scached/%s.jpg",
                             resources.getInstance().getApplicationData(),
                             downloadObject.getJSONObject("metadata").getString("artId")
                     ),
@@ -424,7 +424,7 @@ public class downloads {
                 // Generating albums
                 downloadResult downloadHistoryAlbumBuilder = new downloadResult(
                         String.format(
-                                "%scached\\%s.jpg",
+                                "%scached/%s.jpg",
                                 resources.getInstance().getApplicationData(),
                                 downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId")
                         ),
@@ -451,7 +451,7 @@ public class downloads {
 
             downloadResult downloadHistorySongBuilder = new downloadResult(
                     String.format(
-                            "%scached\\%s.jpg",
+                            "%scached/%s.jpg",
                             resources.getInstance().getApplicationData(),
                             downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId")
                     ),
@@ -469,7 +469,7 @@ public class downloads {
     }
 
     private void checkForCache(JSONArray downloadQueue, int i) throws JSONException {
-        if (!Files.exists(Paths.get(String.format(resources.getInstance().getApplicationData() + "cached\\%s.jpg", downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")))))
+        if (!Files.exists(Paths.get(String.format(resources.getInstance().getApplicationData() + "cached/%s.jpg", downloadQueue.getJSONObject(i).getJSONObject("metadata").getString("artId")))))
             debug.warn(
                     String.format(
                             "Failed to used cached resources for album: \"%s\", containing %s song%s.",
@@ -771,7 +771,7 @@ public class downloads {
                                 Files.exists(
                                         Paths.get(
                                                 String.format(
-                                                        "%s\\%s.%s",
+                                                        "%s/%s.%s",
                                                         downloadObject.getJSONObject("metadata").getString("directory"),
                                                         downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
                                                         extension
@@ -841,7 +841,7 @@ public class downloads {
                 for (String extension: resources.songReferences) {
                     File potentialFile = new File(
                             String.format(
-                                    "%s\\%s.%s",
+                                    "%s/%s.%s",
                                     downloadObject.getJSONObject("metadata").getString("directory"),
                                     downloadObject.getJSONArray("songs").getJSONObject(songIndex).getString("title"),
                                     extension

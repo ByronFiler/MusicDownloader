@@ -366,7 +366,7 @@ public class results {
                 try {
                     FileUtils.copyURLToFile(
                             new URL(metadata.getString("art")),
-                            new File(resources.getInstance().getApplicationData() + String.format("cached\\%s.jpg", metadata.getString("artId")))
+                            new File(resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", metadata.getString("artId")))
                     );
                 } catch (IOException e) {
                     debug.error("Failed to download album art.", e);
@@ -381,7 +381,7 @@ public class results {
 
                 StringBuilder outputDirectory = new StringBuilder(Model.getInstance().settings.getSetting("output_directory"));
                 if (basicData.getJSONObject("data").getBoolean("album"))
-                    outputDirectory.append("\\").append(albumProcessor.getAlbum());
+                    outputDirectory.append("/").append(albumProcessor.getAlbum());
 
                 metadata.put("directory", outputDirectory.toString());
 

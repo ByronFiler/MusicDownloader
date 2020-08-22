@@ -17,15 +17,17 @@ public class resources {
 
         String os = System.getProperty("os.name").toLowerCase();
 
-        if (os.contains("win"))
-            applicationData = System.getenv("APPDATA") + "/MusicDownloader/";
+        // Windows
+        if (os.contains("win")) applicationData = System.getenv("APPDATA") + "/MusicDownloader/";
 
-        else if (os.contains("mac"))
-            applicationData = "./Library/Preferences/MusicDownloader/";
+        // MacOS
+        else if (os.contains("mac")) applicationData = System.getProperty("user.home") + "/Library/MusicDownloader/";
 
+        // Unix Based
         else if (os.contains("nix") || os.contains("nux") || os.contains("aix"))
-            debug.error("Linux is currently, unsupported.", new JarException());
+            debug.error("Linux is currently unsupported.", new JarException());
 
+        // SunOS & Unknown
         else debug.error("Unsupported operating system.", new JarException());
 
     }

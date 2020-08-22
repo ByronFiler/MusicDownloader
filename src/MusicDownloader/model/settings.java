@@ -6,10 +6,7 @@ import MusicDownloader.utils.app.resources;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Scanner;
@@ -27,9 +24,21 @@ public class settings {
             defaultSettings = new JSONObject("{\"advanced_validation\": true, \"output_directory\":\"\",\"save_album_art\":0,\"music_format\":0, \"album_art\":true, \"album_title\":true, \"song_title\":true, \"artist\":true, \"year\":true, \"track\":true,\"dark_theme\":false, \"data_saver\":false}");
         } catch (JSONException ignored) {}
 
+        // Check for app directory, make if it doesn't exist
+        if (!Files.exists(Paths.get(resources.getInstance().getApplicationData()))) {
+
+            System.out.println(new File(resources.getInstance().getApplicationData()).canWrite());
+
+            if (!new File(resources.getInstance().getApplicationData()).mkdirs())
+                debug.error("Failed to create application files.", new IOException());
+
+        }
+
         // Load users actual settings
         try {
-            settings = new JSONObject(new Scanner(new File(resources.getInstance().getApplicationData() + "json\\config.json")).useDelimiter("\\Z").next());
+            settings = new JSONObject(new Scanner(new File(resources.getInstance().getApplicationData() + "json/config.json")).useDelimiter("\\Z").next());
+            debug.trace("Found user settings.");
+            System.out.println(settings.toString());
         } catch (FileNotFoundException | JSONException ignored) {
             debug.warn("Failed to load user settings.");
             settings = defaultSettings;
@@ -58,17 +67,16 @@ public class settings {
 
         try {
 
-            FileWriter newConfig = new FileWriter(resources.getInstance().getApplicationData() + "json\\config.json");
+            FileWriter newConfig = new FileWriter(resources.getInstance().getApplicationData() + "json/config.json");
             newConfig.write(defaultSettings.toString());
             newConfig.close();
 
         } catch (IOException e) {
 
             // Attempt to see if this was due to folders not working or a system IO error
-            if (resetDirectories())
-                resetSettings();
-            else
-                debug.error("Failed to reset settings.", e);
+            if (resetDirectories()) resetSettings();
+
+            else debug.error("Failed to reset settings.", e);
         }
     }
 
@@ -77,16 +85,16 @@ public class settings {
         boolean wasUseful = false;
 
         // Checking for non existing folders
-        if (!Files.exists(Paths.get(resources.getInstance().getApplicationData() + "cached\\"))) {
+        if (!Files.exists(Paths.get(resources.getInstance().getApplicationData() + "cached"))) {
             wasUseful = true;
             if (!new File(resources.getInstance().getApplicationData() + "cached").mkdirs())
-                debug.error("Failed to create non existing directory: " + resources.getInstance().getApplicationData() + "cached", null);
+                debug.error("Failed to create non existing directory: " + resources.getInstance().getApplicationData() + "cached", new IOException());
         }
 
         if (!Files.exists(Paths.get(resources.getInstance().getApplicationData() + "json"))) {
             wasUseful = true;
             if (!new File(resources.getInstance().getApplicationData() + "json").mkdirs())
-                debug.error("Failed to create non existing directory: " + resources.getInstance().getApplicationData() + "json", null);
+                debug.error("Failed to create non existing directory: " + resources.getInstance().getApplicationData() + "json", new IOException());
         }
 
         return wasUseful;
@@ -94,6 +102,18 @@ public class settings {
 
     public void saveSettings(JSONObject settings) {
         try {
+            if (!Files.exists(Paths.get(resources.getInstance().getApplicationData() + "json")))
+                if (!new File(resources.getInstance().getApplicationData() + "json").mkdirs())
+                    debug.error("Failed to create json folder in user data.", new IOException());
+
+            System.out.println(settings);
+
+            System.out.println(
+                    new Scanner(new FileReader(resources.getInstance().getApplicationData() + "json/config.json"))
+                        .useDelimiter("\\Z")
+                        .next()
+            );
+
             FileWriter settingsFile = new FileWriter(resources.getInstance().getApplicationData() + "json/config.json");
             settingsFile.write(settings.toString());
             settingsFile.close();

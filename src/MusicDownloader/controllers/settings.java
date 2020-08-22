@@ -116,8 +116,8 @@ public class settings {
 
         version.setText(Model.getInstance().settings.getVersion() == null ? "Unknown" : Model.getInstance().settings.getVersion());
         new getLatestVersion(false);
-        new verifyExecutable(System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\youtube-dl.exe", youtubeDl, youtubeDlContainer);
-        new verifyExecutable(System.getenv("ProgramFiles(X86)") + "\\youtube-dl\\ffmpeg.exe", ffmpeg, ffmpegContainer);
+        new verifyExecutable(System.getenv("ProgramFiles(X86)") + "/youtube-dl/youtube-dl.exe", youtubeDl, youtubeDlContainer);
+        new verifyExecutable(System.getenv("ProgramFiles(X86)") + "/youtube-dl/ffmpeg.exe", ffmpeg, ffmpegContainer);
 
         // Files
         String outputDirectoryRaw = Model.getInstance().settings.getSetting("output_directory").equals("") ?
@@ -415,7 +415,7 @@ public class settings {
                 File checkerTempFile;
 
                 do {
-                    checkerTempFile = new File(directory + "\\" + Math.random());
+                    checkerTempFile = new File(directory + "/" + Math.random());
                 } while (checkerTempFile.exists());
 
                 if (!checkerTempFile.mkdir() || !checkerTempFile.delete()) {
@@ -498,7 +498,6 @@ public class settings {
                 });
 
             } catch (IOException ignored) {
-                ignored.printStackTrace();
                 debug.warn("Failed to verify executable: " + executablePath);
 
                 Platform.runLater(() -> {
@@ -517,7 +516,7 @@ public class settings {
 
                     // Installation requires admin permissions, hence verify the user is a admin, or inform them
                     if (System.getProperty("os.name").startsWith("Windows")) {
-                        if (new File(System.getenv("ProgramFiles(X86)") + "\\test\\").mkdir() && new File(System.getenv("ProgramFiles(X86)") + "\\test\\").delete()) {
+                        if (new File(System.getenv("ProgramFiles(X86)") + "/test/").mkdir() && new File(System.getenv("ProgramFiles(X86)") + "/test/").delete()) {
                             elementContainer.setCursor(Cursor.HAND);
                             Tooltip.install(elementContainer, new Tooltip("Click to configure"));
                             elementContainer.setOnMouseClicked(e -> new manageInstall(executablePath, element, elementContainer));

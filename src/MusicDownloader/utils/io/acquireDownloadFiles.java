@@ -54,13 +54,13 @@ public class acquireDownloadFiles implements Runnable {
             mp3Source = new URL(sampleFileSource).openStream();
             new Converter().convert(
                     mp3Source,
-                    resources.getInstance().getApplicationData() + "temp\\sample.wav",
+                    resources.getInstance().getApplicationData() + "temp/sample.wav",
                     null,
                     null
             );
             new Converter().convert(
                     downloadedFile,
-                    resources.getInstance().getApplicationData() + "temp\\source.wav"
+                    resources.getInstance().getApplicationData() + "temp/source.wav"
             );
 
         } catch (FileNotFoundException e) {
@@ -86,17 +86,17 @@ public class acquireDownloadFiles implements Runnable {
         byte[] downloadData;
 
         try {
-            downloadData = new FingerprintManager().extractFingerprint(new Wave(resources.getInstance().getApplicationData() + "temp\\source.wav"));
-            sampleData = new FingerprintManager().extractFingerprint(new Wave(resources.getInstance().getApplicationData() + "temp\\sample.wav"));
+            downloadData = new FingerprintManager().extractFingerprint(new Wave(resources.getInstance().getApplicationData() + "temp/source.wav"));
+            sampleData = new FingerprintManager().extractFingerprint(new Wave(resources.getInstance().getApplicationData() + "temp/sample.wav"));
         } catch (ArrayIndexOutOfBoundsException ignored) {
             debug.warn("File is too large to be checked.");
             return 1;
         }
 
         // Deleting temporary files
-        if (!new File(resources.getInstance().getApplicationData() + "temp\\source.wav").delete())
+        if (!new File(resources.getInstance().getApplicationData() + "temp/source.wav").delete())
             debug.warn("Failed to delete source.wav");
-        if (!new File(resources.getInstance().getApplicationData() + "temp\\sample.wav").delete())
+        if (!new File(resources.getInstance().getApplicationData() + "temp/sample.wav").delete())
             debug.warn("Failed to delete sample.wav");
 
         FingerprintSimilarityComputer fingerprint = new FingerprintSimilarityComputer(sampleData, downloadData);
@@ -146,7 +146,7 @@ public class acquireDownloadFiles implements Runnable {
                 )
         );
 
-        ProcessBuilder builder = new ProcessBuilder("C:\\Program Files (x86)\\youtube-dl\\youtube-dl.exe");
+        ProcessBuilder builder = new ProcessBuilder("C:\\Program Files (x86)/youtube-dl/youtube-dl.exe");
         builder.command("youtube-dl", "--extract-audio", "--audio-format", format, "--ignore-errors", "--retries", "10", "https://www.youtube.com/watch?v=" + song.getJSONArray("source").getString(sourceDepth));
         builder.directory(new File(resources.getInstance().getApplicationData() + "temp"));
         builder.redirectErrorStream(true);

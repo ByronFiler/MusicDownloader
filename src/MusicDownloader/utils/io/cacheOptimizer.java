@@ -31,12 +31,12 @@ public class cacheOptimizer implements Runnable {
     public void run() {
 
         // Clearing temporary files
-        if (Files.exists(Paths.get(resources.getInstance().getApplicationData() + "temp\\"))) {
+        if (Files.exists(Paths.get(resources.getInstance().getApplicationData() + "temp/"))) {
             try {
-                File tempFiles = new File(resources.getInstance().getApplicationData() + "temp\\");
+                File tempFiles = new File(resources.getInstance().getApplicationData() + "temp");
                 int preexistingFiles = Objects.requireNonNull(tempFiles.listFiles()).length;
 
-                FileUtils.deleteDirectory(new File(resources.getInstance().getApplicationData() + "temp\\"));
+                FileUtils.deleteDirectory(new File(resources.getInstance().getApplicationData() + "temp"));
                 debug.trace(String.format("Deleted %s temporary files.", preexistingFiles));
 
             } catch (IOException e) {
@@ -188,7 +188,7 @@ public class cacheOptimizer implements Runnable {
                         !Files.exists(
                                 Paths.get(
                                         String.format(
-                                                "%scached\\%s.jpg",
+                                                "%scached/%s.jpg",
                                                 resources.getInstance().getApplicationData(),
                                                 downloadHistory.getJSONObject(i).getJSONObject("metadata").getString("artId")
                                         )
@@ -220,7 +220,7 @@ public class cacheOptimizer implements Runnable {
                 FileUtils.copyURLToFile(
                         new URL(downloadObjects.getJSONObject(i).getJSONObject("metadata").getString("art")),
                         new File(String.format(
-                                "%scached\\%s.jpg",
+                                "%scached/%s.jpg",
                                 resources.getInstance().getApplicationData(),
                                 downloadObjects.getJSONObject(i).getJSONObject("metadata").getString("artId")
                         ))

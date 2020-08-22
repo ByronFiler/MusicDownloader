@@ -10,7 +10,7 @@ class installTest {
     @Test
     void getYoutubeDl() {
 
-        if (new File(System.getenv("ProgramFiles(X86)") + "\\test\\").mkdir() && new File(System.getenv("ProgramFiles(X86)") + "\\test\\").delete()) {
+        if (new File(System.getenv("ProgramFiles(X86)") + "/test/").mkdir() && new File(System.getenv("ProgramFiles(X86)") + "/test/").delete()) {
 
             try {
                 assert install.getYoutubeDl();
@@ -25,7 +25,7 @@ class installTest {
     @Test
     void getFFMPEG() {
 
-        if (new File(System.getenv("ProgramFiles(X86)") + "\\test\\").mkdir() && new File(System.getenv("ProgramFiles(X86)") + "\\test\\").delete()) {
+        if (new File(System.getenv("ProgramFiles(X86)") + "/test/").mkdir() && new File(System.getenv("ProgramFiles(X86)") + "/test/").delete()) {
 
             try {
                 assert install.getFFMPEG();
