@@ -33,6 +33,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -214,6 +216,10 @@ public class results {
             } catch (JSONException ignored) {}
 
             // Checking if it exists in existing cached arts
+            if (!Files.exists(Paths.get(resources.getInstance().getApplicationData())))
+                if (!new File(resources.getInstance().getApplicationData() + "cached").mkdirs())
+                    debug.error("Failed to create cache folder in app data.", new IOException());
+
             for (File cachedArt: Objects.requireNonNull(new File(resources.getInstance().getApplicationData() + "cached").listFiles())) {
                 if (cachedArt.isFile() && cachedArt.getName().split("\\.")[1].equals("jpg") && cachedArt.getName().split("\\.")[0].equals(id)) {
                     // Our generated ID already exists in the files, generate a new one

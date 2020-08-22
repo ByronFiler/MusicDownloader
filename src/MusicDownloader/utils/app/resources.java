@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.jar.JarException;
 
+// TODO: Could auto create directories in constructor (if they don't exist)
+
 public class resources {
     private final static resources instance = new resources();
     public static final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");

@@ -59,6 +59,11 @@ public class cacheOptimizer implements Runnable {
             debug.error("Failed to parse download history for art IDs.", e);
         }
 
+        if (!Files.exists(Paths.get(resources.getInstance().getApplicationData() + "cached")))
+            if (!new File(resources.getInstance().getApplicationData() + "cached").mkdirs())
+                debug.error("Failed to create cached directory", new IOException());
+
+
         for (File foundFile: Objects.requireNonNull(new File(resources.getInstance().getApplicationData() + "cached").listFiles())) {
 
             // Check the file is an image and is being used
