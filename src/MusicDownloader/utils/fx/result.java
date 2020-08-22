@@ -110,35 +110,22 @@ public class result {
     }
 
     private void fetchRemoteResource(String remoteArtResource) {
+        Image albumArtImage = new Image(
+                remoteArtResource,
+                85,
+                85,
+                true,
+                true
+        );
 
-        try {
+        if (albumArtImage.getHeight() == 0) useFallbackAlbumArt();
 
-            if (InetAddress.getByName("allmusic.com").isReachable(1000)) {
-                albumArt.setImage(
-                        new Image(
-                                remoteArtResource,
-                                85,
-                                85,
-                                true,
-                                true
-                        )
-                );
-
-            } else
-                throw new IOException();
-
-        } catch (IOException e) {
-
-            debug.warn("Failed to connect to allmusic to get album art, using default.");
-
-            if (albumArt.getImage() == null)
-                useFallbackAlbumArt();
-        }
-
+        else albumArt.setImage(albumArtImage);
     }
 
     private void useFallbackAlbumArt() {
 
+        debug.warn("Using fallback album art.");
         try {
             albumArt.setImage(
                     new Image(
