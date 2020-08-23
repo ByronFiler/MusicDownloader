@@ -691,7 +691,13 @@ public class downloads {
         }
 
         public void setCurrentlyDownloading(double progress) {
-            right.getChildren().add(new ProgressIndicator(progress));
+            ProgressIndicator progressView = new ProgressIndicator(progress);
+
+            // Hide the % complete message under it
+            if (progress > 0)
+                progressView.getStyleClass().add("progress-indicator-percentage");
+
+            right.getChildren().add(progressView);
             view.setRight(right);
         }
 
