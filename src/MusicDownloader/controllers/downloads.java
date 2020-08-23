@@ -73,6 +73,8 @@ public class downloads {
 
     JSONObject metadataReference = new JSONObject();
 
+    Timer uiUpdater = new Timer();
+
     @FXML
     private void initialize() {
 
@@ -125,7 +127,8 @@ public class downloads {
                     debug.error("Failed to load metadata for rendering albums on the fly.", e);
                 }
                 // TimerTask to update and redraw if necessary
-                new Timer().schedule(new TimerTask() {
+                // TODO: This spawns excessive instances, should kill self when necessary
+                uiUpdater.schedule(new TimerTask() {
 
                     @Override
                     public void run() {
@@ -543,6 +546,7 @@ public class downloads {
 
         // Go to search page
         try {
+            uiUpdater.cancel();
             Parent searchView = FXMLLoader.load(Main.class.getResource("app/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - resources.getInstance().getWindowResizeHeight()));
