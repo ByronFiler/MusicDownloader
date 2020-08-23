@@ -14,4 +14,8 @@ public interface search {
 
     JSONArray getSearchResultsData();
 
+    int getAlbumCount();
+
+    int getSongCount();
+
 }

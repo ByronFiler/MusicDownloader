@@ -1,5 +1,8 @@
 package MusicDownloader.utils.net.db.sites;
 
+import MusicDownloader.Main;
+import MusicDownloader.utils.app.debug;
+import MusicDownloader.utils.fx.result;
 import javafx.scene.layout.BorderPane;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -7,9 +10,6 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import MusicDownloader.Main;
-import MusicDownloader.utils.app.debug;
-import MusicDownloader.utils.fx.result;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +27,9 @@ public class allmusic {
         private final String searchQuery;
         private final JSONArray searchResultsData = new JSONArray();
 
+        private int albumCount = 0;
+        private int songCount = 0;
+
         public static final String subdirectory = "search/all/";
 
         public search(String query) {
@@ -36,7 +39,7 @@ public class allmusic {
         public void getSongExternalInformation() throws IOException {
 
             try {
-                for (int i = 0; i < searchResultsData.length(); i++)
+                for (int i = 0; i < searchResultsData.length(); i++) {
 
                     if (!searchResultsData.getJSONObject(i).getJSONObject("data").getBoolean("album")) {
                         song songProcessor = new song(searchResultsData.getJSONObject(i).getJSONObject("data").getString("allmusicSongId"));
@@ -50,12 +53,14 @@ public class allmusic {
                         searchResultsData.getJSONObject(i).getJSONObject("view").put("art", songProcessor.getAlbumArt());
 
                         StringBuilder metaInfoRaw = new StringBuilder("Song");
-                        if (!searchResultsData.getJSONObject(i).getJSONObject("data").getString("year").isEmpty()) metaInfoRaw.append(" | ").append(searchResultsData.getJSONObject(i).getJSONObject("data").getString("year"));
-                        if (!searchResultsData.getJSONObject(i).getJSONObject("data").getString("genre").isEmpty()) metaInfoRaw.append(" | ").append(searchResultsData.getJSONObject(i).getJSONObject("data").getString("genre"));
+                        if (!searchResultsData.getJSONObject(i).getJSONObject("data").getString("year").isEmpty())
+                            metaInfoRaw.append(" | ").append(searchResultsData.getJSONObject(i).getJSONObject("data").getString("year"));
+                        if (!searchResultsData.getJSONObject(i).getJSONObject("data").getString("genre").isEmpty())
+                            metaInfoRaw.append(" | ").append(searchResultsData.getJSONObject(i).getJSONObject("data").getString("genre"));
 
                         searchResultsData.getJSONObject(i).getJSONObject("view").put("meta", metaInfoRaw.toString());
-
                     }
+                }
             } catch (JSONException e) {
                 debug.error("Failed to parse data to get song album art.", e);
             }
@@ -100,6 +105,8 @@ public class allmusic {
                             );
 
                         if (result.select("div.cover").size() > 0) {
+                            albumCount++;
+
                             // Album (has art)
                             String potentialAlbumArt = result.select("img.lazy").attr("data-original");
 
@@ -117,6 +124,8 @@ public class allmusic {
                             );
 
                         } else {
+                            songCount++;
+
                             // Song (does not have art)
                             try {
 
@@ -169,6 +178,16 @@ public class allmusic {
         @Override
         public JSONArray getSearchResultsData() {
             return searchResultsData;
+        }
+
+        @Override
+        public synchronized int getAlbumCount() {
+            return albumCount;
+        }
+
+        @Override
+        public synchronized int getSongCount() {
+            return songCount;
         }
     }
 

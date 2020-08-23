@@ -1,5 +1,7 @@
 package MusicDownloader.utils.fx;
 
+import MusicDownloader.Main;
+import MusicDownloader.utils.app.debug;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -8,12 +10,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import MusicDownloader.Main;
-import MusicDownloader.utils.app.debug;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -125,7 +123,6 @@ public class result {
 
     private void useFallbackAlbumArt() {
 
-        debug.warn("Using fallback album art.");
         try {
             albumArt.setImage(
                     new Image(

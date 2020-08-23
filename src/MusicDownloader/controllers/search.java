@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -144,17 +145,39 @@ public class search {
                         searchQueryActive = true;
 
                         Thread queryThread = new Thread(() -> {
+
                             allmusic.search searcher = new allmusic.search(search.getText() + e.getText());
 
                             try {
+                                long preQueryTime = Instant.now().toEpochMilli();
+                                long preBuilderTime = 0;
+
                                 searcher.query(Model.getInstance().settings.getSettingBool("data_saver"));
 
                                 // Can open each song page and find relevant album to display album art, and other information such as genre and year which isn't given in a default search
-                                if (!Model.getInstance().settings.getSettingBool("data_saver"))
+                                if (!Model.getInstance().settings.getSettingBool("data_saver")) {
+                                    preBuilderTime = Instant.now().toEpochMilli();
                                     searcher.getSongExternalInformation();
+                                }
+
 
                                 Model.getInstance().search.setSearchResults(searcher.buildView().toArray(new BorderPane[0]));
                                 Model.getInstance().search.setSearchResultsJson(searcher.getSearchResultsData());
+
+                                long now = Instant.now().toEpochMilli();
+
+                                if (!Model.getInstance().settings.getSettingBool("data_saver"))
+                                    debug.trace(
+                                            String.format(
+                                                    "Query results completed in %.2f seconds, containing %s album%s %s song%s and (%sms per song average)",
+                                                    (double) (now - preQueryTime) / 1000,
+                                                    searcher.getAlbumCount(),
+                                                    searcher.getAlbumCount() == 1 ? "" : "s",
+                                                    searcher.getSongCount(),
+                                                    searcher.getSongCount() == 1 ? "" : "s",
+                                                    Math.round((double) (now - preBuilderTime) / searcher.getSongCount())
+                                            )
+                                    );
 
                                 try {
                                     Parent resultsView = FXMLLoader.load(Main.class.getResource("app/fxml/results.fxml"));
@@ -383,5 +406,4 @@ public class search {
         }
 
     }
-
 }

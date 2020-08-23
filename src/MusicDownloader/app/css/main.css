@@ -87,3 +87,11 @@
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
 }
+
+.progress-indicator .percentage {
+    -fx-fill:null;
+}
+
+.progress-indicator  {
+    -fx-padding: 0 0 -16 0;
+}
