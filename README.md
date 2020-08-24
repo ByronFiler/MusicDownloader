@@ -1,4 +1,4 @@
-# MusicDownloader
+# musicdownloader
 
 A tool to download albums and songs easily and quickly, with full album art and file meta data saved, using youtube-dl & ffmpeg, using JavaFX.
 Uses AllMusic for song data and Youtube for media.
