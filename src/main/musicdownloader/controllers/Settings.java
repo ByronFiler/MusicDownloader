@@ -75,16 +75,12 @@ public class Settings {
     @FXML ToggleSwitch dataSaverToggle;
 
     // Confirm / Cancel
-    @FXML Button saveSettings;
     @FXML Button cancel;
-
-    private JSONObject settings;
 
     @FXML
     private void initialize() {
 
         // Prepare settings information from model data
-        settings = Model.getInstance().settings.getSettings();
 
         // Information
         if (Model.getInstance().settings.getVersion() == null) {
@@ -184,7 +180,7 @@ public class Settings {
 
             outputDirectory.setText(newFolder.getSelectedFile().getPath());
             new validateDirectory(newFolder.getSelectedFile().getPath());
-            validateConfirm();
+            saveSettings();
 
         } catch (NullPointerException ignored) {
         }
@@ -192,61 +188,10 @@ public class Settings {
     }
 
     @FXML
-    private void validateConfirm() {
-
-        JSONObject newSettings = getNewSettings();
-
-        try {
-
-            if (newSettings.getBoolean("dark_theme"))
-                root.getStylesheets().setAll(
-                        String.valueOf(Main.class.getResource("resources/css/dark.css"))
-                );
-
-            else
-                root.getStylesheets().setAll(
-                        String.valueOf(Main.class.getResource("resources/css/standard.css"))
-                );
-
-        } catch (JSONException e) {
-            Debug.error("Error checking new settings for dark theme.", e);
-        }
-
-        // Check if settings have been adjusted from default
-        if (settings.toString().equals(getNewSettings().toString())) {
-
-            // Settings have not been modified, hence return to default
-            Platform.runLater(() -> {
-                saveSettings.setDisable(true);
-
-                cancel.setText("Back");
-                cancel.getStyleClass().set(1, "back_button");
-            });
-
-        } else {
-
-            // Settings have been modified
-            Platform.runLater(() -> {
-                saveSettings.setDisable(false);
-                cancel.setText("Cancel");
-                cancel.getStyleClass().set(1, "cancel_button");
-            });
-
-        }
-
-    }
-
-    @FXML
     private void saveSettings() {
         Model.getInstance().settings.saveSettings(getNewSettings());
-        settings = Model.getInstance().settings.getSettings();
 
-        Platform.runLater(() -> {
-            saveSettings.setDisable(true);
-            cancel.setText("Back");
-        });
-
-        Debug.trace("Updated settings file");
+        Debug.trace("New settings saved.");
     }
 
     private JSONObject getNewSettings() {
@@ -296,7 +241,7 @@ public class Settings {
         public void run() {
 
             try {
-                Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/src/MusicDownloader/resources/meta.json").get();
+                Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/src/main/resources/meta.json").get();
                 JSONObject jsonData = new JSONObject(githubRequestLatestVersion.text());
                 Platform.runLater(() -> {
                     try {
@@ -463,7 +408,6 @@ public class Settings {
     // Attempts to test an execution
     static class verifyExecutable implements Runnable {
 
-        private final Thread thread;
         private final String executablePath;
         private final Label element;
         private final HBox elementContainer;
@@ -473,7 +417,7 @@ public class Settings {
             this.element = element;
             this.elementContainer = elementContainer;
 
-            thread = new Thread(this, "executable-execution");
+            Thread thread = new Thread(this, "executable-execution");
             thread.setDaemon(true);
             thread.start();
         }
