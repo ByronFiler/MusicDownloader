@@ -189,7 +189,21 @@ public class Settings {
 
     @FXML
     private void saveSettings() {
-        Model.getInstance().settings.saveSettings(getNewSettings());
+
+        JSONObject newSettings = getNewSettings();
+        try {
+            root.getStylesheets().setAll(
+                    String.valueOf(
+                            Main.class.getResource(
+                                    "resources/css/" + (newSettings.getBoolean("dark_theme") ? "dark" : "standard") + ".css"
+                            )
+                    )
+            );
+        } catch (JSONException e) {
+            Debug.error("Failed to find dark theme setting.", e);
+        }
+
+        Model.getInstance().settings.saveSettings(newSettings);
 
         Debug.trace("New settings saved.");
     }

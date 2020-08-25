@@ -312,7 +312,7 @@ public class Search {
                         int finalI = i;
                         autocompleteResultView.setOnMouseClicked(e -> {
                             try {
-                                search.setText(autocompleteProcessedResults.getJSONObject(finalI).getString("title"));
+                                search.setText(autocompleteProcessedResults.getJSONObject(finalI).getJSONObject("view").getString("title"));
                             } catch (JSONException er) {
                                 Debug.error("Failed to set autocomplete result.", er);
                             }

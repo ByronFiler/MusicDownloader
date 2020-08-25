@@ -146,7 +146,7 @@ public class Results {
             if (queueAdder.isDead()) throw new NullPointerException();
         } catch (NullPointerException ignored) {
 
-            for (BorderPane searchResult: results.getItems()) searchResult.setRight(null);
+            for (BorderPane searchResult: results.getItems()) searchResult.getStyleClass().setAll("result");
             try {
 
                 HBox tickContainer = new HBox(new ImageView(
@@ -161,7 +161,10 @@ public class Results {
                 tickContainer.setAlignment(Pos.CENTER);
                 tickContainer.setPadding(new Insets(0, 5, 0, 0));
 
-                results.getSelectionModel().getSelectedItems().get(0).setRight(tickContainer);
+                // results.getSelectionModel().getSelectedItems().get(0).setRight(tickContainer);
+
+                results.getSelectionModel().getSelectedItems().get(0).getStyleClass().setAll("result_selected");
+
             } catch (URISyntaxException e) {
                 Debug.error("Failed to set tick to mark selected element.", e);
             }

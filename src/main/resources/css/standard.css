@@ -37,6 +37,10 @@
     -fx-background-color: rgba(10, 10, 10, 0.06);
 }
 
+.result_selected {
+    -fx-background-color: rgba(10, 10, 10, 0.18);
+}
+
 .cross-line {
     -fx-stroke: gray;
 }
