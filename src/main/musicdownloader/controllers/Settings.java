@@ -296,7 +296,7 @@ public class Settings {
         public void run() {
 
             try {
-                Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/src/MusicDownloader/app/meta.json").get();
+                Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/src/MusicDownloader/resources/meta.json").get();
                 JSONObject jsonData = new JSONObject(githubRequestLatestVersion.text());
                 Platform.runLater(() -> {
                     try {
