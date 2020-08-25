@@ -16,6 +16,8 @@ public class Youtube implements Source {
     private final String pageUrl;
     private final int targetTime;
 
+    private int retries = 5;
+
     private Document requestedPage = null;
     private final JSONArray results = new JSONArray();
 
@@ -83,12 +85,15 @@ public class Youtube implements Source {
 
             // If youtube gives a bad response, just retry
             if (contents.length() < 10) {
-                Debug.warn("Youtube sent a bad response, resent request.");
-                try {
-                    load();
-                } catch (IOException e) {
-                    Debug.warn("Failed to connect to youtube get results.");
-                }
+                Debug.warn(String.format("Youtube sent a bad response, resent request, %s retr%s remaining.", retries, retries == 1 ? "y" : "ies"));
+                if (retries == 0) return;
+                else
+                    try {
+                        retries--;
+                        load();
+                    } catch (IOException e) {
+                        Debug.warn("Failed to connect to youtube get results.");
+                    }
             }
 
             for (int i = 0; i < contents.length(); i++) {

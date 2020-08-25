@@ -169,7 +169,7 @@ public class Search {
                                 if (!Model.getInstance().settings.getSettingBool("data_saver"))
                                     Debug.trace(
                                             String.format(
-                                                    "Query results completed in %.2f seconds, containing %s album%s %s song%s and (%sms per song average)",
+                                                    "Query completed in %.2f seconds, containing %s album%s %s song%s and (%sms per song average)",
                                                     (double) (now - preQueryTime) / 1000,
                                                     searcher.getAlbumCount(),
                                                     searcher.getAlbumCount() == 1 ? "" : "s",
