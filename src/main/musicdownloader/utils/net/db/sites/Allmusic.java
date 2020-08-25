@@ -1,15 +1,16 @@
 package musicdownloader.utils.net.db.sites;
 
+import javafx.scene.layout.BorderPane;
 import musicdownloader.Main;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.fx.Result;
-import javafx.scene.layout.BorderPane;
 import musicdownloader.utils.net.db.Album;
 import musicdownloader.utils.net.db.Search;
 import musicdownloader.utils.net.db.Song;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -72,85 +73,90 @@ public class Allmusic {
 
         @Override
         public void query(Boolean useDefaultIcons) throws IOException {
+            try {
+                Document doc = Jsoup.connect(searchQuery).get();
 
-            Document doc = Jsoup.connect(searchQuery).get();
+                for (Element result : doc.select("ul.search-results").select("li")) {
+                    // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
+                    if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740) {
 
-            for (Element result: doc.select("ul.search-results").select("li")) {
-                // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
-                if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740) {
+                        JSONObject resultData = new JSONObject();
+                        JSONObject viewData = new JSONObject();
+                        JSONObject applicationData = new JSONObject();
 
-                    JSONObject resultData = new JSONObject();
-                    JSONObject viewData = new JSONObject();
-                    JSONObject applicationData = new JSONObject();
+                        try {
 
-                    try {
+                            viewData.put("title", result.select("div.title").text().replaceAll("\"", ""));
+                            viewData.put("artist", result.select("h4").text().hashCode() == 2582837 ? result.select("div.performers").select("a").text() : result.select("div.artist").text());
 
-                        viewData.put("title", result.select("div.title").text().replaceAll("\"", ""));
-                        viewData.put("artist", result.select("h4").text().hashCode() == 2582837 ? result.select("div.performers").select("a").text() : result.select("div.artist").text());
+                            applicationData.put("artist", result.select("h4").text().hashCode() == 2582837 ? result.select("div.performers").select("a").text() : result.select("div.artist").text());
+                            applicationData.put("year", result.select("div.year").text());
+                            applicationData.put("genre", result.select("div.genres").text());
+                            applicationData.put("album", result.select("div.cover").size() > 0);
 
-                        applicationData.put("artist", result.select("h4").text().hashCode() == 2582837 ? result.select("div.performers").select("a").text() : result.select("div.artist").text());
-                        applicationData.put("year", result.select("div.year").text());
-                        applicationData.put("genre", result.select("div.genres").text());
-                        applicationData.put("album", result.select("div.cover").size() > 0);
+                            // Build a clean view of an overview of our known information
+                            StringBuilder metaInfoRaw = new StringBuilder(applicationData.getBoolean("album") ? "Album" : "Song");
+                            if (!applicationData.getString("year").isEmpty())
+                                metaInfoRaw.append(" | ").append(applicationData.getString("year"));
+                            if (!applicationData.getString("genre").isEmpty())
+                                metaInfoRaw.append(" | ").append(applicationData.getString("genre"));
 
-                        // Build a clean view of an overview of our known information
-                        StringBuilder metaInfoRaw = new StringBuilder(applicationData.getBoolean("album") ? "Album" : "Song");
-                        if (!applicationData.getString("year").isEmpty()) metaInfoRaw.append(" | ").append(applicationData.getString("year"));
-                        if (!applicationData.getString("genre").isEmpty()) metaInfoRaw.append(" | ").append(applicationData.getString("genre"));
+                            viewData.put("meta", metaInfoRaw.toString());
 
-                        viewData.put("meta", metaInfoRaw.toString());
+                            // TODO: This check (in theory) shouldn't be needed?
+                            if (!result.select("div.title").select("a").attr("href").isEmpty())
+                                applicationData.put(
+                                        result.select("div.cover").size() > 0 ? "allmusicAlbumId" : "allmusicSongId",
+                                        result.select("div.title").select("a").attr("href").split("/")[4]
+                                );
 
-                        // TODO: This check (in theory) shouldn't be needed?
-                        if (!result.select("div.title").select("a").attr("href").isEmpty())
-                            applicationData.put(
-                                    result.select("div.cover").size() > 0 ? "allmusicAlbumId" : "allmusicSongId",
-                                    result.select("div.title").select("a").attr("href").split("/")[4]
-                            );
+                            if (result.select("div.cover").size() > 0) {
+                                albumCount++;
 
-                        if (result.select("div.cover").size() > 0) {
-                            albumCount++;
+                                // Album (has art)
+                                String potentialAlbumArt = result.select("img.lazy").attr("data-original");
 
-                            // Album (has art)
-                            String potentialAlbumArt = result.select("img.lazy").attr("data-original");
+                                viewData.put(
+                                        "art",
+                                        potentialAlbumArt.isEmpty() || useDefaultIcons ?
+                                                new File(Main.class.getResource("resources/img/album_default.png").getPath()).toURI().toString() :
+                                                potentialAlbumArt
+                                );
+                                applicationData.put(
+                                        "art",
+                                        potentialAlbumArt.isEmpty() ?
+                                                new File(Main.class.getResource("resources/img/album_default.png").getPath()).toURI().toString() :
+                                                potentialAlbumArt
+                                );
 
-                            viewData.put(
-                                    "art",
-                                    potentialAlbumArt.isEmpty() || useDefaultIcons ?
-                                            new File(Main.class.getResource("resources/img/album_default.png").getPath()).toURI().toString() :
-                                            potentialAlbumArt
-                            );
-                            applicationData.put(
-                                    "art",
-                                    potentialAlbumArt.isEmpty() ?
-                                            new File(Main.class.getResource("resources/img/album_default.png").getPath()).toURI().toString() :
-                                            potentialAlbumArt
-                            );
+                            } else {
+                                songCount++;
 
-                        } else {
-                            songCount++;
+                                // Song (does not have art)
+                                try {
 
-                            // Song (does not have art)
-                            try {
+                                    viewData.put("art", Main.class.getResource("resources/img/song_default.png").toURI().toString());
+                                    applicationData.put("art", Main.class.getResource("resources/img/song_default.png").toURI().toString());
 
-                                viewData.put("art", Main.class.getResource("resources/img/song_default.png").toURI().toString());
-                                applicationData.put("art", Main.class.getResource("resources/img/song_default.png").toURI().toString());
-
-                            } catch (URISyntaxException e) {
-                                Debug.error("Failed to get default icon for song.", e);
+                                } catch (URISyntaxException e) {
+                                    Debug.error("Failed to get default icon for song.", e);
+                                }
                             }
+
+                            resultData.put("view", viewData);
+                            resultData.put("data", applicationData);
+
+                            searchResultsData.put(resultData);
+
+                        } catch (JSONException e) {
+                            Debug.error("Failed to process search request JSON for" + searchQuery, e);
+                        } catch (ArrayIndexOutOfBoundsException e) {
+                            Debug.warn("Unknown URL: " + result.select("div.title").select("a").attr("href"));
                         }
-
-                        resultData.put("view", viewData);
-                        resultData.put("data", applicationData);
-
-                        searchResultsData.put(resultData);
-
-                    } catch (JSONException e) {
-                        Debug.error("Failed to process search request JSON for" + searchQuery, e);
-                    } catch (ArrayIndexOutOfBoundsException e) {
-                        Debug.warn("Unknown URL: " + result.select("div.title").select("a").attr("href"));
                     }
                 }
+            } catch (HttpStatusException e) {
+                Debug.warn("Invalid query given.");
             }
         }
 
@@ -206,7 +212,11 @@ public class Allmusic {
         }
 
         public void load() throws IOException {
-            this.doc = Jsoup.connect(pageUrl).get();
+            try {
+                this.doc = Jsoup.connect(pageUrl).get();
+            } catch (HttpStatusException e) {
+                Debug.warn("Invalid song link supplied.");
+            }
         }
 
         public String getYear() {
@@ -283,12 +293,16 @@ public class Allmusic {
 
         @Override
         public void load() throws IOException {
-            this.doc = Jsoup.connect(pageUrl).get();
+            try {
+                this.doc = Jsoup.connect(pageUrl).get();
 
-            for (Element albumResult: doc.select("tr.track")) {
-                song foundSong = new song(albumResult);
+                for (Element albumResult: doc.select("tr.track")) {
+                    song foundSong = new song(albumResult);
 
-                if (foundSong.isValid()) songs.add(foundSong);
+                    if (foundSong.isValid()) songs.add(foundSong);
+                }
+            } catch (HttpStatusException e) {
+                Debug.warn("Invalid album link supplied.");
             }
         }
 
@@ -365,10 +379,6 @@ public class Allmusic {
 
         }
 
-    }
-
-    @SuppressWarnings("unused")
-    public static class artist {
     }
 
 }
