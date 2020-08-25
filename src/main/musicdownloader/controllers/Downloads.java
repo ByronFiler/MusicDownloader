@@ -185,7 +185,7 @@ public class Downloads {
                                                                 ((HBox) element.getRight()).getChildren().setAll(
                                                                         new ImageView(
                                                                                 new Image(
-                                                                                        Main.class.getResource("app/img/tick.png").toURI().toString(),
+                                                                                        Main.class.getResource("resources/img/tick.png").toURI().toString(),
                                                                                         25,
                                                                                         25,
                                                                                         true,
@@ -305,12 +305,12 @@ public class Downloads {
 
         // Load style
         if (Model.getInstance().settings.getSettingBool("dark_theme")) {
-            root.getStylesheets().add(String.valueOf(Main.class.getResource("app/css/dark.css")));
+            root.getStylesheets().add(String.valueOf(Main.class.getResource("resources/css/dark.css")));
             albumViewSelector.setEffect(new ColorAdjust(0, 0, 1, 0));
             songViewSelector.setEffect(new ColorAdjust(0, 0, 1, 0));
         }
 
-        else root.getStylesheets().add(String.valueOf(Main.class.getResource("app/css/standard.css")));
+        else root.getStylesheets().add(String.valueOf(Main.class.getResource("resources/css/standard.css")));
 
         if (currentDownloadsView.size() > 0 || downloadHistoriesView.size() > 0) albumsView();
         else defaultView();
@@ -521,7 +521,7 @@ public class Downloads {
 
         ImageView iconImage = new ImageView(
                 new Image(
-                        Main.class.getResourceAsStream("app/img/icon.png"),
+                        Main.class.getResourceAsStream("resources/img/icon.png"),
                         50,
                         50,
                         true,
@@ -547,7 +547,7 @@ public class Downloads {
         // Go to search page
         try {
             uiUpdater.cancel();
-            Parent searchView = FXMLLoader.load(Main.class.getResource("app/fxml/search.fxml"));
+            Parent searchView = FXMLLoader.load(Main.class.getResource("resources/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight()));
 
@@ -706,7 +706,7 @@ public class Downloads {
                 right.getChildren().setAll(
                         new ImageView(
                                 new Image(
-                                        Main.class.getResource("app/img/tick.png").toURI().toString(),
+                                        Main.class.getResource("resources/img/tick.png").toURI().toString(),
                                         25,
                                         25,
                                         true,
@@ -725,7 +725,7 @@ public class Downloads {
             try {
                 ImageView scheduledIcon = new ImageView(
                         new Image(
-                                Main.class.getResource("app/img/scheduled.png").toURI().toString(),
+                                Main.class.getResource("resources/img/scheduled.png").toURI().toString(),
                                 25,
                                 25,
                                 true,

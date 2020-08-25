@@ -43,7 +43,7 @@ public class Settings {
         try {
 
             version = new JSONObject(
-                    new Scanner(Main.class.getResourceAsStream("app/meta.json"))
+                    new Scanner(Main.class.getResourceAsStream("resources/meta.json"))
                             .useDelimiter("\\Z")
                             .next()
             )

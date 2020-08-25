@@ -75,7 +75,7 @@ public class Search {
         if (Model.getInstance().settings.getSettingBool("dark_theme")) {
 
             root.getStylesheets().add(
-                    String.valueOf(Main.class.getResource("app/css/dark.css"))
+                    String.valueOf(Main.class.getResource("resources/css/dark.css"))
             );
 
             ColorAdjust invert = new ColorAdjust();
@@ -86,7 +86,7 @@ public class Search {
         }
         else
             root.getStylesheets().add(
-                    String.valueOf(Main.class.getResource("app/css/standard.css"))
+                    String.valueOf(Main.class.getResource("resources/css/standard.css"))
             );
 
         Debug.trace("Initialized search view.");
@@ -95,7 +95,7 @@ public class Search {
     @FXML
     private void downloadsView(Event event) {
         try {
-            Parent settingsView = FXMLLoader.load(Main.class.getResource("app/fxml/downloads.fxml"));
+            Parent settingsView = FXMLLoader.load(Main.class.getResource("resources/fxml/downloads.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
             mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight()));
 
@@ -108,7 +108,7 @@ public class Search {
     private void settingsView(Event event) {
 
         try {
-            Parent settingsView = FXMLLoader.load(Main.class.getResource("app/fxml/settings.fxml"));
+            Parent settingsView = FXMLLoader.load(Main.class.getResource("resources/fxml/settings.fxml"));
 
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
             mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight()));
@@ -180,7 +180,7 @@ public class Search {
                                     );
 
                                 try {
-                                    Parent resultsView = FXMLLoader.load(Main.class.getResource("app/fxml/results.fxml"));
+                                    Parent resultsView = FXMLLoader.load(Main.class.getResource("resources/fxml/results.fxml"));
                                     Stage mainWindow = (Stage) ((Node) e.getSource()).getScene().getWindow();
 
                                     Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight())));

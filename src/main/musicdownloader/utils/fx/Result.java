@@ -126,7 +126,7 @@ public class Result {
         try {
             albumArt.setImage(
                     new Image(
-                            Main.class.getResource("app/img/song_default.png").toURI().toString(),
+                            Main.class.getResource("resources/img/song_default.png").toURI().toString(),
                             85,
                             85,
                             true,

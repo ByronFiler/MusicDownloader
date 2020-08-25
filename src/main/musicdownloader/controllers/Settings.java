@@ -92,7 +92,7 @@ public class Settings {
             versionContainer.getChildren().add(
                     new ImageView(
                             new Image(
-                                    Main.class.getResourceAsStream("app/img/warning.png"),
+                                    Main.class.getResourceAsStream("resources/img/warning.png"),
                                     20,
                                     20,
                                     true,
@@ -105,7 +105,7 @@ public class Settings {
             versionContainer.getChildren().add(
                     new ImageView(
                             new Image(
-                                    Main.class.getResourceAsStream("app/img/tick.png"),
+                                    Main.class.getResourceAsStream("resources/img/tick.png"),
                                     20,
                                     20,
                                     true,
@@ -146,12 +146,12 @@ public class Settings {
         // Load theme
         if (Model.getInstance().settings.getSettingBool("dark_theme"))
             root.getStylesheets().setAll(
-                    String.valueOf(Main.class.getResource("app/css/dark.css"))
+                    String.valueOf(Main.class.getResource("resources/css/dark.css"))
             );
 
         else
             root.getStylesheets().setAll(
-                    String.valueOf(Main.class.getResource("app/css/standard.css"))
+                    String.valueOf(Main.class.getResource("resources/css/standard.css"))
             );
 
         Debug.trace("Initialized settings view.");
@@ -162,7 +162,7 @@ public class Settings {
     private void searchView(Event event) {
 
         try {
-            AnchorPane searchView = FXMLLoader.load(Main.class.getResource("app/fxml/search.fxml"));
+            AnchorPane searchView = FXMLLoader.load(Main.class.getResource("resources/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight()));
@@ -200,12 +200,12 @@ public class Settings {
 
             if (newSettings.getBoolean("dark_theme"))
                 root.getStylesheets().setAll(
-                        String.valueOf(Main.class.getResource("app/css/dark.css"))
+                        String.valueOf(Main.class.getResource("resources/css/dark.css"))
                 );
 
             else
                 root.getStylesheets().setAll(
-                        String.valueOf(Main.class.getResource("app/css/standard.css"))
+                        String.valueOf(Main.class.getResource("resources/css/standard.css"))
                 );
 
         } catch (JSONException e) {
@@ -304,7 +304,7 @@ public class Settings {
                         latestVersionContainer.getChildren().add(
                                 new ImageView(
                                     new Image(
-                                            Main.class.getResourceAsStream("app/img/tick.png"),
+                                            Main.class.getResourceAsStream("resources/img/tick.png"),
                                             20,
                                             20,
                                             true,
@@ -328,7 +328,7 @@ public class Settings {
                                 latestVersion,
                                 new ImageView(
                                         new Image(
-                                                Main.class.getResourceAsStream("app/img/warning.png"),
+                                                Main.class.getResourceAsStream("resources/img/warning.png"),
                                                 20,
                                                 20,
                                                 true,
@@ -393,7 +393,7 @@ public class Settings {
             if (!Files.exists(Paths.get(directory))) {
 
                 ImageView warningImage = new ImageView(new Image(
-                        Main.class.getResourceAsStream("app/img/warning.png"),
+                        Main.class.getResourceAsStream("resources/img/warning.png"),
                         25,
                         25,
                         true,
@@ -423,7 +423,7 @@ public class Settings {
                 if (!checkerTempFile.mkdir() || !checkerTempFile.delete()) {
 
                     ImageView warningImage = new ImageView(new Image(
-                            Main.class.getResourceAsStream("app/img/warning.png"),
+                            Main.class.getResourceAsStream("resources/img/warning.png"),
                             25,
                             25,
                             true,
@@ -489,7 +489,7 @@ public class Settings {
                     elementContainer.getChildren().add(
                             new ImageView(
                                     new Image(
-                                            Main.class.getResourceAsStream("app/img/tick.png"),
+                                            Main.class.getResourceAsStream("resources/img/tick.png"),
                                             20,
                                             20,
                                             true,
@@ -507,7 +507,7 @@ public class Settings {
                     elementContainer.getChildren().add(
                             new ImageView(
                                 new Image(
-                                        Main.class.getResourceAsStream("app/img/warning.png"),
+                                        Main.class.getResourceAsStream("resources/img/warning.png"),
                                         20,
                                         20,
                                         true,
@@ -566,7 +566,7 @@ public class Settings {
                                     1,
                                     new ImageView(
                                             new Image(
-                                                    Main.class.getResourceAsStream("app/img/tick.png"),
+                                                    Main.class.getResourceAsStream("resources/img/tick.png"),
                                                     20,
                                                     20,
                                                     true,
@@ -583,7 +583,7 @@ public class Settings {
                                     1,
                                     new ImageView(
                                             new Image(
-                                                    Main.class.getResourceAsStream("app/img/warning.png"),
+                                                    Main.class.getResourceAsStream("resources/img/warning.png"),
                                                     20,
                                                     20,
                                                     true,
@@ -600,7 +600,7 @@ public class Settings {
                                 1,
                                 new ImageView(
                                         new Image(
-                                                Main.class.getResourceAsStream("app/img/warning.png"),
+                                                Main.class.getResourceAsStream("resources/img/warning.png"),
                                                 20,
                                                 20,
                                                 true,

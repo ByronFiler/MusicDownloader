@@ -116,13 +116,13 @@ public class Allmusic {
                             viewData.put(
                                     "art",
                                     potentialAlbumArt.isEmpty() || useDefaultIcons ?
-                                            new File(Main.class.getResource("app/img/album_default.png").getPath()).toURI().toString() :
+                                            new File(Main.class.getResource("resources/img/album_default.png").getPath()).toURI().toString() :
                                             potentialAlbumArt
                             );
                             applicationData.put(
                                     "art",
                                     potentialAlbumArt.isEmpty() ?
-                                            new File(Main.class.getResource("app/img/album_default.png").getPath()).toURI().toString() :
+                                            new File(Main.class.getResource("resources/img/album_default.png").getPath()).toURI().toString() :
                                             potentialAlbumArt
                             );
 
@@ -132,8 +132,8 @@ public class Allmusic {
                             // Song (does not have art)
                             try {
 
-                                viewData.put("art", Main.class.getResource("app/img/song_default.png").toURI().toString());
-                                applicationData.put("art", Main.class.getResource("app/img/song_default.png").toURI().toString());
+                                viewData.put("art", Main.class.getResource("resources/img/song_default.png").toURI().toString());
+                                applicationData.put("art", Main.class.getResource("resources/img/song_default.png").toURI().toString());
 
                             } catch (URISyntaxException e) {
                                 Debug.error("Failed to get default icon for song.", e);
@@ -225,7 +225,7 @@ public class Allmusic {
 
             try {
                 if (albumArtSource.isEmpty())
-                    return Main.class.getResource("app/img/song_default.png").toURI().toString();
+                    return Main.class.getResource("resources/img/song_default.png").toURI().toString();
 
                 else return albumArtSource;
 

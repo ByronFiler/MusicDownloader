@@ -69,14 +69,14 @@ public class Results {
         if (Model.getInstance().settings.getSettingBool("dark_theme"))
             root.getStylesheets().add(
                     String.valueOf(
-                            Main.class.getResource("app/css/dark.css")
+                            Main.class.getResource("resources/css/dark.css")
                     )
             );
 
         else
             root.getStylesheets().add(
                 String.valueOf(
-                        Main.class.getResource("app/css/standard.css")
+                        Main.class.getResource("resources/css/standard.css")
                 )
             );
 
@@ -88,7 +88,7 @@ public class Results {
                     download,
                     new ImageView(
                             new Image(
-                                    Main.class.getResourceAsStream("app/img/warning.png"),
+                                    Main.class.getResourceAsStream("resources/img/warning.png"),
                                     40,
                                     40,
                                     true,
@@ -151,7 +151,7 @@ public class Results {
 
                 HBox tickContainer = new HBox(new ImageView(
                         new Image(
-                                Main.class.getResource("app/img/tick.png").toURI().toString(),
+                                Main.class.getResource("resources/img/tick.png").toURI().toString(),
                                 25,
                                 25,
                                 true,
@@ -176,7 +176,7 @@ public class Results {
 
         try {
 
-            Parent searchView = FXMLLoader.load(Main.class.getResource("app/fxml/search.fxml"));
+            Parent searchView = FXMLLoader.load(Main.class.getResource("resources/fxml/search.fxml"));
             Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
             mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight()));
@@ -455,7 +455,7 @@ public class Results {
                 linkPart1.setCursor(Cursor.HAND);
                 linkPart1.setOnMouseClicked(e -> {
                     try {
-                        Parent searchView = FXMLLoader.load(Main.class.getResource("app/fxml/downloads.fxml"));
+                        Parent searchView = FXMLLoader.load(Main.class.getResource("resources/fxml/downloads.fxml"));
                         Stage mainWindow = (Stage) ((Node) e.getSource()).getScene().getWindow();
 
                         mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight()));
