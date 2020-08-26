@@ -1,11 +1,5 @@
 package musicdownloader.controllers;
 
-import musicdownloader.Main;
-import musicdownloader.model.Model;
-import musicdownloader.utils.app.Debug;
-import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.net.db.sites.Allmusic;
-import musicdownloader.utils.net.source.sites.Youtube;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -19,12 +13,22 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import musicdownloader.Main;
+import musicdownloader.model.Model;
+import musicdownloader.utils.app.Debug;
+import musicdownloader.utils.app.Resources;
+import musicdownloader.utils.net.db.sites.Allmusic;
+import musicdownloader.utils.net.source.sites.Youtube;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,29 +39,45 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 
 /*
 TODO
  - Remove the title and replace it with a new search box
  - Consider thread loading the album art
+
+ - Changing the search does not appear to update the necessary requirements (Set to Model, then set from Model)
+ - Searching should be disallowed when adding to queue (Use class wide bools, no more NullPointerExceptions)
+
  */
 
 public class Results {
 
-    @FXML private AnchorPane root;
+    @FXML
+    private AnchorPane root;
 
-    @FXML private VBox centerContainer;
-    @FXML private ListView<BorderPane> results;
+    @FXML
+    private VBox centerContainer;
+    @FXML
+    private TextField searchField;
+    @FXML
+    private ProgressIndicator loadingIndicator;
+    @FXML
+    private Text errorMessage;
+    @FXML
+    private ListView<BorderPane> results;
 
-    @FXML private HBox downloadButtonContainer;
-    @FXML private ProgressIndicator queueAdditionProgress;
-    @FXML private Button download;
-    @FXML private Button cancel;
+    @FXML
+    private HBox downloadButtonContainer;
+    @FXML
+    private ProgressIndicator queueAdditionProgress;
+    @FXML
+    private Button download;
+    @FXML
+    private Button cancel;
 
-    generateQueueItem queueAdder;
+    private generateQueueItem queueAdder;
+    private String loadedQuery;
 
     @FXML
     private void initialize() {
@@ -65,20 +85,31 @@ public class Results {
         // Set the table data
         results.getItems().setAll(Model.getInstance().search.getSearchResults());
 
-        // Set theme
-        if (Model.getInstance().settings.getSettingBool("dark_theme"))
-            root.getStylesheets().add(
-                    String.valueOf(
-                            Main.class.getResource("resources/css/dark.css")
-                    )
-            );
+        // Set the search box data
+        try {
+            loadedQuery = Model
+                    .getInstance()
+                    .search
+                    .getSearchResultsJson()
+                    .getJSONObject("metadata")
+                    .getString("query")
+                    .replace(
+                            "\r",
+                            ""
+                    );
+            searchField.setText(loadedQuery);
+        } catch (JSONException e) {
+            Debug.error("Failed to get query for results.", e);
+        }
 
-        else
-            root.getStylesheets().add(
+        // Set theme
+        root.getStylesheets().add(
                 String.valueOf(
-                        Main.class.getResource("resources/css/standard.css")
+                        Main.class.getResource(
+                                "resources/css/" + (Model.getInstance().settings.getSettingBool("dark_theme") ? "dark" : "standard") + ".css"
+                        )
                 )
-            );
+        );
 
         try {
             new ProcessBuilder(Resources.getInstance().getYoutubeDlExecutable(), "--version").start();
@@ -124,6 +155,7 @@ public class Results {
                             .getInstance()
                             .search
                             .getSearchResultsJson()
+                            .getJSONArray("songs")
                             .getJSONObject(
                                     Arrays
                                             .asList(Model.getInstance().search.getSearchResults())
@@ -133,6 +165,7 @@ public class Results {
             );
         } catch (JSONException e) {
             Debug.warn("Error generating basic data for queue addition.");
+            e.printStackTrace();
             Platform.runLater(() -> download.setDisable(true));
         }
 
@@ -190,10 +223,70 @@ public class Results {
 
     }
 
+    @FXML
+    public void newQuery(KeyEvent e) {
+        if (e.getCode() == KeyCode.ENTER && !searchField.getText().equals(loadedQuery)) {
+
+            if (searchField.getText().length() >= 3) {
+
+                // Search is valid to attempt
+                String tempQuery = searchField.getText();
+                Allmusic.search search = new Allmusic.search(tempQuery);
+                loadingIndicator.setVisible(true);
+                Thread resultsSearch = new Thread(() -> {
+                    try {
+                        search.query(Model.getInstance().settings.getSettingBool("data_saver"));
+                    } catch (IOException er) {
+                        error("Failed to load results, please check connection and retry!");
+                    }
+                    try {
+                        if (search.getResults().getJSONArray("songs").length() > 0) {
+                            Platform.runLater(() -> {
+                                loadingIndicator.setVisible(false);
+                                loadedQuery = tempQuery;
+
+                                Model.getInstance().search.setSearchResultsJson(search.getResults());
+                                Model.getInstance().search.setSearchResults(search.buildView().toArray(new BorderPane[0]));
+
+
+                                results.getItems().setAll(Model.getInstance().search.getSearchResults());
+                            });
+                        } else {
+                            Platform.runLater(() -> error("No Results Found"));
+                        }
+                    } catch (JSONException er) {
+                        Debug.error("Bad search response given.", er);
+                    }
+                }, "results-search");
+                resultsSearch.setDaemon(true);
+                resultsSearch.start();
+
+            } else {
+                // Inform user no results
+                Platform.runLater(() -> {
+                    loadingIndicator.setVisible(true);
+                    error("No Results Found");
+                });
+            }
+        }
+
+    }
+
+    private void error(String message) {
+
+        errorMessage.setText(message);
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                Platform.runLater(() -> errorMessage.setVisible(false));
+            }
+        }, 200, 0);
+
+    }
+
     // TODO: Add network error handling
     class generateQueueItem implements Runnable {
 
-        private final Thread thread;
         private final JSONObject basicData;
         private volatile boolean kill;
         private volatile boolean completed = false;
@@ -201,7 +294,7 @@ public class Results {
         public generateQueueItem(JSONObject basicData) {
             this.basicData = basicData;
 
-            thread = new Thread(this, "generate-queue-item");
+            Thread thread = new Thread(this, "generate-queue-item");
             thread.setDaemon(true);
             thread.start();
         }
@@ -255,6 +348,7 @@ public class Results {
 
         }
 
+        @NotNull
         private synchronized String generateNewSongId(JSONArray downloadItems) {
             String id = Double.toString(Math.random()).split("\\.")[1];
 
@@ -277,6 +371,7 @@ public class Results {
             return id;
         }
 
+        @NotNull
         private JSONArray getSource(String query, int targetTime) {
 
             Youtube youtubeParser = new Youtube(query, targetTime);
@@ -421,8 +516,6 @@ public class Results {
 
                 }
 
-
-
                 if (!kill) {
                     downloadItem.put("metadata", metadata);
                     downloadItem.put("songs", songs);
@@ -546,5 +639,6 @@ public class Results {
             }
         }
     }
+
 
 }

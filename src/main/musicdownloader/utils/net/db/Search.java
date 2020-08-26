@@ -1,7 +1,7 @@
 package musicdownloader.utils.net.db;
 
 import javafx.scene.layout.BorderPane;
-import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,7 +12,7 @@ public interface Search {
 
     ArrayList<BorderPane> buildView();
 
-    JSONArray getSearchResultsData();
+    JSONObject getResults();
 
     int getAlbumCount();
 

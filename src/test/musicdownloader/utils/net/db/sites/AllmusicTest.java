@@ -1,5 +1,6 @@
 package musicdownloader.utils.net.db.sites;
 
+import org.json.JSONException;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -11,8 +12,8 @@ class AllmusicTest {
         Allmusic.search validSearch = new Allmusic.search("The Dark Side of the Moon");
         try {
             validSearch.query(true);
-            assert validSearch.getSearchResultsData().length() > 0;
-        } catch (IOException e) {
+            assert validSearch.getResults().getJSONArray("songs").length() > 0;
+        } catch (IOException | JSONException e) {
             assert false;
         }
     }
@@ -32,8 +33,8 @@ class AllmusicTest {
         Allmusic.search noResultsSearch = new Allmusic.search("This is a valid search, but it contains no results.");
         try {
             noResultsSearch.query(true);
-            assert noResultsSearch.getSearchResultsData().length() == 0;
-        } catch (IOException e) {
+            assert noResultsSearch.getResults().getJSONArray("songs").length() == 0;
+        } catch (IOException | JSONException e) {
             assert false;
         }
     }

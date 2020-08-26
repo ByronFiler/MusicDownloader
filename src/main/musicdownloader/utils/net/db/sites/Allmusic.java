@@ -29,7 +29,10 @@ public class Allmusic {
     public static class search implements Search {
 
         private final String searchQuery;
-        private final JSONArray searchResultsData = new JSONArray();
+
+        private final JSONObject results = new JSONObject();
+        private final JSONArray songs = new JSONArray();
+        private final JSONObject metadata = new JSONObject();
 
         private int albumCount = 0;
         private int songCount = 0;
@@ -38,31 +41,36 @@ public class Allmusic {
 
         public search(String query) {
             this.searchQuery = baseDomain + subdirectory + query;
+            try {
+                this.metadata.put("query", query);
+            } catch (JSONException e) {
+                Debug.error("Failed to get query for building response.", e);
+            }
         }
 
         public void getSongExternalInformation() throws IOException {
 
             try {
-                for (int i = 0; i < searchResultsData.length(); i++) {
+                for (int i = 0; i < songs.length(); i++) {
 
-                    if (!searchResultsData.getJSONObject(i).getJSONObject("data").getBoolean("album")) {
-                        song songProcessor = new song(searchResultsData.getJSONObject(i).getJSONObject("data").getString("allmusicSongId"));
+                    if (!songs.getJSONObject(i).getJSONObject("data").getBoolean("album")) {
+                        song songProcessor = new song(songs.getJSONObject(i).getJSONObject("data").getString("allmusicSongId"));
                         songProcessor.load();
 
-                        searchResultsData.getJSONObject(i).getJSONObject("data").put("art", songProcessor.getAlbumArt());
-                        searchResultsData.getJSONObject(i).getJSONObject("data").put("year", songProcessor.getYear());
-                        searchResultsData.getJSONObject(i).getJSONObject("data").put("genre", songProcessor.getGenre());
-                        searchResultsData.getJSONObject(i).getJSONObject("data").put("allmusicAlbumId", songProcessor.getAlbumId());
+                        songs.getJSONObject(i).getJSONObject("data").put("art", songProcessor.getAlbumArt());
+                        songs.getJSONObject(i).getJSONObject("data").put("year", songProcessor.getYear());
+                        songs.getJSONObject(i).getJSONObject("data").put("genre", songProcessor.getGenre());
+                        songs.getJSONObject(i).getJSONObject("data").put("allmusicAlbumId", songProcessor.getAlbumId());
 
-                        searchResultsData.getJSONObject(i).getJSONObject("view").put("art", songProcessor.getAlbumArt());
+                        songs.getJSONObject(i).getJSONObject("view").put("art", songProcessor.getAlbumArt());
 
                         StringBuilder metaInfoRaw = new StringBuilder("Song");
-                        if (!searchResultsData.getJSONObject(i).getJSONObject("data").getString("year").isEmpty())
-                            metaInfoRaw.append(" | ").append(searchResultsData.getJSONObject(i).getJSONObject("data").getString("year"));
-                        if (!searchResultsData.getJSONObject(i).getJSONObject("data").getString("genre").isEmpty())
-                            metaInfoRaw.append(" | ").append(searchResultsData.getJSONObject(i).getJSONObject("data").getString("genre"));
+                        if (!songs.getJSONObject(i).getJSONObject("data").getString("year").isEmpty())
+                            metaInfoRaw.append(" | ").append(songs.getJSONObject(i).getJSONObject("data").getString("year"));
+                        if (!songs.getJSONObject(i).getJSONObject("data").getString("genre").isEmpty())
+                            metaInfoRaw.append(" | ").append(songs.getJSONObject(i).getJSONObject("data").getString("genre"));
 
-                        searchResultsData.getJSONObject(i).getJSONObject("view").put("meta", metaInfoRaw.toString());
+                        songs.getJSONObject(i).getJSONObject("view").put("meta", metaInfoRaw.toString());
                     }
                 }
             } catch (JSONException e) {
@@ -146,7 +154,7 @@ public class Allmusic {
                             resultData.put("view", viewData);
                             resultData.put("data", applicationData);
 
-                            searchResultsData.put(resultData);
+                            songs.put(resultData);
 
                         } catch (JSONException e) {
                             Debug.error("Failed to process search request JSON for" + searchQuery, e);
@@ -165,16 +173,16 @@ public class Allmusic {
             ArrayList<BorderPane> viewResults = new ArrayList<>();
 
             try {
-                for (int i = 0; i < searchResultsData.length(); i++) {
+                for (int i = 0; i < songs.length(); i++) {
                     Result resultBuilder = new Result(
                             null,
-                            searchResultsData.getJSONObject(i).getJSONObject("view").getString("art"),
+                            songs.getJSONObject(i).getJSONObject("view").getString("art"),
                             true,
-                            searchResultsData.getJSONObject(i).getJSONObject("view").getString("title"),
-                            searchResultsData.getJSONObject(i).getJSONObject("view").getString("artist")
+                            songs.getJSONObject(i).getJSONObject("view").getString("title"),
+                            songs.getJSONObject(i).getJSONObject("view").getString("artist")
                     );
 
-                    resultBuilder.setSubtext(searchResultsData.getJSONObject(i).getJSONObject("view").getString("meta"));
+                    resultBuilder.setSubtext(songs.getJSONObject(i).getJSONObject("view").getString("meta"));
                     viewResults.add(resultBuilder.getView());
                 }
             } catch (JSONException e) {
@@ -185,8 +193,15 @@ public class Allmusic {
         }
 
         @Override
-        public JSONArray getSearchResultsData() {
-            return searchResultsData;
+        public JSONObject getResults() {
+            try {
+                results.put("metadata", metadata);
+                results.put("songs", songs);
+            } catch (JSONException e) {
+                Debug.error("Failed in building results from search data.", e);
+            }
+
+            return results;
         }
 
         @Override

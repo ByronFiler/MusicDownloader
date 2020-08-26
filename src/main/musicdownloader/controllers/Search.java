@@ -51,16 +51,24 @@ TODO
  */
 public class Search {
 
-    @FXML private AnchorPane root;
+    @FXML
+    private AnchorPane root;
 
-    @FXML private VBox searchContainer;
-    @FXML private TextField search;
-    @FXML private ProgressIndicator loadingIcon;
-    @FXML private Text errorMessage;
-    @FXML private ListView<HBox> autocompleteResults;
+    @FXML
+    private VBox searchContainer;
+    @FXML
+    private TextField search;
+    @FXML
+    private ProgressIndicator loadingIcon;
+    @FXML
+    private Text errorMessage;
+    @FXML
+    private ListView<HBox> autocompleteResults;
 
-    @FXML private ImageView downloads;
-    @FXML private ImageView settings;
+    @FXML
+    private ImageView downloads;
+    @FXML
+    private ImageView settings;
 
     // Timer timerRotate;
     private Timer hideErrorMessage;
@@ -162,7 +170,7 @@ public class Search {
 
 
                                 Model.getInstance().search.setSearchResults(searcher.buildView().toArray(new BorderPane[0]));
-                                Model.getInstance().search.setSearchResultsJson(searcher.getSearchResultsData());
+                                Model.getInstance().search.setSearchResultsJson(searcher.getResults());
 
                                 long now = Instant.now().toEpochMilli();
 
@@ -253,6 +261,8 @@ public class Search {
             public void run() {
                 Platform.runLater(() -> {
                     errorMessage.setVisible(false);
+
+                    // TODO: Check & Replace with setAll
                     searchContainer.getChildren().remove(errorMessage);
                     searchContainer.getChildren().add(errorMessage);
                 });
@@ -264,14 +274,14 @@ public class Search {
     // Updating the UI with the autocomplete suggestions
     private class generateAutocomplete implements Runnable {
 
-        private final Thread thread;
         private volatile boolean killRequest = false;
         private final String query;
 
         generateAutocomplete (String query){
             this.query = query;
 
-            thread = new Thread(this, "autocomplete");
+            Thread thread = new Thread(this, "autocomplete");
+            thread.setDaemon(true);
             thread.start();
         }
 
@@ -287,8 +297,12 @@ public class Search {
             try {
                 Allmusic.search autocompleteSearch = new Allmusic.search(query);
                 autocompleteSearch.query(true);
-                JSONArray autocompleteProcessedResults = autocompleteSearch.getSearchResultsData();
-
+                JSONArray autocompleteProcessedResults = new JSONArray();
+                try {
+                    autocompleteProcessedResults = autocompleteSearch.getResults().getJSONArray("songs");
+                } catch (JSONException e) {
+                    Debug.error("Failed to get autocomplete results.", e);
+                }
                 ArrayList<String> viewResultTitles = new ArrayList<>();
                 ArrayList<HBox> autocompleteResultsView = new ArrayList<>();
 
@@ -316,9 +330,10 @@ public class Search {
 
                             HBox autocompleteResultView = new HBox(10, resultIcon, resultTitle);
                             int finalI = i;
+                            JSONArray finalAutocompleteProcessedResults = autocompleteProcessedResults;
                             autocompleteResultView.setOnMouseClicked(e -> {
                                 try {
-                                    search.setText(autocompleteProcessedResults.getJSONObject(finalI).getJSONObject("view").getString("title"));
+                                    search.setText(finalAutocompleteProcessedResults.getJSONObject(finalI).getJSONObject("view").getString("title"));
                                 } catch (JSONException er) {
                                     Debug.warn("Failed to set autocomplete result.");
                                 }

@@ -1,12 +1,12 @@
 package musicdownloader.model;
 
 import javafx.scene.layout.BorderPane;
-import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class Search {
 
     private BorderPane[] searchResults;
-    private JSONArray searchResultsJson;
+    private JSONObject searchResultsJson;
 
     public BorderPane[] getSearchResults(){
         return searchResults;
@@ -16,9 +16,9 @@ public class Search {
         this.searchResults = searchResults;
     }
 
-    public JSONArray getSearchResultsJson() {return searchResultsJson; }
+    public JSONObject getSearchResultsJson() {return searchResultsJson; }
 
-    public void setSearchResultsJson(JSONArray searchResultsJson) {
+    public void setSearchResultsJson(JSONObject searchResultsJson) {
         this.searchResultsJson = searchResultsJson;
     }
 
