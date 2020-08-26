@@ -78,7 +78,7 @@ public class Settings {
     @FXML Button cancel;
 
     @FXML
-    private void initialize() {
+    protected void initialize() {
 
         // Prepare settings information from model data
 
@@ -135,27 +135,23 @@ public class Settings {
         yearToggle.setSelected(Model.getInstance().settings.getSettingBool("year"));
         trackNumberToggle.setSelected(Model.getInstance().settings.getSettingBool("track"));
 
-        // ../application
+        // Application
         darkThemeToggle.setSelected(Model.getInstance().settings.getSettingBool("dark_theme"));
         dataSaverToggle.setSelected(Model.getInstance().settings.getSettingBool("data_saver"));
 
         // Load theme
-        if (Model.getInstance().settings.getSettingBool("dark_theme"))
-            root.getStylesheets().setAll(
-                    String.valueOf(Main.class.getResource("resources/css/dark.css"))
-            );
-
-        else
-            root.getStylesheets().setAll(
-                    String.valueOf(Main.class.getResource("resources/css/standard.css"))
-            );
+        root.getStylesheets().setAll(
+                Main.class.getResource(
+                        "resources/css/" + (Model.getInstance().settings.getSettingBool("dark_theme") ? "dark" : "standard") + ".css"
+                ).toString()
+        );
 
         Debug.trace("Initialized settings view.");
 
     }
 
     @FXML
-    private void searchView(Event event) {
+    protected void searchView(Event event) {
 
         try {
             AnchorPane searchView = FXMLLoader.load(Main.class.getResource("resources/fxml/search.fxml"));
@@ -170,32 +166,29 @@ public class Settings {
     }
 
     @FXML
-    private void selectNewFolder() {
+    protected void selectNewFolder() {
 
-        try {
+        JFileChooser newFolder = new JFileChooser();
+        newFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        newFolder.showSaveDialog(null);
 
-            JFileChooser newFolder = new JFileChooser();
-            newFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            newFolder.showSaveDialog(null);
-
-            outputDirectory.setText(newFolder.getSelectedFile().getPath());
-            new validateDirectory(newFolder.getSelectedFile().getPath());
-            saveSettings();
-
-        } catch (NullPointerException ignored) {
-        }
+        outputDirectory.setText(newFolder.getSelectedFile().getPath());
+        new validateDirectory(newFolder.getSelectedFile().getPath());
+        saveSettings();
 
     }
 
     @FXML
-    private void saveSettings() {
+    protected void saveSettings() {
 
         JSONObject newSettings = getNewSettings();
         try {
             root.getStylesheets().setAll(
                     String.valueOf(
                             Main.class.getResource(
-                                    "resources/css/" + (newSettings.getBoolean("dark_theme") ? "dark" : "standard") + ".css"
+                                    "resources/css/"
+                                            + (newSettings.getBoolean("dark_theme") ? "dark" : "standard")
+                                            + ".css"
                             )
                     )
             );
@@ -208,7 +201,7 @@ public class Settings {
         Debug.trace("New settings saved.");
     }
 
-    private JSONObject getNewSettings() {
+    protected JSONObject getNewSettings() {
 
         JSONObject settings = new JSONObject();
         try {
@@ -255,11 +248,11 @@ public class Settings {
         public void run() {
 
             try {
-                Document githubRequestLatestVersion = Jsoup.connect("https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/src/main/resources/meta.json").get();
+                Document githubRequestLatestVersion = Jsoup.connect(Resources.remoteVersionUrl).get();
                 JSONObject jsonData = new JSONObject(githubRequestLatestVersion.text());
                 Platform.runLater(() -> {
                     try {
-                        latestVersion.setText(jsonData.get("version").toString());
+                        latestVersion.setText(jsonData.getString("version"));
                         latestVersionContainer.getChildren().add(
                                 new ImageView(
                                     new Image(
@@ -389,7 +382,9 @@ public class Settings {
                             true
                     ));
 
-                    Tooltip.install(warningImage, new Tooltip("The program does not have permissions to write to this directory, please restart with elevated permissions or select a different directory."));
+                    Tooltip.install(warningImage,
+                            new Tooltip("The program does not have permissions to write to this directory, please restart with elevated permissions or select a different directory.")
+                    );
 
                     // Warn user
                     Platform.runLater(() ->

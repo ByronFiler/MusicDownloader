@@ -16,10 +16,9 @@ class gzipTest {
     void decompressFile() {
 
         try {
-
             Assert.assertEquals(
-                    1636506029,
-                    Gzip.decompressFile(new File("tests/resources/downloads0.gz")).hashCode()
+                    817978763,
+                    Gzip.decompressFile(new File("src/test/resources/downloads0.gz")).hashCode()
             );
 
         } catch (IOException e) {
@@ -33,9 +32,14 @@ class gzipTest {
 
         try {
 
-            Gzip.compressData(new ByteArrayInputStream("Example test".getBytes()), new File("tests/resources/test.gz"));
-            String md5Hash = DigestUtils.md5Hex(Files.newInputStream(Paths.get("tests/resources/test.gz")));
-            Files.delete(Paths.get("tests/resources/test.gz"));
+            Gzip.compressData(
+                    new ByteArrayInputStream("Example test".getBytes()),
+                    new File("src/test/resources/test.gz")
+            );
+            String md5Hash = DigestUtils.md5Hex(Files.newInputStream(Paths.get("src/test/resources/test.gz")));
+            Files.delete(Paths.get("src/test/resources/test.gz"));
+
+            System.out.println(md5Hash);
 
             Assert.assertEquals(
                     "860c806c3db0f3540d99a7be8366442f",
