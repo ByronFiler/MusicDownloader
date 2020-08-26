@@ -37,7 +37,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.ConcurrentModificationException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -172,41 +171,35 @@ public class Downloads {
                                         )
                                 ) {
                                     for (int i = 0; i < Model.getInstance().download.getDownloadObject().getJSONArray("songs").length(); i++) {
-
                                         int workingCounter = 0;
-                                        try {
-                                            for (BorderPane element : currentDownloadsView) {
-                                                try {
-                                                    if (workingCounter == i && Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed") && element.getId().equals("working"))
-                                                        Platform.runLater(() -> {
-                                                            try {
-                                                                // TODO: Dear fucking you lord you fucking idiot fix this
-                                                                ((HBox) element.getRight()).getChildren().setAll(
-                                                                        new ImageView(
-                                                                                new Image(
-                                                                                        Main.class.getResource("resources/img/tick.png").toURI().toString(),
-                                                                                        25,
-                                                                                        25,
-                                                                                        true,
-                                                                                        true
-                                                                                )
+                                        for (BorderPane element : currentDownloadsView) {
+                                            if (workingCounter == i && Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed") && element.getId().equals("working"))
+                                                Platform.runLater(() -> {
+                                                    try {
+                                                        ((HBox) element.getRight()).getChildren().setAll(
+                                                                new ImageView(
+                                                                        new Image(
+                                                                                Main.class.getResource("resources/img/tick.png").toURI().toString(),
+                                                                                25,
+                                                                                25,
+                                                                                true,
+                                                                                true
                                                                         )
-                                                                );
-                                                                element.setId(null);
-                                                            } catch (URISyntaxException ignored) {}
-                                                        });
-                                                } catch (NullPointerException ignored) {}
-                                                workingCounter++;
-                                            }
-                                        } catch (ConcurrentModificationException ignored) {}
+                                                                )
+                                                        );
+                                                        element.setId("completed");
+                                                    } catch (URISyntaxException e) {
+                                                        Debug.warn("Failed to load tick for view.");
+                                                    }
+                                                });
+                                            workingCounter++;
+                                        }
                                     }
 
                                     double completed = 0;
-                                    for (int i = 0; i < Model.getInstance().download.getDownloadObject().getJSONArray("songs").length(); i++) {
-                                        if (Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed")) {
+                                    for (int i = 0; i < Model.getInstance().download.getDownloadObject().getJSONArray("songs").length(); i++)
+                                        if (Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
                                             completed++;
-                                        }
-                                    }
 
                                     // Calculate time remaining and update
 
@@ -217,7 +210,6 @@ public class Downloads {
                                         Platform.runLater(() -> ((ProgressIndicator) ((HBox) currentDownloadsViewAlbums.get(0).getRight()).getChildren().get(0)).setProgress(percentComplete));
 
                                 } else {
-
                                     Debug.trace("Current download completed, switching to next item in queue.");
 
                                     // Download Object has changed, update the model accordingly
