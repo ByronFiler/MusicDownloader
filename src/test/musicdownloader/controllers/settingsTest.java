@@ -45,9 +45,7 @@ class settingsTest {
 
     @Test
     void testInitialisation() {
-
-        musicdownloader.controllers.Settings settings = new FXMLLoader(Main.class.getResource("resources/fxml/settings.fxml")).getController();
-
+        new FXMLLoader(Main.class.getResource("resources/fxml/settings.fxml"));
     }
 
 }

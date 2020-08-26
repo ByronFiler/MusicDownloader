@@ -1,10 +1,5 @@
 package musicdownloader.controllers;
 
-import musicdownloader.Main;
-import musicdownloader.model.Model;
-import musicdownloader.utils.app.Debug;
-import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.fx.Result;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -26,6 +21,11 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
+import musicdownloader.Main;
+import musicdownloader.model.Model;
+import musicdownloader.utils.app.Debug;
+import musicdownloader.utils.app.Resources;
+import musicdownloader.utils.fx.Result;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -112,10 +112,8 @@ public class Downloads {
 
                     generateCurrent(downloadObject[0]);
 
-                    if (albumViewSelectorWrapper.isVisible())
-                        eventsViewTable.getItems().addAll(currentDownloadsViewAlbums);
-                    else
-                        eventsViewTable.getItems().addAll(currentDownloadsView);
+                    if (albumViewSelectorWrapper.isVisible()) eventsViewTable.getItems().addAll(currentDownloadsViewAlbums);
+                    else eventsViewTable.getItems().addAll(currentDownloadsView);
 
                 } catch (JSONException e) {
                     Debug.error("Error parsing JSON for download object.", e);
@@ -127,7 +125,6 @@ public class Downloads {
                     Debug.error("Failed to load metadata for rendering albums on the fly.", e);
                 }
                 // TimerTask to update and redraw if necessary
-                // TODO: This spawns excessive instances, should kill self when necessary
                 uiUpdater.schedule(new TimerTask() {
 
                     @Override
@@ -135,6 +132,7 @@ public class Downloads {
 
                         // Only handles a single item queued, issue
                         if (Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString())) {
+
                             Debug.trace("All pending downloads completed.");
 
                             Platform.runLater(() -> {
@@ -179,9 +177,10 @@ public class Downloads {
                                         try {
                                             for (BorderPane element : currentDownloadsView) {
                                                 try {
-                                                    if (workingCounter == i && Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
+                                                    if (workingCounter == i && Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed") && element.getId().equals("working"))
                                                         Platform.runLater(() -> {
                                                             try {
+                                                                // TODO: Dear fucking you lord you fucking idiot fix this
                                                                 ((HBox) element.getRight()).getChildren().setAll(
                                                                         new ImageView(
                                                                                 new Image(
@@ -193,6 +192,7 @@ public class Downloads {
                                                                                 )
                                                                         )
                                                                 );
+                                                                element.setId(null);
                                                             } catch (URISyntaxException ignored) {}
                                                         });
                                                 } catch (NullPointerException ignored) {}
@@ -402,8 +402,8 @@ public class Downloads {
             if (downloadObject.getJSONArray("songs").getJSONObject(i).getBoolean("completed"))
                 currentDownloadViewSongBuilder.setCompleted();
 
-            else
-                currentDownloadViewSongBuilder.setCurrentlyDownloading(-1);
+
+            else currentDownloadViewSongBuilder.setCurrentlyDownloading(-1);
 
             currentDownloadsView.add(currentDownloadViewSongBuilder.getView());
 
@@ -694,11 +694,11 @@ public class Downloads {
             ProgressIndicator progressView = new ProgressIndicator(progress);
 
             // Hide the % complete message under it
-            if (progress > 0)
-                progressView.getStyleClass().add("progress-indicator-percentage");
+            if (progress > 0) progressView.getStyleClass().add("progress-indicator-percentage");
 
             right.getChildren().add(progressView);
             view.setRight(right);
+            view.setId("working");
         }
 
         public void setCompleted() {
@@ -781,7 +781,7 @@ public class Downloads {
                                                 String.format(
                                                         "%s/%s.%s",
                                                         downloadObject.getJSONObject("metadata").getString("directory"),
-                                                        downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
+                                                        downloadObject.getJSONArray("songs").getJSONObject(i).getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_"),
                                                         extension
                                                 )
                                         )
@@ -851,7 +851,7 @@ public class Downloads {
                             String.format(
                                     "%s/%s.%s",
                                     downloadObject.getJSONObject("metadata").getString("directory"),
-                                    downloadObject.getJSONArray("songs").getJSONObject(songIndex).getString("title"),
+                                    downloadObject.getJSONArray("songs").getJSONObject(songIndex).getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_"),
                                     extension
                             )
                     );
