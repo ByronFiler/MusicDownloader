@@ -168,7 +168,6 @@ public class Search {
                                     searcher.getSongExternalInformation();
                                 }
 
-
                                 Model.getInstance().search.setSearchResults(searcher.buildView().toArray(new BorderPane[0]));
                                 Model.getInstance().search.setSearchResultsJson(searcher.getResults());
 
@@ -427,4 +426,5 @@ public class Search {
         }
 
     }
+
 }

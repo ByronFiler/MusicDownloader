@@ -1,7 +1,5 @@
 package musicdownloader.utils.fx;
 
-import musicdownloader.Main;
-import musicdownloader.utils.app.Debug;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -10,6 +8,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import musicdownloader.Main;
+import musicdownloader.utils.app.Debug;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -18,7 +18,7 @@ import java.nio.file.Paths;
 
 public class Result {
 
-    protected final BorderPane view;
+    protected BorderPane view;
 
     protected final HBox left;
     protected final ImageView albumArt;
@@ -107,7 +107,7 @@ public class Result {
 
     }
 
-    private void fetchRemoteResource(String remoteArtResource) {
+    protected void fetchRemoteResource(String remoteArtResource) {
         Image albumArtImage = new Image(
                 remoteArtResource,
                 85,

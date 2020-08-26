@@ -14,8 +14,7 @@ import javafx.scene.control.*;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -25,6 +24,7 @@ import musicdownloader.Main;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
+import musicdownloader.utils.fx.Result;
 import musicdownloader.utils.net.db.sites.Allmusic;
 import musicdownloader.utils.net.source.sites.Youtube;
 import org.apache.commons.io.FileUtils;
@@ -36,7 +36,6 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -81,15 +80,41 @@ public class Results {
 
     private generateQueueItem queueAdder;
     private String loadedQuery;
+    private boolean modifiedResults;
+    private JSONObject viewData;
 
     @FXML
     private void initialize() {
 
         // Set the table data
-        if (Model.getInstance().search.getSearchResults().length > 0)
-            results.getItems().setAll(Model.getInstance().search.getSearchResults());
+        try {
+            viewData = Model.getInstance().search.getSearchResultsJson();
+            JSONArray songs = Model.getInstance().search.getSearchResultsJson().getJSONArray("songs");
+            if (songs.length() > 0) {
+                searchResult result;
+                for (int i = 0; i < songs.length(); i++) {
+                    result = new searchResult(
+                            songs.getJSONObject(i).getJSONObject("view").getString("art").substring(6),
+                            songs.getJSONObject(i).getJSONObject("data").getString("art"),
+                            Model.getInstance().settings.getSettingBool("data_saver"),
+                            songs.getJSONObject(i).getJSONObject("view").getString("title"),
+                            songs.getJSONObject(i).getJSONObject("view").getString("artist"),
+                            songs.getJSONObject(i).getJSONObject("data").getBoolean("album"),
+                            songs.getJSONObject(i).getJSONObject("data").getString(
+                                    songs.getJSONObject(i).getJSONObject("data").getBoolean("album") ?
+                                            "allmusicAlbumId" : "allmusicSongId"
+                            ),
+                            songs.getJSONObject(i).getJSONObject("view").getString("meta")
+                    );
+                    results.getItems().add(result.getView());
 
-        else defaultView("No Search Results Found");
+                }
+
+
+            } else defaultView("No Search Results Found");
+        } catch (JSONException e) {
+            Debug.error("Failed to load search results.", e);
+        }
 
         // Set the search box data
         try {
@@ -179,38 +204,10 @@ public class Results {
     }
 
     @FXML
-    public void downloadButtonCheck() {
+    public void downloadButtonCheck(MouseEvent e) {
 
-        // Verify executable
-        try {
-            if (queueAdder.isDead()) throw new NullPointerException();
-        } catch (NullPointerException ignored) {
-
-            for (BorderPane searchResult: results.getItems()) searchResult.getStyleClass().setAll("result");
-            try {
-
-                HBox tickContainer = new HBox(new ImageView(
-                        new Image(
-                                Main.class.getResource("resources/img/tick.png").toURI().toString(),
-                                25,
-                                25,
-                                true,
-                                true
-                        )
-                ));
-                tickContainer.setAlignment(Pos.CENTER);
-                tickContainer.setPadding(new Insets(0, 5, 0, 0));
-
-                // results.getSelectionModel().getSelectedItems().get(0).setRight(tickContainer);
-
-                results.getSelectionModel().getSelectedItems().get(0).getStyleClass().setAll("result_selected");
-
-            } catch (URISyntaxException e) {
-                Debug.error("Failed to set tick to mark selected element.", e);
-            }
-
-            Platform.runLater(() -> download.setDisable(results.getSelectionModel().getSelectedIndex() == -1));
-        }
+        if (e.getButton() == MouseButton.PRIMARY)
+            downloadButtonCheckInternal();
 
     }
 
@@ -232,7 +229,7 @@ public class Results {
 
     @FXML
     public void newQuery(KeyEvent e) {
-        if (e.getCode() == KeyCode.ENTER && !searchField.getText().equals(loadedQuery)) {
+        if (e.getCode() == KeyCode.ENTER && (!searchField.getText().equals(loadedQuery) || modifiedResults)) {
 
             if (searchField.getText().length() >= 3) {
 
@@ -310,6 +307,18 @@ public class Results {
 
         mainContainer.setCenter(defaultInfoContainer);
 
+    }
+
+    private void downloadButtonCheckInternal() {
+        try {
+            if (queueAdder.isDead()) throw new NullPointerException();
+        } catch (NullPointerException ignored) {
+
+            for (BorderPane searchResult: results.getItems()) searchResult.getStyleClass().setAll("result");
+            results.getSelectionModel().getSelectedItems().get(0).getStyleClass().setAll("result_selected");
+
+            Platform.runLater(() -> download.setDisable(results.getSelectionModel().getSelectedIndex() == -1));
+        }
     }
 
     // TODO: Add network error handling
@@ -564,7 +573,7 @@ public class Results {
                 queueAdditionProgress.setVisible(false);
 
                 download.setText("Download");
-                downloadButtonCheck();
+                downloadButtonCheckInternal();
 
                 Label linkPart0;
                 if (Model.getInstance().download.getDownloadQueue().length() > 0)
@@ -664,5 +673,72 @@ public class Results {
         }
     }
 
+    class searchResult extends Result {
 
+        public searchResult(String localArtResource, String remoteArtResource, boolean forceLoadRemote, String title, String artist, boolean album, String id, String metadata) {
+            super(localArtResource, remoteArtResource, forceLoadRemote, title, artist);
+            setSubtext(metadata);
+
+
+            ContextMenu contextMenu = new ContextMenu();
+
+            MenuItem hide = new MenuItem("Hide");
+            hide.setOnAction(e -> {
+                Results.this.results.getItems().remove(view);
+                Results.this.modifiedResults = true;
+            });
+
+            contextMenu.getItems().setAll(hide);
+
+            view.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
+                contextMenu.show(view, event.getScreenX(), event.getScreenY());
+                event.consume();
+            });
+            view.addEventHandler(MouseEvent.MOUSE_PRESSED, event -> contextMenu.hide());
+
+            if (Model.getInstance().settings.getSettingBool("data_saver")) {
+                MenuItem informationRetrieval = new MenuItem("Retrieve Additional Information");
+                informationRetrieval.setOnAction(e -> {
+                    Thread externalInformationRetriever = new Thread(() -> {
+
+                        try {
+                            if (album) {
+
+                                // Data is already stored
+                                fetchRemoteResource(viewData.getJSONArray("songs").getJSONObject(Results.this.results.getItems().indexOf(view)).getJSONObject("data").getString("art"));
+
+                            } else {
+
+                                Allmusic.song songParser = new Allmusic.song(id);
+                                songParser.load();
+
+                                StringBuilder subtext = new StringBuilder("Song");
+                                if (!songParser.getYear().isEmpty()) {
+                                    subtext.append(" | ").append(songParser.getYear());
+                                }
+                                if (!songParser.getGenre().isEmpty()) {
+                                    subtext.append(" | ").append(songParser.getGenre());
+                                }
+
+                                Platform.runLater(() -> {
+                                    fetchRemoteResource(songParser.getAlbumArt());
+                                    setSubtext(subtext.toString());
+                                });
+
+                            }
+                            contextMenu.getItems().setAll(hide);
+                        } catch (JSONException er) {
+                            Debug.error("Failed to get data to extract additional information.", er);
+                        } catch (IOException er) {
+                            Debug.warn("Connection issue.");
+                        }
+
+                    }, "external-information-retriever");
+                    externalInformationRetriever.setDaemon(true);
+                    externalInformationRetriever.start();
+                });
+                contextMenu.getItems().add(informationRetrieval);
+            }
+        }
+    }
 }
