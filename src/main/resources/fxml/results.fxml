@@ -8,60 +8,53 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<?import javafx.scene.text.Text?>
 
-<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" styleClass="root" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="musicdownloader.controllers.Results">
-   <BorderPane prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="30.0">
+<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" styleClass="root" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="musicdownloader.controllers.Results">
+   <BorderPane fx:id="mainContainer" prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="30.0">
       <bottom>
-         <BorderPane minHeight="40.0" prefHeight="40.0" prefWidth="540.0" BorderPane.alignment="CENTER">
+         <BorderPane fx:id="footer" minHeight="40.0" prefWidth="540.0" BorderPane.alignment="CENTER">
             <right>
-               <Button fx:id="cancel" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="120.0" styleClass="button, back_button" text="Back" BorderPane.alignment="CENTER" />
+               <Button fx:id="cancel" minHeight="40.0" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="120.0" styleClass="button, back_button" text="Back" BorderPane.alignment="CENTER">
+                  <BorderPane.margin>
+                     <Insets top="10.0" />
+                  </BorderPane.margin></Button>
             </right>
             <left>
-               <HBox fx:id="downloadButtonContainer" prefHeight="100.0" prefWidth="176.0" BorderPane.alignment="CENTER">
-                  <Button fx:id="download" disable="true" mnemonicParsing="false" onMouseClicked="#download" prefHeight="40.0" prefWidth="120.0" styleClass="button, confirm_button" text="Download" />
+               <HBox fx:id="downloadButtonContainer" maxHeight="40.0" prefHeight="100.0" spacing="5.0" BorderPane.alignment="CENTER">
+                  <Button fx:id="download" disable="true" minHeight="40.0" mnemonicParsing="false" onMouseClicked="#download" prefHeight="40.0" prefWidth="120.0" styleClass="button, confirm_button" text="Download" />
 
-                  <ProgressIndicator fx:id="queueAdditionProgress" visible="false" />
+                  <ProgressIndicator fx:id="queueAdditionProgress" maxHeight="40.0" maxWidth="40.0" prefHeight="40.0" prefWidth="40.0" visible="false" />
+                  <padding>
+                     <Insets top="10.0" />
+                  </padding>
                </HBox>
             </left>
+            <BorderPane.margin>
+               <Insets top="10.0" />
+            </BorderPane.margin>
          </BorderPane>
       </bottom>
-      <center>
-         <VBox fx:id="centerContainer" alignment="CENTER" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
-            <BorderPane.margin>
-               <Insets />
-            </BorderPane.margin>
-            <padding>
-               <Insets bottom="50.0" />
-            </padding>
-            <ListView fx:id="results" onMouseClicked="#downloadButtonCheck" prefHeight="679.0" prefWidth="540.0" styleClass="table" VBox.vgrow="ALWAYS" />
-         </VBox>
-      </center>
       <top>
-         <VBox prefHeight="66.0" prefWidth="540.0" BorderPane.alignment="CENTER">
+         <HBox maxHeight="40.0" minWidth="40.0" prefWidth="412.0" spacing="5.0" BorderPane.alignment="CENTER">
             <children>
-               <HBox maxHeight="40.0" minWidth="40.0" prefWidth="412.0" spacing="5.0">
-                  <children>
-                     <TextField fx:id="searchField" alignment="BASELINE_LEFT" minHeight="40.0" onKeyPressed="#newQuery" prefWidth="480.0" promptText="Search for music." styleClass="searchBox">
-                        <font>
-                           <Font name="Arial Black" size="18.0" />
-                        </font>
-                        <HBox.margin>
-                           <Insets />
-                        </HBox.margin>
-                     </TextField>
-                     <ProgressIndicator fx:id="loadingIndicator" maxHeight="56.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" prefHeight="56.0" prefWidth="25.0" visible="false" />
-                  </children>
-               </HBox>
-               <Text fx:id="errorMessage" fill="RED" strokeType="OUTSIDE" strokeWidth="0.0" text="Error Message" visible="false">
+               <TextField fx:id="searchField" alignment="BASELINE_LEFT" minHeight="40.0" onKeyPressed="#newQuery" prefWidth="480.0" promptText="Search for music." styleClass="searchBox">
                   <font>
-                     <Font name="Arial" size="16.0" />
+                     <Font name="Arial Black" size="18.0" />
                   </font>
-               </Text>
+                  <HBox.margin>
+                     <Insets />
+                  </HBox.margin>
+               </TextField>
+               <ProgressIndicator fx:id="loadingIndicator" maxHeight="56.0" maxWidth="25.0" minHeight="25.0" minWidth="25.0" prefHeight="56.0" prefWidth="25.0" visible="false" />
             </children>
-         </VBox>
+            <padding>
+               <Insets bottom="10.0" />
+            </padding>
+         </HBox>
       </top>
+      <center>
+         <ListView fx:id="results" onMouseClicked="#downloadButtonCheck" prefHeight="679.0" prefWidth="540.0" styleClass="table" BorderPane.alignment="CENTER" />
+      </center>
    </BorderPane>
 </AnchorPane>

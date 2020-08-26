@@ -11,6 +11,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -19,7 +20,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import musicdownloader.Main;
 import musicdownloader.model.Model;
@@ -29,6 +29,7 @@ import musicdownloader.utils.net.db.sites.Allmusic;
 import musicdownloader.utils.net.source.sites.Youtube;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,7 +40,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /*
 TODO
@@ -55,18 +58,18 @@ public class Results {
 
     @FXML
     private AnchorPane root;
-
     @FXML
-    private VBox centerContainer;
+    private BorderPane mainContainer;
+
     @FXML
     private TextField searchField;
     @FXML
     private ProgressIndicator loadingIndicator;
     @FXML
-    private Text errorMessage;
-    @FXML
     private ListView<BorderPane> results;
 
+    @FXML
+    private BorderPane footer;
     @FXML
     private HBox downloadButtonContainer;
     @FXML
@@ -83,7 +86,10 @@ public class Results {
     private void initialize() {
 
         // Set the table data
-        results.getItems().setAll(Model.getInstance().search.getSearchResults());
+        if (Model.getInstance().search.getSearchResults().length > 0)
+            results.getItems().setAll(Model.getInstance().search.getSearchResults());
+
+        else defaultView("No Search Results Found");
 
         // Set the search box data
         try {
@@ -115,6 +121,7 @@ public class Results {
             new ProcessBuilder(Resources.getInstance().getYoutubeDlExecutable(), "--version").start();
             new ProcessBuilder(Resources.getInstance().getFfmpegExecutable(), "--version").start();
         } catch (IOException ignored) {
+
             downloadButtonContainer.getChildren().setAll(
                     download,
                     new ImageView(
@@ -142,7 +149,7 @@ public class Results {
         try {
             queueAdditionProgress.setVisible(true);
 
-            download.setText("Adding to queue...");
+            download.setText("Queueing");
             download.setDisable(true);
 
             cancel.setText("Cancel");
@@ -237,7 +244,7 @@ public class Results {
                     try {
                         search.query(Model.getInstance().settings.getSettingBool("data_saver"));
                     } catch (IOException er) {
-                        error("Failed to load results, please check connection and retry!");
+                        defaultView("Connection issue detected, please verify connection and retry.");
                     }
                     try {
                         if (search.getResults().getJSONArray("songs").length() > 0) {
@@ -248,14 +255,20 @@ public class Results {
                                 Model.getInstance().search.setSearchResultsJson(search.getResults());
                                 Model.getInstance().search.setSearchResults(search.buildView().toArray(new BorderPane[0]));
 
-
+                                mainContainer.setCenter(results);
                                 results.getItems().setAll(Model.getInstance().search.getSearchResults());
                             });
                         } else {
-                            Platform.runLater(() -> error("No Results Found"));
+                            Platform.runLater(() -> {
+                                defaultView("No Search Results Found");
+                                loadingIndicator.setVisible(false);
+                            });
                         }
                     } catch (JSONException er) {
-                        Debug.error("Bad search response given.", er);
+                        Platform.runLater(() -> {
+                            defaultView("Connection issue detected, please verify connection and retry.");
+                            loadingIndicator.setVisible(false);
+                        });
                     }
                 }, "results-search");
                 resultsSearch.setDaemon(true);
@@ -264,23 +277,38 @@ public class Results {
             } else {
                 // Inform user no results
                 Platform.runLater(() -> {
-                    loadingIndicator.setVisible(true);
-                    error("No Results Found");
+                    loadingIndicator.setVisible(false);
+                    defaultView("No Search Results Found");
                 });
             }
         }
 
     }
 
-    private void error(String message) {
+    private void defaultView(String message) {
 
-        errorMessage.setText(message);
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                Platform.runLater(() -> errorMessage.setVisible(false));
-            }
-        }, 200, 0);
+        Label defaultMessage = new Label(message);
+        defaultMessage.getStyleClass().add("sub_title1");
+
+        ImageView iconImage = new ImageView(
+                new Image(
+                        Main.class.getResourceAsStream("resources/img/song_default.png"),
+                        50,
+                        50,
+                        true,
+                        true
+                )
+        );
+
+
+        if (Model.getInstance().settings.getSettingBool("dark_theme"))
+            iconImage.setEffect(new ColorAdjust(0, 0, 1, 0));
+
+        VBox defaultInfoContainer = new VBox(defaultMessage, iconImage);
+        defaultInfoContainer.setAlignment(Pos.CENTER);
+        defaultInfoContainer.setPadding(new Insets(0, 0, 40, 0));
+
+        mainContainer.setCenter(defaultInfoContainer);
 
     }
 
@@ -348,7 +376,7 @@ public class Results {
 
         }
 
-        @NotNull
+        @Nullable
         private synchronized String generateNewSongId(JSONArray downloadItems) {
             String id = Double.toString(Math.random()).split("\\.")[1];
 
@@ -562,11 +590,7 @@ public class Results {
                 });
                 linkPart1.getStyleClass().add("sub_text");
 
-                Platform.runLater(() -> {
-                    centerContainer.setPadding(new Insets(0, 0, 20, 0));
-                    centerContainer.setSpacing(20);
-                    centerContainer.getChildren().setAll(results, new HBox(linkPart0, linkPart1));
-                });
+                Platform.runLater(() -> footer.setTop(new HBox(linkPart0, linkPart1)));
 
                 cancel.setText("Back");
                 cancel.getStyleClass().set(1, "back_button");
