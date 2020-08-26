@@ -288,38 +288,44 @@ public class Search {
                 Allmusic.search autocompleteSearch = new Allmusic.search(query);
                 autocompleteSearch.query(true);
                 JSONArray autocompleteProcessedResults = autocompleteSearch.getSearchResultsData();
+
+                ArrayList<String> viewResultTitles = new ArrayList<>();
                 ArrayList<HBox> autocompleteResultsView = new ArrayList<>();
 
                 try {
                     for (int i = 0; i < autocompleteProcessedResults.length(); i++) {
-                        Label resultTitle = new Label(autocompleteProcessedResults.getJSONObject(i).getJSONObject("view").getString("title"));
-                        resultTitle.getStyleClass().add("sub_text2");
 
-                        ImageView resultIcon = new ImageView(
-                                new Image(
-                                        autocompleteProcessedResults.getJSONObject(i).getJSONObject("view").getString("art"),
-                                        25,
-                                        25,
-                                        true,
-                                        true
-                                )
-                        );
+                        if (!viewResultTitles.contains(autocompleteProcessedResults.getJSONObject(i).getJSONObject("view").getString("title"))) {
+                            viewResultTitles.add(autocompleteProcessedResults.getJSONObject(i).getJSONObject("view").getString("title"));
 
-                        if (Model.getInstance().settings.getSettingBool("dark_theme"))
-                            resultIcon.setEffect(new ColorAdjust(0, 0, 1, 0));
+                            Label resultTitle = new Label(autocompleteProcessedResults.getJSONObject(i).getJSONObject("view").getString("title"));
+                            resultTitle.getStyleClass().add("sub_text2");
 
-                        HBox autocompleteResultView = new HBox(10, resultIcon, resultTitle);
-                        int finalI = i;
-                        autocompleteResultView.setOnMouseClicked(e -> {
-                            try {
-                                search.setText(autocompleteProcessedResults.getJSONObject(finalI).getJSONObject("view").getString("title"));
-                            } catch (JSONException er) {
-                                Debug.error("Failed to set autocomplete result.", er);
-                            }
-                        });
-                        autocompleteResultView.setCursor(Cursor.HAND);
+                            ImageView resultIcon = new ImageView(
+                                    new Image(
+                                            autocompleteProcessedResults.getJSONObject(i).getJSONObject("view").getString("art"),
+                                            25,
+                                            25,
+                                            true,
+                                            true
+                                    )
+                            );
 
-                        autocompleteResultsView.add(autocompleteResultView);
+                            if (Model.getInstance().settings.getSettingBool("dark_theme"))
+                                resultIcon.setEffect(new ColorAdjust(0, 0, 1, 0));
+
+                            HBox autocompleteResultView = new HBox(10, resultIcon, resultTitle);
+                            int finalI = i;
+                            autocompleteResultView.setOnMouseClicked(e -> {
+                                try {
+                                    search.setText(autocompleteProcessedResults.getJSONObject(finalI).getJSONObject("view").getString("title"));
+                                } catch (JSONException er) {
+                                    Debug.warn("Failed to set autocomplete result.");
+                                }
+                            });
+                            autocompleteResultView.setCursor(Cursor.HAND);
+                            autocompleteResultsView.add(autocompleteResultView);
+                        }
                     }
                 } catch (JSONException e) {
                     Debug.error("Error processing JSON to generate autocomplete results.", e);
