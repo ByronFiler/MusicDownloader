@@ -42,7 +42,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
@@ -90,8 +89,6 @@ public class Results {
 
     @FXML
     private void initialize() {
-
-        System.out.println(Arrays.toString(Model.getInstance().search.getSearchResults()));
 
         // Set the table data
         try {
@@ -172,9 +169,6 @@ public class Results {
             cancel.setOnMouseClicked(e -> queueAdder.kill());
 
             // Selected Item -> Selected Item Data -> Select Item Data in correctly positioned array -> JSON Data needed -> Spawn thread with data to generate a queue item
-
-            System.out.println(results.getSelectionModel().getSelectedItem());
-            System.out.println(Arrays.toString(Model.getInstance().search.getSearchResults()));
             queueAdder = new generateQueueItem(
                     Model
                             .getInstance()

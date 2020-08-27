@@ -56,6 +56,8 @@ public class Result {
                             true
                     )
             );
+            albumArt.setFitHeight(85);
+            albumArt.setFitWidth(85);
 
         } else {
             if (forceLoadRemote) fetchRemoteResource(remoteArtResource);

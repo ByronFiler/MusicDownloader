@@ -308,6 +308,11 @@ public class Downloads {
 
         if (currentDownloadsView.size() > 0 || downloadHistoriesView.size() > 0) albumsView();
         else defaultView();
+
+        ImageView image = ((ImageView) ((BorderPane) ((HBox) downloadHistoriesViewAlbums.get(0).getLeft()).getChildren().get(0)).getChildren().get(0));
+
+        System.out.println( image.getImage().getHeight() - image.getImage().getWidth());
+
         Debug.trace("Initialized downloads view.");
     }
 
@@ -476,30 +481,31 @@ public class Downloads {
     }
 
     private void updateViewSelection() {
-        switch (eventViewSelector.getSelectionModel().getSelectedItem()) {
+        if (eventViewSelector.isVisible())
+            switch (eventViewSelector.getSelectionModel().getSelectedItem()) {
 
-            case "All":
-                eventsViewTable.getItems().clear();
-                eventsViewTable.getItems().addAll(currentDownloadsViewAlbums);
-                eventsViewTable.getItems().addAll(plannedDownloadsViewAlbums);
-                eventsViewTable.getItems().addAll(downloadHistoriesViewAlbums);
-                break;
+                case "All":
+                    eventsViewTable.getItems().clear();
+                    eventsViewTable.getItems().addAll(currentDownloadsViewAlbums);
+                    eventsViewTable.getItems().addAll(plannedDownloadsViewAlbums);
+                    eventsViewTable.getItems().addAll(downloadHistoriesViewAlbums);
+                    break;
 
-            case "Currently Downloading":
-                eventsViewTable.getItems().setAll(currentDownloadsViewAlbums);
-                break;
+                case "Currently Downloading":
+                    eventsViewTable.getItems().setAll(currentDownloadsViewAlbums);
+                    break;
 
-            case "Download Queue":
-                eventsViewTable.getItems().setAll(plannedDownloadsViewAlbums);
-                break;
+                case "Download Queue":
+                    eventsViewTable.getItems().setAll(plannedDownloadsViewAlbums);
+                    break;
 
-            case "Download History":
-                eventsViewTable.getItems().setAll(downloadHistoriesViewAlbums);
-                break;
+                case "Download History":
+                    eventsViewTable.getItems().setAll(downloadHistoriesViewAlbums);
+                    break;
 
-            default:
-                Debug.error("Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
-        }
+                default:
+                    Debug.error("Unknown combobox option selected: " + eventViewSelector.getSelectionModel().getSelectedItem(), null);
+            }
     }
 
     private void defaultView() {
