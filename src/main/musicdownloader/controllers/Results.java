@@ -1,6 +1,7 @@
 package musicdownloader.controllers;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -19,7 +20,10 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import musicdownloader.Main;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
@@ -37,6 +41,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -80,6 +85,8 @@ public class Results {
     private String loadedQuery;
     private boolean modifiedResults;
     private JSONObject viewData;
+
+    private final ArrayList<searchResult.MediaController> mediaPlayers = new ArrayList<>();
 
     @FXML
     private void initialize() {
@@ -660,6 +667,15 @@ public class Results {
 
     class searchResult extends Result {
 
+        private final JSONObject data;
+
+        private final ContextMenu contextMenu;
+
+        private MenuItem getAlbumSongs;
+        private MenuItem hideAlbumSongs;
+
+        private ArrayList<MediaController> internalMediaControllers = new ArrayList<>();
+
         public searchResult (JSONObject data) throws JSONException {
             super(
                     null,
@@ -670,7 +686,9 @@ public class Results {
             );
             setSubtext(data.getJSONObject("view").getString("meta"));
 
-            ContextMenu contextMenu = new ContextMenu();
+            this.data = data;
+
+            contextMenu = new ContextMenu();
 
             MenuItem hide = new MenuItem("Hide");
             hide.setOnAction(e -> {
@@ -680,10 +698,7 @@ public class Results {
 
             contextMenu.getItems().setAll(hide);
 
-            view.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
-                contextMenu.show(view, event.getScreenX(), event.getScreenY());
-                event.consume();
-            });
+            view.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> { contextMenu.show(view, event.getScreenX(), event.getScreenY());event.consume(); });
             view.addEventHandler(MouseEvent.MOUSE_PRESSED, event -> contextMenu.hide());
 
             if (Model.getInstance().settings.getSettingBool("data_saver")) {
@@ -729,9 +744,8 @@ public class Results {
                                     fetchRemoteResource(songParser.getAlbumArt());
                                     setSubtext(subtext.toString());
                                 });
-
                             }
-                            contextMenu.getItems().setAll(hide);
+                            Platform.runLater(() -> contextMenu.getItems().remove(informationRetrieval));
                         } catch (JSONException er) {
                             Debug.error("Failed to get data to extract additional information.", er);
                         } catch (IOException er) {
@@ -743,6 +757,190 @@ public class Results {
                     externalInformationRetriever.start();
                 });
                 contextMenu.getItems().add(informationRetrieval);
+            }
+
+            if (data.getJSONObject("data").getBoolean("album")) {
+                hideAlbumSongs = new MenuItem("Hide Songs");
+                getAlbumSongs = new MenuItem("View Songs");
+
+                hideAlbumSongs.setOnAction(this::hideResult);
+                getAlbumSongs.setOnAction(this::getAlbumSongs);
+
+                contextMenu.getItems().add(getAlbumSongs);
+            }
+        }
+
+        private void hideResult(ActionEvent event) {
+
+            view.setBottom(null);
+            contextMenu.getItems().remove(hideAlbumSongs);
+            contextMenu.getItems().add(getAlbumSongs);
+            internalMediaControllers.forEach(Results.this.mediaPlayers::remove);
+
+        }
+
+        private void getAlbumSongs(ActionEvent event) {
+
+            try {
+                Allmusic.album albumParser = new Allmusic.album(data.getJSONObject("data").getString("allmusicAlbumId"));
+                Thread albumLoader = new Thread(() -> {
+                    try {
+                        albumParser.load();
+
+                        VBox songResults = new VBox();
+
+                        for (Allmusic.album.song song: albumParser.getSongs()) {
+
+                            MediaController songController = new MediaController(song);
+                            mediaPlayers.add(songController);
+                            internalMediaControllers.add(songController);
+                            songResults.getChildren().add(songController.getView());
+
+                        }
+
+                        Platform.runLater(() -> view.setBottom(songResults));
+                        contextMenu.getItems().remove(getAlbumSongs);
+                        contextMenu.getItems().add(hideAlbumSongs);
+
+                    } catch (IOException er) {
+                        Debug.warn("Connection failure detected.");
+                    }
+                }, "album-loader");
+                albumLoader.setDaemon(true);
+                albumLoader.start();
+
+            } catch (JSONException er) {
+                Debug.error("lol", er);
+            }
+
+        }
+
+        protected class MediaController {
+
+            private BorderPane view;
+            private final Allmusic.album.song song;
+            private final MediaPlayer mp;
+
+            private final HBox playIconContainer = new HBox();
+            private final ImageView playIcon = new ImageView(
+                    new Image(
+                            Main.class.getResourceAsStream("resources/img/play.png"),
+                            20,
+                            20,
+                            true,
+                            true
+                    )
+            );
+
+            public MediaController(Allmusic.album.song song) {
+                this.song = song;
+                this.mp = new MediaPlayer(
+                        new Media(
+                                String.format(Resources.mp3Source, song.getSample())
+                        )
+                );
+                mp.setOnEndOfMedia(() -> {
+                    Debug.trace("Finished Playing '%s'");
+                    playIcon.setImage(
+                            new Image(
+                                    Main.class.getResourceAsStream("resources/img/play.png"),
+                                    20,
+                                    20,
+                                    true,
+                                    true
+                            )
+                    );
+                    mp.seek(Duration.millis(0));
+                    mp.pause();
+                });
+            }
+
+            public BorderPane getView() {
+                buildView();
+                return view;
+            }
+
+            private void play(MouseEvent event) {
+                Debug.trace(
+                        String.format(
+                                "Playing '%s' from %.2fs of 30s (%.2f%%)",
+                                song.getTitle(),
+                                mp.getCurrentTime().toSeconds(),
+                                (mp.getCurrentTime().toSeconds() / 30) * 100
+                        )
+                );
+                if (event.getButton().equals(MouseButton.PRIMARY)) play();
+            }
+
+            private void pause(MouseEvent event) {
+                Debug.trace(
+                        String.format(
+                                "Paused '%s' at %.2fs of 30s (%.2f%%)",
+                                song.getTitle(),
+                                mp.getCurrentTime().toSeconds(),
+                                (mp.getCurrentTime().toSeconds() / 30) * 100
+                        )
+                );
+                if (event.getButton().equals(MouseButton.PRIMARY)) pause();
+            }
+
+            private void play() {
+                Results.this.mediaPlayers.forEach(MediaController::pause);
+                playIcon.setImage(
+                        new Image(
+                                Main.class.getResourceAsStream("resources/img/paused.png"),
+                                20,
+                                20,
+                                true,
+                                true
+                        )
+                );
+                mp.play();
+                playIconContainer.setOnMouseClicked(this::pause);
+            }
+
+            private void pause() {
+                playIcon.setImage(
+                        new Image(
+                                Main.class.getResourceAsStream("resources/img/play.png"),
+                                20,
+                                20,
+                                true,
+                                true
+                        )
+                );
+                mp.pause();
+                playIconContainer.setOnMouseClicked(this::play);
+
+            }
+
+            private void buildView() {
+
+                view = new BorderPane();
+                view.setPadding(new Insets(5, 0, 5, 89));
+
+                HBox songResult = new HBox();
+                songResult.setSpacing(5);
+
+                Label songTitleView = new Label(song.getTitle());
+                songTitleView.getStyleClass().add("sub_text");
+
+                // This would be much easier to work into a class, will need to switch back and forth, consider a thin progress bar or something
+                if (!song.getSample().isEmpty()) {
+
+                    if (Model.getInstance().settings.getSettingBool("dark_theme"))
+                        playIcon.setEffect(new ColorAdjust(0, 1, 0, 0));
+
+                    playIconContainer.getChildren().setAll(playIcon);
+                    playIconContainer.setOnMouseClicked(this::play);
+                    playIconContainer.setCursor(Cursor.HAND);
+
+                    songResult.getChildren().add(playIconContainer);
+
+                }
+                songResult.getChildren().add(songTitleView);
+                view.setLeft(songResult);
+
             }
         }
     }

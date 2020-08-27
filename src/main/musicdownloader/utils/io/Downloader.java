@@ -179,7 +179,7 @@ public class Downloader implements Runnable {
         if (Model.getInstance().settings.getSettingBool("advanced_validation")) {
 
             float downloadValidity = evaluateDownloadValidity(
-                    String.format("https://rovimusic.rovicorp.com/playback.mp3?c=%s=&f=I", song.getString("sample")),
+                    String.format(Resources.mp3Source, song.getString("sample")),
                     downloadedFile.getAbsolutePath()
             );
 
