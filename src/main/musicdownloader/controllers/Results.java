@@ -662,7 +662,7 @@ public class Results {
 
         public searchResult (JSONObject data) throws JSONException {
             super(
-                    data.getJSONObject("view").getString("art").substring(6),
+                    null,
                     data.getJSONObject("data").getString("art"),
                     Model.getInstance().settings.getSettingBool("data_saver"),
                     data.getJSONObject("view").getString("title"),
