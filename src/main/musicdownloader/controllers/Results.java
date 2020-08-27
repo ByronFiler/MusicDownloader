@@ -674,7 +674,7 @@ public class Results {
         private MenuItem getAlbumSongs;
         private MenuItem hideAlbumSongs;
 
-        private ArrayList<MediaController> internalMediaControllers = new ArrayList<>();
+        private final ArrayList<MediaController> internalMediaControllers = new ArrayList<>();
 
         public searchResult (JSONObject data) throws JSONException {
             super(
@@ -687,7 +687,6 @@ public class Results {
             setSubtext(data.getJSONObject("view").getString("meta"));
 
             this.data = data;
-
             contextMenu = new ContextMenu();
 
             MenuItem hide = new MenuItem("Hide");
@@ -840,18 +839,9 @@ public class Results {
                         )
                 );
                 mp.setOnEndOfMedia(() -> {
-                    Debug.trace("Finished Playing '%s'");
-                    playIcon.setImage(
-                            new Image(
-                                    Main.class.getResourceAsStream("resources/img/play.png"),
-                                    20,
-                                    20,
-                                    true,
-                                    true
-                            )
-                    );
+                    Debug.trace(String.format("Finished Playing '%s'", song.getTitle()));
                     mp.seek(Duration.millis(0));
-                    mp.pause();
+                    pause();
                 });
             }
 
@@ -870,6 +860,7 @@ public class Results {
                         )
                 );
                 if (event.getButton().equals(MouseButton.PRIMARY)) play();
+                event.consume();
             }
 
             private void pause(MouseEvent event) {
@@ -882,6 +873,7 @@ public class Results {
                         )
                 );
                 if (event.getButton().equals(MouseButton.PRIMARY)) pause();
+                event.consume();
             }
 
             private void play() {
@@ -929,7 +921,7 @@ public class Results {
                 if (!song.getSample().isEmpty()) {
 
                     if (Model.getInstance().settings.getSettingBool("dark_theme"))
-                        playIcon.setEffect(new ColorAdjust(0, 1, 0, 0));
+                        playIcon.setEffect(new ColorAdjust(0, 0, 1, 0));
 
                     playIconContainer.getChildren().setAll(playIcon);
                     playIconContainer.setOnMouseClicked(this::play);
