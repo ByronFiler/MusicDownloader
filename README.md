@@ -20,7 +20,7 @@ Features:
   - Easily accessible downloads history and downloads client
   
 ![Search Page](https://i.imgur.com/jmbLcIj.png)
-![Search Results](https://i.imgur.com/cxntYm6.png)
+![Search Results](https://i.imgur.com/NMbkqmU.png)
 ![Downloads Client View: Albums](https://i.imgur.com/VTWnuwm.png)
 ![Downloads Client View: Songs](https://i.imgur.com/FBwz7ry.png)
 ![Settings](https://i.imgur.com/heTztlu.png)
