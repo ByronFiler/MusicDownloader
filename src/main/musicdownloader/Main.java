@@ -12,6 +12,7 @@ import java.io.IOException;
 
 /*
 TODO
+ Look at AsynchHttpClient to speed up high volume of web requests
  Add different language options
  Support different search databases: https://en.wikipedia.org/wiki/List_of_online_music_databases
  Support different video sources: Dailymotion, Vimeo, Flickr, Metacafe

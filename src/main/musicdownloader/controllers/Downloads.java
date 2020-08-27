@@ -44,8 +44,8 @@ import java.util.TimerTask;
 
 /*
 TODO
- - In future also write actual tests for this
  - Songs could have a button to reacquire if missing?
+ - Clickable area should be the entire result, the X should have a wide enough area and consume event to prevent both being done
  */
 
 public class Downloads {
@@ -796,14 +796,14 @@ public class Downloads {
                     if (foundFiles != downloadObject.getJSONArray("songs").length())
                         setSubtext((downloadObject.getJSONArray("songs").length() - foundFiles) + " Files moved or deleted.");
 
-                    left.setCursor(Cursor.HAND);
-                    left.setOnMouseClicked((MouseEvent event) -> {
+                    view.setCursor(Cursor.HAND);
+                    view.setOnMouseClicked((MouseEvent event) -> {
                         if (event.getButton() == MouseButton.PRIMARY)
                             try {
                                 Desktop.getDesktop().open(new File(downloadObject.getJSONObject("metadata").getString("directory")));
                             } catch (IOException | IllegalArgumentException | JSONException ignored) {
-                                left.setCursor(Cursor.DEFAULT);
-                                left.setOnMouseClicked(null);
+                                view.setCursor(Cursor.DEFAULT);
+                                view.setOnMouseClicked(null);
 
                                 albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
                                 setSubtext("All Files moved or deleted.");
@@ -835,6 +835,7 @@ public class Downloads {
                     }
 
                     if (eventsViewTable.getItems().size() == 0) Platform.runLater(Downloads.this::defaultView);
+                    e.consume();
 
                 });
 
@@ -864,15 +865,15 @@ public class Downloads {
                     view.setLeft(new HBox(albumArt, leftTextContainer));
 
                 } else {
-                    left.setCursor(Cursor.HAND);
+                    view.setCursor(Cursor.HAND);
                     File finalFoundFile = foundFile;
-                    left.setOnMouseClicked((MouseEvent event) -> {
+                    view.setOnMouseClicked((MouseEvent event) -> {
                         if (event.getButton() == MouseButton.PRIMARY)
                             try {
                                 Desktop.getDesktop().open(finalFoundFile);
                             } catch (IOException | IllegalArgumentException ignored) {
-                                left.setCursor(Cursor.DEFAULT);
-                                left.setOnMouseClicked(null);
+                                view.setCursor(Cursor.DEFAULT);
+                                view.setOnMouseClicked(null);
                                 albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
                                 setSubtext("Files moved or deleted.");
 
@@ -907,7 +908,7 @@ public class Downloads {
                     }
 
                     if (eventsViewTable.getItems().size() == 0) Platform.runLater(Downloads.this::defaultView);
-
+                    e.consume();
                 });
 
             }

@@ -51,7 +51,7 @@ TODO
  - Remove the title and replace it with a new search box
  - Consider thread loading the album art
 
- - Changing the search does not appear to update the necessary requirements (Set to Model, then set from Model)
+- Loaded the additional data about the album should be saved and used to save a web request when building data
  - Searching should be disallowed when adding to queue (Use class wide bools, no more NullPointerExceptions)
 
  */
@@ -90,6 +90,8 @@ public class Results {
 
     @FXML
     private void initialize() {
+
+        System.out.println(Arrays.toString(Model.getInstance().search.getSearchResults()));
 
         // Set the table data
         try {
@@ -170,6 +172,9 @@ public class Results {
             cancel.setOnMouseClicked(e -> queueAdder.kill());
 
             // Selected Item -> Selected Item Data -> Select Item Data in correctly positioned array -> JSON Data needed -> Spawn thread with data to generate a queue item
+
+            System.out.println(results.getSelectionModel().getSelectedItem());
+            System.out.println(Arrays.toString(Model.getInstance().search.getSearchResults()));
             queueAdder = new generateQueueItem(
                     Model
                             .getInstance()
@@ -177,9 +182,7 @@ public class Results {
                             .getSearchResultsJson()
                             .getJSONArray("songs")
                             .getJSONObject(
-                                    Arrays
-                                            .asList(Model.getInstance().search.getSearchResults())
-                                            .indexOf(results.getSelectionModel().getSelectedItem())
+                                    results.getItems().indexOf(results.getSelectionModel().getSelectedItem())
                             )
 
             );
