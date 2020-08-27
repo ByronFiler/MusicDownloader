@@ -14,6 +14,8 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -795,18 +797,19 @@ public class Downloads {
                         setSubtext((downloadObject.getJSONArray("songs").length() - foundFiles) + " Files moved or deleted.");
 
                     left.setCursor(Cursor.HAND);
-                    left.setOnMouseClicked(event -> {
-                        try {
-                            Desktop.getDesktop().open(new File(downloadObject.getJSONObject("metadata").getString("directory")));
-                        } catch (IOException | IllegalArgumentException | JSONException ignored) {
-                            left.setCursor(Cursor.DEFAULT);
-                            left.setOnMouseClicked(null);
+                    left.setOnMouseClicked((MouseEvent event) -> {
+                        if (event.getButton() == MouseButton.PRIMARY)
+                            try {
+                                Desktop.getDesktop().open(new File(downloadObject.getJSONObject("metadata").getString("directory")));
+                            } catch (IOException | IllegalArgumentException | JSONException ignored) {
+                                left.setCursor(Cursor.DEFAULT);
+                                left.setOnMouseClicked(null);
 
-                            albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
-                            setSubtext("All Files moved or deleted.");
+                                albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
+                                setSubtext("All Files moved or deleted.");
 
-                            renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
-                        }
+                                renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
+                            }
                     });
 
                 }
@@ -863,19 +866,20 @@ public class Downloads {
                 } else {
                     left.setCursor(Cursor.HAND);
                     File finalFoundFile = foundFile;
-                    left.setOnMouseClicked(event -> {
-                        try {
-                            Desktop.getDesktop().open(finalFoundFile);
-                        } catch (IOException | IllegalArgumentException ignored) {
-                            left.setCursor(Cursor.DEFAULT);
-                            left.setOnMouseClicked(null);
-                            albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
-                            setSubtext("Files moved or deleted.");
+                    left.setOnMouseClicked((MouseEvent event) -> {
+                        if (event.getButton() == MouseButton.PRIMARY)
+                            try {
+                                Desktop.getDesktop().open(finalFoundFile);
+                            } catch (IOException | IllegalArgumentException ignored) {
+                                left.setCursor(Cursor.DEFAULT);
+                                left.setOnMouseClicked(null);
+                                albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
+                                setSubtext("Files moved or deleted.");
 
-                            // Rebuild song download histories
-                            renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
+                                // Rebuild song download histories
+                                renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
 
-                        }
+                            }
                     });
                 }
 

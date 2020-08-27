@@ -28,8 +28,6 @@ import musicdownloader.utils.fx.Result;
 import musicdownloader.utils.net.db.sites.Allmusic;
 import musicdownloader.utils.net.source.sites.Youtube;
 import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -91,26 +89,9 @@ public class Results {
             viewData = Model.getInstance().search.getSearchResultsJson();
             JSONArray songs = Model.getInstance().search.getSearchResultsJson().getJSONArray("songs");
             if (songs.length() > 0) {
-                searchResult result;
                 for (int i = 0; i < songs.length(); i++) {
-                    result = new searchResult(
-                            songs.getJSONObject(i).getJSONObject("view").getString("art").substring(6),
-                            songs.getJSONObject(i).getJSONObject("data").getString("art"),
-                            Model.getInstance().settings.getSettingBool("data_saver"),
-                            songs.getJSONObject(i).getJSONObject("view").getString("title"),
-                            songs.getJSONObject(i).getJSONObject("view").getString("artist"),
-                            songs.getJSONObject(i).getJSONObject("data").getBoolean("album"),
-                            songs.getJSONObject(i).getJSONObject("data").getString(
-                                    songs.getJSONObject(i).getJSONObject("data").getBoolean("album") ?
-                                            "allmusicAlbumId" : "allmusicSongId"
-                            ),
-                            songs.getJSONObject(i).getJSONObject("view").getString("meta")
-                    );
-                    results.getItems().add(result.getView());
-
+                    results.getItems().add(new searchResult(songs.getJSONObject(i)).getView());
                 }
-
-
             } else defaultView("No Search Results Found");
         } catch (JSONException e) {
             Debug.error("Failed to load search results.", e);
@@ -205,10 +186,7 @@ public class Results {
 
     @FXML
     public void downloadButtonCheck(MouseEvent e) {
-
-        if (e.getButton() == MouseButton.PRIMARY)
-            downloadButtonCheckInternal();
-
+        if (e.getButton() == MouseButton.PRIMARY) downloadButtonCheckInternal();
     }
 
     @FXML
@@ -250,10 +228,19 @@ public class Results {
                                 loadedQuery = tempQuery;
 
                                 Model.getInstance().search.setSearchResultsJson(search.getResults());
-                                Model.getInstance().search.setSearchResults(search.buildView().toArray(new BorderPane[0]));
-
-                                mainContainer.setCenter(results);
-                                results.getItems().setAll(Model.getInstance().search.getSearchResults());
+                                try {
+                                    JSONArray songs = search.getResults().getJSONArray("songs");
+                                    this.viewData = search.getResults();
+                                    mainContainer.setCenter(results);
+                                    results.getItems().clear();
+                                    if (songs.length() > 0) {
+                                        for (int i = 0; i < songs.length(); i++) {
+                                            results.getItems().add(new searchResult(songs.getJSONObject(i)).getView());
+                                        }
+                                    } else defaultView("No Search Results Found");
+                                } catch (JSONException er) {
+                                    Debug.error("Failed to get search results.", er);
+                                }
                             });
                         } else {
                             Platform.runLater(() -> {
@@ -385,7 +372,6 @@ public class Results {
 
         }
 
-        @Nullable
         private synchronized String generateNewSongId(JSONArray downloadItems) {
             String id = Double.toString(Math.random()).split("\\.")[1];
 
@@ -408,7 +394,6 @@ public class Results {
             return id;
         }
 
-        @NotNull
         private JSONArray getSource(String query, int targetTime) {
 
             Youtube youtubeParser = new Youtube(query, targetTime);
@@ -675,10 +660,15 @@ public class Results {
 
     class searchResult extends Result {
 
-        public searchResult(String localArtResource, String remoteArtResource, boolean forceLoadRemote, String title, String artist, boolean album, String id, String metadata) {
-            super(localArtResource, remoteArtResource, forceLoadRemote, title, artist);
-            setSubtext(metadata);
-
+        public searchResult (JSONObject data) throws JSONException {
+            super(
+                    data.getJSONObject("view").getString("art").substring(6),
+                    data.getJSONObject("data").getString("art"),
+                    Model.getInstance().settings.getSettingBool("data_saver"),
+                    data.getJSONObject("view").getString("title"),
+                    data.getJSONObject("view").getString("artist")
+            );
+            setSubtext(data.getJSONObject("view").getString("meta"));
 
             ContextMenu contextMenu = new ContextMenu();
 
@@ -702,14 +692,29 @@ public class Results {
                     Thread externalInformationRetriever = new Thread(() -> {
 
                         try {
-                            if (album) {
+                            if (data.getJSONObject("data").getBoolean("album")) {
 
                                 // Data is already stored
-                                fetchRemoteResource(viewData.getJSONArray("songs").getJSONObject(Results.this.results.getItems().indexOf(view)).getJSONObject("data").getString("art"));
+                                fetchRemoteResource(
+                                        viewData
+                                                .getJSONArray("songs")
+                                                .getJSONObject(
+                                                        Results
+                                                                .this
+                                                                .results
+                                                                .getItems()
+                                                                .indexOf(view)
+                                                )
+                                                .getJSONObject("data")
+                                                .getString("art")
+                                );
 
                             } else {
 
-                                Allmusic.song songParser = new Allmusic.song(id);
+                                Allmusic.song songParser = new Allmusic.song(data.getJSONObject("data").getString(
+                                        data.getJSONObject("data").getBoolean("album") ?
+                                                "allmusicAlbumId" : "allmusicSongId"
+                                ));
                                 songParser.load();
 
                                 StringBuilder subtext = new StringBuilder("Song");
