@@ -58,8 +58,7 @@ public class Result {
             );
 
         } else {
-            if (forceLoadRemote)
-                fetchRemoteResource(remoteArtResource);
+            if (forceLoadRemote) fetchRemoteResource(remoteArtResource);
 
             else
                 new Thread(() -> {
