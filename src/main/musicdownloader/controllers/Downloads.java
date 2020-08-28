@@ -801,6 +801,8 @@ public class Downloads {
                         setSubtext((downloadObject.getJSONArray("songs").length() - foundFiles) + " Files moved or deleted.");
 
                     view.setCursor(Cursor.HAND);
+                    view.setOnMouseEntered(e -> title.getStyleClass().add("sub_title1_selected"));
+                    view.setOnMouseExited(e -> title.getStyleClass().remove("sub_title1_selected"));
                     view.setOnMouseClicked((MouseEvent event) -> {
                         if (event.getButton() == MouseButton.PRIMARY)
                             try {
@@ -872,6 +874,10 @@ public class Downloads {
                 } else {
                     view.setCursor(Cursor.HAND);
                     File finalFoundFile = foundFile;
+
+                    view.setOnMouseEntered(e -> title.getStyleClass().add("sub_title1_selected"));
+                    view.setOnMouseExited(e -> title.getStyleClass().remove("sub_title1_selected"));
+
                     view.setOnMouseClicked((MouseEvent event) -> {
                         if (event.getButton() == MouseButton.PRIMARY)
                             try {

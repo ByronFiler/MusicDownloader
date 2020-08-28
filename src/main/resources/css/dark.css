@@ -16,6 +16,10 @@
     -fx-text-fill: #DADEDF;
 }
 
+.sub_title1_selected {
+    -fx-text-fill: white;
+}
+
 .sub_title2 {
     -fx-text-fill: #DADEDF;
 }

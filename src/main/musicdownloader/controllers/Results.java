@@ -50,7 +50,6 @@ TODO
  - Loaded the additional data about the album should be saved and used to save a web request when building data
  - Searching should be disallowed when adding to queue (Use class wide bools, no more NullPointerExceptions)
  - Search not gettingAdditionalInformation when using full data mode, ie songs do not have album art or metadata
- - Ensure that images are scaled to the correct size as with downloads
  */
 
 public class Results {
@@ -660,14 +659,8 @@ public class Results {
         }
     }
 
-    /*
-    TODO
-     - songResult subclass of searchResult
-     - Should handle the standard view, layout & title
-     - If it has media source, should create a MediaController instance which should create icon, handle requests
-     - Consider how pausing will affect other objects in layout, result item could have internal containers to be iterated through for cleaner logic
-     */
 
+    //TODO: Refactor media controller and ui components separately
     class searchResult extends Result {
 
         private final JSONObject data;
