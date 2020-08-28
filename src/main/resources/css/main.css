@@ -16,6 +16,10 @@
     -fx-font-size: 22px;
 }
 
+.sub_title1_strikethrough .text{
+    -fx-strikethrough: true;
+}
+
 .sub_title2 {
     -fx-font-size: 16px;
     -fx-font-style: italic;

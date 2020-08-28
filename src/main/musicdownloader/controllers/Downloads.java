@@ -309,10 +309,6 @@ public class Downloads {
         if (currentDownloadsView.size() > 0 || downloadHistoriesView.size() > 0) albumsView();
         else defaultView();
 
-        ImageView image = ((ImageView) ((BorderPane) ((HBox) downloadHistoriesViewAlbums.get(0).getLeft()).getChildren().get(0)).getChildren().get(0));
-
-        System.out.println( image.getImage().getHeight() - image.getImage().getWidth());
-
         Debug.trace("Initialized downloads view.");
     }
 
@@ -481,7 +477,7 @@ public class Downloads {
     }
 
     private void updateViewSelection() {
-        if (eventViewSelector.isVisible())
+        if (eventViewSelector.getItems().size() > 2)
             switch (eventViewSelector.getSelectionModel().getSelectedItem()) {
 
                 case "All":
@@ -749,6 +745,7 @@ public class Downloads {
 
         }
 
+        // TODO: Refactor into a class with functions instead of duplicated code and other inefficiencies
         public void setHistory(JSONObject downloadObject, int songIndex) throws JSONException {
 
             // Building the cross
@@ -796,6 +793,7 @@ public class Downloads {
                     setSubtext("All Files moved or deleted.");
                     albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
                     view.setLeft(new HBox(albumArt, leftTextContainer));
+                    title.getStyleClass().add("sub_title1_strikethrough");
 
                 } else {
 
@@ -869,6 +867,7 @@ public class Downloads {
                     albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
 
                     view.setLeft(new HBox(albumArt, leftTextContainer));
+                    title.getStyleClass().add("sub_title1_strikethrough");
 
                 } else {
                     view.setCursor(Cursor.HAND);
@@ -882,6 +881,8 @@ public class Downloads {
                                 view.setOnMouseClicked(null);
                                 albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
                                 setSubtext("Files moved or deleted.");
+
+                                title.getStyleClass().add("sub_title1_strikethrough");
 
                                 // Rebuild song download histories
                                 renderDownloadHistory(Model.getInstance().download.getDownloadHistory());

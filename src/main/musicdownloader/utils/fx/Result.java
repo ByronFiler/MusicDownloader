@@ -24,6 +24,7 @@ public class Result {
     protected final ImageView albumArt;
     protected final BorderPane leftTextContainer;
     protected final BorderPane imageContainer;
+    protected final Label title;
 
     protected HBox right;
 
@@ -70,13 +71,13 @@ public class Result {
 
         }
 
-        Label titleLabel = new Label(title);
-        titleLabel.getStyleClass().setAll("sub_title1");
+        this.title = new Label(title);
+        this.title.getStyleClass().setAll("sub_title1");
 
         Label artistLabel = new Label(artist);
         artistLabel.getStyleClass().setAll("sub_title2");
 
-        VBox songArtistContainer = new VBox(titleLabel, artistLabel);
+        VBox songArtistContainer = new VBox(this.title, artistLabel);
         songArtistContainer.setAlignment(Pos.TOP_LEFT);
 
         leftTextContainer.setTop(songArtistContainer);

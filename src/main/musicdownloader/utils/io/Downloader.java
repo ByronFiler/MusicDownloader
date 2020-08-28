@@ -147,7 +147,14 @@ public class Downloader implements Runnable {
         );
 
         ProcessBuilder builder = new ProcessBuilder(Resources.getInstance().getYoutubeDlExecutable());
-        builder.command("youtube-dl", "--extract-audio", "--audio-format", format, "--ignore-errors", "--retries", "10", "https://www.youtube.com/watch?v=" + song.getJSONArray("source").getString(sourceDepth));
+        builder.command(
+                "youtube-dl",
+                "--extract-audio",
+                "--audio-format", format,
+                "--ignore-errors",
+                "--retries", "10",
+                "https://www.youtube.com/watch?v=" + song.getJSONArray("source").getString(sourceDepth)
+        );
         builder.directory(new File(Resources.getInstance().getApplicationData() + "temp"));
         builder.redirectErrorStream(true);
         Process process = builder.start();
