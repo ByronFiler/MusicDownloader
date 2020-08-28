@@ -49,9 +49,10 @@ import java.util.Objects;
 TODO
  - Remove the title and replace it with a new search box
  - Consider thread loading the album art
-
-- Loaded the additional data about the album should be saved and used to save a web request when building data
+ - Loaded the additional data about the album should be saved and used to save a web request when building data
  - Searching should be disallowed when adding to queue (Use class wide bools, no more NullPointerExceptions)
+ - Error on generating media controllers, should really be separate and have one thing handle view and another handle audio perhaps?
+ - Search not gettingAdditionalInformation when using full data mode, ie songs do not have album art or metadata
 
  */
 

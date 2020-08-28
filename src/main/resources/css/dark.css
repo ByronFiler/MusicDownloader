@@ -1,6 +1,6 @@
 /* Primary Root */
 .root {
-    -fx-background-color: #121212;
+    -fx-background-color: linear-gradient(to bottom right, rgba(18,18,18,1) 0%, rgba(29,29,29,1) 100%);
 }
 
 /* Text */
@@ -88,7 +88,7 @@
 
 /* Footer */
 .searchContainer {
-    -fx-background-color: #121212;
+    -fx-background-color: rgba(0, 0, 0, 0);
 }
 
 .footer {
