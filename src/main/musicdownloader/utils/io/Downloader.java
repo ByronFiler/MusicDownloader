@@ -1,8 +1,5 @@
 package musicdownloader.utils.io;
 
-import musicdownloader.model.Model;
-import musicdownloader.utils.app.Debug;
-import musicdownloader.utils.app.Resources;
 import com.mpatric.mp3agic.*;
 import com.musicg.fingerprint.FingerprintManager;
 import com.musicg.fingerprint.FingerprintSimilarityComputer;
@@ -10,6 +7,9 @@ import com.musicg.wave.Wave;
 import javafx.application.Platform;
 import javazoom.jl.converter.Converter;
 import javazoom.jl.decoder.JavaLayerException;
+import musicdownloader.model.Model;
+import musicdownloader.utils.app.Debug;
+import musicdownloader.utils.app.Resources;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -20,10 +20,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /*
 TODO
@@ -35,6 +32,8 @@ public class Downloader implements Runnable {
     private JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
     private final JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
     private JSONArray downloadQueue = Model.getInstance().download.getDownloadQueue();
+
+    private final ArrayList<Float> songsValidity = new ArrayList<>();
 
     private byte[] albumArt;
 
@@ -132,7 +131,7 @@ public class Downloader implements Runnable {
 
     }
 
-    private synchronized void downloadFile(JSONObject song, String format, int sourceDepth, String index) throws IOException, JSONException {
+    private synchronized void downloadFile(JSONObject song, String format, int sourceDepth, String index, boolean overrideSimilarity) throws IOException, JSONException {
 
         // Start download
         if (!Files.exists(Paths.get(Resources.getInstance().getApplicationData() + "temp")))
@@ -190,29 +189,45 @@ public class Downloader implements Runnable {
                     downloadedFile.getAbsolutePath()
             );
 
+            JSONObject tempValidityLog = new JSONObject();
+            tempValidityLog.put("song", song);
+            tempValidityLog.put("validity", downloadValidity);
+
+            songsValidity.add(downloadValidity);
+
             Debug.trace(
                     String.format(
-                            "Calculated downloaded validity of %s at %2.2f [%s]",
+                            "Calculated downloaded validity of %s at %2.2f [%s%s]",
                             song.getString("title"),
                             downloadValidity * 100,
-                            downloadValidity > 0.7 ? "PASS" : "FAIL"
+                            downloadValidity > 0.7 ? "PASS" : "FAIL",
+                            overrideSimilarity ? " OVERRODE" : ""
                     )
             );
 
-            if (downloadValidity <= 0.7) {
+            if (downloadValidity <= 0.7 && !overrideSimilarity) {
 
-                // Delete downloaded files & sample
                 if (!downloadedFile.delete())
                     Debug.warn("Failed to delete: " + downloadedFile.getName());
 
                 if (song.getJSONArray("source").length() > sourceDepth + 2) {
 
                     // Can continue and move onto the next source
-                    downloadFile(song, format, sourceDepth + 1, index);
-                    return;
+                    downloadFile(song, format, sourceDepth + 1, index, false);
 
-                } else
-                    Debug.warn("Failed to find a song in sources that was found to be valid, inform user of failure.");
+                } else {
+                    float highestValidity = Collections.max(songsValidity);
+                    Debug.warn(
+                            String.format(
+                                    "Failed to find a song matching required similarity, defaulting to using the highest validity, which was %.2f",
+                                    highestValidity
+                            )
+                    );
+
+                    // Need to call the download function and override check to use the greatest value song
+                    downloadFile(song, format, songsValidity.indexOf(highestValidity), index, true);
+                }
+                return;
 
             }
         }
@@ -274,6 +289,8 @@ public class Downloader implements Runnable {
             );
 
         }
+
+        songsValidity.clear();
 
     }
 
@@ -368,7 +385,8 @@ public class Downloader implements Runnable {
                             downloadObject.getJSONArray("songs").getJSONObject(i),
                             Resources.songReferences.get(Model.getInstance().settings.getSettingInt("music_format")),
                             0,
-                            String.valueOf(i+1)
+                            String.valueOf(i+1),
+                            false
                     );
                 } catch (IOException | JSONException e) {
                     try {
