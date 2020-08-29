@@ -1,12 +1,11 @@
 package musicdownloader.utils.net.source;
 
-import org.json.JSONArray;
-
 import java.io.IOException;
+import java.util.ArrayList;
 
 public interface Source {
 
     void load() throws IOException;
 
-    JSONArray getResults();
+    ArrayList<String> getResults();
 }

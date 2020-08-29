@@ -178,26 +178,30 @@ public class Downloads {
                                     for (int i = 0; i < Model.getInstance().download.getDownloadObject().getJSONArray("songs").length(); i++) {
                                         int workingCounter = 0;
                                         for (BorderPane element : currentDownloadsView) {
-                                            if (workingCounter == i && Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed") && element.getId().equals("working"))
-                                                Platform.runLater(() -> {
-                                                    try {
-                                                        ((HBox) element.getRight()).getChildren().setAll(
-                                                                new ImageView(
-                                                                        new Image(
-                                                                                Main.class.getResource("resources/img/tick.png").toURI().toString(),
-                                                                                25,
-                                                                                25,
-                                                                                true,
-                                                                                true
-                                                                        )
-                                                                )
-                                                        );
-                                                        element.setId("completed");
-                                                    } catch (URISyntaxException e) {
-                                                        Debug.warn("Failed to load tick for view.");
-                                                    }
-                                                });
-                                            workingCounter++;
+                                            try {
+                                                if (workingCounter == i && Model.getInstance().download.getDownloadObject().getJSONArray("songs").getJSONObject(i).getBoolean("completed") && element.getId().equals("working"))
+                                                    Platform.runLater(() -> {
+                                                        try {
+                                                            ((HBox) element.getRight()).getChildren().setAll(
+                                                                    new ImageView(
+                                                                            new Image(
+                                                                                    Main.class.getResource("resources/img/tick.png").toURI().toString(),
+                                                                                    25,
+                                                                                    25,
+                                                                                    true,
+                                                                                    true
+                                                                            )
+                                                                    )
+                                                            );
+                                                            element.setId("completed");
+                                                        } catch (URISyntaxException e) {
+                                                            Debug.warn("Failed to load tick for view.");
+                                                        }
+                                                    });
+                                                workingCounter++;
+                                            } catch (NullPointerException e) {
+                                                Debug.log(Thread.currentThread(), "NullPointerException occurred in view, suppressed.");
+                                            }
                                         }
                                     }
 

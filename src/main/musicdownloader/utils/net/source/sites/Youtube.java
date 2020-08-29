@@ -1,5 +1,7 @@
 package musicdownloader.utils.net.source.sites;
 
+import musicdownloader.utils.app.Debug;
+import musicdownloader.utils.io.QuickSort;
 import musicdownloader.utils.net.source.Source;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -7,9 +9,9 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import musicdownloader.utils.app.Debug;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Youtube implements Source {
 
@@ -19,7 +21,9 @@ public class Youtube implements Source {
     private int retries = 5;
 
     private Document requestedPage = null;
-    private final JSONArray results = new JSONArray();
+    private final ArrayList<String> results = new ArrayList<>();
+
+    private final JSONArray secondaryResults = new JSONArray(); // Songs within +=15% of target time, sorted by QuickSort based on time
 
     public Youtube(String query, int targetTime) {
 
@@ -39,7 +43,7 @@ public class Youtube implements Source {
     }
 
     @Override
-    public JSONArray getResults() {
+    public ArrayList<String> getResults() {
         return results;
     }
 
@@ -58,6 +62,8 @@ public class Youtube implements Source {
     }
 
     private void parseJSONResponse() {
+
+        Debug.log(Thread.currentThread(),"JSON Response received from youtube.");
 
         // YouTube has given us the data stored in json stored script tags which be parsed
         JSONObject searchDataTemp;
@@ -99,7 +105,6 @@ public class Youtube implements Source {
             for (int i = 0; i < contents.length(); i++) {
 
                 try {
-
                     int length = timeConversion(
                             contents
                                     .getJSONObject(i)
@@ -109,11 +114,18 @@ public class Youtube implements Source {
                     );
 
                     // Checks that the length is within 15% either way of the target time, otherwise definitely not relevant.
-                    if (length < targetTime * 1.15 && length > targetTime / 1.15) {
+                    if (length < targetTime * 1.05 && length > targetTime / 1.05) {
+
+                        results.add(
+                                contents
+                                        .getJSONObject(i)
+                                        .getJSONObject("videoRenderer")
+                                        .getString("videoId")
+                        );
+
+                    } else if (length < targetTime * 1.15 && length > targetTime / 1.15) {
 
                         searchDataTemp = new JSONObject();
-
-                        // Extract the playtime and the link to the video
                         searchDataTemp.put(
                                 "watch_id",
                                 contents
@@ -121,14 +133,16 @@ public class Youtube implements Source {
                                         .getJSONObject("videoRenderer")
                                         .getString("videoId")
                         );
-
                         searchDataTemp.put("difference", Math.abs(length - targetTime));
 
-                        results.put(searchDataTemp);
+                        secondaryResults.put(searchDataTemp);
+
                     }
 
                 } catch (JSONException ignored) {} // Youtube adds random elements that are tricky to handle and are best ignored
             }
+
+            results.addAll(new QuickSort(secondaryResults, 0, secondaryResults.length() - 1).getSorted());
 
         } catch (JSONException e) {
             Debug.error("Failed to parse youtube results.", e);
@@ -142,38 +156,67 @@ public class Youtube implements Source {
         // Video Times: youtubeSearch.select("ol.item-section").get(0).select("span.video-time").get(selection)
         // Video Link: youtubeSearch.select("ol.item-section").get(0).select("a[href][aria-hidden]").get(selection).attr("href")
 
-        JSONObject searchDataTemp;
-        for (int i = 0; i < requestedPage.select("ol.item-section").get(0).select("span.video-time").size(); i++) {
+        Debug.trace("HTML Response received from youtube.");
 
-            try {
-                searchDataTemp = new JSONObject();
-                searchDataTemp.put(
-                        "watch_id",
+        JSONObject searchDataTemp;
+        try {
+            for (int i = 0; i < requestedPage.select("ol.item-section").get(0).select("span.video-time").size(); i++) {
+
+                int length = timeConversion(
                         requestedPage
                                 .select("ol.item-section")
                                 .get(0)
-                                .select("a[href][aria-hidden]")
-                                .get(i).attr("href")
-                                .substring(9) // Removes /watch?v= from the source
+                                .select("span.video-time")
+                                .get(i)
+                                .text()
                 );
-                searchDataTemp.put(
-                        "difference",
-                        Math.abs(
-                                timeConversion(
-                                        requestedPage
-                                                .select("ol.item-section")
-                                                .get(0)
-                                                .select("span.video-time")
-                                                .get(i)
-                                                .text()
-                                ) - targetTime
-                        )
-                );
-                results.put(searchDataTemp);
-            } catch (JSONException e) {
-                Debug.warn("Failed to generate search data from query, from html response.");
+
+                if (length < targetTime * 1.05 && length > targetTime / 1.05) {
+
+                    results.add(
+                            requestedPage
+                                    .select("ol.item-section")
+                                    .get(0)
+                                    .select("a[href][aria-hidden]")
+                                    .get(i).attr("href")
+                                    .substring(9)
+                    );
+
+                } else if (length < targetTime * 1.15 && length > targetTime / 1.15) {
+
+                    searchDataTemp = new JSONObject();
+                    searchDataTemp.put(
+                            "watch_id",
+                            requestedPage
+                                    .select("ol.item-section")
+                                    .get(0)
+                                    .select("a[href][aria-hidden]")
+                                    .get(i).attr("href")
+                                    .substring(9) // Removes /watch?v= from the source
+                    );
+                    searchDataTemp.put(
+                            "difference",
+                            Math.abs(
+                                    timeConversion(
+                                            requestedPage
+                                                    .select("ol.item-section")
+                                                    .get(0)
+                                                    .select("span.video-time")
+                                                    .get(i)
+                                                    .text()
+                                    ) - targetTime
+                            )
+                    );
+
+                }
             }
+
+            results.addAll(new QuickSort(secondaryResults, 0, secondaryResults.length()).getSorted());
+
+        } catch (JSONException e) {
+            Debug.error("Failed to create response from youtube.", e);
         }
+
 
     }
 

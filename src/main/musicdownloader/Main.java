@@ -17,12 +17,11 @@ TODO
  Support different search databases: https://en.wikipedia.org/wiki/List_of_online_music_databases
  Support different video sources: Dailymotion, Vimeo, Flickr, Metacafe
  -
- YouTube search results should be sorted by default search with +-%5
  Normalise audio on songs as a post processing effect
  Not finding a valid source shouldn't error, should just use the highest found value, but should display a warning if it has to do so
- Downloads client result should refactor history into an controller
  Rework light theme, just looks ugly, borrow design considerations from dark theme
  View appears to break when set to full screen when swapping between elements
+ Change debug class to use log more and not pass the thread to it.
  */
 
 public class Main extends Application {

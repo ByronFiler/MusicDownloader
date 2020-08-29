@@ -14,7 +14,7 @@ class YoutubeTest {
         youtubeRequest = new Youtube("Pink Floyd - Speak To Me", 67);
         try {
             youtubeRequest.load();
-            assert youtubeRequest.getResults().length() > 0;
+            assert youtubeRequest.getResults().size() > 0;
         } catch (IOException e) {
             assert false;
         }
@@ -23,7 +23,7 @@ class YoutubeTest {
         youtubeRequest = new Youtube("%%%%%%%%", -1);
         try {
             youtubeRequest.load();
-            assert  youtubeRequest.getResults().length() == 0;
+            assert  youtubeRequest.getResults().size() == 0;
         } catch (IOException e) {
             assert false;
         }

@@ -407,36 +407,29 @@ public class Results {
                 // TODO: Await reconnection
             }
 
-            JSONArray searchDataExtracted = youtubeParser.getResults();
+            ArrayList<String> searchDataExtracted = youtubeParser.getResults();
             try {
-
-                switch (searchDataExtracted.length()) {
+                switch (searchDataExtracted.size()) {
 
                     case 0:
-                        // Unable to find a song which matched what we are looking for
-                        Debug.warn("Youtube does not have the this song, inform user of failure.");
+                        Debug.warn("Youtube does not have the this song.");
                         return new JSONArray();
 
                     case 1:
-                        // Only one element, hence doesn't need to be sorted
-                        return new JSONArray("[" + searchDataExtracted.getJSONObject(0).getString("watch_id") + "]");
+                        return new JSONArray("[" + searchDataExtracted.get(0) + "]");
 
                     default:
                         // Quick-sort remaining and return
-                        JSONArray sortedData = new QuickSort(searchDataExtracted, 0, searchDataExtracted.length() - 1).getSorted();
-                        JSONArray reducedData = new JSONArray();
-                        for (int i = 0; i < sortedData.length(); i++) {
-                            reducedData.put(sortedData.getJSONObject(i).getString("watch_id"));
+                        JSONArray temp = new JSONArray();
+                        for (String result: searchDataExtracted) {
+                            temp.put(result);
                         }
-                        return reducedData;
+                        return temp;
                 }
             } catch (JSONException e) {
                 Debug.error("Failed to sort songs data with data: " + searchDataExtracted, e);
                 return new JSONArray();
             }
-
-
-
 
         }
 
@@ -595,6 +588,7 @@ public class Results {
 
         }
 
+        /*
         private class QuickSort {
 
             private final JSONArray searchDataExtracted;
@@ -657,6 +651,7 @@ public class Results {
                 return searchDataExtracted;
             }
         }
+         */
     }
 
 
