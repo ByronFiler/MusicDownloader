@@ -1,35 +1,39 @@
 /* Primary Root */
 #root {
-    -fx-background-color: #F5F5F5;
+    -fx-background-color: linear-gradient(to bottom right, rgba(245,245,245,1) 0%, rgba(200,200,200,1) 100%);
 }
 
 /* Text */
 .hero_text {
-    -fx-text-fill: black;
+    -fx-text-fill: #211a23;
 }
 
 .title {
-    -fx-text-fill: black;
+    -fx-text-fill: #211a23;
 }
 
 .sub_title1 {
+    -fx-text-fill: #211a23;
+}
+
+.sub_title1_selected {
     -fx-text-fill: black;
 }
 
 .sub_title2 {
-    -fx-text-fill: black;
+    -fx-text-fill: #2e242c;
 }
 
 .sub_text {
-    -fx-text-fill: black;
+    -fx-text-fill: #2e242c;
 }
 
 .sub_text2 {
-    -fx-text-fill: black;
+    -fx-text-fill: #2e242c;
 }
 
 .sub_text3 {
-    -fx-text-fill: black;
+    -fx-text-fill: #2e242c;
 }
 
 /* Table Containers */
@@ -47,21 +51,21 @@
 
 /* UI Components */
 .underline {
-    -fx-border-color : black;
+    -fx-border-color : #211a23;
 }
 
 .underline2 {
-    -fx-border-color : black;
+    -fx-border-color : #211a23;
 }
 
 .combo-box .list-cell
 {
-    -fx-text-fill: black;
+    -fx-text-fill: #211a23;
 }
 
 /* Page Sections */
 .searchContainer {
-    -fx-background-color: #F5F5F5;
+    -fx-background-color: rgba(0, 0, 0, 0);
 }
 
 .searchBox:focused {

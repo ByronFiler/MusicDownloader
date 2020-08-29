@@ -15,7 +15,7 @@
       <bottom>
          <BorderPane fx:id="footer" minHeight="40.0" prefWidth="540.0" BorderPane.alignment="CENTER">
             <right>
-               <Button fx:id="cancel" minHeight="40.0" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="120.0" styleClass="button, back_button" text="Back" BorderPane.alignment="CENTER">
+               <Button fx:id="cancel" minHeight="40.0" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="120.0" text="Back" BorderPane.alignment="CENTER">
                   <BorderPane.margin>
                      <Insets top="10.0" />
                   </BorderPane.margin></Button>
