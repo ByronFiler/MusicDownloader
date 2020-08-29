@@ -9,8 +9,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
@@ -22,7 +20,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
-import javafx.stage.Stage;
 import javafx.util.Duration;
 import musicdownloader.Main;
 import musicdownloader.model.Model;
@@ -195,11 +192,17 @@ public class Results {
 
         try {
 
-            Parent searchView = FXMLLoader.load(Main.class.getResource("resources/fxml/search.fxml"));
-            Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
-            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight()));
-
+            (
+                    ((Node) event.getSource())
+                            .getScene()
+                            .getWindow()
+            )
+                    .getScene()
+                    .setRoot(
+                            FXMLLoader.load(
+                                    Main.class.getResource("resources/fxml/search.fxml")
+                            )
+                    );
         } catch (IOException e) {
             Debug.error("FXML Error with search.fxml", e);
         }
@@ -567,11 +570,17 @@ public class Results {
                 linkPart1.setCursor(Cursor.HAND);
                 linkPart1.setOnMouseClicked(e -> {
                     try {
-                        Parent searchView = FXMLLoader.load(Main.class.getResource("resources/fxml/downloads.fxml"));
-                        Stage mainWindow = (Stage) ((Node) e.getSource()).getScene().getWindow();
-
-                        mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight()));
-
+                        (
+                                ((Node) e.getSource())
+                                        .getScene()
+                                        .getWindow()
+                        )
+                                .getScene()
+                                .setRoot(
+                                        FXMLLoader.load(
+                                                Main.class.getResource("resources/fxml/downloads.fxml")
+                                        )
+                                );
                     } catch (IOException er) {
                         Debug.error("FXML Error with downloads.fxml", er);
                     }

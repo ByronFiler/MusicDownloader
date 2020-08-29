@@ -1,24 +1,21 @@
 package musicdownloader.controllers;
 
-import musicdownloader.Main;
-import musicdownloader.model.Model;
-import musicdownloader.utils.app.Debug;
-import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.io.Install;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.stage.Stage;
+import musicdownloader.Main;
+import musicdownloader.model.Model;
+import musicdownloader.utils.app.Debug;
+import musicdownloader.utils.app.Resources;
+import musicdownloader.utils.io.Install;
 import org.controlsfx.control.ToggleSwitch;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -154,11 +151,17 @@ public class Settings {
     protected void searchView(Event event) {
 
         try {
-            AnchorPane searchView = FXMLLoader.load(Main.class.getResource("resources/fxml/search.fxml"));
-            Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
-            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight()));
-
+            (
+                    ((Node) event.getSource())
+                            .getScene()
+                            .getWindow()
+            )
+                    .getScene()
+                    .setRoot(
+                            FXMLLoader.load(
+                                    Main.class.getResource("resources/fxml/search.fxml")
+                            )
+                    );
         } catch (IOException e) {
             Debug.error("Missing FXML File: Search.fxml", e);
         }

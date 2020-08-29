@@ -16,10 +16,7 @@ TODO
  Add different language options
  Support different search databases: https://en.wikipedia.org/wiki/List_of_online_music_databases
  Support different video sources: Dailymotion, Vimeo, Flickr, Metacafe
- -
  Normalise audio on songs as a post processing effect
- Rework light theme, just looks ugly, borrow design considerations from dark theme
- View appears to break when set to full screen when swapping between elements on macOS
  */
 
 public class Main extends Application {

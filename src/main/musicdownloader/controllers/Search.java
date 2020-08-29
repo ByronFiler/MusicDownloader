@@ -1,18 +1,11 @@
 package musicdownloader.controllers;
 
-import musicdownloader.Main;
-import musicdownloader.model.Model;
-import musicdownloader.utils.app.Debug;
-import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.net.db.sites.Allmusic;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
@@ -27,7 +20,10 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import javafx.stage.Stage;
+import musicdownloader.Main;
+import musicdownloader.model.Model;
+import musicdownloader.utils.app.Debug;
+import musicdownloader.utils.net.db.sites.Allmusic;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.jsoup.HttpStatusException;
@@ -103,10 +99,17 @@ public class Search {
     @FXML
     private void downloadsView(Event event) {
         try {
-            Parent settingsView = FXMLLoader.load(Main.class.getResource("resources/fxml/downloads.fxml"));
-            Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight()));
-
+            (
+                    ((Node) event.getSource())
+                            .getScene()
+                            .getWindow()
+            )
+                    .getScene()
+                    .setRoot(
+                            FXMLLoader.load(
+                                    Main.class.getResource("resources/fxml/downloads.fxml")
+                            )
+                    );
         } catch(IOException e) {
             Debug.error("FXML Error: downloads.fxml", e);
         }
@@ -116,10 +119,18 @@ public class Search {
     private void settingsView(Event event) {
 
         try {
-            Parent settingsView = FXMLLoader.load(Main.class.getResource("resources/fxml/settings.fxml"));
+            (
+                    ((Node) event.getSource())
+                            .getScene()
+                            .getWindow()
+            )
+                    .getScene()
+                    .setRoot(
+                            FXMLLoader.load(
+                                    Main.class.getResource("resources/fxml/settings.fxml")
+                            )
+                    );
 
-            Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            mainWindow.setScene(new Scene(settingsView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight()));
 
         } catch(IOException e) {
             Debug.error("Missing FXML File: Settings.fxml", e);
@@ -187,11 +198,17 @@ public class Search {
                                     );
 
                                 try {
-                                    Parent resultsView = FXMLLoader.load(Main.class.getResource("resources/fxml/results.fxml"));
-                                    Stage mainWindow = (Stage) ((Node) e.getSource()).getScene().getWindow();
-
-                                    Platform.runLater(() -> mainWindow.setScene(new Scene(resultsView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight())));
-
+                                    (
+                                            ((Node) e.getSource())
+                                                    .getScene()
+                                                    .getWindow()
+                                    )
+                                            .getScene()
+                                            .setRoot(
+                                                    FXMLLoader.load(
+                                                            Main.class.getResource("resources/fxml/results.fxml")
+                                                    )
+                                            );
                                 } catch (IOException er) {
                                     Debug.error("FXML Error: Settings.fxml", er);
                                 }

@@ -7,7 +7,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
-import javafx.scene.*;
+import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -23,7 +24,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
-import javafx.stage.Stage;
 import musicdownloader.Main;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
@@ -550,10 +550,17 @@ public class Downloads {
         // Go to search page
         try {
             uiUpdater.cancel();
-            Parent searchView = FXMLLoader.load(Main.class.getResource("resources/fxml/search.fxml"));
-            Stage mainWindow = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            mainWindow.setScene(new Scene(searchView, mainWindow.getWidth() - Resources.getInstance().getWindowResizeWidth(), mainWindow.getHeight() - Resources.getInstance().getWindowResizeHeight()));
-
+            (
+                    ((Node) event.getSource())
+                            .getScene()
+                            .getWindow()
+            )
+                    .getScene()
+                    .setRoot(
+                            FXMLLoader.load(
+                                    Main.class.getResource("resources/fxml/search.fxml")
+                            )
+                    );
         } catch(IOException e) {
             Debug.error("FXML Error: search.fxml", e);
         }
