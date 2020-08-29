@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.*;
@@ -39,8 +40,10 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.IntStream;
 
 /*
 TODO
@@ -677,6 +680,8 @@ public class Downloads {
 
     public class downloadResult extends Result {
 
+        private historyController historyController = null;
+
         public downloadResult(
                 String localArtResource,
                 String remoteArtResource,
@@ -745,189 +750,171 @@ public class Downloads {
 
         }
 
-        // TODO: Refactor into a class with functions instead of duplicated code and other inefficiencies
         public void setHistory(JSONObject downloadObject, int songIndex) throws JSONException {
+            this.historyController = new historyController(downloadObject, songIndex);
+            view.setRight(historyController.getView());
+        }
 
-            // Building the cross
-            Line crossLine0 = new Line(20, 0, 0, 20);
-            crossLine0.getStyleClass().add("cross-line");
+        protected class historyController {
 
-            Line crossLine1 = new Line(20, 20, 0, 0);
-            crossLine1.getStyleClass().add("cross-line");
+            private final HBox view = new HBox();
 
-            right.setOnMouseEntered(e -> {
-                crossLine0.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.RED : Color.BLACK);
-                crossLine1.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.RED : Color.BLACK);
-            });
-            right.setOnMouseExited(e -> {
-                crossLine0.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.rgb(193, 199, 201) : Color.GRAY);
-                crossLine1.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.rgb(193, 199, 201) : Color.GRAY);
-            });
-            right.setCursor(Cursor.HAND);
+            private final Line crossLine0 = new Line(20, 0, 0, 20);
+            private final Line crossLine1 = new Line(20, 20, 0, 0);
 
-            // Processing an album history
-            if (songIndex == -1) {
+            private final downloadResult parent = downloadResult.this;
 
-                int foundFiles = 0;
-                for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
-                    for (String extension : Resources.songReferences) {
+            private final JSONObject downloadObject;
+            private final int songIndex;
 
-                        if (
-                                Files.exists(
-                                        Paths.get(
-                                                String.format(
-                                                        "%s/%s.%s",
-                                                        downloadObject.getJSONObject("metadata").getString("directory"),
-                                                        downloadObject.getJSONArray("songs").getJSONObject(i).getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_"),
-                                                        extension
-                                                )
-                                        )
+            private final ArrayList<File> foundFiles = new ArrayList<>();
+            private File viewFile = null;
+
+            public historyController(JSONObject downloadObject, int songIndex) throws JSONException {
+
+                this.downloadObject = downloadObject;
+                this.songIndex = songIndex;
+
+                // View Initialisation
+                crossLine0.getStyleClass().add("cross-line");
+                crossLine1.getStyleClass().add("cross-line");
+
+                view.setAlignment(Pos.CENTER);
+                view.setCursor(Cursor.HAND);
+                view.setPadding(new Insets(0, 10, 0, 0));
+                view.setOnMouseEntered(this::selectCross);
+                view.setOnMouseExited(this::unselectCross);
+
+                // Check if: song doesn't exist or all songs in album don't exist
+                double foundFiles = 0;
+                if ((songIndex != -1 && checkFile(songIndex) == 0)
+                        || (songIndex == -1 && (foundFiles = IntStream.range(0, downloadObject.getJSONArray("songs").length()).mapToDouble(this::checkFile).sum()) == 0))
+                {
+                    parent.title.getStyleClass().add("sub_title1_strikethrough");
+                    parent.albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
+                    parent.setSubtext( (songIndex == -1 ? "All Files" : "File") + " Moved or Deleted.");
+
+                } else {
+
+                    double missingFiles;
+                    if (songIndex == -1 && foundFiles < downloadObject.getJSONArray("songs").length() ) {
+
+                        parent.setSubtext(
+                                String.format(
+                                        "%.0f File%s Moved or Deleted.",
+                                        (missingFiles = downloadObject.getJSONArray("songs").length() - foundFiles),
+                                        missingFiles == 1 ? "" : "s"
                                 )
-                        )
-                            foundFiles++;
+                        );
 
                     }
+
+                    // Active Files
+                    viewFile = this.foundFiles.size() > 1 ? new File(downloadObject.getJSONObject("metadata").getString("directory")) : this.foundFiles.get(0);
+
+                    parent.left.setOnMouseEntered(this::selectTitle);
+                    parent.left.setOnMouseExited(this::unselectTitle);
+
+                    parent.view.setOnMouseClicked(this::openFiles);
+                    parent.view.setCursor(Cursor.HAND);
                 }
 
-                if (foundFiles == 0) {
-                    setSubtext("All Files moved or deleted.");
-                    albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
-                    view.setLeft(new HBox(albumArt, leftTextContainer));
-                    title.getStyleClass().add("sub_title1_strikethrough");
-
-                } else {
-
-                    if (foundFiles != downloadObject.getJSONArray("songs").length())
-                        setSubtext((downloadObject.getJSONArray("songs").length() - foundFiles) + " Files moved or deleted.");
-
-                    view.setCursor(Cursor.HAND);
-                    view.setOnMouseEntered(e -> title.getStyleClass().add("sub_title1_selected"));
-                    view.setOnMouseExited(e -> title.getStyleClass().remove("sub_title1_selected"));
-                    view.setOnMouseClicked((MouseEvent event) -> {
-                        if (event.getButton() == MouseButton.PRIMARY)
-                            try {
-                                Desktop.getDesktop().open(new File(downloadObject.getJSONObject("metadata").getString("directory")));
-                            } catch (IOException | IllegalArgumentException | JSONException ignored) {
-                                view.setCursor(Cursor.DEFAULT);
-                                view.setOnMouseClicked(null);
-
-                                albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
-                                setSubtext("All Files moved or deleted.");
-
-                                renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
-                            }
-                    });
-
-                }
-
-                right.setOnMouseClicked(e -> {
-                    Downloads.this.eventsViewTable.getItems().remove(view);
-                    Downloads.this.downloadHistoriesViewAlbums.remove(view);
-
-                    try {
-                        for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++)
-                            Model.getInstance().download.deleteHistory(downloadObject.getJSONArray("songs").getJSONObject(i));
-                    } catch (JSONException er) {
-                        Debug.error("Failed to parse songs to delete history album.", er);
-                    }
-
-                    try {
-                        JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
-                        downloadHistoriesView.clear();
-
-                        for (int i = 0; i < downloadHistory.length(); i++) buildSongHistory(downloadHistory, i);
-                    } catch (JSONException er) {
-                        Debug.error("Failed to parse JSON to render new download history for songs.", er);
-                    }
-
-                    if (eventsViewTable.getItems().size() == 0) Platform.runLater(Downloads.this::defaultView);
-                    e.consume();
-
-                });
-
-            } else {
-
-                File foundFile = null;
-                for (String extension: Resources.songReferences) {
-                    File potentialFile = new File(
-                            String.format(
-                                    "%s/%s.%s",
-                                    downloadObject.getJSONObject("metadata").getString("directory"),
-                                    downloadObject.getJSONArray("songs").getJSONObject(songIndex).getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_"),
-                                    extension
-                            )
-                    );
-                    if (potentialFile.exists()) {
-                        foundFile = potentialFile;
-                        break;
-                    }
-                }
-
-                if (foundFile == null) {
-
-                    setSubtext("File moved or deleted.");
-                    albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
-
-                    view.setLeft(new HBox(albumArt, leftTextContainer));
-                    title.getStyleClass().add("sub_title1_strikethrough");
-
-                } else {
-                    view.setCursor(Cursor.HAND);
-                    File finalFoundFile = foundFile;
-
-                    view.setOnMouseEntered(e -> title.getStyleClass().add("sub_title1_selected"));
-                    view.setOnMouseExited(e -> title.getStyleClass().remove("sub_title1_selected"));
-
-                    view.setOnMouseClicked((MouseEvent event) -> {
-                        if (event.getButton() == MouseButton.PRIMARY)
-                            try {
-                                Desktop.getDesktop().open(finalFoundFile);
-                            } catch (IOException | IllegalArgumentException ignored) {
-                                view.setCursor(Cursor.DEFAULT);
-                                view.setOnMouseClicked(null);
-                                albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
-                                setSubtext("Files moved or deleted.");
-
-                                title.getStyleClass().add("sub_title1_strikethrough");
-
-                                // Rebuild song download histories
-                                renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
-
-                            }
-                    });
-                }
-
-                right.setOnMouseClicked(e -> {
-                    Downloads.this.eventsViewTable.getItems().remove(view);
-                    Downloads.this.downloadHistoriesViewAlbums.remove(view);
-
-                    try {
-                        Model.getInstance().download.deleteHistory(downloadObject.getJSONArray("songs").getJSONObject(songIndex));
-                    } catch (JSONException er) {
-                        Debug.error("Failed to parse songs to delete history album.", er);
-                    }
-
-
-                    try {
-                        downloadHistoriesViewAlbums.clear();
-                        JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
-
-                        for (int i = 0; i < downloadHistory.length(); i++) {
-                            buildSongHistory(downloadHistory, i);
-                        }
-
-                    } catch (JSONException er) {
-                        Debug.error("Failed to parse JSON to redraw albums.", er);
-                    }
-
-                    if (eventsViewTable.getItems().size() == 0) Platform.runLater(Downloads.this::defaultView);
-                    e.consume();
-                });
+                view.setOnMouseClicked(this::clearHistory);
+                view.getChildren().setAll(new Group(crossLine0, crossLine1));
 
             }
 
-            right.getChildren().setAll(new Group(crossLine0, crossLine1));
-            view.setRight(right);
+            public synchronized HBox getView() {
+                return view;
+            }
+
+            private synchronized void selectCross(MouseEvent e) {
+                crossLine0.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.RED : Color.BLACK);
+                crossLine1.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.RED : Color.BLACK);
+            }
+
+            private synchronized void unselectCross(MouseEvent e) {
+                crossLine0.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.rgb(193, 199, 201) : Color.GRAY);
+                crossLine1.setStroke(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.rgb(193, 199, 201) : Color.GRAY);
+            }
+
+            private synchronized void selectTitle(MouseEvent e) {
+                parent.title.getStyleClass().add("sub_title1_selected");
+            }
+
+            private synchronized void unselectTitle(MouseEvent e) {
+                parent.title.getStyleClass().remove("sub_title1_selected");
+            }
+
+            private synchronized void openFiles(MouseEvent event) {
+
+                if (event.getButton() == MouseButton.PRIMARY)
+                    try {
+                        Desktop.getDesktop().open(Objects.requireNonNull(viewFile));
+                    } catch (IOException | IllegalArgumentException ignored) {
+
+                        parent.view.setCursor(Cursor.DEFAULT);
+                        parent.view.setOnMouseClicked(null);
+                        parent.albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
+                        parent.setSubtext("Files moved or deleted.");
+
+                        parent.title.getStyleClass().add("sub_title1_strikethrough");
+
+                        // Rebuild song download histories
+                        Downloads.this.renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
+
+                        event.consume();
+
+                    } catch (NullPointerException e) {
+                        Debug.error("Attempted to open file which is not yet definitely, should have been completed in initialisation.", e);
+                    }
+
+            }
+
+            private synchronized void clearHistory(MouseEvent event) {
+
+                Downloads.this.eventsViewTable.getItems().remove(parent.view);
+
+                try {
+                    for (int i = 0; i < (songIndex == -1 ? downloadObject.getJSONArray("songs").length() : 1); i++) {
+                        Model.getInstance().download.deleteHistory(downloadObject.getJSONArray("songs").getJSONObject(songIndex == -1 ? i : songIndex));
+                    }
+                } catch (JSONException e) {
+                    Debug.error("Failed to parse JSON to remove download history from the model.", e);
+                }
+
+                Downloads.this.renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
+
+                if (eventsViewTable.getItems().size() == 0) Platform.runLater(Downloads.this::defaultView);
+                event.consume();
+
+            }
+
+            private synchronized int checkFile(int songIndex) {
+
+                try {
+                    String filePath;
+                    for (String extension : Resources.songReferences) {
+                        filePath = String.format(
+                                "%s/%s.%s",
+                                downloadObject.getJSONObject("metadata").getString("directory"),
+                                downloadObject.getJSONArray("songs").getJSONObject(songIndex).getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_"),
+                                extension
+                        );
+                        if (Files.exists(Paths.get(filePath))) {
+                            foundFiles.add(new File(filePath));
+                            return 1;
+                        }
+
+
+                    }
+                } catch (JSONException e) {
+                    Debug.error("Failed check file based on JSON history.", e);
+                }
+
+                return 0;
+
+            }
 
         }
     }
