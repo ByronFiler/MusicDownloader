@@ -63,7 +63,7 @@ public class Youtube implements Source {
 
     private void parseJSONResponse() {
 
-        Debug.log(Thread.currentThread(),"JSON Response received from youtube.");
+        Debug.log("JSON Response received from youtube.");
 
         // YouTube has given us the data stored in json stored script tags which be parsed
         JSONObject searchDataTemp;

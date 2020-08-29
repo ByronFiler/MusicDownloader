@@ -200,7 +200,7 @@ public class Downloads {
                                                     });
                                                 workingCounter++;
                                             } catch (NullPointerException e) {
-                                                Debug.log(Thread.currentThread(), "NullPointerException occurred in view, suppressed.");
+                                                Debug.log("NullPointerException occurred in view, suppressed.");
                                             }
                                         }
                                     }
@@ -580,7 +580,7 @@ public class Downloads {
             updateViewSelection();
         });
 
-        Debug.trace(
+        Debug.log(
                 String.format(
                         "Switched to albums view, displaying %s element%s out of %s (%.0f%%), using \"%s\" view.",
                         eventsViewTable.getItems().size(),
@@ -668,7 +668,7 @@ public class Downloads {
             } catch (NullPointerException ignored) {}
         });
 
-        Debug.trace(
+        Debug.log(
                 String.format(
                         "Switched to songs view, displaying %.0f element%s out of %.0f (%.0f%%), using \"%s\" view.",
                         usedElements,

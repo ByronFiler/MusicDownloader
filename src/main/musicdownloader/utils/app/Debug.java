@@ -39,7 +39,7 @@ public class Debug {
         debug = state;
     }
 
-    public static void log(Thread t, String msg) {
+    public static void log(String msg) {
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         String traceMessage;
@@ -47,27 +47,15 @@ public class Debug {
         if (debug) {
             synchronized ( Debug.class )
             {
-                if (t != null) {
 
-                    traceMessage = String.format(
-                            "LOG%s[%s: %d] @ %s: %s",
-                            advancedDebug ? prettyExecutionTrace() : " ",
-                            t.getName(),
-                            t.getId(),
-                            formatter.format(new Date()),
-                            msg
-                    );
-
-                } else {
-
-                    // Debugging main thread
-                    traceMessage = String.format(
-                            "LOG%s@ %s: %s",
-                            advancedDebug ? prettyExecutionTrace() : " ",
-                            formatter.format(new Date()),
-                            msg
-                    );
-                }
+                traceMessage = String.format(
+                        "LOG%s[%s: %d] @ %s: %s",
+                        advancedDebug ? prettyExecutionTrace() : " ",
+                        Thread.currentThread().getName(),
+                        Thread.currentThread().getId(),
+                        formatter.format(new Date()),
+                        msg
+                );
 
                 errorTrace.add(traceMessage);
             }

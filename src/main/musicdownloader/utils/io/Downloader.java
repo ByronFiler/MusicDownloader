@@ -163,7 +163,7 @@ public class Downloader implements Runnable {
 
         String line;
         while ((line = reader.readLine()) != null)
-            Debug.log(Thread.currentThread(), line);
+            Debug.log(line);
 
         // Silent debug to not spam console
         ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(Resources.getInstance().getApplicationData() + "temp").listFiles())));
