@@ -159,8 +159,10 @@ public class Results {
             download.setDisable(true);
 
             cancel.setText("Cancel");
-            cancel.getStyleClass().set(1, "cancel_button");
+            // cancel.getStyleClass().set(1, "cancel_button");
             cancel.setOnMouseClicked(e -> queueAdder.kill());
+
+            searchField.setDisable(true);
 
             // Selected Item -> Selected Item Data -> Select Item Data in correctly positioned array -> JSON Data needed -> Spawn thread with data to generate a queue item
             queueAdder = new generateQueueItem(
@@ -540,6 +542,7 @@ public class Results {
                     downloadItem.put("songs", songs);
 
                     Model.getInstance().download.updateDownloadQueue(downloadItem);
+                    Platform.runLater(() -> searchField.setDisable(false));
                 }
 
             } catch (JSONException e) {
@@ -547,6 +550,7 @@ public class Results {
             }
             catch (IOException e) {
                 Debug.warn("Connection error, attempting to reconnect.");
+                Platform.runLater(() -> searchField.setDisable(false));
                 // TODO:  Handle reconnection
             }
 
@@ -590,7 +594,7 @@ public class Results {
                 Platform.runLater(() -> footer.setTop(new HBox(linkPart0, linkPart1)));
 
                 cancel.setText("Back");
-                cancel.getStyleClass().set(1, "back_button");
+                // cancel.getStyleClass().set(1, "back_button");
                 cancel.setOnMouseClicked(Results.this::searchView);
             });
             completed = true;

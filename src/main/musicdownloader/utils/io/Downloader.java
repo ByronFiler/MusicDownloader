@@ -29,16 +29,22 @@ TODO
 
 public class Downloader implements Runnable {
 
+    // private final Thread executor;
     private JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
     private final JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
     private JSONArray downloadQueue = Model.getInstance().download.getDownloadQueue();
 
     private final ArrayList<Float> songsValidity = new ArrayList<>();
+    private final ArrayList<String> youtubeIds = new ArrayList<>();
 
     private byte[] albumArt;
 
     public Downloader() {
         new Thread(this, "acquire-download-files").start();
+        /*
+        executor = new Thread(this, "acquire-download-files");
+        executor.start();
+         */
     }
 
     private float evaluateDownloadValidity (String sampleFileSource, String downloadedFile) {
@@ -182,7 +188,7 @@ public class Downloader implements Runnable {
         if (downloadedFile == null) throw new IOException("Failed to find downloaded file.");
 
         // Validate
-        if (Model.getInstance().settings.getSettingBool("advanced_validation")) {
+        if (Model.getInstance().settings.getSettingBool("advanced_validation") && song.has("sample")) {
 
             float downloadValidity = evaluateDownloadValidity(
                     String.format(Resources.mp3Source, song.getString("sample")),
@@ -230,6 +236,10 @@ public class Downloader implements Runnable {
                 return;
 
             }
+
+            youtubeIds.add(song.getJSONArray("source").getString(sourceDepth));
+        } else {
+            youtubeIds.add(song.getJSONArray("source").getString(0));
         }
 
         // Apply meta-data
@@ -293,6 +303,17 @@ public class Downloader implements Runnable {
         songsValidity.clear();
 
     }
+
+    /*
+    public synchronized void pause() {
+        //executor.suspend();
+    }
+
+    public synchronized void resume() {
+        //executor.resume();
+    }
+
+     */
 
     @Override
     public void run() {
@@ -413,6 +434,7 @@ public class Downloader implements Runnable {
                 JSONObject newSongHistory = new JSONObject();
                 newSongHistory.put("title", downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"));
                 newSongHistory.put("id", downloadObject.getJSONArray("songs").getJSONObject(i).getString("id"));
+                newSongHistory.put("source", new JSONArray("[" + youtubeIds.get(i) + "]"));
 
                 songs.put(newSongHistory);
             }

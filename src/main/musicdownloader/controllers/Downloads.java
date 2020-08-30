@@ -1,6 +1,7 @@
 package musicdownloader.controllers;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -9,13 +10,13 @@ import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.*;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
@@ -29,6 +30,7 @@ import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
 import musicdownloader.utils.fx.Result;
+import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,17 +41,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.stream.IntStream;
-
-/*
-TODO
- - Songs could have a button to reacquire if missing?
- - Clickable area should be the entire result, the X should have a wide enough area and consume event to prevent both being done
- */
 
 public class Downloads {
 
@@ -85,6 +78,8 @@ public class Downloads {
         final JSONArray[] downloadHistory = {Model.getInstance().download.getDownloadHistory()};
         final JSONArray[] downloadQueue = {Model.getInstance().download.getDownloadQueue()};
         final JSONObject[] downloadObject = {Model.getInstance().download.getDownloadObject()};
+
+        eventViewSelector.getItems().clear();
 
         // Check what should be displayed
         if (downloadHistory[0].length() > 0 || downloadQueue[0].length() > 0 || downloadObject[0].length() > 0) {
@@ -513,6 +508,8 @@ public class Downloads {
 
     private void defaultView() {
 
+        Arrays.stream(Thread.currentThread().getStackTrace()).forEach(System.out::println);
+
         albumViewSelectorWrapper.setVisible(false);
         songViewSelectorWrapper.setVisible(false);
 
@@ -542,6 +539,8 @@ public class Downloads {
 
         viewContainer.getChildren().setAll(defaultInfoContainer);
 
+        Debug.trace("Finished default view.");
+
     }
 
     @FXML
@@ -569,6 +568,8 @@ public class Downloads {
 
     @FXML
     public void albumsView() {
+
+        // Default to defaultView for some reason
         albumViewSelectorWrapper.getStyleClass().setAll("underline2");
         songViewSelectorWrapper.getStyleClass().setAll();
 
@@ -597,6 +598,8 @@ public class Downloads {
                         eventViewSelector.isVisible() ? eventViewSelector.getSelectionModel().getSelectedItem() : "All"
                 )
         );
+
+        Debug.trace("Finished albums view.");
     }
 
     @FXML
@@ -691,7 +694,8 @@ public class Downloads {
 
     public class downloadResult extends Result {
 
-        private historyController historyController = null;
+        ContextMenu options = new ContextMenu();
+        HistoryController historyController;
 
         public downloadResult(
                 String localArtResource,
@@ -700,6 +704,8 @@ public class Downloads {
                 String artist
         ) {
             super(localArtResource, remoteArtResource, false, title, artist);
+            view.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> { options.show(view, event.getScreenX(), event.getScreenY());event.consume(); });
+            view.addEventHandler(MouseEvent.MOUSE_PRESSED, event -> options.hide());
         }
 
         public void setCurrentlyDownloading(double progress) {
@@ -762,11 +768,68 @@ public class Downloads {
         }
 
         public void setHistory(JSONObject downloadObject, int songIndex) throws JSONException {
-            this.historyController = new historyController(downloadObject, songIndex);
+            historyController = new HistoryController(downloadObject, songIndex);
+
             view.setRight(historyController.getView());
+
+            if (songIndex == -1) {
+                new ContextController("HISTORY", new File(downloadObject.getJSONObject("metadata").getString("directory")));
+            } else {
+
+                String filePathCheck;
+                String filePath = null;
+                for (String extension : Resources.songReferences) {
+                    filePathCheck = String.format(
+                            "%s/%s.%s",
+                            downloadObject.getJSONObject("metadata").getString("directory"),
+                            downloadObject.getJSONArray("songs").getJSONObject(songIndex).getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_"),
+                            extension
+                    );
+                    if (Files.exists(Paths.get(filePathCheck))) {
+                        filePath = filePathCheck;
+                        break;
+                    }
+                }
+                if (filePath == null) {
+                    filePath = String.format(
+                            "%s/%s.%s",
+                            downloadObject.getJSONObject("metadata").getString("directory"),
+                            downloadObject.getJSONArray("songs").getJSONObject(songIndex).getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_"),
+                            Resources.songReferences.get(Model.getInstance().settings.getSettingInt("music_format"))
+                    );
+                }
+
+                new ContextController("HISTORY", new File(filePath));
+            }
+
         }
 
-        protected class historyController {
+        private void deleteHistory(int songIndex, JSONObject downloadObject, boolean supressDefault) {
+            Downloads.this.eventsViewTable.getItems().remove(view);
+
+            try {
+                for (int i = 0; i < (songIndex == -1 ? downloadObject.getJSONArray("songs").length() : 1); i++) {
+                    Model.getInstance().download.deleteHistory(downloadObject.getJSONArray("songs").getJSONObject(songIndex == -1 ? i : songIndex));
+                }
+            } catch (JSONException e) {
+                Debug.error("Failed to parse JSON to remove download history from the model.", e);
+            }
+
+            Downloads.this.renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
+            try {
+                if (Model.getInstance().download.getDownloadObject().has("metadata"))
+                    Downloads.this.generateCurrent(Model.getInstance().download.getDownloadObject());
+
+                if (Model.getInstance().download.getDownloadQueue().length() > 0)
+                    Downloads.this.buildDownloadQueueView(Model.getInstance().download.getDownloadQueue());
+            } catch (JSONException e) {
+                Debug.error("Failed to parse JSON to build view.", e);
+            }
+
+            if (eventsViewTable.getItems().size() == 0 && !supressDefault) Platform.runLater(Downloads.this::defaultView);
+        }
+
+        protected class HistoryController {
 
             private final HBox view = new HBox();
 
@@ -774,14 +837,14 @@ public class Downloads {
             private final Line crossLine1 = new Line(20, 20, 0, 0);
 
             private final downloadResult parent = downloadResult.this;
-
             private final JSONObject downloadObject;
+
             private final int songIndex;
 
             private final ArrayList<File> foundFiles = new ArrayList<>();
             private File viewFile = null;
 
-            public historyController(JSONObject downloadObject, int songIndex) throws JSONException {
+            public HistoryController(JSONObject downloadObject, int songIndex) throws JSONException {
 
                 this.downloadObject = downloadObject;
                 this.songIndex = songIndex;
@@ -830,13 +893,21 @@ public class Downloads {
                     parent.view.setCursor(Cursor.HAND);
                 }
 
-                view.setOnMouseClicked(this::clearHistory);
+                view.setOnMouseClicked(this::deleteHistory);
                 view.getChildren().setAll(new Group(crossLine0, crossLine1));
 
             }
 
             public synchronized HBox getView() {
                 return view;
+            }
+
+            public JSONObject getDownloadObject() {
+                return downloadObject;
+            }
+
+            public int getSongIndex() {
+                return songIndex;
             }
 
             private synchronized void selectCross(MouseEvent e) {
@@ -877,26 +948,14 @@ public class Downloads {
                         event.consume();
 
                     } catch (NullPointerException e) {
-                        Debug.error("Attempted to open file which is not yet definitely, should have been completed in initialisation.", e);
+                        Debug.error("Attempted to open file which is not yet initialised, should have been completed in initialisation.", e);
                     }
 
             }
 
-            private synchronized void clearHistory(MouseEvent event) {
+            private synchronized void deleteHistory(MouseEvent event) {
 
-                Downloads.this.eventsViewTable.getItems().remove(parent.view);
-
-                try {
-                    for (int i = 0; i < (songIndex == -1 ? downloadObject.getJSONArray("songs").length() : 1); i++) {
-                        Model.getInstance().download.deleteHistory(downloadObject.getJSONArray("songs").getJSONObject(songIndex == -1 ? i : songIndex));
-                    }
-                } catch (JSONException e) {
-                    Debug.error("Failed to parse JSON to remove download history from the model.", e);
-                }
-
-                Downloads.this.renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
-
-                if (eventsViewTable.getItems().size() == 0) Platform.runLater(Downloads.this::defaultView);
+                downloadResult.this.deleteHistory(songIndex, downloadObject, false);
                 event.consume();
 
             }
@@ -924,6 +983,211 @@ public class Downloads {
                 }
 
                 return 0;
+
+            }
+
+        }
+
+        protected class ContextController {
+
+            private final ContextMenu menu = downloadResult.this.options;
+            private final File downloadedFile;
+
+            private MenuItem pause;
+            private MenuItem cancelCurrent;
+            private MenuItem resume;
+
+            private MenuItem deleteHistory;
+            private MenuItem reacquireFiles;
+
+            public ContextController(String type, File downloadedFile) {
+
+                this.downloadedFile = downloadedFile;
+
+                switch (type) {
+
+                    case "CURRENTLY_DOWNLOADING":
+
+                        this.pause = new MenuItem("Pause");
+                        this.cancelCurrent = new MenuItem("Cancel");
+                        this.resume = new MenuItem("Resume");
+
+                        this.pause.setOnAction(this::pause);
+                        this.cancelCurrent.setOnAction(this::cancelCurrent);
+                        this.resume.setOnAction(this::resume);
+
+                        synchronized (this) {
+                            menu.getItems().setAll(pause, cancelCurrent);
+                        }
+
+                        break;
+
+                    case "COMPLETED_DOWNLOAD":
+
+                        if (downloadedFile.exists()) {
+
+                            MenuItem viewFiles = new MenuItem("View File" + (downloadedFile.isDirectory() ? "s" : ""));
+                            viewFiles.setOnAction(this::viewFiles);
+
+                            synchronized (this) {
+                                menu.getItems().setAll(viewFiles);
+                            }
+
+                        }
+
+                        break;
+
+                    case "SCHEDULED_DOWNLOAD":
+
+                        MenuItem cancelScheduled = new MenuItem("Cancel");
+                        cancelScheduled.setOnAction(this::cancelScheduled);
+
+                        synchronized (this) {
+                            menu.getItems().setAll(cancelScheduled);
+                        }
+
+                        break;
+
+                    case "HISTORY":
+                        deleteHistory = new MenuItem("Delete from History");
+                        reacquireFiles = new MenuItem("Redownload File" + (historyController.getSongIndex() == -1 ? "s" : ""));
+                        MenuItem deleteFiles = new MenuItem("Delete File" + (downloadedFile.isDirectory() ? "s" : ""));
+                        MenuItem deleteBoth = new MenuItem("Delete Both");
+
+                        deleteHistory.setOnAction(this::deleteHistory);
+                        reacquireFiles.setOnAction(this::reacquireFiles);
+                        deleteFiles.setOnAction(this::deleteFile);
+                        deleteBoth.setOnAction(this::deleteBoth);
+
+                        synchronized (this) {
+                            if (downloadedFile.exists()) menu.getItems().setAll(deleteHistory, deleteFiles, deleteBoth);
+                            else menu.getItems().setAll(deleteHistory, reacquireFiles);
+                        }
+
+                        break;
+
+                    default:
+                        Debug.error("Failed to set context menu for item.", new IllegalArgumentException("Unknown item type: " + type));
+
+                }
+
+            }
+
+            private synchronized void pause(ActionEvent event) {
+
+                menu.getItems().setAll(resume, cancelCurrent);
+
+                //Model.getInstance().download.getDownloader().pause();
+
+                Debug.trace("Pause Download");
+
+            }
+
+            private synchronized void cancelCurrent(ActionEvent event) {
+
+                menu.getItems().clear();
+
+                Debug.trace("Cancel Download");
+
+            }
+
+            private synchronized void resume(ActionEvent event) {
+
+                menu.getItems().setAll(pause, cancelCurrent);
+
+                //Model.getInstance().download.getDownloader().resume();
+
+                Debug.trace("Resume Download");
+
+            }
+
+            private synchronized void viewFiles(ActionEvent event) {
+
+                try {
+
+                    if (downloadedFile.exists()) Desktop.getDesktop().open(Objects.requireNonNull(downloadedFile));
+                    else menu.getItems().clear();
+
+                } catch (IOException e) {
+
+                    Debug.warn("Downloaded file passed exist check but failed to open.");
+                    menu.getItems().clear();
+
+                } catch (NullPointerException e) {
+
+                    Debug.error("Downloaded file was not given, should've been passed in initialisation.", new IllegalArgumentException("Invalid download file"));
+
+                }
+
+            }
+
+            private synchronized void cancelScheduled(ActionEvent event) {
+
+                menu.getItems().clear();
+
+                Debug.trace("Cancel Scheduled");
+
+            }
+
+            private synchronized void deleteHistory(ActionEvent event) {
+
+                downloadResult.this.deleteHistory(
+                        historyController.getSongIndex(),
+                        historyController.getDownloadObject(),
+                        false
+                );
+
+            }
+
+            private synchronized void deleteFile(ActionEvent event) {
+
+                try {
+                    if (downloadedFile.isDirectory()) FileUtils.deleteDirectory(downloadedFile);
+                    else if (!downloadedFile.delete())
+                        Debug.warn("Failed to delete file " + downloadedFile.getAbsolutePath());
+                } catch (IOException e) {
+                    Debug.warn("Failed to delete directory " + downloadedFile.getAbsolutePath());
+                }
+
+                downloadResult.this.view.setCursor(Cursor.DEFAULT);
+                downloadResult.this.view.setOnMouseClicked(null);
+                downloadResult.this.albumArt.setEffect(new ColorAdjust(0, -1, 0, 0));
+                downloadResult.this.setSubtext(String.format("File%s moved or deleted.", historyController.getSongIndex() == -1 ? "s" : ""));
+                downloadResult.this.title.getStyleClass().add("sub_title1_strikethrough");
+
+                menu.getItems().setAll(deleteHistory, reacquireFiles);
+
+                Downloads.this.renderDownloadHistory(Model.getInstance().download.getDownloadHistory());
+            }
+
+            private synchronized void deleteBoth(ActionEvent event) {
+
+                deleteHistory(event);
+                deleteFile(event);
+
+            }
+
+            private synchronized void reacquireFiles(ActionEvent event) {
+
+                downloadResult.this.deleteHistory(
+                        historyController.getSongIndex(),
+                        historyController.getDownloadObject(),
+                        true
+                );
+                Model.getInstance().download.updateDownloadQueue(historyController.getDownloadObject());
+
+                // Seems to not be getting the latest data
+                downloadHistoriesView.clear();
+                downloadHistoriesViewAlbums.clear();
+
+                currentDownloadsView.clear();
+                currentDownloadsViewAlbums.clear();
+
+                plannedDownloadsView.clear();
+                plannedDownloadsViewAlbums.clear();
+
+                // Reinitialise, draws properly but seems to overwrite it's self?
+                initialize();
 
             }
 

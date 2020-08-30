@@ -70,10 +70,12 @@
     -fx-font-weight: bold;
 }
 
+/*
 .confirm_button {
     -fx-background-color: green;
     -fx-text-fill: white;
 }
+ */
 
 .selector {
     -fx-border-radius: 0;
