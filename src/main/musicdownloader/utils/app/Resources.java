@@ -18,10 +18,6 @@ public class Resources {
     private String youtubeDlExecutable = null;
     private String ffmpegExecutable = null;
 
-    // Windows makes the windows slightly different sizes after each new scene
-    private int windowResizeWidth = 0;
-    private int windowResizeHeight = 0;
-
     public Resources() {
 
         String os = System.getProperty("os.name").toLowerCase();
@@ -31,9 +27,6 @@ public class Resources {
             applicationData = System.getenv("APPDATA") + "/MusicDownloader/";
             youtubeDlExecutable = System.getenv("ProgramFiles(X86)") + "/youtube-dl/youtube-dl.exe";
             ffmpegExecutable = System.getenv("ProgramFiles(X86)") + "/youtube-dl/ffmpeg.exe";
-
-            windowResizeWidth = 16;
-            windowResizeHeight = 39;
         }
 
         // MacOS
@@ -41,14 +34,10 @@ public class Resources {
             applicationData = System.getProperty("user.home") + "/Library/MusicDownloader/";
             youtubeDlExecutable = "/usr/local/bin/youtube-dl";
             ffmpegExecutable = "/usr/local/bin/ffmpeg";
-
-            windowResizeWidth = 0;
-            windowResizeHeight = 22;
         }
 
         // Unix Based
-        else if (os.contains("nix") || os.contains("nux") || os.contains("aix"))
-            Debug.error("Linux is currently unsupported.", new JarException());
+        else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) Debug.error("Linux is currently unsupported.", new JarException());
 
         // SunOS & Unknown
         else Debug.error("Unsupported operating system.", new JarException());
@@ -65,14 +54,6 @@ public class Resources {
 
     public String getFfmpegExecutable() {
         return Objects.requireNonNull(ffmpegExecutable);
-    }
-
-    public int getWindowResizeWidth() {
-        return windowResizeWidth;
-    }
-
-    public int getWindowResizeHeight() {
-        return windowResizeHeight;
     }
 
     public static Resources getInstance() {
