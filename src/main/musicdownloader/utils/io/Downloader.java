@@ -29,7 +29,6 @@ TODO
 
 public class Downloader implements Runnable {
 
-    // private final Thread executor;
     private JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
     private final JSONArray downloadHistory = Model.getInstance().download.getDownloadHistory();
     private JSONArray downloadQueue = Model.getInstance().download.getDownloadQueue();
@@ -41,10 +40,6 @@ public class Downloader implements Runnable {
 
     public Downloader() {
         new Thread(this, "acquire-download-files").start();
-        /*
-        executor = new Thread(this, "acquire-download-files");
-        executor.start();
-         */
     }
 
     private float evaluateDownloadValidity (String sampleFileSource, String downloadedFile) {
@@ -304,17 +299,6 @@ public class Downloader implements Runnable {
 
     }
 
-    /*
-    public synchronized void pause() {
-        //executor.suspend();
-    }
-
-    public synchronized void resume() {
-        //executor.resume();
-    }
-
-     */
-
     @Override
     public void run() {
 
@@ -380,6 +364,7 @@ public class Downloader implements Runnable {
 
             // Preparing history data structure
             newHistory.put("metadata", downloadObject.getJSONObject("metadata"));
+            newHistory.getJSONObject("metadata").put("format", Resources.songReferences.get(Model.getInstance().settings.getSettingInt("music_format")));
             JSONArray songs = new JSONArray();
 
             JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
@@ -421,6 +406,8 @@ public class Downloader implements Runnable {
                 // Update internal referencing
                 downloadObject.getJSONArray("songs").getJSONObject(i).put("completed", true);
                 downloadObject.getJSONArray("songs").getJSONObject(i).put("downloadCompleted", Instant.now().toEpochMilli());
+
+                Model.getInstance().download.markCompletedSong(i);
 
                 Debug.trace(
                         String.format(
@@ -519,6 +506,7 @@ public class Downloader implements Runnable {
 
                     // Updating the model
                     Model.getInstance().download.setDownloadObject(downloadObject);
+                    Model.getInstance().download.markCompletedDownload();
 
                     // Updating the queue
                     if (downloadQueue.length() == 1)
@@ -544,6 +532,7 @@ public class Downloader implements Runnable {
             } else {
                 Debug.trace("Found 0 items remaining in queue, waiting for next download to start.");
                 Model.getInstance().download.setDownloadObject(new JSONObject());
+                Model.getInstance().download.markCompletedDownload();
             }
         });
 

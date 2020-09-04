@@ -9,6 +9,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
@@ -219,7 +220,7 @@ public class Results {
 
                 // Search is valid to attempt
                 String tempQuery = searchField.getText();
-                Allmusic.search search = new Allmusic.search(tempQuery);
+                Allmusic.Search search = new Allmusic.Search(tempQuery);
                 loadingIndicator.setVisible(true);
                 Thread resultsSearch = new Thread(() -> {
                     try {
@@ -563,7 +564,7 @@ public class Results {
 
                 Label linkPart0;
                 if (Model.getInstance().download.getDownloadQueue().length() > 0)
-                    linkPart0 = new Label(String.format("Added to download queue, in position %s, view progress in", Model.getInstance().download.getDownloadObject().length()));
+                    linkPart0 = new Label(String.format("Added to download queue, in position %s, view progress in ", Model.getInstance().download.getDownloadObject().length()));
 
                 else linkPart0 = new Label("Download started, view progress in ");
 
@@ -574,6 +575,10 @@ public class Results {
                 linkPart1.setCursor(Cursor.HAND);
                 linkPart1.setOnMouseClicked(e -> {
                     try {
+                        FXMLLoader downloadsLoader = new FXMLLoader(Main.class.getResource("resources/fxml/downloads.fxml"));
+                        Parent controllerView = downloadsLoader.load();
+                        Model.getInstance().download.setDownloadsView(downloadsLoader.getController());
+
                         (
                                 ((Node) e.getSource())
                                         .getScene()
@@ -581,9 +586,7 @@ public class Results {
                         )
                                 .getScene()
                                 .setRoot(
-                                        FXMLLoader.load(
-                                                Main.class.getResource("resources/fxml/downloads.fxml")
-                                        )
+                                        controllerView
                                 );
                     } catch (IOException er) {
                         Debug.error("FXML Error with downloads.fxml", er);
@@ -607,9 +610,6 @@ public class Results {
     class searchResult extends Result {
 
         private final JSONObject data;
-
-        private final ContextMenu contextMenu;
-
         private MenuItem getAlbumSongs;
         private MenuItem hideAlbumSongs;
 
@@ -626,7 +626,6 @@ public class Results {
             setSubtext(data.getJSONObject("view").getString("meta"));
 
             this.data = data;
-            contextMenu = new ContextMenu();
 
             MenuItem hide = new MenuItem("Hide");
             hide.setOnAction(e -> {
@@ -634,10 +633,7 @@ public class Results {
                 Results.this.modifiedResults = true;
             });
 
-            contextMenu.getItems().setAll(hide);
-
-            view.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> { contextMenu.show(view, event.getScreenX(), event.getScreenY());event.consume(); });
-            view.addEventHandler(MouseEvent.MOUSE_PRESSED, event -> contextMenu.hide());
+            menu.getItems().setAll(hide);
 
             if (Model.getInstance().settings.getSettingBool("data_saver")) {
                 MenuItem informationRetrieval = new MenuItem("Retrieve Additional Information");
@@ -683,7 +679,7 @@ public class Results {
                                     setSubtext(subtext.toString());
                                 });
                             }
-                            Platform.runLater(() -> contextMenu.getItems().remove(informationRetrieval));
+                            Platform.runLater(() -> menu.getItems().remove(informationRetrieval));
                         } catch (JSONException er) {
                             Debug.error("Failed to get data to extract additional information.", er);
                         } catch (IOException er) {
@@ -694,7 +690,7 @@ public class Results {
                     externalInformationRetriever.setDaemon(true);
                     externalInformationRetriever.start();
                 });
-                contextMenu.getItems().add(informationRetrieval);
+                menu.getItems().add(informationRetrieval);
             }
 
             if (data.getJSONObject("data").getBoolean("album")) {
@@ -704,15 +700,15 @@ public class Results {
                 hideAlbumSongs.setOnAction(this::hideResult);
                 getAlbumSongs.setOnAction(this::getAlbumSongs);
 
-                contextMenu.getItems().add(getAlbumSongs);
+                menu.getItems().add(getAlbumSongs);
             }
         }
 
         private void hideResult(ActionEvent event) {
 
             view.setBottom(null);
-            contextMenu.getItems().remove(hideAlbumSongs);
-            contextMenu.getItems().add(getAlbumSongs);
+            menu.getItems().remove(hideAlbumSongs);
+            menu.getItems().add(getAlbumSongs);
             internalMediaControllers.forEach(Results.this.mediaPlayers::remove);
 
         }
@@ -737,8 +733,8 @@ public class Results {
                         }
 
                         Platform.runLater(() -> view.setBottom(songResults));
-                        contextMenu.getItems().remove(getAlbumSongs);
-                        contextMenu.getItems().add(hideAlbumSongs);
+                        menu.getItems().remove(getAlbumSongs);
+                        menu.getItems().add(hideAlbumSongs);
 
                     } catch (IOException er) {
                         Debug.warn("Connection failure detected.");

@@ -9,7 +9,7 @@ class AllmusicTest {
 
     @Test
     void validSearch() {
-        Allmusic.search validSearch = new Allmusic.search("The Dark Side of the Moon");
+        Allmusic.Search validSearch = new Allmusic.Search("The Dark Side of the Moon");
         try {
             validSearch.query(true);
             assert validSearch.getResults().getJSONArray("songs").length() > 0;
@@ -20,7 +20,7 @@ class AllmusicTest {
 
     @Test
     void invalidSearch() {
-        Allmusic.search invalidSearch = new Allmusic.search("%%%%%%%%");
+        Allmusic.Search invalidSearch = new Allmusic.Search("%%%%%%%%");
         try {
             invalidSearch.query(true);
         } catch (IOException e) {
@@ -30,7 +30,7 @@ class AllmusicTest {
 
     @Test
     void noResultsSearch() {
-        Allmusic.search noResultsSearch = new Allmusic.search("This is a valid search, but it contains no results.");
+        Allmusic.Search noResultsSearch = new Allmusic.Search("This is a valid search, but it contains no results.");
         try {
             noResultsSearch.query(true);
             assert noResultsSearch.getResults().getJSONArray("songs").length() == 0;

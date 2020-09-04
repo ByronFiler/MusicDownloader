@@ -76,7 +76,12 @@ public class Youtube implements Source {
             jsonConversion = jsonConversion.substring(39, jsonConversion.length() - 119);
 
             // Web Data -> JavaScript -> String -> [Json] -> Data
-            JSONObject json = new JSONObject(jsonConversion);
+            JSONObject json = new JSONObject();
+            try {
+                json = new JSONObject(jsonConversion);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
 
             // Parsing deep JSON to get relevant data
             JSONArray contents = json

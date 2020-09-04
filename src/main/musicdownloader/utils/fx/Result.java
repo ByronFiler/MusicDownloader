@@ -2,9 +2,12 @@ package musicdownloader.utils.fx;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ContextMenuEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -18,15 +21,16 @@ import java.nio.file.Paths;
 
 public class Result {
 
-    protected BorderPane view;
+    protected final BorderPane view = new BorderPane();
 
-    protected final HBox left;
-    protected final ImageView albumArt;
-    protected final BorderPane leftTextContainer;
-    protected final BorderPane imageContainer;
-    protected final Label title;
+    protected final HBox left = new HBox();
+    protected final ImageView albumArt = new ImageView();
+    protected final BorderPane leftTextContainer = new BorderPane();
+    protected final BorderPane imageContainer = new BorderPane();
+    protected final Label title = new Label();
 
-    protected HBox right;
+    protected final HBox right = new HBox();
+    protected final ContextMenu menu = new ContextMenu();
 
     public Result(
             String localArtResource,
@@ -35,17 +39,7 @@ public class Result {
             String title,
             String artist
     ) {
-        view = new BorderPane();
-
-        imageContainer = new BorderPane();
-        imageContainer.setMinSize(85, 85);
-        imageContainer.setPrefSize(85, 85);
-
-        albumArt = new ImageView();
-        leftTextContainer = new BorderPane();
-
-        right = new HBox();
-
+        sharedInitialisation(title, artist);
         if (localArtResource != null && Files.exists(Paths.get(localArtResource))) {
 
             albumArt.setImage(
@@ -57,8 +51,6 @@ public class Result {
                             true
                     )
             );
-            albumArt.setFitHeight(85);
-            albumArt.setFitWidth(85);
 
         } else {
             if (forceLoadRemote) fetchRemoteResource(remoteArtResource);
@@ -66,12 +58,38 @@ public class Result {
             else
                 new Thread(() -> {
                     useFallbackAlbumArt();
+
+                    try {
+                        Thread.sleep((long) (Math.random() * 1000));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
                     fetchRemoteResource(remoteArtResource);
                 }, "album-art-loader").start();
 
         }
 
-        this.title = new Label(title);
+        imageContainer.getChildren().add(albumArt);
+        left.getChildren().setAll(imageContainer, leftTextContainer);
+        view.setLeft(left);
+    }
+
+    // TODO: Fallback use for downloads when album art doesn't exist
+    protected Result(Image albumArt, String title, String artist) {
+
+        sharedInitialisation(title, artist);
+
+        this.albumArt.setImage(albumArt);
+        imageContainer.getChildren().add(this.albumArt);
+
+        left.getChildren().setAll(imageContainer, leftTextContainer);
+        view.setLeft(left);
+    }
+
+    private void sharedInitialisation(String title, String artist) {
+
+        this.title.setText(title);
         this.title.getStyleClass().setAll("sub_title1");
 
         Label artistLabel = new Label(artist);
@@ -83,15 +101,25 @@ public class Result {
         leftTextContainer.setTop(songArtistContainer);
         leftTextContainer.setPadding(new Insets(0, 0, 0, 5));
 
+        imageContainer.setMinSize(85, 85);
+        imageContainer.setPrefSize(85, 85);
+
+        albumArt.setFitHeight(85);
+        albumArt.setFitWidth(85);
+
         right.setPadding(new Insets(0, 10, 0, 0));
         right.setAlignment(Pos.CENTER);
         right.setMaxWidth(40);
 
-        imageContainer.getChildren().add(albumArt);
-
-        left = new HBox(imageContainer, leftTextContainer);
-
-        view.setLeft(left);
+        view.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
+            menu.show(
+                    view,
+                    event.getScreenX(),
+                    event.getScreenY()
+            );
+            event.consume();
+        });
+        view.addEventHandler(MouseEvent.MOUSE_PRESSED, event -> menu.hide());
         view.getStyleClass().add("result");
     }
 

@@ -5,7 +5,6 @@ import musicdownloader.Main;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.fx.Result;
 import musicdownloader.utils.net.db.Album;
-import musicdownloader.utils.net.db.Search;
 import musicdownloader.utils.net.db.Song;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,15 +17,18 @@ import org.jsoup.nodes.Element;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
+import java.util.OptionalDouble;
 
 // Should contain
 public class Allmusic {
 
     public static final String baseDomain = "https://www.allmusic.com/";
 
-    public static class search implements Search {
+    public static class Search implements musicdownloader.utils.net.db.Search {
 
         private final String searchQuery;
 
@@ -39,7 +41,7 @@ public class Allmusic {
 
         public static final String subdirectory = "search/all/";
 
-        public search(String query) {
+        public Search(String query) {
             this.searchQuery = baseDomain + subdirectory + query;
             try {
                 this.metadata.put("query", query);
@@ -51,28 +53,47 @@ public class Allmusic {
         public void getSongExternalInformation() throws IOException {
 
             try {
+
+                double[] songTimes = new double[songs.length()];
+
+                long songTime = Instant.now().toEpochMilli();
+
                 for (int i = 0; i < songs.length(); i++) {
 
-                    if (!songs.getJSONObject(i).getJSONObject("data").getBoolean("album")) {
-                        song songProcessor = new song(songs.getJSONObject(i).getJSONObject("data").getString("allmusicSongId"));
-                        songProcessor.load();
+                    try {
+                        if (!songs.getJSONObject(i).getJSONObject("data").getBoolean("album") && songs.getJSONObject(i).getJSONObject("data").has("allmusicSongId")) {
+                            song songProcessor = new song(songs.getJSONObject(i).getJSONObject("data").getString("allmusicSongId"));
+                            songProcessor.load();
 
-                        songs.getJSONObject(i).getJSONObject("data").put("art", songProcessor.getAlbumArt());
-                        songs.getJSONObject(i).getJSONObject("data").put("year", songProcessor.getYear());
-                        songs.getJSONObject(i).getJSONObject("data").put("genre", songProcessor.getGenre());
-                        songs.getJSONObject(i).getJSONObject("data").put("allmusicAlbumId", songProcessor.getAlbumId());
+                            songs.getJSONObject(i).getJSONObject("data").put("art", songProcessor.getAlbumArt());
+                            songs.getJSONObject(i).getJSONObject("data").put("year", songProcessor.getYear());
+                            songs.getJSONObject(i).getJSONObject("data").put("genre", songProcessor.getGenre());
+                            songs.getJSONObject(i).getJSONObject("data").put("allmusicAlbumId", songProcessor.getAlbumId());
 
-                        songs.getJSONObject(i).getJSONObject("view").put("art", songProcessor.getAlbumArt());
+                            songs.getJSONObject(i).getJSONObject("view").put("art", songProcessor.getAlbumArt());
 
-                        StringBuilder metaInfoRaw = new StringBuilder("Song");
-                        if (!songs.getJSONObject(i).getJSONObject("data").getString("year").isEmpty())
-                            metaInfoRaw.append(" | ").append(songs.getJSONObject(i).getJSONObject("data").getString("year"));
-                        if (!songs.getJSONObject(i).getJSONObject("data").getString("genre").isEmpty())
-                            metaInfoRaw.append(" | ").append(songs.getJSONObject(i).getJSONObject("data").getString("genre"));
+                            StringBuilder metaInfoRaw = new StringBuilder("Song");
+                            if (!songs.getJSONObject(i).getJSONObject("data").getString("year").isEmpty())
+                                metaInfoRaw.append(" | ").append(songs.getJSONObject(i).getJSONObject("data").getString("year"));
+                            if (!songs.getJSONObject(i).getJSONObject("data").getString("genre").isEmpty())
+                                metaInfoRaw.append(" | ").append(songs.getJSONObject(i).getJSONObject("data").getString("genre"));
 
-                        songs.getJSONObject(i).getJSONObject("view").put("meta", metaInfoRaw.toString());
-                    }
+                            songs.getJSONObject(i).getJSONObject("view").put("meta", metaInfoRaw.toString());
+                        }
+                    } catch (IllegalCallerException ignored) {}
+
+                    long now = Instant.now().toEpochMilli();
+                    songTimes[i] = now - songTime;
+                    songTime = now;
+
                 }
+
+                OptionalDouble timesAverageCheck = Arrays.stream(songTimes).average();
+
+                if (timesAverageCheck.isPresent() && timesAverageCheck.getAsDouble() > 1000) {
+                    Debug.warn("Very slow network connection detected %sms average per song." + timesAverageCheck.getAsDouble());
+                }
+
             } catch (JSONException e) {
                 Debug.error("Failed to parse data to get song album art.", e);
             }
@@ -177,7 +198,7 @@ public class Allmusic {
                     Result resultBuilder = new Result(
                             null,
                             songs.getJSONObject(i).getJSONObject("view").getString("art"),
-                            true,
+                            false,
                             songs.getJSONObject(i).getJSONObject("view").getString("title"),
                             songs.getJSONObject(i).getJSONObject("view").getString("artist")
                     );
@@ -230,7 +251,9 @@ public class Allmusic {
             try {
                 this.doc = Jsoup.connect(pageUrl).get();
             } catch (HttpStatusException e) {
-                Debug.warn("Invalid song link supplied.");
+
+                Debug.warn(e.getStatusCode() == 404 ? "Dead link detected in search: " + pageUrl : "Invalid song link supplied, error: " + e.getStatusCode());
+
             }
         }
 

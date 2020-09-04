@@ -6,6 +6,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
@@ -99,6 +100,11 @@ public class Search {
     @FXML
     private void downloadsView(Event event) {
         try {
+
+            FXMLLoader downloadsLoader = new FXMLLoader(Main.class.getResource("resources/fxml/downloads.fxml"));
+            Parent controllerView = downloadsLoader.load();
+            Model.getInstance().download.setDownloadsView(downloadsLoader.getController());
+
             (
                     ((Node) event.getSource())
                             .getScene()
@@ -106,9 +112,7 @@ public class Search {
             )
                     .getScene()
                     .setRoot(
-                            FXMLLoader.load(
-                                    Main.class.getResource("resources/fxml/downloads.fxml")
-                            )
+                            controllerView
                     );
         } catch(IOException e) {
             Debug.error("FXML Error: downloads.fxml", e);
@@ -165,7 +169,7 @@ public class Search {
 
                         Thread queryThread = new Thread(() -> {
 
-                            Allmusic.search searcher = new Allmusic.search(search.getText() + e.getText());
+                            Allmusic.Search searcher = new Allmusic.Search(search.getText() + e.getText());
 
                             try {
                                 long preQueryTime = Instant.now().toEpochMilli();
@@ -179,6 +183,7 @@ public class Search {
                                     searcher.getSongExternalInformation();
                                 }
 
+                                // This causes a lot of time:tm:
                                 Model.getInstance().search.setSearchResults(searcher.buildView().toArray(new BorderPane[0]));
                                 Model.getInstance().search.setSearchResultsJson(searcher.getResults());
 
@@ -228,7 +233,7 @@ public class Search {
                                     loadingIcon.setVisible(false);
                                     searchQueryActive = false;
 
-                                    Debug.warn("Failed to connect to " + Allmusic.baseDomain + Allmusic.search.subdirectory + search.getText() + e.getText());
+                                    Debug.warn("Failed to connect to " + Allmusic.baseDomain + Allmusic.Search.subdirectory + search.getText() + e.getText());
                                     new awaitReconnection();
                                 });
                             }
@@ -311,7 +316,7 @@ public class Search {
                 return;
 
             try {
-                Allmusic.search autocompleteSearch = new Allmusic.search(query);
+                Allmusic.Search autocompleteSearch = new Allmusic.Search(query);
                 autocompleteSearch.query(true);
                 JSONArray autocompleteProcessedResults = new JSONArray();
                 try {

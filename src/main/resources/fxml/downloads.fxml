@@ -28,7 +28,7 @@
                   <Label fx:id="eventViewTitle" styleClass="sub_title3" underline="true" BorderPane.alignment="CENTER" />
                </left>
                <right>
-                  <ComboBox fx:id="eventViewSelector" prefWidth="150.0" BorderPane.alignment="CENTER" />
+                  <ComboBox fx:id="eventViewSelector" onAction="#selectionUpdate" prefWidth="150.0" BorderPane.alignment="CENTER" />
                </right>
             </BorderPane>
             <ListView fx:id="eventsViewTable" styleClass="table" VBox.vgrow="ALWAYS" />
