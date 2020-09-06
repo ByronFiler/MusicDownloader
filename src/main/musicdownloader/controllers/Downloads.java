@@ -29,6 +29,7 @@ import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
 import musicdownloader.utils.fx.Result;
+import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -633,8 +634,10 @@ public class Downloads {
             private final String resultTitle;
             private int filesExist;
 
-            private final MenuItem deleteLocal = new MenuItem("Delete Files");
+            private final MenuItem deleteLocal;
             private final MenuItem deleteBoth = new MenuItem("Delete Both");
+
+            private final MenuItem reacquireFiles = new MenuItem("Download Missing Files");
 
             protected int missingFiles;
 
@@ -655,6 +658,8 @@ public class Downloads {
                 this.isAlbum = isAlbum;
                 this.resultTitle = resultTitle;
                 this.filesExist = filesExist;
+
+                this.deleteLocal = new MenuItem("Delete File" + (isAlbum ? "s" : ""));
 
                 // Generate Cross
                 crossLine0.getStyleClass().add("cross-line");
@@ -718,9 +723,9 @@ public class Downloads {
 
                     menu.getItems().addAll(deleteLocal, deleteBoth);
 
-                } else {
-
-                    // Reacquire downloads file
+                    if (filesExist < historyItem.getJSONArray("songs").length()) {
+                        reacquireFiles.setOnAction(this::reacquireFiles);
+                    }
 
                 }
 
@@ -838,7 +843,41 @@ public class Downloads {
 
             private void deleteLocalFiles(ActionEvent event) {
 
+                try {
+                    if (isAlbum) {
 
+                        try {
+                            FileUtils.deleteDirectory(
+                                    new File(historyItem.getJSONObject("metadata").getString("directory"))
+                            );
+                            markUnOpenable();
+                        } catch (IOException e) {
+                            Debug.warn("Failed to delete album directory.");
+                        }
+
+                    } else {
+
+                        if (
+                                !new File(
+                                        historyItem.getJSONObject("metadata").getString("directory")
+                                                + "/"
+                                                + resultTitle
+                                                + "."
+                                                + historyItem.getJSONObject("metadata").getString("format")
+                                ).delete()
+                        ) Debug.warn("Failed to delete song.");
+                        else markUnOpenable();
+
+                    }
+                } catch (JSONException e) {
+                    Debug.error("Failed to parse JSON to delete local item.", e);
+                }
+
+            }
+
+            private void reacquireFiles(ActionEvent e) {
+
+                menu.getItems().remove(reacquireFiles);
 
             }
 

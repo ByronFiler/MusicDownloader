@@ -3,6 +3,7 @@ package musicdownloader.model;
 import musicdownloader.controllers.Downloads;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
+import musicdownloader.utils.io.HistoryValidator;
 import musicdownloader.utils.io.Downloader;
 import musicdownloader.utils.io.Gzip;
 import org.json.JSONArray;
@@ -172,11 +173,36 @@ public class Download {
     private synchronized void refreshDownloadHistory() {
 
         try {
-            this.downloadHistory = new JSONArray(
+            JSONArray diskHistory = new JSONArray(
                     Gzip.decompressFile(
-                            new File(Resources.getInstance().getApplicationData() + "json/downloads.gz")
+                            new File(
+                                    Resources.getInstance().getApplicationData() + "json/downloads.gz"
+                            )
                     ).toString()
             );
+
+            if (diskHistory.toString().equals(new JSONObject().toString())) {
+                this.downloadHistory = new JSONArray();
+            } else {
+
+                HistoryValidator historyValidator = new HistoryValidator(diskHistory);
+
+                if (!historyValidator.getValidatedHistory().toString().equals(diskHistory.toString())) {
+                    Debug.trace(
+                            String.format(
+                                    "Download history loaded, upon validation %s items removed, %s song%s, and %s histories have missing non essential metadata.",
+                                    historyValidator.getModifiedRemovedHistories(),
+                                    historyValidator.getModifiedRemovedSongs(),
+                                    historyValidator.getModifiedRemovedSongs() == 1 ? "" : "s",
+                                    historyValidator.getHistoriesWithPartialMetadata()
+                                    )
+                    );
+                }
+
+                this.downloadHistory = historyValidator.getValidatedHistory();
+
+            }
+
 
         } catch (IOException | JSONException e) {
             try {
