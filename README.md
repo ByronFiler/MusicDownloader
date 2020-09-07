@@ -19,8 +19,8 @@ Features:
   - Advanced song validation to ensure the correct track is downloaded
   - Easily accessible downloads history and downloads client
   
-![Search Page](https://i.imgur.com/jmbLcIj.png)
-![Search Results](https://i.imgur.com/NMbkqmU.png)
-![Downloads Client View: Albums](https://i.imgur.com/VTWnuwm.png)
-![Downloads Client View: Songs](https://i.imgur.com/FBwz7ry.png)
-![Settings](https://i.imgur.com/heTztlu.png)
+![Search Page](https://i.imgur.com/yFsTK7V.png)
+![Search Results](https://i.imgur.com/l9lyMaU.png)
+![Downloads Client View: Albums](https://i.imgur.com/1sqLsPx.png)
+![Downloads Client View: Songs](https://i.imgur.com/RCmFCry.png)
+![Settings](https://i.imgur.com/HrXDOAd.png)
