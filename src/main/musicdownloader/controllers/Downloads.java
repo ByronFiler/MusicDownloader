@@ -193,9 +193,6 @@ public class Downloads {
 
     @FXML
     public void songsView() {
-
-        Debug.trace("CAlled songs view");
-
         String selectedItem = eventViewSelector.getSelectionModel().getSelectedItem();
 
         if (selectedItem == null) {
