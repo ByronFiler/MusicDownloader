@@ -11,8 +11,11 @@ public class Resources {
     private final static Resources instance = new Resources();
 
     public static final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
+    public static final List<Integer> invalidSearchTypes = Arrays.asList(1969736551, 73174740, 932275414);
+
     public static final String remoteVersionUrl = "https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/src/main/resources/meta.json";
     public static final String mp3Source = "https://rovimusic.rovicorp.com/playback.mp3?c=%s=&f=I";
+    public static final String youtubeVideoSource = "https://www.youtube.com/watch?v=";
 
     private String applicationData = null;
     private String youtubeDlExecutable = null;

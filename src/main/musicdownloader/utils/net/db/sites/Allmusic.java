@@ -3,6 +3,7 @@ package musicdownloader.utils.net.db.sites;
 import javafx.scene.layout.BorderPane;
 import musicdownloader.Main;
 import musicdownloader.utils.app.Debug;
+import musicdownloader.utils.app.Resources;
 import musicdownloader.utils.fx.Result;
 import musicdownloader.utils.net.db.Album;
 import musicdownloader.utils.net.db.Song;
@@ -107,7 +108,7 @@ public class Allmusic {
 
                 for (Element result : doc.select("ul.search-results").select("li")) {
                     // Check that it's either a album or an song, not an artist, the data is a bit odd so the hashcode fixes it
-                    if (result.select("h4").text().hashCode() != 1969736551 && result.select("h4").text().hashCode() != 73174740) {
+                    if (!Resources.invalidSearchTypes.contains(result.select("h4").text().hashCode())) {
 
                         JSONObject resultData = new JSONObject();
                         JSONObject viewData = new JSONObject();
