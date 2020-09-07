@@ -153,7 +153,7 @@ public class Downloader implements Runnable {
                 "--audio-format", format,
                 "--ignore-errors",
                 "--retries", "10",
-                "https://www.youtube.com/watch?v=" + song.getJSONArray("source").getString(sourceDepth)
+                Resources.youtubeVideoSource + song.getJSONArray("source").getString(sourceDepth)
         );
         builder.directory(new File(Resources.getInstance().getApplicationData() + "temp"));
         builder.redirectErrorStream(true);

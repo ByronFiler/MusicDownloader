@@ -189,16 +189,16 @@ public class Search {
 
                                 long now = Instant.now().toEpochMilli();
 
-                                if (!Model.getInstance().settings.getSettingBool("data_saver"))
+                                if (!Model.getInstance().settings.getSettingBool("data_saver") && searcher.getSongCount() > 0)
                                     Debug.trace(
                                             String.format(
-                                                    "Query completed in %.2f seconds, containing %s album%s %s song%s and (%sms per song average)",
+                                                    "Query completed in %.2f seconds, containing %s album%s %s song%s and (%.0fms per song average)",
                                                     (double) (now - preQueryTime) / 1000,
                                                     searcher.getAlbumCount(),
                                                     searcher.getAlbumCount() == 1 ? "" : "s",
                                                     searcher.getSongCount(),
                                                     searcher.getSongCount() == 1 ? "" : "s",
-                                                    Math.round((double) (now - preBuilderTime) / searcher.getSongCount())
+                                                    (double) Math.round((double) (now - preBuilderTime) / searcher.getSongCount())
                                             )
                                     );
 

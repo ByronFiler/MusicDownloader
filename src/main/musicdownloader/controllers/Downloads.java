@@ -29,6 +29,7 @@ import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
 import musicdownloader.utils.fx.Result;
+import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -193,6 +194,8 @@ public class Downloads {
     @FXML
     public void songsView() {
 
+        Debug.trace("CAlled songs view");
+
         String selectedItem = eventViewSelector.getSelectionModel().getSelectedItem();
 
         if (selectedItem == null) {
@@ -209,20 +212,24 @@ public class Downloads {
                 case "Currently Downloading":
                     eventsViewTable.getItems().clear();
                     Arrays.stream(currentlyDownloading.stream().map(CurrentlyDownloadingResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
+                    break;
 
                 case "Download Queue":
                     eventsViewTable.getItems().clear();
                     Arrays.stream(queued.stream().map(QueuedResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
+                    break;
 
                 case "Download History":
                     eventsViewTable.getItems().clear();
                     Arrays.stream(histories.stream().map(HistoryResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
+                    break;
 
                 case "All":
                     eventsViewTable.getItems().clear();
                     Arrays.stream(currentlyDownloading.stream().map(CurrentlyDownloadingResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
                     Arrays.stream(queued.stream().map(QueuedResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
                     Arrays.stream(histories.stream().map(HistoryResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
+                    break;
 
                 default:
                     eventViewTitle.setText(eventViewSelector.getSelectionModel().getSelectedItem());
@@ -292,8 +299,6 @@ public class Downloads {
 
     public void markDownloadCompleted() {
 
-        // TODO: Doing weird shit, fix
-
         Platform.runLater(() -> {
             currentlyDownloading.get(currentlyDownloading.size() - 1).markCompleted();
 
@@ -323,26 +328,10 @@ public class Downloads {
                 }
 
             }
-
-            /*
-            if (Model.getInstance().download.getDownloadQueue().length() > 0) {
-
-                queued.remove(0);
-
-                try {
-                    currentlyDownloading.add(new CurrentlyDownloadingResultController(Model.getInstance().download.getDownloadObject()));
-                } catch (JSONException e) {
-                    Debug.error("Failed to parse JSON to create new download object.", e);
-                }
-
-            }
-
-             */
         });
     }
 
-    // TODO: Rework result to allow construction with a pre-generated imageview to prevent excessive web requests
-    public class CurrentlyDownloadingResultController {
+    public static class CurrentlyDownloadingResultController {
 
         private final CurrentlyDownloadingResult album;
         private final ArrayList<CurrentlyDownloadingResult> songs = new ArrayList<>();
@@ -353,14 +342,10 @@ public class Downloads {
 
             this.downloadObject = downloadObject;
 
-            this.album = new CurrentlyDownloadingResult(downloadObject.getJSONObject("metadata").getString("album"), false, true);
+            this.album = new CurrentlyDownloadingResult(downloadObject.getJSONObject("metadata").getString("album"));
             for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++)
                 songs.add(
-                        new CurrentlyDownloadingResult(
-                                downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
-                                !downloadObject.getJSONArray("songs").getJSONObject(i).getBoolean("completed"),
-                                false
-                        )
+                        new CurrentlyDownloadingResult(downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"))
                 );
 
             int completed = 0;
@@ -395,7 +380,7 @@ public class Downloads {
 
         private class CurrentlyDownloadingResult extends Result {
 
-            public CurrentlyDownloadingResult(String title, boolean workingSong, boolean isAlbum) throws JSONException {
+            public CurrentlyDownloadingResult(String title) throws JSONException {
 
                 super(
                         String.format(
@@ -409,18 +394,8 @@ public class Downloads {
                         downloadObject.getJSONObject("metadata").getString("artist")
                 );
 
-                MenuItem skip = new MenuItem("Skip");
-                skip.setOnAction(this::skip);
-
-                MenuItem cancel = new MenuItem("Cancel");
-                cancel.setOnAction(this::cancel);
-
-                if (workingSong) menu.getItems().setAll(skip);
-                if (isAlbum) menu.getItems().setAll(cancel);
-
             }
 
-            // Progress Modifier
             private void setProgress(double progress) {
 
                 try {
@@ -455,32 +430,6 @@ public class Downloads {
                     Debug.error("URI Syntax exception loading tick.", e);
                 }
                 view.setRight(right);
-
-            }
-
-            private void skip(ActionEvent e) {
-
-                Debug.trace("Skip Requested");
-
-                // Send signal to the actual downloader to skip something, pass by JSONObject not int
-                // Should remove the respective song from this
-
-                eventsViewTable.getItems().remove(this.getView());
-                songs.remove(this);
-
-                if (songs.size() == 0) cancel(e);
-
-            }
-
-            private void cancel(ActionEvent e) {
-
-                Debug.trace("Cancel Requested");
-
-                // Send signal to download to skip entire download and delete files (downloaded & temp)
-                // Should clear self and update the reference and view
-
-                // Remove element from view
-                // Acquire the element from the model
 
             }
 
@@ -556,12 +505,33 @@ public class Downloads {
 
             private void cancelSong(ActionEvent event) {
 
-                eventsViewTable.getItems().remove(this.getView());
-                songs.remove(this);
+                if (songs.size() == 1) cancel(event);
+                else {
 
-                if (songs.size() == 0) cancel(event);
+                    JSONArray newSongs = new JSONArray();
+                    JSONObject backup = new JSONObject(queuedObject);
+                    JSONArray newModelData = new JSONArray();
 
-                // Remove from model
+                    try {
+                        for (int i = 0; i < queuedObject.getJSONArray("songs").length(); i++)
+                            if (i != songs.indexOf(this))
+                                newSongs.put(queuedObject.getJSONArray("songs").getJSONObject(i));
+
+                        queuedObject.put("songs", newSongs);
+
+                        for (int i = 0; i < Model.getInstance().download.getDownloadQueue().length(); i++)
+                            newModelData.put(!Model.getInstance().download.getDownloadQueue().getJSONObject(i).toString().equals(backup.toString()) ? Model.getInstance().download.getDownloadQueue().getJSONObject(i) : queuedObject);
+
+                    } catch (JSONException e) {
+                        Debug.error("Failed to parse data to remove song from model.", e);
+                    }
+
+                    Model.getInstance().download.setDownloadQueue(newModelData);
+
+                    eventsViewTable.getItems().remove(this.getView());
+                    songs.remove(this);
+                }
+
                 event.consume();
 
             }
@@ -571,7 +541,18 @@ public class Downloads {
                 eventsViewTable.getItems().remove(this.getView());
                 queued.remove(QueuedResultController.this);
 
-                // Remove from model
+                JSONArray queued = Model.getInstance().download.getDownloadQueue();
+                JSONArray newQueued = new JSONArray();
+
+                try {
+                    for (int i = 0; i < queued.length(); i++)
+                        if (!queued.getJSONObject(i).toString().equals(queuedObject.toString()))
+                            newQueued.put(queued.getJSONObject(i));
+                } catch (JSONException e) {
+                    Debug.error("Failed to parse queue to remove item.", e);
+                }
+
+                Model.getInstance().download.setDownloadQueue(newQueued);
                 event.consume();
             }
 
@@ -633,8 +614,10 @@ public class Downloads {
             private final String resultTitle;
             private int filesExist;
 
-            private final MenuItem deleteLocal = new MenuItem("Delete Files");
+            private final MenuItem deleteLocal;
             private final MenuItem deleteBoth = new MenuItem("Delete Both");
+
+            private final MenuItem reacquireFiles = new MenuItem("Download Missing Files");
 
             protected int missingFiles;
 
@@ -655,6 +638,8 @@ public class Downloads {
                 this.isAlbum = isAlbum;
                 this.resultTitle = resultTitle;
                 this.filesExist = filesExist;
+
+                this.deleteLocal = new MenuItem("Delete File" + (isAlbum ? "s" : ""));
 
                 // Generate Cross
                 crossLine0.getStyleClass().add("cross-line");
@@ -718,9 +703,9 @@ public class Downloads {
 
                     menu.getItems().addAll(deleteLocal, deleteBoth);
 
-                } else {
-
-                    // Reacquire downloads file
+                    if (filesExist < historyItem.getJSONArray("songs").length()) {
+                        reacquireFiles.setOnAction(this::reacquireFiles);
+                    }
 
                 }
 
@@ -838,7 +823,41 @@ public class Downloads {
 
             private void deleteLocalFiles(ActionEvent event) {
 
+                try {
+                    if (isAlbum) {
 
+                        try {
+                            FileUtils.deleteDirectory(
+                                    new File(historyItem.getJSONObject("metadata").getString("directory"))
+                            );
+                            markUnOpenable();
+                        } catch (IOException e) {
+                            Debug.warn("Failed to delete album directory.");
+                        }
+
+                    } else {
+
+                        if (
+                                !new File(
+                                        historyItem.getJSONObject("metadata").getString("directory")
+                                                + "/"
+                                                + resultTitle
+                                                + "."
+                                                + historyItem.getJSONObject("metadata").getString("format")
+                                ).delete()
+                        ) Debug.warn("Failed to delete song.");
+                        else markUnOpenable();
+
+                    }
+                } catch (JSONException e) {
+                    Debug.error("Failed to parse JSON to delete local item.", e);
+                }
+
+            }
+
+            private void reacquireFiles(ActionEvent e) {
+
+                menu.getItems().remove(reacquireFiles);
 
             }
 
