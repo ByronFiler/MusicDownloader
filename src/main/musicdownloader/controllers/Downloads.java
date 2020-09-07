@@ -325,8 +325,7 @@ public class Downloads {
         });
     }
 
-    // TODO: Rework result to allow construction with a pre-generated imageview to prevent excessive web requests
-    public class CurrentlyDownloadingResultController {
+    public static class CurrentlyDownloadingResultController {
 
         private final CurrentlyDownloadingResult album;
         private final ArrayList<CurrentlyDownloadingResult> songs = new ArrayList<>();
@@ -337,14 +336,10 @@ public class Downloads {
 
             this.downloadObject = downloadObject;
 
-            this.album = new CurrentlyDownloadingResult(downloadObject.getJSONObject("metadata").getString("album"), false, true);
+            this.album = new CurrentlyDownloadingResult(downloadObject.getJSONObject("metadata").getString("album"));
             for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++)
                 songs.add(
-                        new CurrentlyDownloadingResult(
-                                downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
-                                !downloadObject.getJSONArray("songs").getJSONObject(i).getBoolean("completed"),
-                                false
-                        )
+                        new CurrentlyDownloadingResult(downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"))
                 );
 
             int completed = 0;
@@ -379,7 +374,7 @@ public class Downloads {
 
         private class CurrentlyDownloadingResult extends Result {
 
-            public CurrentlyDownloadingResult(String title, boolean workingSong, boolean isAlbum) throws JSONException {
+            public CurrentlyDownloadingResult(String title) throws JSONException {
 
                 super(
                         String.format(
@@ -392,15 +387,6 @@ public class Downloads {
                         title,
                         downloadObject.getJSONObject("metadata").getString("artist")
                 );
-
-                MenuItem skip = new MenuItem("Skip");
-                skip.setOnAction(this::skip);
-
-                MenuItem cancel = new MenuItem("Cancel");
-                cancel.setOnAction(this::cancel);
-
-                if (workingSong) menu.getItems().setAll(skip);
-                if (isAlbum) menu.getItems().setAll(cancel);
 
             }
 
@@ -438,32 +424,6 @@ public class Downloads {
                     Debug.error("URI Syntax exception loading tick.", e);
                 }
                 view.setRight(right);
-
-            }
-
-            private void skip(ActionEvent e) {
-
-                Debug.trace("Skip Requested");
-
-                // Send signal to the actual downloader to skip something, pass by JSONObject not int
-                // Should remove the respective song from this
-
-                eventsViewTable.getItems().remove(this.getView());
-                songs.remove(this);
-
-                if (songs.size() == 0) cancel(e);
-
-            }
-
-            private void cancel(ActionEvent e) {
-
-                Debug.trace("Cancel Requested");
-
-                // Send signal to download to skip entire download and delete files (downloaded & temp)
-                // Should clear self and update the reference and view
-
-                // Remove element from view
-                // Acquire the element from the model
 
             }
 
@@ -537,7 +497,6 @@ public class Downloads {
 
             }
 
-            // REPLACING ALBUMS WITH SELF
             private void cancelSong(ActionEvent event) {
 
                 if (songs.size() == 1) cancel(event);
