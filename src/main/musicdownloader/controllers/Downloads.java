@@ -194,6 +194,8 @@ public class Downloads {
     @FXML
     public void songsView() {
 
+        Debug.trace("CAlled songs view");
+
         String selectedItem = eventViewSelector.getSelectionModel().getSelectedItem();
 
         if (selectedItem == null) {
@@ -210,20 +212,24 @@ public class Downloads {
                 case "Currently Downloading":
                     eventsViewTable.getItems().clear();
                     Arrays.stream(currentlyDownloading.stream().map(CurrentlyDownloadingResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
+                    break;
 
                 case "Download Queue":
                     eventsViewTable.getItems().clear();
                     Arrays.stream(queued.stream().map(QueuedResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
+                    break;
 
                 case "Download History":
                     eventsViewTable.getItems().clear();
                     Arrays.stream(histories.stream().map(HistoryResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
+                    break;
 
                 case "All":
                     eventsViewTable.getItems().clear();
                     Arrays.stream(currentlyDownloading.stream().map(CurrentlyDownloadingResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
                     Arrays.stream(queued.stream().map(QueuedResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
                     Arrays.stream(histories.stream().map(HistoryResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
+                    break;
 
                 default:
                     eventViewTitle.setText(eventViewSelector.getSelectionModel().getSelectedItem());
