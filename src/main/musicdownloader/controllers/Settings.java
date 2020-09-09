@@ -1,5 +1,6 @@
 package musicdownloader.controllers;
 
+import com.google.common.base.CaseFormat;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -16,6 +17,8 @@ import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
 import musicdownloader.utils.io.Install;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.ToggleSwitch;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,6 +33,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import static musicdownloader.utils.app.Resources.albumArtOptions;
+import static musicdownloader.utils.app.Resources.songReferences;
 
 // TODO
 // Information & Files cutoff when resizing
@@ -169,7 +175,7 @@ public class Settings {
     }
 
     @FXML
-    protected void selectNewFolder() {
+    protected void selectNewFolder(javafx.scene.input.MouseEvent e) {
 
         JFileChooser newFolder = new JFileChooser();
         newFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -177,12 +183,88 @@ public class Settings {
 
         outputDirectory.setText(newFolder.getSelectedFile().getPath());
         new validateDirectory(newFolder.getSelectedFile().getPath());
-        saveSettings();
+        saveSettings(e);
 
     }
 
     @FXML
-    protected void saveSettings() {
+    @SuppressWarnings("unchecked")
+    protected void saveSettings(Event e) {
+
+        String settingsFormatString = "Settings Changed %s: %s -> %s";
+
+        // TODO: Consider for other settings previous states
+        if ( (e.getSource()).getClass().equals(ToggleSwitch.class) ) {
+
+            ToggleSwitch modifiedSetting = (ToggleSwitch) e.getSource();
+
+            Debug.trace(
+                    String.format(
+                            settingsFormatString,
+                            StringUtils.capitalize(
+                                    StringUtils.join(
+                                            StringUtils.splitByCharacterTypeCamelCase(
+                                                    modifiedSetting.getId().substring(
+                                                            0,
+                                                            modifiedSetting.getId().length() - 6)
+                                            ),
+                                            StringUtils.SPACE
+                                    )
+                            ),
+                            convertSwitchValue(!modifiedSetting.isSelected()),
+                            convertSwitchValue(modifiedSetting.isSelected())
+                    )
+            );
+
+        } else if ((e.getSource()).getClass().equals(ComboBox.class)) {
+
+            ComboBox<String> modifiedSetting = (ComboBox<String>) e.getSource();
+
+            Debug.trace(
+                    String.format(
+                            settingsFormatString,
+                            StringUtils.capitalize(
+                                    StringUtils.join(
+                                            StringUtils.splitByCharacterTypeCamelCase(modifiedSetting.getId()),
+                                            StringUtils.SPACE
+                                    )
+                            ),
+                            (modifiedSetting.getId().equals("musicFormat") ? songReferences : albumArtOptions).get(
+                                    Model.getInstance().settings.getSettingInt(
+                                            CaseFormat.UPPER_CAMEL.to(
+                                                    CaseFormat.LOWER_UNDERSCORE,
+                                                    modifiedSetting.getId()
+                                            )
+                                    )
+                            ),
+                            modifiedSetting.getSelectionModel().getSelectedItem()
+                    )
+            );
+
+        } else if ((e.getSource()).getClass().equals(Label.class)) {
+
+            Label modifiedSetting = (Label) e.getSource();
+
+            // Not correcting '' to the default dir is intentional as this is more representative of the real settings values vs effective
+            Debug.trace(
+                    String.format(
+                            settingsFormatString,
+                            StringUtils.capitalize(
+                                    StringUtils.join(
+                                            StringUtils.splitByCharacterTypeCamelCase(modifiedSetting.getId()),
+                                            StringUtils.SPACE
+                                    )
+                            ),
+                            Model.getInstance().settings.getSetting("output_directory"),
+                            modifiedSetting.getText()
+                    )
+            );
+
+        } else {
+
+            Debug.warn("Unknown setting modification source: " + e.getSource());
+
+        }
 
         JSONObject newSettings = getNewSettings();
         try {
@@ -195,13 +277,11 @@ public class Settings {
                             )
                     )
             );
-        } catch (JSONException e) {
-            Debug.error("Failed to find dark theme setting.", e);
+        } catch (JSONException er) {
+            Debug.error("Failed to find dark theme setting.", er);
         }
 
         Model.getInstance().settings.saveSettings(newSettings);
-
-        Debug.trace("New settings saved.");
     }
 
     protected JSONObject getNewSettings() {
@@ -233,6 +313,10 @@ public class Settings {
         return settings;
 
 
+    }
+
+    private String convertSwitchValue(boolean enabled) {
+        return enabled ? "ENABLED" : "DISABLED";
     }
 
     // Sends a web-request to the github to check the latest version available
@@ -456,7 +540,7 @@ public class Settings {
                 });
 
             } catch (IOException ignored) {
-                Debug.warn("Failed to verify executable: " + executablePath);
+                Debug.warn(String.format("Failed to verify executable: \"%s\"", executablePath));
 
                 Platform.runLater(() -> {
                     element.setText("Not Configured");
@@ -477,9 +561,14 @@ public class Settings {
                         if (new File(System.getenv("ProgramFiles(X86)") + "/test/").mkdir() && new File(System.getenv("ProgramFiles(X86)") + "/test/").delete()) {
                             elementContainer.setCursor(Cursor.HAND);
                             Tooltip.install(elementContainer, new Tooltip("Click to configure"));
-                            elementContainer.setOnMouseClicked(e -> new manageInstall(executablePath, element, elementContainer));
-                        } else
-                            Tooltip.install(elementContainer, new Tooltip("Easy installation requires elevated permissions, restart the program and try again."));
+                            elementContainer.setOnMouseClicked(e ->
+                                    new manageInstall(
+                                        FilenameUtils.removeExtension(Paths.get(executablePath).getFileName().toString()),
+                                        element,
+                                        elementContainer
+                                    )
+                            );
+                        } else Tooltip.install(elementContainer, new Tooltip("Easy installation requires elevated permissions, restart the program and try again."));
                     }
                 });
             }
@@ -493,6 +582,9 @@ public class Settings {
             final HBox elementContainer;
 
             manageInstall(String executable, Label element, HBox elementContainer) {
+
+                System.out.println(executable);
+
                 this.executable = executable;
                 this.element = element;
                 this.elementContainer = elementContainer;

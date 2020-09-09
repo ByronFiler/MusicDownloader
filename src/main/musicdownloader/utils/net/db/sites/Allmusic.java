@@ -4,7 +4,7 @@ import javafx.scene.layout.BorderPane;
 import musicdownloader.Main;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.fx.Result;
+import musicdownloader.utils.ui.Result;
 import musicdownloader.utils.net.db.Album;
 import musicdownloader.utils.net.db.Song;
 import org.json.JSONArray;

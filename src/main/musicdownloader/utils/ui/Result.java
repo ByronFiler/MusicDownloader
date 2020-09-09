@@ -1,4 +1,4 @@
-package musicdownloader.utils.fx;
+package musicdownloader.utils.ui;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

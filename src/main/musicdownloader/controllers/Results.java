@@ -14,7 +14,10 @@ import javafx.scene.control.*;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -26,7 +29,7 @@ import musicdownloader.Main;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.fx.Result;
+import musicdownloader.utils.ui.Result;
 import musicdownloader.utils.net.db.sites.Allmusic;
 import musicdownloader.utils.net.source.sites.Youtube;
 import org.apache.commons.io.FileUtils;
@@ -45,9 +48,8 @@ import java.util.Objects;
 
 /*
 TODO
+ - When view songs request is sent cache this data
  - Loaded the additional data about the album should be saved and used to save a web request when building data
- - Searching should be disallowed when adding to queue (Use class wide bools, no more NullPointerExceptions)
- - Search not gettingAdditionalInformation when using full data mode, ie songs do not have album art or metadata
  */
 
 public class Results {
@@ -225,6 +227,10 @@ public class Results {
                 Thread resultsSearch = new Thread(() -> {
                     try {
                         search.query(Model.getInstance().settings.getSettingBool("data_saver"));
+
+                        if (!Model.getInstance().settings.getSettingBool("data_saver"))
+                            search.getSongExternalInformation();
+
                     } catch (IOException er) {
                         defaultView("Connection issue detected, please verify connection and retry.");
                     }
@@ -235,6 +241,7 @@ public class Results {
                                 loadedQuery = tempQuery;
 
                                 Model.getInstance().search.setSearchResultsJson(search.getResults());
+
                                 try {
                                     JSONArray songs = search.getResults().getJSONArray("songs");
                                     this.viewData = search.getResults();
@@ -469,13 +476,15 @@ public class Results {
                 metadata.put("artist", basicData.getJSONObject("data").getString("artist"));
 
                 // Additional data revealed either by query or additional request already sent
-                if (basicData.getJSONObject("data").getBoolean("album") || !Model.getInstance().settings.getSettingBool("data_saver")) {
+                if (basicData.getJSONObject("data").getBoolean("album") || !Model.getInstance().settings.getSettingBool("data_saver") || !basicData.getJSONObject("view").has("allmusicSongId")) {
 
                     metadata.put("art", basicData.getJSONObject("data").getString("art"));
                     metadata.put("year", basicData.getJSONObject("data").getString("year"));
                     metadata.put("genre", basicData.getJSONObject("data").getString("genre"));
 
                 } else {
+
+                    Debug.trace("here");
 
                     // Additional connection required to get album id & metadata
                     Allmusic.song songTraceLinkLoader = new Allmusic.song(basicData.getJSONObject("view").getString("allmusicSongId"));

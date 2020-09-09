@@ -428,6 +428,8 @@ public class Downloader implements Runnable {
 
             newHistory.put("songs", songs);
 
+            // TODO: Only send notification if the window is minimised
+            //new Notification(downloadObject.getJSONObject("metadata").getString("album"), "", new File(downloadObject.getJSONObject("metadata").getString("directory")));
 
         } catch (JSONException e) {
             Debug.error("JSON Error when attempting to access songs to download.", e);
@@ -437,6 +439,7 @@ public class Downloader implements Runnable {
         try {
             downloadHistory.put(newHistory);
             Model.getInstance().download.setDownloadHistory(downloadHistory);
+
         } catch (IOException e) {
             Debug.error("Failed to set new download history with current download.", e);
         }
@@ -484,6 +487,7 @@ public class Downloader implements Runnable {
         } catch (IOException e) {
             Debug.warn("Failed to copy album art into downloads folder.");
         }
+
 
         // Move onto the next item if necessary
         Platform.runLater(() -> {

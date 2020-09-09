@@ -11,6 +11,7 @@ public class Resources {
     private final static Resources instance = new Resources();
 
     public static final List<String> songReferences = Arrays.asList("mp3", "wav", "ogg", "aac");
+    public static final List<String> albumArtOptions = Arrays.asList("Never", "Albums Only", "Songs Only", "Never");
     public static final List<Integer> invalidSearchTypes = Arrays.asList(1969736551, 73174740, 932275414);
 
     public static final String remoteVersionUrl = "https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/src/main/resources/meta.json";
@@ -35,6 +36,7 @@ public class Resources {
         // MacOS
         else if (os.contains("mac")) {
             applicationData = System.getProperty("user.home") + "/Library/MusicDownloader/";
+
             youtubeDlExecutable = "/usr/local/bin/youtube-dl";
             ffmpegExecutable = "/usr/local/bin/ffmpeg";
         }
