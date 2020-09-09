@@ -29,9 +29,9 @@ import musicdownloader.Main;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.ui.Result;
 import musicdownloader.utils.net.db.sites.Allmusic;
 import musicdownloader.utils.net.source.sites.Youtube;
+import musicdownloader.utils.ui.Result;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,12 +42,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 
 /*
 TODO
+ - Searching should once again disable the download button, otherwise won't find anything
  - When view songs request is sent cache this data
  - Loaded the additional data about the album should be saved and used to save a web request when building data
  */
@@ -484,8 +483,6 @@ public class Results {
 
                 } else {
 
-                    Debug.trace("here");
-
                     // Additional connection required to get album id & metadata
                     Allmusic.song songTraceLinkLoader = new Allmusic.song(basicData.getJSONObject("view").getString("allmusicSongId"));
                     songTraceLinkLoader.load();
@@ -523,33 +520,39 @@ public class Results {
                 metadata.put("album", albumProcessor.getAlbum());
                 metadata.put("playtime", albumProcessor.getPlaytime());
 
-                for (Allmusic.album.song song: albumProcessor.getSongs()) {
+                if (basicData.getJSONObject("data").getBoolean("album")) {
+                    for (Allmusic.album.song song : albumProcessor.getSongs()) songs.put(parseJsonFromSong(metadata, collectiveDownloadsObjects, albumProcessor, song));
+                } else songs.put(
+                        parseJsonFromSong(
+                                metadata,
+                                collectiveDownloadsObjects,
+                                albumProcessor,
+                                albumProcessor
+                                        .getSongs()
+                                        .get(
+                                                Arrays.asList(
+                                                        albumProcessor
+                                                                .getSongs()
+                                                                .stream()
+                                                                .map(
+                                                                        Allmusic.album.song::getTitle
+                                                                ).toArray()
+                                                ).indexOf(
+                                                        basicData
+                                                                .getJSONObject("view")
+                                                                .getString("title")
+                                                )
+                                        )
+                        )
+                );
 
-                    JSONObject jSong = new JSONObject();
-
-                    jSong.put("position", albumProcessor.getSongs().indexOf(song) + 1);
-                    jSong.put("id", generateNewSongId(collectiveDownloadsObjects));
-                    jSong.put("completed", JSONObject.NULL);
-
-                    jSong.put(
-                            "source",
-                            getSource(
-                                    metadata.get("artist") + " " + song.getTitle(),
-                                    song.getPlaytime()
-                            )
-                    );
-
-                    jSong.put("playtime", song.getPlaytime());
-                    jSong.put("title", song.getTitle());
-                    jSong.put("sample", song.getSample() == null ? JSONObject.NULL : song.getSample());
-
-                    songs.put(jSong);
-
-                }
 
                 if (!kill) {
                     downloadItem.put("metadata", metadata);
                     downloadItem.put("songs", songs);
+
+                    System.out.println(downloadItem);
+                    System.exit(0);
 
                     Model.getInstance().download.updateDownloadQueue(downloadItem);
                     Platform.runLater(() -> searchField.setDisable(false));
@@ -611,6 +614,28 @@ public class Results {
             });
             completed = true;
 
+        }
+
+        private JSONObject parseJsonFromSong(JSONObject metadata, JSONArray collectiveDownloadsObjects, Allmusic.album albumProcessor, Allmusic.album.song song) throws JSONException {
+            JSONObject jSong = new JSONObject();
+
+            jSong.put("position", albumProcessor.getSongs().indexOf(song) + 1);
+            jSong.put("id", generateNewSongId(collectiveDownloadsObjects));
+            jSong.put("completed", JSONObject.NULL);
+
+            jSong.put(
+                    "source",
+                    getSource(
+                            metadata.get("artist") + " " + song.getTitle(),
+                            song.getPlaytime()
+                    )
+            );
+
+            jSong.put("playtime", song.getPlaytime());
+            jSong.put("title", song.getTitle());
+            jSong.put("sample", song.getSample() == null ? JSONObject.NULL : song.getSample());
+
+            return jSong;
         }
     }
 
