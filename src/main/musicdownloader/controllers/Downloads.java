@@ -43,6 +43,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+/*
+TODO
+ - Histories should save positions of songs in album
+ */
+
 public class Downloads {
 
     @FXML AnchorPane root;

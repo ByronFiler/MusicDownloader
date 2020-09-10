@@ -11,7 +11,7 @@ public class Notification {
 
     File directory;
 
-    public Notification(String albumTitle, String meta, File directory) {
+    public Notification(String albumTitle, String meta, File directory, TrayIcon.MessageType messageType) {
 
         this.directory = directory;
 
@@ -27,7 +27,7 @@ public class Notification {
                 ti.setToolTip("View Downloaded Files");
                 tray.add(ti);
 
-                ti.displayMessage("Finished Downloading " + albumTitle, meta, TrayIcon.MessageType.ERROR);
+                ti.displayMessage("Finished Downloading " + albumTitle, meta, messageType);
             } catch (AWTException e) {
                 Debug.error("Failed to send notification.", e);
             }

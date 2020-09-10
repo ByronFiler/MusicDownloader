@@ -6,6 +6,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 
 import java.io.IOException;
@@ -30,6 +31,8 @@ public class Main extends Application {
         primaryStage.getIcons().add(new Image(Main.class.getResourceAsStream("resources/img/icon.png")));
         primaryStage.setTitle("Music Downloader");
         primaryStage.show();
+
+        Model.getInstance().setPrimaryStage(primaryStage);
 
         Debug.trace("Primary Stage Generated");
     }

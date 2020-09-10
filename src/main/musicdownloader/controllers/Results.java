@@ -46,8 +46,6 @@ import java.util.*;
 
 /*
 TODO
- - Searching should once again disable the download button, otherwise won't find anything
- - When view songs request is sent cache this data
  - Loaded the additional data about the album should be saved and used to save a web request when building data
  */
 
@@ -551,9 +549,6 @@ public class Results {
                 if (!kill) {
                     downloadItem.put("metadata", metadata);
                     downloadItem.put("songs", songs);
-
-                    System.out.println(downloadItem);
-                    System.exit(0);
 
                     Model.getInstance().download.updateDownloadQueue(downloadItem);
                     Platform.runLater(() -> searchField.setDisable(false));

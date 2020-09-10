@@ -10,17 +10,20 @@ import javazoom.jl.decoder.JavaLayerException;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
+import musicdownloader.utils.ui.Notification;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.awt.*;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
+import java.util.List;
 
 /*
 TODO
@@ -428,8 +431,8 @@ public class Downloader implements Runnable {
 
             newHistory.put("songs", songs);
 
-            // TODO: Only send notification if the window is minimised
-            //new Notification(downloadObject.getJSONObject("metadata").getString("album"), "", new File(downloadObject.getJSONObject("metadata").getString("directory")));
+            // If the application is iconified then notify the user using their OSs notification system
+            if (Model.getInstance().getPrimaryStage().isIconified()) new Notification(downloadObject.getJSONObject("metadata").getString("album"), "", new File(downloadObject.getJSONObject("metadata").getString("directory")), TrayIcon.MessageType.INFO);
 
         } catch (JSONException e) {
             Debug.error("JSON Error when attempting to access songs to download.", e);
