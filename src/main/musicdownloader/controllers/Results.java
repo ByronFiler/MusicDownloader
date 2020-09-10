@@ -250,6 +250,7 @@ public class Results {
                                         for (int i = 0; i < songs.length(); i++) {
                                             results.getItems().add(new searchResult(songs.getJSONObject(i)).getView());
                                         }
+                                        download.setDisable(true);
                                     } else defaultView("No Search Results Found");
                                 } catch (JSONException er) {
                                     Debug.error("Failed to get search results.", er);
@@ -639,14 +640,12 @@ public class Results {
         }
     }
 
-
-    //TODO: Refactor media controller and ui components separately
     class searchResult extends Result {
 
-        private final JSONObject data;
         private MenuItem getAlbumSongs;
         private MenuItem hideAlbumSongs;
 
+        private Allmusic.album albumParser;
         private final ArrayList<MediaController> internalMediaControllers = new ArrayList<>();
 
         public searchResult (JSONObject data) throws JSONException {
@@ -658,8 +657,6 @@ public class Results {
                     data.getJSONObject("view").getString("artist")
             );
             setSubtext(data.getJSONObject("view").getString("meta"));
-
-            this.data = data;
 
             MenuItem hide = new MenuItem("Hide");
             hide.setOnAction(e -> {
@@ -728,6 +725,9 @@ public class Results {
             }
 
             if (data.getJSONObject("data").getBoolean("album")) {
+
+                albumParser = new Allmusic.album(data.getJSONObject("data").getString("allmusicAlbumId"));
+
                 hideAlbumSongs = new MenuItem("Hide Songs");
                 getAlbumSongs = new MenuItem("View Songs");
 
@@ -749,26 +749,14 @@ public class Results {
 
         private void getAlbumSongs(ActionEvent event) {
 
-            try {
-                Allmusic.album albumParser = new Allmusic.album(data.getJSONObject("data").getString("allmusicAlbumId"));
+            VBox songResults = new VBox();
+
+            if (albumParser.getIsLoaded()) generateMediaControllers(songResults);
+            else {
                 Thread albumLoader = new Thread(() -> {
                     try {
                         albumParser.load();
-
-                        VBox songResults = new VBox();
-
-                        for (Allmusic.album.song song: albumParser.getSongs()) {
-
-                            MediaController songController = new MediaController(song);
-                            mediaPlayers.add(songController);
-                            internalMediaControllers.add(songController);
-                            songResults.getChildren().add(songController.getView());
-
-                        }
-
-                        Platform.runLater(() -> view.setBottom(songResults));
-                        menu.getItems().remove(getAlbumSongs);
-                        menu.getItems().add(hideAlbumSongs);
+                        generateMediaControllers(songResults);
 
                     } catch (IOException er) {
                         Debug.warn("Connection failure detected.");
@@ -776,11 +764,24 @@ public class Results {
                 }, "album-loader");
                 albumLoader.setDaemon(true);
                 albumLoader.start();
-
-            } catch (JSONException er) {
-                Debug.error("lol", er);
             }
 
+
+        }
+
+        private void generateMediaControllers(VBox songResults) {
+            for (Allmusic.album.song song: albumParser.getSongs()) {
+                MediaController songController = new MediaController(song);
+                mediaPlayers.add(songController);
+                internalMediaControllers.add(songController);
+                Platform.runLater(() -> songResults.getChildren().add(songController.getView()));
+            }
+
+            Platform.runLater(() -> {
+                view.setBottom(songResults);
+                menu.getItems().remove(getAlbumSongs);
+                menu.getItems().add(hideAlbumSongs);
+            });
         }
 
         protected class MediaController {

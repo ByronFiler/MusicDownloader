@@ -325,6 +325,7 @@ public class Allmusic {
         private final String pageUrl;
         private Document doc = null;
         private final ArrayList<song> songs = new ArrayList<>();
+        private boolean isLoaded = false;
 
         public album(String identifier) {
             this.pageUrl = baseDomain + subdirectory + identifier;
@@ -332,6 +333,7 @@ public class Allmusic {
 
         @Override
         public void load() throws IOException {
+            isLoaded = true;
             try {
                 this.doc = Jsoup.connect(pageUrl).get();
 
@@ -361,6 +363,11 @@ public class Allmusic {
         @Override
         public int getPlaytime() {
             return songs.stream().mapToInt(song::getPlaytime).sum();
+        }
+
+        @Override
+        public boolean getIsLoaded() {
+            return isLoaded;
         }
 
         protected static int timeConversion(String stringTime) {
