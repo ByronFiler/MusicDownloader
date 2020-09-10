@@ -325,11 +325,8 @@ public class Downloader implements Runnable {
                     .getJSONObject("metadata")
                     .put(
                             "directory",
-                            generateFolder(
-                                    downloadObject
-                                            .getJSONObject("metadata")
-                                            .getString("directory")
-                            )
+                            downloadObject.getJSONObject("metadata").getBoolean("is_album") ?
+                                generateFolder(downloadObject.getJSONObject("metadata").getString("directory")) : downloadObject.getJSONObject("metadata").getString("directory")
                     );
         } catch (JSONException ignored) {}
 
@@ -425,6 +422,7 @@ public class Downloader implements Runnable {
                 newSongHistory.put("title", downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"));
                 newSongHistory.put("id", downloadObject.getJSONArray("songs").getJSONObject(i).getString("id"));
                 newSongHistory.put("source", new JSONArray("[" + youtubeIds.get(i) + "]"));
+                newSongHistory.put("position", downloadObject.getJSONArray("songs").getJSONObject(i).getInt("position"));
 
                 songs.put(newSongHistory);
             }

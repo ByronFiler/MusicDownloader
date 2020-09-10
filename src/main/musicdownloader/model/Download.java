@@ -38,6 +38,7 @@ public class Download {
             e.printStackTrace();
             System.exit(-1);
         }
+
          */
 
         if (downloadHistory.length() > 0) {
@@ -183,7 +184,6 @@ public class Download {
             if (diskHistory.toString().equals(new JSONObject().toString())) {
                 this.downloadHistory = new JSONArray();
             } else {
-
                 HistoryValidator historyValidator = new HistoryValidator(diskHistory);
 
                 if (!historyValidator.getValidatedHistory().toString().equals(diskHistory.toString())) {

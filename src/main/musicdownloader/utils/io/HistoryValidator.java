@@ -11,9 +11,9 @@ public class HistoryValidator {
 
     private static final String[] metadataEssential = new String[]{"artId", "artist", "album", "format", "directory"};
     private static final String[] metadataExtra = new String[]{"art", "year", "genre", "playtime", "downloadStarted"};
-    private static final String[] songEssential = new String[]{"id", "source", "title"};
+    private static final String[] songEssential = new String[]{"id", "source", "title", "position"};
 
-    private final JSONArray validatedHistory;
+    private final JSONArray validatedHistory = new JSONArray();
 
     private final int modifiedRemovedHistories;
     private int historiesWithPartialMetadata = 0;
@@ -21,17 +21,19 @@ public class HistoryValidator {
 
     public HistoryValidator(JSONArray history) throws JSONException {
 
-        validatedHistory = new JSONArray();
         JSONObject validatedHistory;
 
         for (int i = 0; i < history.length(); i++) {
 
             validatedHistory = downloadHistory(history.getJSONObject(i));
+
             if (!validatedHistory.toString().equals(new JSONObject().toString())) this.validatedHistory.put(validatedHistory);
 
         }
 
         this.modifiedRemovedHistories = history.length() - this.validatedHistory.length();
+
+
 
     }
 
@@ -69,6 +71,7 @@ public class HistoryValidator {
                     for (int i = 0; i < history.getJSONArray("songs").length(); i++) {
 
                         int finalI = i;
+
                         if (Arrays.stream(songEssential).mapToInt(e -> {
                             try {
                                 return history.getJSONArray("songs").getJSONObject(finalI).has(e) ? 1 : 0;
@@ -76,11 +79,8 @@ public class HistoryValidator {
                                 Debug.error("Failed to parse songs when iterate through.", er);
                                 return 0;
                             }
-                        }).sum() == songEssential.length) {
+                        }).sum() == songEssential.length) songs.put(history.getJSONArray("songs").getJSONObject(i));
 
-                            songs.put(history.getJSONArray("songs").getJSONObject(i));
-
-                        }
 
                     }
 
@@ -97,8 +97,10 @@ public class HistoryValidator {
 
                     modifiedRemovedSongs += history.getJSONArray("songs").length() - songs.length();
 
+                    if (songs.length() == 0) return new JSONObject();
 
-                } else return new JSONObject();
+
+                } else {Debug.trace("failed to validate meta"); return new JSONObject();}
 
             } catch (JSONException e) {
                 Debug.warn("History object in validation has metadata but accessing this threw a JSONException, review: " + history.toString());
