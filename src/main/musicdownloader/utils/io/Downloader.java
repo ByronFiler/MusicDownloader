@@ -37,7 +37,7 @@ public class Downloader implements Runnable {
     private JSONArray downloadQueue = Model.getInstance().download.getDownloadQueue();
 
     private final ArrayList<Float> songsValidity = new ArrayList<>();
-    private final ArrayList<String> youtubeIds = new ArrayList<>();
+    private final ArrayList<String> sources = new ArrayList<>();
 
     private byte[] albumArt;
 
@@ -156,7 +156,7 @@ public class Downloader implements Runnable {
                 "--audio-format", format,
                 "--ignore-errors",
                 "--retries", "10",
-                Resources.youtubeVideoSource + song.getJSONArray("source").getString(sourceDepth)
+                song.getJSONArray("source").getString(sourceDepth)
         );
         builder.directory(new File(Resources.getInstance().getApplicationData() + "temp"));
         builder.redirectErrorStream(true);
@@ -235,9 +235,9 @@ public class Downloader implements Runnable {
 
             }
 
-            youtubeIds.add(song.getJSONArray("source").getString(sourceDepth));
+            sources.add(song.getJSONArray("source").getString(sourceDepth));
         } else {
-            youtubeIds.add(song.getJSONArray("source").getString(0));
+            sources.add(song.getJSONArray("source").getString(0));
         }
 
         // Apply meta-data
@@ -421,7 +421,8 @@ public class Downloader implements Runnable {
                 JSONObject newSongHistory = new JSONObject();
                 newSongHistory.put("title", downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"));
                 newSongHistory.put("id", downloadObject.getJSONArray("songs").getJSONObject(i).getString("id"));
-                newSongHistory.put("source", new JSONArray("[" + youtubeIds.get(i) + "]"));
+
+                newSongHistory.put("source", new JSONArray("[\"" + sources.get(i) + "\"]"));
                 newSongHistory.put("position", downloadObject.getJSONArray("songs").getJSONObject(i).getInt("position"));
 
                 songs.put(newSongHistory);

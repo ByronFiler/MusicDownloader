@@ -45,7 +45,7 @@ import java.util.Arrays;
 
 /*
 TODO
- - Histories should save positions of songs in album
+ - Check if iTunes is installed and add a right click to open in iTunes option
  */
 
 public class Downloads {

@@ -13,7 +13,7 @@ import java.io.IOException;
 
 /*
 TODO
- Add different language options
+ Add different language options: https://stackoverflow.com/questions/26325403/how-to-implement-language-support-for-javafx-in-fxml-documents
  Support different search databases: https://en.wikipedia.org/wiki/List_of_online_music_databases
  Support different video sources: Dailymotion, Vimeo, Flickr, Metacafe
  Normalise audio on songs as a post processing effect
@@ -24,6 +24,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
+
         FXMLLoader loader = new FXMLLoader(Main.class.getResource("resources/fxml/search.fxml"));
         Parent root = loader.load();
 

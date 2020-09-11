@@ -16,7 +16,15 @@ public class Resources {
 
     public static final String remoteVersionUrl = "https://raw.githubusercontent.com/ByronFiler/MusicDownloader/master/src/main/resources/meta.json";
     public static final String mp3Source = "https://rovimusic.rovicorp.com/playback.mp3?c=%s=&f=I";
+
     public static final String youtubeVideoSource = "https://www.youtube.com/watch?v=";
+    public static final String youtubeSearch = "https://www.youtube.com/results?search_query=";
+
+    public static final String dailyMotionVideoSource = "https://www.dailymotion.com/video/";
+    public static final String dailyMotionSearch = "https://www.dailymotion.com/search/%s/videos";
+
+    public static final String vimeoVideoSource = "https://vimeo.com/";
+    public static final String vimeoSearch = "https://vimeo.com/search?q=";
 
     private String applicationData = null;
     private String youtubeDlExecutable = null;
@@ -41,7 +49,7 @@ public class Resources {
             ffmpegExecutable = "/usr/local/bin/ffmpeg";
         }
 
-        // Unix Based
+        // Unix Based: Test First then Support
         else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) Debug.error("Linux is currently unsupported.", new JarException());
 
         // SunOS & Unknown

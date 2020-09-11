@@ -30,7 +30,8 @@ import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
 import musicdownloader.utils.net.db.sites.Allmusic;
-import musicdownloader.utils.net.source.sites.Youtube;
+import musicdownloader.utils.net.source.sites.Vimeo;
+import musicdownloader.utils.net.source.sites.YouTube;
 import musicdownloader.utils.ui.Result;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
@@ -42,7 +43,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /*
 TODO
@@ -408,39 +412,35 @@ public class Results {
 
         private JSONArray getSource(String query, int targetTime) {
 
-            Youtube youtubeParser = new Youtube(query, targetTime);
+            //YouTube youtubeParser = new YouTube(query, targetTime);
 
+            JSONArray sources = new JSONArray();
+
+            JSONObject searchDataExtracted = new JSONObject();
             try {
+
+                YouTube youtubeParser = new YouTube(query, targetTime);
                 youtubeParser.load();
+
+                Vimeo vimeoParser = new Vimeo(query, targetTime);
+                vimeoParser.load();
+
+                for (int i = 0; i < youtubeParser.getResults().getJSONArray("primary").length(); i++) sources.put(Resources.youtubeVideoSource + youtubeParser.getResults().getJSONArray("primary").getString(i));
+                for (int i = 0; i < vimeoParser.getResults().getJSONArray("primary").length(); i++) sources.put(Resources.vimeoVideoSource + vimeoParser.getResults().getJSONArray("primary").getString(i));
+                for (int i = 0; i < youtubeParser.getResults().getJSONArray("secondary").length(); i++) sources.put(Resources.youtubeVideoSource + youtubeParser.getResults().getJSONArray("secondary").getString(i));
+                for (int i = 0; i < vimeoParser.getResults().getJSONArray("secondary").length(); i++) sources.put(Resources.vimeoVideoSource + vimeoParser.getResults().getJSONArray("secondary").getString(i));
+
             } catch (IOException e) {
-                Debug.warn("Error connecting to https://www.youtube.com/results?search_query=" + query);
+                Debug.warn("Connection error");
+
                 return null;
                 // TODO: Await reconnection
-            }
 
-            ArrayList<String> searchDataExtracted = youtubeParser.getResults();
-            try {
-                switch (searchDataExtracted.size()) {
-
-                    case 0:
-                        Debug.warn("Youtube does not have the this song.");
-                        return new JSONArray();
-
-                    case 1:
-                        return new JSONArray("[" + searchDataExtracted.get(0) + "]");
-
-                    default:
-                        // Quick-sort remaining and return
-                        JSONArray temp = new JSONArray();
-                        for (String result: searchDataExtracted) {
-                            temp.put(result);
-                        }
-                        return temp;
-                }
             } catch (JSONException e) {
-                Debug.error("Failed to sort songs data with data: " + searchDataExtracted, e);
-                return new JSONArray();
+                e.printStackTrace();
             }
+
+            return sources;
 
         }
 
@@ -573,7 +573,7 @@ public class Results {
 
                 Label linkPart0;
                 if (Model.getInstance().download.getDownloadQueue().length() > 0)
-                    linkPart0 = new Label(String.format("Added to download queue, in position %s, view progress in ", Model.getInstance().download.getDownloadObject().length()));
+                    linkPart0 = new Label(String.format("Added to download queue, in position %s, view progress in ", Model.getInstance().download.getDownloadQueue().length()));
 
                 else linkPart0 = new Label("Download started, view progress in ");
 
