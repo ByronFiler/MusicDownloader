@@ -8,25 +8,24 @@ import java.io.IOException;
 class YoutubeTest {
 
     @Test
-    void load() {
-        YouTube youtubeRequest;
-
-        // Known working request
+    void validRequest() {
         try {
-            youtubeRequest = new YouTube("Pink Floyd - Speak To Me", 67);
+            YouTube youtubeRequest = new YouTube("Pink Floyd - Speak To Me", 67);
             youtubeRequest.load();
             assert youtubeRequest.getResults().getJSONArray("primary").length() > 0 || youtubeRequest.getResults().getJSONArray("secondary").length() > 0;
         } catch (IOException | JSONException e) {
             assert false;
         }
+    }
 
-        // Bad request
+    @Test
+    void invalidRequest() {
         try {
-            youtubeRequest = new YouTube("%%%%%%%%", -1);
+            YouTube youtubeRequest = new YouTube("%%%%%%%%", -1);
             youtubeRequest.load();
-            assert  youtubeRequest.getResults().getJSONArray("primary").length() == 0 || youtubeRequest.getResults().getJSONArray("secondary").length() == 0;
         } catch (IOException | JSONException e) {
             assert false;
         }
+
     }
 }
