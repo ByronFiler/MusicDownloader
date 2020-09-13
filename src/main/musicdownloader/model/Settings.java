@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Scanner;
 
+// TODO: Should have a settings validator that checks settings or resets
 public class Settings {
 
     private JSONObject settings;
@@ -21,8 +22,10 @@ public class Settings {
 
         // Declare default settings for reference
         try{
-            defaultSettings = new JSONObject("{\"advanced_validation\": true, \"output_directory\":\"\",\"save_album_art\":0,\"music_format\":0, \"album_art\":true, \"album_title\":true, \"song_title\":true, \"artist\":true, \"year\":true, \"track\":true,\"dark_theme\":false, \"data_saver\":false}");
-        } catch (JSONException ignored) {}
+            defaultSettings = new JSONObject("{\"advanced_validation\": true, \"output_directory\":\"\",\"save_album_art\":0,\"music_format\":0, \"album_art\":true, \"album_title\":true, \"song_title\":true, \"artist\":true, \"year\":true, \"track\":true,\"dark_theme\":false, \"data_saver\":false, \"correct_volume\": true}");
+        } catch (JSONException e) {
+            Debug.error("Default settings are invalid.", e);
+        }
 
         // Check for app directory, make if it doesn't exist
         if (!Files.exists(Paths.get(Resources.getInstance().getApplicationData())))
@@ -31,6 +34,7 @@ public class Settings {
 
         // Load users actual settings
         try {
+            // TODO: Validator should be here
             settings = new JSONObject(new Scanner(new File(Resources.getInstance().getApplicationData() + "json/config.json")).useDelimiter("\\Z").next());
             Debug.trace("Found user settings.");
         } catch (FileNotFoundException | JSONException ignored) {

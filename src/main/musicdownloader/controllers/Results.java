@@ -519,6 +519,7 @@ public class Results {
                 metadata.put("album", albumProcessor.getAlbum());
                 metadata.put("playtime", albumProcessor.getPlaytime());
                 metadata.put("is_album", basicData.getJSONObject("data").getBoolean("album"));
+                metadata.put("format", Resources.songReferences.get(Model.getInstance().settings.getSettingInt("music_format")));
 
                 if (basicData.getJSONObject("data").getBoolean("album")) {
                     for (Allmusic.album.song song : albumProcessor.getSongs()) songs.put(parseJsonFromSong(metadata, collectiveDownloadsObjects, albumProcessor, song));

@@ -1,11 +1,7 @@
 package musicdownloader.utils.io;
 
 import com.mpatric.mp3agic.*;
-import com.musicg.fingerprint.FingerprintManager;
-import com.musicg.fingerprint.FingerprintSimilarityComputer;
-import com.musicg.wave.Wave;
 import javafx.application.Platform;
-import javazoom.jl.converter.Converter;
 import javazoom.jl.decoder.JavaLayerException;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
@@ -22,8 +18,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 /*
 TODO
@@ -45,6 +41,7 @@ public class Downloader implements Runnable {
         new Thread(this, "acquire-download-files").start();
     }
 
+    /*
     private float evaluateDownloadValidity (String sampleFileSource, String downloadedFile) {
 
         if (!Files.exists(Paths.get(Resources.getInstance().getApplicationData() + "temp")))
@@ -105,6 +102,7 @@ public class Downloader implements Runnable {
         FingerprintSimilarityComputer fingerprint = new FingerprintSimilarityComputer(sampleData, downloadData);
         return fingerprint.getFingerprintsSimilarity().getScore();
     }
+     */
 
     private String generateFolder(String folderRequest) {
 
@@ -135,7 +133,7 @@ public class Downloader implements Runnable {
 
     }
 
-    private synchronized void downloadFile(JSONObject song, String format, int sourceDepth, String index, boolean overrideSimilarity) throws IOException, JSONException {
+    private synchronized void downloadFile(JSONObject song, String format, int sourceDepth, String index, boolean overrideSimilarity, SpectroAnalysis analysis) throws IOException, JSONException, JavaLayerException {
 
         // Start download
         if (!Files.exists(Paths.get(Resources.getInstance().getApplicationData() + "temp")))
@@ -159,14 +157,7 @@ public class Downloader implements Runnable {
                 song.getJSONArray("source").getString(sourceDepth)
         );
         builder.directory(new File(Resources.getInstance().getApplicationData() + "temp"));
-        builder.redirectErrorStream(true);
-        Process process = builder.start();
-        InputStream is = process.getInputStream();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-
-        String line;
-        while ((line = reader.readLine()) != null)
-            Debug.log(line);
+        debugProcess(builder);
 
         // Silent debug to not spam console
         ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(Resources.getInstance().getApplicationData() + "temp").listFiles())));
@@ -186,12 +177,9 @@ public class Downloader implements Runnable {
         if (downloadedFile == null) throw new IOException("Failed to find downloaded file.");
 
         // Validate
-        if (Model.getInstance().settings.getSettingBool("advanced_validation") && song.has("sample")) {
+        if (Model.getInstance().settings.getSettingBool("advanced_validation") && song.get("sample") != JSONObject.NULL) {
 
-            float downloadValidity = evaluateDownloadValidity(
-                    String.format(Resources.mp3Source, song.getString("sample")),
-                    downloadedFile.getAbsolutePath()
-            );
+            float downloadValidity = analysis.compare(downloadedFile.getAbsolutePath());
 
             JSONObject tempValidityLog = new JSONObject();
             tempValidityLog.put("song", song);
@@ -217,7 +205,7 @@ public class Downloader implements Runnable {
                 if (song.getJSONArray("source").length() > sourceDepth + 2) {
 
                     // Can continue and move onto the next source
-                    downloadFile(song, format, sourceDepth + 1, index, false);
+                    downloadFile(song, format, sourceDepth + 1, index, false, analysis);
 
                 } else {
                     float highestValidity = Collections.max(songsValidity);
@@ -229,11 +217,13 @@ public class Downloader implements Runnable {
                     );
 
                     // Need to call the download function and override check to use the greatest value song
-                    downloadFile(song, format, songsValidity.indexOf(highestValidity), index, true);
+                    downloadFile(song, format, songsValidity.indexOf(highestValidity), index, true, analysis);
                 }
                 return;
 
             }
+
+            analysis.correctAmplitude(downloadedFile.getAbsolutePath());
 
             sources.add(song.getJSONArray("source").getString(sourceDepth));
         } else {
@@ -300,6 +290,16 @@ public class Downloader implements Runnable {
 
         songsValidity.clear();
 
+    }
+
+    public static void debugProcess(ProcessBuilder builder) throws IOException {
+        builder.redirectErrorStream(true);
+        Process process = builder.start();
+        InputStream is = process.getInputStream();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
+        String line;
+        while ((line = reader.readLine()) != null) Debug.log(line);
     }
 
     @Override
@@ -385,14 +385,21 @@ public class Downloader implements Runnable {
             // Working the download
             for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
 
+                SpectroAnalysis analysis = null;
+                if (downloadObject.getJSONArray("songs").getJSONObject(i).get("sample") != JSONObject.NULL) {
+                    System.out.println(downloadObject.getJSONArray("songs").getJSONObject(i).get("sample"));
+                    analysis = new SpectroAnalysis(String.format(Resources.mp3Source, downloadObject.getJSONArray("songs").getJSONObject(i).getString("sample")));
+                }
+
                 // Will call it's self recursively until it exhausts possible files or succeeds
                 try {
                     downloadFile(
                             downloadObject.getJSONArray("songs").getJSONObject(i),
-                            Resources.songReferences.get(Model.getInstance().settings.getSettingInt("music_format")),
+                            downloadObject.getJSONObject("metadata").getString("format"),
                             0,
                             String.valueOf(i+1),
-                            false
+                            false,
+                            analysis
                     );
                 } catch (IOException | JSONException e) {
                     try {
@@ -435,6 +442,10 @@ public class Downloader implements Runnable {
 
         } catch (JSONException e) {
             Debug.error("JSON Error when attempting to access songs to download.", e);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JavaLayerException e) {
+            e.printStackTrace();
         }
 
         // Updating the history

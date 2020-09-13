@@ -63,7 +63,10 @@ public class Settings {
     @FXML HBox outputDirectoryContainer;
     @FXML ComboBox<String> musicFormat;
     @FXML ComboBox<String> saveAlbumArt;
+
+    // Audio
     @FXML ToggleSwitch advancedValidationToggle;
+    @FXML ToggleSwitch volumeCorrectionToggle;
 
     // Meta-Data application
     @FXML ToggleSwitch albumArtToggle;
@@ -127,8 +130,11 @@ public class Settings {
         outputDirectory.setText(outputDirectoryRaw);
         musicFormat.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("music_format")));
         saveAlbumArt.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("save_album_art")));
-        advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
         new validateDirectory(outputDirectoryRaw);
+
+        // Audio
+        advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
+        volumeCorrectionToggle.setSelected(Model.getInstance().settings.getSettingBool("volume_correction"));
 
         // Meta-Data
         albumArtToggle.setSelected(Model.getInstance().settings.getSettingBool("album_art"));
@@ -292,9 +298,12 @@ public class Settings {
             settings.put("output_directory", outputDirectory.getText().equals(System.getProperty("user.dir")) ? "" : outputDirectory.getText());
             settings.put("music_format", musicFormat.getSelectionModel().getSelectedIndex());
             settings.put("save_album_art", saveAlbumArt.getSelectionModel().getSelectedIndex());
-            settings.put("advanced_validation", advancedValidationToggle.isSelected());
 
-            // Meta-Data ../application
+            // Audio
+            settings.put("advanced_validation", advancedValidationToggle.isSelected());
+            settings.put("volume_correction", volumeCorrectionToggle.isSelected());
+
+            // Meta-Data
             settings.put("album_art", albumArtToggle.isSelected());
             settings.put("album_title", albumTitleToggle.isSelected());
             settings.put("song_title", songTitleToggle.isSelected());
@@ -302,7 +311,7 @@ public class Settings {
             settings.put("year", yearToggle.isSelected());
             settings.put("track", trackNumberToggle.isSelected());
 
-            // ../application Configuration
+            // Application Configuration
             settings.put("dark_theme", darkThemeToggle.isSelected());
             settings.put("data_saver", dataSaverToggle.isSelected());
 
