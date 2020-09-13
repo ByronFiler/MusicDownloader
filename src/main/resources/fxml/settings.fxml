@@ -144,30 +144,28 @@
                      </BorderPane>
                   </VBox>
                </VBox>
-               <VBox prefHeight="113.0" prefWidth="500.0">
+               <VBox prefWidth="500.0" spacing="5">
                   <HBox prefHeight="25.0" prefWidth="570.0" styleClass="underline">
                      <Label text="Audio" styleClass="sub_title1"/>
                   </HBox>
-                  <VBox prefWidth="500.0">
-                     <BorderPane prefHeight="30.0" prefWidth="500.0">
-                        <left>
-                           <Label text="Advanced Download Validation: " BorderPane.alignment="CENTER" styleClass="sub_text"/>
-                        </left>
-                        <right>
-                           <ToggleSwitch onMouseClicked="#saveSettings" fx:id="advancedValidationToggle" BorderPane.alignment="CENTER"/>
-                        </right>
-                     </BorderPane>
-                     <BorderPane prefHeight="30.0" prefWidth="500.0">
-                        <left>
-                           <Label text="Volume Correction: " BorderPane.alignment="CENTER" styleClass="sub_text"/>
-                        </left>
-                        <right>
-                           <ToggleSwitch onMouseClicked="#saveSettings" fx:id="volumeCorrectionToggle" BorderPane.alignment="CENTER"/>
-                        </right>
-                     </BorderPane>
-                  </VBox>
+                  <BorderPane prefHeight="30.0" prefWidth="500.0">
+                     <left>
+                        <Label text="Advanced Download Validation: " BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                     </left>
+                     <right>
+                        <ToggleSwitch onMouseClicked="#saveSettings" fx:id="advancedValidationToggle" BorderPane.alignment="CENTER"/>
+                     </right>
+                  </BorderPane>
+                  <BorderPane prefHeight="30.0" prefWidth="500.0">
+                     <left>
+                        <Label text="Volume Correction: " BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                     </left>
+                     <right>
+                        <ToggleSwitch onMouseClicked="#saveSettings" fx:id="volumeCorrectionToggle" BorderPane.alignment="CENTER"/>
+                     </right>
+                  </BorderPane>
                </VBox>
-               <VBox prefHeight="200.0" prefWidth="100.0">
+               <VBox prefWidth="100.0" spacing="5">
                   <HBox prefHeight="24.0" prefWidth="570.0" styleClass="underline">
                      <Label text="Meta-Data Application" styleClass="sub_title1"/>
                   </HBox>
@@ -220,28 +218,26 @@
                      </right>
                   </BorderPane>
                </VBox>
-               <VBox prefHeight="97.0" prefWidth="500.0">
+               <VBox prefWidth="500.0" spacing="5">
                   <HBox prefHeight="25.0" prefWidth="570.0" styleClass="underline">
                      <Label text="Application Configuration" styleClass="sub_title1"/>
                   </HBox>
-                  <VBox>
-                     <BorderPane prefHeight="30.0" prefWidth="500.0">
-                        <left>
-                           <Label text="Dark Theme:" BorderPane.alignment="CENTER" styleClass="sub_text"/>
-                        </left>
-                        <right>
-                           <ToggleSwitch onMouseClicked="#saveSettings" fx:id="darkThemeToggle" BorderPane.alignment="CENTER"/>
-                        </right>
-                     </BorderPane>
-                     <BorderPane prefHeight="30.0" prefWidth="500.0">
-                        <left>
-                           <Label text="Data Saver Mode:" BorderPane.alignment="CENTER" styleClass="sub_text"/>
-                        </left>
-                        <right>
-                           <ToggleSwitch onMouseClicked="#saveSettings" fx:id="dataSaverToggle" BorderPane.alignment="CENTER"/>
-                        </right>
-                     </BorderPane>
-                  </VBox>
+                  <BorderPane prefHeight="30.0" prefWidth="500.0">
+                     <left>
+                        <Label text="Dark Theme:" BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                     </left>
+                     <right>
+                        <ToggleSwitch onMouseClicked="#saveSettings" fx:id="darkThemeToggle" BorderPane.alignment="CENTER"/>
+                     </right>
+                  </BorderPane>
+                  <BorderPane prefHeight="30.0" prefWidth="500.0">
+                     <left>
+                        <Label text="Data Saver Mode:" BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                     </left>
+                     <right>
+                        <ToggleSwitch onMouseClicked="#saveSettings" fx:id="dataSaverToggle" BorderPane.alignment="CENTER"/>
+                     </right>
+                  </BorderPane>
                </VBox>
             </VBox>
          </top>
