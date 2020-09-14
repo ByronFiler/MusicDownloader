@@ -13,7 +13,6 @@ import java.io.IOException;
 
 /*
 TODO
- DOWNLOAD SONG INDIVIDUAL METADATA IS INCORRECT POSITION CORRECT IMMEDIATELY
  Add different language options: https://stackoverflow.com/questions/26325403/how-to-implement-language-support-for-javafx-in-fxml-documents
  Support different search databases: https://en.wikipedia.org/wiki/List_of_online_music_databases
  When the window is closed mid download save the object and continue the download?

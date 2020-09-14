@@ -181,31 +181,33 @@ public class Downloader implements Runnable {
                 }
 
                 // Applying remaining data
-                if (Model.getInstance().settings.getSettingBool("album_title"))
+                if (Model.getInstance().settings.getSettingBool("album_title")) {
                     id3v2tag.setTitle(song.getString("title"));
+                }
 
-                if (Model.getInstance().settings.getSettingBool("song_title"))
+                if (Model.getInstance().settings.getSettingBool("song_title")) {
                     id3v2tag.setAlbum(downloadObject.getJSONObject("metadata").getString("album"));
+                }
 
                 if (Model.getInstance().settings.getSettingBool("artist")) {
                     id3v2tag.setArtist(downloadObject.getJSONObject("metadata").getString("artist"));
                     id3v2tag.setAlbumArtist(downloadObject.getJSONObject("metadata").getString("artist"));
                 }
 
-                if (Model.getInstance().settings.getSettingBool("year"))
+                if (Model.getInstance().settings.getSettingBool("year")) {
                     id3v2tag.setYear(downloadObject.getJSONObject("metadata").getString("year"));
+                }
 
-                // TODO: Add as setting
-                id3v2tag.setTrack(downloadObject.getJSONArray("songs").getJSONObject(Integer.parseInt(index)-1).getString("position"));
+                if (Model.getInstance().settings.getSettingBool("track")) {
+                    id3v2tag.setTrack(downloadObject.getJSONArray("songs").getJSONObject(Integer.parseInt(index) - 1).getString("position"));
+                }
 
                 try {
                     // Check if already exists, remove special characters
                     mp3Applicator.save(downloadObject.getJSONObject("metadata").getString("directory") + "/" + song.getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_") + "." + format);
 
                     // Delete old file
-                    if (!downloadedFile.delete()) {
-                        Debug.error("Failed to delete file: " + downloadedFile, new IOException());
-                    }
+                    if (!downloadedFile.delete()) Debug.warn("Failed to delete file: " + downloadedFile);
 
                 } catch (IOException | NotSupportedException e) {
                     Debug.warn("Failed to apply metadata.");
