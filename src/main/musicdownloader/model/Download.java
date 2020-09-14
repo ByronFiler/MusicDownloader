@@ -3,7 +3,7 @@ package musicdownloader.model;
 import musicdownloader.controllers.Downloads;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.io.HistoryValidator;
+import musicdownloader.utils.io.validation.History;
 import musicdownloader.utils.io.Downloader;
 import musicdownloader.utils.io.Gzip;
 import org.json.JSONArray;
@@ -184,7 +184,7 @@ public class Download {
             if (diskHistory.toString().equals(new JSONObject().toString())) {
                 this.downloadHistory = new JSONArray();
             } else {
-                HistoryValidator historyValidator = new HistoryValidator(diskHistory);
+                History historyValidator = new History(diskHistory);
 
                 if (!historyValidator.getValidatedHistory().toString().equals(diskHistory.toString())) {
                     Debug.trace(

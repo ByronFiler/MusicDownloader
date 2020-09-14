@@ -1,4 +1,4 @@
-package musicdownloader.utils.io;
+package musicdownloader.utils.io.validation;
 
 import musicdownloader.utils.app.Debug;
 import org.json.JSONArray;
@@ -7,7 +7,7 @@ import org.json.JSONObject;
 
 import java.util.Arrays;
 
-public class HistoryValidator {
+public class History {
 
     private static final String[] metadataEssential = new String[]{"artId", "artist", "album", "format", "directory"};
     private static final String[] metadataExtra = new String[]{"art", "year", "genre", "playtime", "downloadStarted"};
@@ -19,7 +19,7 @@ public class HistoryValidator {
     private int historiesWithPartialMetadata = 0;
     private int modifiedRemovedSongs = 0;
 
-    public HistoryValidator(JSONArray history) throws JSONException {
+    public History(JSONArray history) throws JSONException {
 
         JSONObject validatedHistory;
 
