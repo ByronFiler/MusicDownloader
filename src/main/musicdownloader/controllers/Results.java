@@ -553,9 +553,6 @@ public class Results {
                     downloadItem.put("metadata", metadata);
                     downloadItem.put("songs", songs);
 
-                    System.out.println(downloadItem);
-                    System.out.println(Model.getInstance().download.getDownloadQueue());
-
                     Model.getInstance().download.updateDownloadQueue(downloadItem);
                     Platform.runLater(() -> searchField.setDisable(false));
                 }

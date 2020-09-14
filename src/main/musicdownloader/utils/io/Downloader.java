@@ -23,7 +23,7 @@ import java.util.*;
 
 /*
 TODO
- Download history should include a file md5, creation time, and source, and meta could include a link to the allmusic source?
+ Download history should include a file md5, creation time?
  */
 
 public class Downloader implements Runnable {
@@ -40,69 +40,6 @@ public class Downloader implements Runnable {
     public Downloader() {
         new Thread(this, "acquire-download-files").start();
     }
-
-    /*
-    private float evaluateDownloadValidity (String sampleFileSource, String downloadedFile) {
-
-        if (!Files.exists(Paths.get(Resources.getInstance().getApplicationData() + "temp")))
-            if (!new File(Resources.getInstance().getApplicationData() + "temp").mkdirs())
-                Debug.error("Failed to create temp file directory for validation.", new IOException());
-
-        // Preparing sample: Downloading sample & Converting
-        InputStream mp3Source = null;
-        try {
-            mp3Source = new URL(sampleFileSource).openStream();
-            new Converter().convert(
-                    mp3Source,
-                    Resources.getInstance().getApplicationData() + "temp/sample.wav",
-                    null,
-                    null
-            );
-            new Converter().convert(
-                    downloadedFile,
-                    Resources.getInstance().getApplicationData() + "temp/source.wav"
-            );
-
-        } catch (FileNotFoundException e) {
-            Debug.warn("Failed to find file to run check on.");
-        } catch (IOException e) {
-            Debug.warn("Error connecting to: " + sampleFileSource);
-            e.printStackTrace();
-            System.exit(-1);
-        } catch (JavaLayerException e) {
-            Debug.warn("Error processing given data for conversion.");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }finally {
-            try {
-                if (mp3Source != null) mp3Source.close();
-            } catch (IOException e) {
-                Debug.error("Failed to close remote sample source stream.", e);
-            }
-        }
-
-        // Checking if the download file needs to be converted
-        byte[] sampleData;
-        byte[] downloadData;
-
-        try {
-            downloadData = new FingerprintManager().extractFingerprint(new Wave(Resources.getInstance().getApplicationData() + "temp/source.wav"));
-            sampleData = new FingerprintManager().extractFingerprint(new Wave(Resources.getInstance().getApplicationData() + "temp/sample.wav"));
-        } catch (ArrayIndexOutOfBoundsException ignored) {
-            Debug.warn("File is too large to be checked.");
-            return 1;
-        }
-
-        // Deleting temporary files
-        if (!new File(Resources.getInstance().getApplicationData() + "temp/source.wav").delete())
-            Debug.warn("Failed to delete source.wav");
-        if (!new File(Resources.getInstance().getApplicationData() + "temp/sample.wav").delete())
-            Debug.warn("Failed to delete sample.wav");
-
-        FingerprintSimilarityComputer fingerprint = new FingerprintSimilarityComputer(sampleData, downloadData);
-        return fingerprint.getFingerprintsSimilarity().getScore();
-    }
-     */
 
     private String generateFolder(String folderRequest) {
 
@@ -163,6 +100,7 @@ public class Downloader implements Runnable {
         ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(Resources.getInstance().getApplicationData() + "temp").listFiles())));
         currentFiles.removeAll(preexistingFiles);
 
+        // TODO: attempt every 50ms until 200ms then just say it fucked up
         // TODO: Happens rarely, likely due to a youtube-dl renaming process, consider awaiting for maybe 50 or 100ms?
         if (currentFiles.size() != 1)
             Debug.error(
@@ -199,8 +137,7 @@ public class Downloader implements Runnable {
 
             if (downloadValidity <= 0.7 && !overrideSimilarity) {
 
-                if (!downloadedFile.delete())
-                    Debug.warn("Failed to delete: " + downloadedFile.getName());
+                if (!downloadedFile.delete()) Debug.warn("Failed to delete: " + downloadedFile.getName());
 
                 if (song.getJSONArray("source").length() > sourceDepth + 2) {
 
@@ -224,7 +161,6 @@ public class Downloader implements Runnable {
             }
 
             analysis.correctAmplitude(downloadedFile.getAbsolutePath());
-
             sources.add(song.getJSONArray("source").getString(sourceDepth));
         } else {
             sources.add(song.getJSONArray("source").getString(0));
@@ -259,8 +195,8 @@ public class Downloader implements Runnable {
                 if (Model.getInstance().settings.getSettingBool("year"))
                     id3v2tag.setYear(downloadObject.getJSONObject("metadata").getString("year"));
 
-                // Add this as a possible setting, also contain
-                id3v2tag.setTrack(index);
+                // TODO: Add as setting
+                id3v2tag.setTrack(downloadObject.getJSONArray("songs").getJSONObject(Integer.parseInt(index)-1).getString("position"));
 
                 try {
                     // Check if already exists, remove special characters
@@ -304,8 +240,6 @@ public class Downloader implements Runnable {
 
     @Override
     public void run() {
-
-        Debug.trace("------------------------------- NEW DOWNLOADER THREAD STARTED ----------------------------------------");
 
         try {
             Debug.trace(
