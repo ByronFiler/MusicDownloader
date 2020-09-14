@@ -30,7 +30,7 @@ public class Settings {
             validInts = new JSONArray(
                     "[" +
                             "{\"var\": \"music_format\", \"min\": 0, \"max\": 3}," +
-                            "{\"var\": \"save_album_art\", \"min\": 0, \"max:\": 3}" +
+                            "{\"var\": \"save_album_art\", \"min\": 0, \"max\": 3}" +
                     "]"
             );
         } catch (JSONException e) {
@@ -41,24 +41,43 @@ public class Settings {
     // TODO: Does not work
     public static boolean validate(JSONObject settings) {
 
-        if (settings.length() != (validBooleans.length + validStrings.length + validInts.length())) return false;
+        if (settings.length() != (validBooleans.length + validStrings.length + validInts.length())) {
+            Debug.warn(
+                    String.format(
+                            "Unexpected settings length, size of %s expected, %s found.",
+                            validBooleans.length + validStrings.length + validInts.length(),
+                            settings.length()
+                    )
+            );
+            return false;
+        }
 
         try {
             for (String validBoolean : validBooleans) {
                 if (!settings.has(validBoolean) || (settings.has(validBoolean) && settings.get(validBoolean) == null)) {
+                    Debug.warn("Setting mid-configured/non-existent: " + validBoolean);
                     return false;
                 }
             }
 
-            for (String validString: validStrings) if (!settings.has(validString) || (settings.has(validString) && !settings.get(validString).getClass().equals(String.class))) return false;
-
-            for (int i = 0; i < validInts.length(); i++)
+            for (String validString: validStrings) {
+                if (!settings.has(validString) || (settings.has(validString) && !settings.get(validString).getClass().equals(String.class))) {
+                    Debug.warn("Setting mid-configured/non-existent: " + validString);
+                    return false;
+                }
+            }
+            for (int i = 0; i < validInts.length(); i++) {
                 if (!settings.has(validInts.getJSONObject(i).getString("var"))
                         || settings.getInt(validInts.getJSONObject(i).getString("var")) < validInts.getJSONObject(i).getInt("min")
                         || settings.getInt(validInts.getJSONObject(i).getString("var")) > validInts.getJSONObject(i).getInt("max")
-                ) return false;
+                ) {
+                    Debug.warn("Setting mid-configured/non-existent: " + validInts.getJSONObject(i).getString("var"));
+                    return false;
+                }
+            }
 
         } catch (JSONException e) {
+            Debug.warn("JSON Error validating settings.");
             return false;
         }
 
