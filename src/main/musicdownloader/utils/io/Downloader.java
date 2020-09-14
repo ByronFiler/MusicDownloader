@@ -305,6 +305,8 @@ public class Downloader implements Runnable {
     @Override
     public void run() {
 
+        Debug.trace("------------------------------- NEW DOWNLOADER THREAD STARTED ----------------------------------------");
+
         try {
             Debug.trace(
                     String.format(
@@ -387,7 +389,6 @@ public class Downloader implements Runnable {
 
                 SpectroAnalysis analysis = null;
                 if (downloadObject.getJSONArray("songs").getJSONObject(i).get("sample") != JSONObject.NULL) {
-                    System.out.println(downloadObject.getJSONArray("songs").getJSONObject(i).get("sample"));
                     analysis = new SpectroAnalysis(String.format(Resources.mp3Source, downloadObject.getJSONArray("songs").getJSONObject(i).getString("sample")));
                 }
 
@@ -442,9 +443,7 @@ public class Downloader implements Runnable {
 
         } catch (JSONException e) {
             Debug.error("JSON Error when attempting to access songs to download.", e);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JavaLayerException e) {
+        } catch (IOException | JavaLayerException e) {
             e.printStackTrace();
         }
 
@@ -504,11 +503,8 @@ public class Downloader implements Runnable {
 
         // Move onto the next item if necessary
         Platform.runLater(() -> {
-
             if (downloadQueue.length() > 0) {
-
                 try {
-
                     Debug.trace(
                             String.format(
                                 "Found %s items left in queue processing and starting new download...",
@@ -526,14 +522,12 @@ public class Downloader implements Runnable {
                     Model.getInstance().download.markCompletedDownload();
 
                     // Updating the queue
-                    if (downloadQueue.length() == 1)
-                        downloadQueue = new JSONArray();
+                    if (downloadQueue.length() == 1) downloadQueue = new JSONArray();
 
                     else {
 
                         JSONArray newQueue = new JSONArray();
-                        for (int i = 1; i < newQueue.length(); i++)
-                            newQueue.put(downloadQueue.get(i));
+                        for (int i = 1; i < downloadQueue.length(); i++) newQueue.put(downloadQueue.get(i));
 
                         downloadQueue = newQueue;
                     }

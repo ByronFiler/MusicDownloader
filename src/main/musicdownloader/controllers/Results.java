@@ -464,7 +464,8 @@ public class Results {
                 // Getting other download items for the purpose of ID validation
                 JSONArray collectiveDownloadsObjects = new JSONArray();
                 if (Model.getInstance().download.getDownloadQueue().length() > 0)
-                    collectiveDownloadsObjects.put(Model.getInstance().download.getDownloadQueue());
+                    for (int i = 0; i < Model.getInstance().download.getDownloadQueue().length(); i++)
+                        collectiveDownloadsObjects.put(Model.getInstance().download.getDownloadQueue().getJSONObject(i));
 
                 if (Model.getInstance().download.getDownloadObject().length() > 0)
                     collectiveDownloadsObjects.put(Model.getInstance().download.getDownloadObject());
@@ -551,6 +552,9 @@ public class Results {
                 if (!kill) {
                     downloadItem.put("metadata", metadata);
                     downloadItem.put("songs", songs);
+
+                    System.out.println(downloadItem);
+                    System.out.println(Model.getInstance().download.getDownloadQueue());
 
                     Model.getInstance().download.updateDownloadQueue(downloadItem);
                     Platform.runLater(() -> searchField.setDisable(false));
