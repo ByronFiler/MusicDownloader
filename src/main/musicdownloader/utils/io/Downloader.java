@@ -1,7 +1,6 @@
 package musicdownloader.utils.io;
 
 import com.mpatric.mp3agic.*;
-import javafx.application.Platform;
 import javazoom.jl.decoder.JavaLayerException;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
@@ -24,6 +23,7 @@ import java.util.*;
 /*
 TODO
  Download history should include a file md5, creation time?
+ When the window is closed the thread seems to hang and not continue to downlaod
  */
 
 public class Downloader implements Runnable {
@@ -162,9 +162,7 @@ public class Downloader implements Runnable {
 
             analysis.correctAmplitude(downloadedFile.getAbsolutePath());
             sources.add(song.getJSONArray("source").getString(sourceDepth));
-        } else {
-            sources.add(song.getJSONArray("source").getString(0));
-        }
+        } else sources.add(song.getJSONArray("source").getString(0));
 
         // Apply meta-data
         if (format.equals("mp3")) {
@@ -374,9 +372,6 @@ public class Downloader implements Runnable {
 
             newHistory.put("songs", songs);
 
-            // If the application is iconified then notify the user using their OSs notification system
-            if (Model.getInstance().getPrimaryStage().isIconified()) new Notification(downloadObject.getJSONObject("metadata").getString("album"), "", new File(downloadObject.getJSONObject("metadata").getString("directory")), TrayIcon.MessageType.INFO);
-
         } catch (JSONException e) {
             Debug.error("JSON Error when attempting to access songs to download.", e);
         } catch (IOException | JavaLayerException e) {
@@ -392,8 +387,6 @@ public class Downloader implements Runnable {
             Debug.error("Failed to set new download history with current download.", e);
         }
 
-        // Check if we should delete the album art
-        // TODO: Change number settings
         try {
             switch (Model.getInstance().settings.getSettingInt("save_album_art")) {
 
@@ -436,52 +429,57 @@ public class Downloader implements Runnable {
             Debug.warn("Failed to copy album art into downloads folder.");
         }
 
-
         // Move onto the next item if necessary
-        Platform.runLater(() -> {
-            if (downloadQueue.length() > 0) {
-                try {
-                    Debug.trace(
-                            String.format(
-                                "Found %s items left in queue processing and starting new download...",
-                                    downloadQueue.length()
-                            )
+        if (downloadQueue.length() > 0) {
+            try {
+                Debug.trace(String.format("Found %s items left in queue processing and starting new download...", downloadQueue.length()));
+
+                // Creating new download object by marking songs for downloads controller
+                downloadObject = downloadQueue.getJSONObject(0);
+                for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) downloadObject.getJSONArray("songs").getJSONObject(i).put("completed", false);
+
+                // Updating the model
+                Model.getInstance().download.setDownloadObject(downloadObject);
+                Model.getInstance().download.markCompletedDownload();
+
+                // Updating the queue
+                if (downloadQueue.length() == 1) downloadQueue = new JSONArray();
+                else {
+                    JSONArray newQueue = new JSONArray();
+                    for (int i = 1; i < downloadQueue.length(); i++) newQueue.put(downloadQueue.get(i));
+                    downloadQueue = newQueue;
+                }
+                Model.getInstance().download.setDownloadQueue(downloadQueue);
+
+                // Notification
+                if (Model.getInstance().getPrimaryStage().isIconified() || Model.getInstance().isStageClosed()) {
+                    int length = Model.getInstance().download.getDownloadQueue().length();
+                    new Notification(
+                            String.format("Download for \"%s\" started", downloadObject.getJSONObject("metadata").getString("album")),
+                            length == 0 ? "" : String.format("%s Item%s left in queue.", length, length == 1 ? "" : "s"),
+                            new File(downloadObject.getJSONObject("metadata").getString("directory")),
+                            TrayIcon.MessageType.INFO
                     );
-
-                    // Creating new download object by marking songs for downloads controller
-                    downloadObject = downloadQueue.getJSONObject(0);
-                    for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++)
-                        downloadObject.getJSONArray("songs").getJSONObject(i).put("completed", false);
-
-                    // Updating the model
-                    Model.getInstance().download.setDownloadObject(downloadObject);
-                    Model.getInstance().download.markCompletedDownload();
-
-                    // Updating the queue
-                    if (downloadQueue.length() == 1) downloadQueue = new JSONArray();
-
-                    else {
-
-                        JSONArray newQueue = new JSONArray();
-                        for (int i = 1; i < downloadQueue.length(); i++) newQueue.put(downloadQueue.get(i));
-
-                        downloadQueue = newQueue;
-                    }
-                    Model.getInstance().download.setDownloadQueue(downloadQueue);
-
-                    // Starting the new download
-                    new Downloader();
-
-                } catch (JSONException e) {
-                    Debug.error("Failed to process queue.", e);
                 }
 
-            } else {
-                Debug.trace("Found 0 items remaining in queue, waiting for next download to start.");
-                Model.getInstance().download.setDownloadObject(new JSONObject());
-                Model.getInstance().download.markCompletedDownload();
-            }
-        });
+                // Starting the new download
+                new Downloader();
 
+            } catch (JSONException e) {
+                Debug.error("Failed to process queue.", e);
+            }
+
+        } else {
+
+            // No items left in queue.
+            if (Model.getInstance().getPrimaryStage().isIconified() || Model.getInstance().isStageClosed()) {
+                new Notification("All downloads completed.", "", null, TrayIcon.MessageType.INFO);
+                System.exit(0);
+            }
+
+            Debug.trace("Found 0 items remaining in queue, waiting for next download to start.");
+            Model.getInstance().download.setDownloadObject(new JSONObject());
+            Model.getInstance().download.markCompletedDownload();
+        }
     }
 }

@@ -11,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Scanner;
 
-// TODO: Should have a settings validator that checks settings or resets
 public class Settings {
 
     private JSONObject settings;

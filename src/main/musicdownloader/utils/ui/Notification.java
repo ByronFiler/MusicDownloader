@@ -1,5 +1,6 @@
 package musicdownloader.utils.ui;
 
+import musicdownloader.Main;
 import musicdownloader.utils.app.Debug;
 
 import java.awt.*;
@@ -11,27 +12,28 @@ public class Notification {
 
     File directory;
 
-    public Notification(String albumTitle, String meta, File directory, TrayIcon.MessageType messageType) {
+    public Notification(String title , String subtitle, File directory, TrayIcon.MessageType messageType) {
 
         this.directory = directory;
 
         if (SystemTray.isSupported()) {
-
             try {
                 SystemTray tray = SystemTray.getSystemTray();
-                TrayIcon ti = new TrayIcon(Toolkit.getDefaultToolkit().createImage(""), "View Files");
+                TrayIcon ti = new TrayIcon(
+                        Toolkit.getDefaultToolkit().createImage(Main.class.getResource("resources/img/icon.png")),
+                        directory == null ? "" : "View Files"
+                );
                 ti.setImageAutoSize(true);
-
-                ti.addActionListener(this::openFiles);
-
-                ti.setToolTip("View Downloaded Files");
+                if (directory != null) {
+                    ti.addActionListener(this::openFiles);
+                    ti.setToolTip("View Downloaded Files");
+                }
                 tray.add(ti);
 
-                ti.displayMessage("Finished Downloading " + albumTitle, meta, messageType);
+                ti.displayMessage(title, subtitle, messageType);
             } catch (AWTException e) {
                 Debug.error("Failed to send notification.", e);
             }
-
         }
 
     }

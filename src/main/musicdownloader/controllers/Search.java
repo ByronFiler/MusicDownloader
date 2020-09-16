@@ -189,7 +189,7 @@ public class Search {
 
                                 long now = Instant.now().toEpochMilli();
 
-                                if (!Model.getInstance().settings.getSettingBool("data_saver") && searcher.getSongCount() > 0)
+                                if (!Model.getInstance().settings.getSettingBool("data_saver") && searcher.getSongCount() > 0) {
                                     Debug.trace(
                                             String.format(
                                                     "Query completed in %.2f seconds, containing %s album%s %s song%s and (%.0fms per song average)",
@@ -201,22 +201,26 @@ public class Search {
                                                     (double) Math.round((double) (now - preBuilderTime) / searcher.getSongCount())
                                             )
                                     );
-
-                                try {
-                                    (
-                                            ((Node) e.getSource())
-                                                    .getScene()
-                                                    .getWindow()
-                                    )
-                                            .getScene()
-                                            .setRoot(
-                                                    FXMLLoader.load(
-                                                            Main.class.getResource("resources/fxml/results.fxml")
-                                                    )
-                                            );
-                                } catch (IOException er) {
-                                    Debug.error("FXML Error: Settings.fxml", er);
                                 }
+
+                                Platform.runLater(() -> {
+                                    try {
+                                        (
+                                                ((Node) e.getSource())
+                                                        .getScene()
+                                                        .getWindow()
+                                        )
+                                                .getScene()
+                                                .setRoot(
+                                                        FXMLLoader.load(
+                                                                Main.class.getResource("resources/fxml/results.fxml")
+                                                        )
+                                                );
+                                    } catch (IOException er) {
+                                        Debug.error("FXML Error: Settings.fxml", er);
+                                    } catch (NullPointerException ignored) {}
+                                });
+
 
                             } catch (HttpStatusException ignored) {
 

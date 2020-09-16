@@ -51,6 +51,8 @@ import java.util.Objects;
 /*
 TODO
  - Loaded the additional data about the album should be saved and used to save a web request when building data
+ - While it's doing something other interactions should be disable, ie searching -> no queueing or going to downloads, queueing -> no searching or downloads
+ - Cancel button should immediately just cancel and not redirect, it should just cancel and turn into a back button
  */
 
 public class Results {

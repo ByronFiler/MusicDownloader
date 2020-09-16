@@ -43,42 +43,66 @@ import static musicdownloader.utils.app.Resources.songReferences;
 public class Settings {
 
     @FXML
-    BorderPane root;
+    private BorderPane root;
 
     // Information
-    @FXML Label version;
-    @FXML Label latestVersion;
-    @FXML Label youtubeDl;
-    @FXML Label ffmpeg;
+    @FXML
+    private Label version;
+    @FXML
+    private Label latestVersion;
+    @FXML
+    private Label youtubeDl;
+    @FXML
+    private Label ffmpeg;
 
-    @FXML HBox versionContainer;
-    @FXML HBox latestVersionContainer;
-    @FXML HBox youtubeDlContainer;
-    @FXML HBox ffmpegContainer;
+    @FXML
+    private HBox versionContainer;
+    @FXML
+    private HBox latestVersionContainer;
+    @FXML
+    private HBox youtubeDlContainer;
+    @FXML
+    private HBox ffmpegContainer;
 
     // Files
-    @FXML Label outputDirectory;
-    @FXML BorderPane saveMusicLine;
-    @FXML Label outputDirectoryInfo;
-    @FXML HBox outputDirectoryContainer;
-    @FXML ComboBox<String> musicFormat;
-    @FXML ComboBox<String> saveAlbumArt;
+    @FXML
+    private Label outputDirectory;
+    @FXML
+    private BorderPane saveMusicLine;
+    @FXML
+    private Label outputDirectoryInfo;
+    @FXML
+    private HBox outputDirectoryContainer;
+    @FXML
+    private ComboBox<String> musicFormat;
+    @FXML
+    private ComboBox<String> saveAlbumArt;
 
     // Audio
-    @FXML ToggleSwitch advancedValidationToggle;
-    @FXML ToggleSwitch volumeCorrectionToggle;
+    @FXML
+    private ToggleSwitch advancedValidationToggle;
+    @FXML
+    private ToggleSwitch volumeCorrectionToggle;
 
     // Meta-Data application
-    @FXML ToggleSwitch albumArtToggle;
-    @FXML ToggleSwitch albumTitleToggle;
-    @FXML ToggleSwitch songTitleToggle;
-    @FXML ToggleSwitch artistToggle;
-    @FXML ToggleSwitch yearToggle;
-    @FXML ToggleSwitch trackNumberToggle;
+    @FXML
+    private ToggleSwitch albumArtToggle;
+    @FXML
+    private ToggleSwitch albumTitleToggle;
+    @FXML
+    private ToggleSwitch songTitleToggle;
+    @FXML
+    private ToggleSwitch artistToggle;
+    @FXML
+    private ToggleSwitch yearToggle;
+    @FXML
+    private ToggleSwitch trackNumberToggle;
 
     // application Configuration
-    @FXML ToggleSwitch darkThemeToggle;
-    @FXML ToggleSwitch dataSaverToggle;
+    @FXML
+    private ToggleSwitch darkThemeToggle;
+    @FXML
+    private ToggleSwitch dataSaverToggle;
 
     // Confirm / Cancel
     @FXML Button cancel;

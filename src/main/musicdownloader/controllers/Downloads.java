@@ -46,24 +46,32 @@ import java.util.Arrays;
 /*
 TODO
  - Check if iTunes is installed and add a right click to open in iTunes option
+ - Clearing a history does not check to remove from combobox
  */
 
 public class Downloads {
 
-    @FXML AnchorPane root;
-    @FXML VBox viewContainer;
+    @FXML
+    private AnchorPane root;
+    @FXML
+    private VBox viewContainer;
 
-    @FXML Label eventViewTitle;
-    @FXML ComboBox<String> eventViewSelector;
-    @FXML ListView<BorderPane> eventsViewTable;
+    @FXML
+    private Label eventViewTitle;
+    @FXML
+    private ComboBox<String> eventViewSelector;
+    @FXML
+    private ListView<BorderPane> eventsViewTable;
 
-    @FXML ImageView albumViewSelector;
-    @FXML ImageView songViewSelector;
+    @FXML
+    private ImageView albumViewSelector;
+    @FXML
+    private ImageView songViewSelector;
 
-    @FXML BorderPane albumViewSelectorWrapper;
-    @FXML BorderPane songViewSelectorWrapper;
-
-    // Views should all be built from current, scheduled and history controllers, where each getView methods to generate
+    @FXML
+    private BorderPane albumViewSelectorWrapper;
+    @FXML
+    private BorderPane songViewSelectorWrapper;
 
     private final ArrayList<CurrentlyDownloadingResultController> currentlyDownloading = new ArrayList<>();
     private final ArrayList<QueuedResultController> queued = new ArrayList<>();
@@ -607,7 +615,15 @@ public class Downloads {
 
         }
 
-        private class HistoryResult extends Result {
+        public BorderPane[] getSongsView() {
+            return songs.stream().map(Result::getView).toArray(BorderPane[]::new);
+        }
+
+        public BorderPane getAlbumView() {
+            return album.getView();
+        }
+
+        protected class HistoryResult extends Result {
 
             private final Line crossLine0 = new Line(20, 0, 0, 20);
             private final Line crossLine1 = new Line(20, 20, 0, 0);
@@ -744,6 +760,8 @@ public class Downloads {
                     Debug.error("Failed to parse JSON to delete history.", e);
                 }
 
+                if (histories.size() == 0 && currentlyDownloading.size() == 0) defaultView();
+
             }
 
             private synchronized void selectCross(MouseEvent e) {
@@ -870,14 +888,6 @@ public class Downloads {
             protected void setFilesExist(int filesExist) {
                 this.filesExist = filesExist;
             }
-        }
-
-        public BorderPane[] getSongsView() {
-            return songs.stream().map(Result::getView).toArray(BorderPane[]::new);
-        }
-
-        public BorderPane getAlbumView() {
-            return album.getView();
         }
     }
 }

@@ -4,8 +4,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-// TODO: Extracting results processing should be ideally sorted by song
-
 public class Site {
 
     protected final String query;

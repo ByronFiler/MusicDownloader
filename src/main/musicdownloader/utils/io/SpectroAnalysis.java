@@ -72,8 +72,7 @@ public class SpectroAnalysis {
                     )
             ).getFingerprintsSimilarity().getScore();
         } catch (ArrayIndexOutOfBoundsException e) {
-            // TODO: Trim to first 30 seconds of file in future
-            Debug.warn("File is too large to be validated.");
+            Debug.warn("File is too large to be validated, should've been trimmed.");
             return 1;
         }
 

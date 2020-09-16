@@ -38,7 +38,6 @@ public class Settings {
         }
     }
 
-    // TODO: Does not work
     public static boolean validate(JSONObject settings) {
 
         if (settings.length() != (validBooleans.length + validStrings.length + validInts.length())) {
