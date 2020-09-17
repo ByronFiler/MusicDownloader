@@ -12,7 +12,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import musicdownloader.Main;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
@@ -31,14 +30,15 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Objects;
+import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import static musicdownloader.utils.app.Resources.albumArtOptions;
 import static musicdownloader.utils.app.Resources.songReferences;
 
-// TODO
-// Information & Files cutoff when resizing
+// TODO: Information & Files cutoff when resizing
 
 public class Settings {
 
@@ -67,10 +67,6 @@ public class Settings {
     // Files
     @FXML
     private Label outputDirectory;
-    @FXML
-    private BorderPane saveMusicLine;
-    @FXML
-    private Label outputDirectoryInfo;
     @FXML
     private HBox outputDirectoryContainer;
     @FXML
@@ -111,6 +107,13 @@ public class Settings {
     protected void initialize() {
 
         // Prepare settings information from model data
+        ResourceBundle settingsLocale = ResourceBundle.getBundle("resources.locale.settings");
+        songReferences.forEach(musicFormatOption -> musicFormat.getItems().add(musicFormatOption));
+
+        saveAlbumArt.getItems().add(settingsLocale.getString("alwaysOption"));
+        saveAlbumArt.getItems().add(settingsLocale.getString("songsOnlyOption"));
+        saveAlbumArt.getItems().add(settingsLocale.getString("albumsOnlyOption"));
+        saveAlbumArt.getItems().add(settingsLocale.getString("neverOption"));
 
         // Information
         if (Model.getInstance().settings.getVersion() == null) {
@@ -118,7 +121,7 @@ public class Settings {
             versionContainer.getChildren().add(
                     new ImageView(
                             new Image(
-                                    Main.class.getResourceAsStream("resources/img/warning.png"),
+                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                                     20,
                                     20,
                                     true,
@@ -131,7 +134,7 @@ public class Settings {
             versionContainer.getChildren().add(
                     new ImageView(
                             new Image(
-                                    Main.class.getResourceAsStream("resources/img/tick.png"),
+                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
                                     20,
                                     20,
                                     true,
@@ -140,6 +143,8 @@ public class Settings {
                     )
             );
         }
+
+
 
         version.setText(Model.getInstance().settings.getVersion() == null ? "Unknown" : Model.getInstance().settings.getVersion());
         new getLatestVersion(false);
@@ -174,8 +179,12 @@ public class Settings {
 
         // Load theme
         root.getStylesheets().setAll(
-                Main.class.getResource(
-                        "resources/css/" + (Model.getInstance().settings.getSettingBool("dark_theme") ? "dark" : "standard") + ".css"
+                Objects.requireNonNull(
+                        getClass()
+                                .getClassLoader()
+                                .getResource(
+                                        "resources/css/" + (Model.getInstance().settings.getSettingBool("dark_theme") ? "dark" : "standard") + ".css"
+                                )
                 ).toString()
         );
 
@@ -195,7 +204,8 @@ public class Settings {
                     .getScene()
                     .setRoot(
                             FXMLLoader.load(
-                                    Main.class.getResource("resources/fxml/search.fxml")
+                                    Objects.requireNonNull(getClass().getClassLoader().getResource("resources/fxml/search.fxml")),
+                                    ResourceBundle.getBundle("resources.locale.search")
                             )
                     );
         } catch (IOException e) {
@@ -221,9 +231,7 @@ public class Settings {
     @SuppressWarnings("unchecked")
     protected void saveSettings(Event e) {
 
-        String settingsFormatString = "Settings Changed %s: %s -> %s";
-
-        // TODO: Consider for other settings previous states
+        final String settingsFormatString = "Settings Changed %s: %s -> %s";
         if ( (e.getSource()).getClass().equals(ToggleSwitch.class) ) {
 
             ToggleSwitch modifiedSetting = (ToggleSwitch) e.getSource();
@@ -300,7 +308,7 @@ public class Settings {
         try {
             root.getStylesheets().setAll(
                     String.valueOf(
-                            Main.class.getResource(
+                            getClass().getClassLoader().getResource(
                                     "resources/css/"
                                             + (newSettings.getBoolean("dark_theme") ? "dark" : "standard")
                                             + ".css"
@@ -376,7 +384,7 @@ public class Settings {
                         latestVersionContainer.getChildren().add(
                                 new ImageView(
                                     new Image(
-                                            Main.class.getResourceAsStream("resources/img/tick.png"),
+                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
                                             20,
                                             20,
                                             true,
@@ -400,7 +408,7 @@ public class Settings {
                                 latestVersion,
                                 new ImageView(
                                         new Image(
-                                                Main.class.getResourceAsStream("resources/img/warning.png"),
+                                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                                                 20,
                                                 20,
                                                 true,
@@ -465,7 +473,7 @@ public class Settings {
             if (!Files.exists(Paths.get(directory))) {
 
                 ImageView warningImage = new ImageView(new Image(
-                        Main.class.getResourceAsStream("resources/img/warning.png"),
+                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                         25,
                         25,
                         true,
@@ -495,7 +503,7 @@ public class Settings {
                 if (!checkerTempFile.mkdir() || !checkerTempFile.delete()) {
 
                     ImageView warningImage = new ImageView(new Image(
-                            Main.class.getResourceAsStream("resources/img/warning.png"),
+                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                             25,
                             25,
                             true,
@@ -562,7 +570,7 @@ public class Settings {
                     elementContainer.getChildren().add(
                             new ImageView(
                                     new Image(
-                                            Main.class.getResourceAsStream("resources/img/tick.png"),
+                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
                                             20,
                                             20,
                                             true,
@@ -580,7 +588,7 @@ public class Settings {
                     elementContainer.getChildren().add(
                             new ImageView(
                                 new Image(
-                                        Main.class.getResourceAsStream("resources/img/warning.png"),
+                                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                                         20,
                                         20,
                                         true,
@@ -647,7 +655,7 @@ public class Settings {
                                     1,
                                     new ImageView(
                                             new Image(
-                                                    Main.class.getResourceAsStream("resources/img/tick.png"),
+                                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
                                                     20,
                                                     20,
                                                     true,
@@ -664,7 +672,7 @@ public class Settings {
                                     1,
                                     new ImageView(
                                             new Image(
-                                                    Main.class.getResourceAsStream("resources/img/warning.png"),
+                                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                                                     20,
                                                     20,
                                                     true,
@@ -681,7 +689,7 @@ public class Settings {
                                 1,
                                 new ImageView(
                                         new Image(
-                                                Main.class.getResourceAsStream("resources/img/warning.png"),
+                                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                                                 20,
                                                 20,
                                                 true,

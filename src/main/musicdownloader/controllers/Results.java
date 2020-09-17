@@ -25,7 +25,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.util.Duration;
-import musicdownloader.Main;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
@@ -43,10 +42,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 
 /*
 TODO
@@ -84,6 +80,8 @@ public class Results {
     private String loadedQuery;
     private boolean modifiedResults;
     private JSONObject viewData;
+
+    private final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.results");
 
     private final ArrayList<searchResult.MediaController> mediaPlayers = new ArrayList<>();
 
@@ -123,7 +121,7 @@ public class Results {
         // Set theme
         root.getStylesheets().add(
                 String.valueOf(
-                        Main.class.getResource(
+                        getClass().getClassLoader().getResource(
                                 "resources/css/" + (Model.getInstance().settings.getSettingBool("dark_theme") ? "dark" : "standard") + ".css"
                         )
                 )
@@ -138,7 +136,7 @@ public class Results {
                     download,
                     new ImageView(
                             new Image(
-                                    Main.class.getResourceAsStream("resources/img/warning.png"),
+                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                                     40,
                                     40,
                                     true,
@@ -161,11 +159,10 @@ public class Results {
         try {
             queueAdditionProgress.setVisible(true);
 
-            download.setText("Queueing");
+            download.setText(resourceBundle.getString("queueingMessage"));
             download.setDisable(true);
 
-            cancel.setText("Cancel");
-            // cancel.getStyleClass().set(1, "cancel_button");
+            cancel.setText(resourceBundle.getString("cancelButton"));
             cancel.setOnMouseClicked(e -> queueAdder.kill());
 
             searchField.setDisable(true);
@@ -208,7 +205,8 @@ public class Results {
                     .getScene()
                     .setRoot(
                             FXMLLoader.load(
-                                    Main.class.getResource("resources/fxml/search.fxml")
+                                    Objects.requireNonNull(getClass().getClassLoader().getResource("resources/fxml/search.fxml")),
+                                    ResourceBundle.getBundle("resources.locale.search")
                             )
                     );
         } catch (IOException e) {
@@ -294,7 +292,7 @@ public class Results {
 
         ImageView iconImage = new ImageView(
                 new Image(
-                        Main.class.getResourceAsStream("resources/img/song_default.png"),
+                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/song_default.png")),
                         50,
                         50,
                         true,
@@ -413,12 +411,7 @@ public class Results {
         }
 
         private JSONArray getSource(String query, int targetTime) {
-
-            //YouTube youtubeParser = new YouTube(query, targetTime);
-
             JSONArray sources = new JSONArray();
-
-            JSONObject searchDataExtracted = new JSONObject();
             try {
 
                 YouTube youtubeParser = new YouTube(query, targetTime);
@@ -572,23 +565,24 @@ public class Results {
             Platform.runLater(() -> {
                 queueAdditionProgress.setVisible(false);
 
-                download.setText("Download");
+                download.setText(resourceBundle.getString("downloadButton"));
                 downloadButtonCheckInternal();
 
                 Label linkPart0;
-                if (Model.getInstance().download.getDownloadQueue().length() > 0)
-                    linkPart0 = new Label(String.format("Added to download queue, in position %s, view progress in ", Model.getInstance().download.getDownloadQueue().length()));
-
-                else linkPart0 = new Label("Download started, view progress in ");
+                if (Model.getInstance().download.getDownloadQueue().length() > 0) {
+                    linkPart0 = new Label(String.format(resourceBundle.getString("addedToQueueMessage"), Model.getInstance().download.getDownloadQueue().length()));
+                } else linkPart0 = new Label(resourceBundle.getString("downloadStartedMessage"));
 
                 linkPart0.getStyleClass().add("sub_text");
-
-                Label linkPart1 = new Label("Downloads");
+                Label linkPart1 = new Label(resourceBundle.getString("downloadsTitlePart"));
                 linkPart1.setUnderline(true);
                 linkPart1.setCursor(Cursor.HAND);
                 linkPart1.setOnMouseClicked(e -> {
                     try {
-                        FXMLLoader downloadsLoader = new FXMLLoader(Main.class.getResource("resources/fxml/downloads.fxml"));
+                        FXMLLoader downloadsLoader = new FXMLLoader(
+                                getClass().getClassLoader().getResource("resources/fxml/downloads.fxml"),
+                                ResourceBundle.getBundle("resources.locale.downloads")
+                        );
                         Parent controllerView = downloadsLoader.load();
                         Model.getInstance().download.setDownloadsView(downloadsLoader.getController());
 
@@ -607,10 +601,12 @@ public class Results {
                 });
                 linkPart1.getStyleClass().add("sub_text");
 
-                Platform.runLater(() -> footer.setTop(new HBox(linkPart0, linkPart1)));
+                HBox downloadsLinkContainer = new HBox(linkPart0, linkPart1);
+                downloadsLinkContainer.setSpacing(5);
 
-                cancel.setText("Back");
-                // cancel.getStyleClass().set(1, "back_button");
+                Platform.runLater(() -> footer.setTop(downloadsLinkContainer));
+
+                cancel.setText(resourceBundle.getString("backButton"));
                 cancel.setOnMouseClicked(Results.this::searchView);
             });
             completed = true;
@@ -793,7 +789,7 @@ public class Results {
             private final HBox playIconContainer = new HBox();
             private final ImageView playIcon = new ImageView(
                     new Image(
-                            Main.class.getResourceAsStream("resources/img/play.png"),
+                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/play.png")),
                             20,
                             20,
                             true,
@@ -850,7 +846,7 @@ public class Results {
                 Results.this.mediaPlayers.forEach(MediaController::pause);
                 playIcon.setImage(
                         new Image(
-                                Main.class.getResourceAsStream("resources/img/paused.png"),
+                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/paused.png")),
                                 20,
                                 20,
                                 true,
@@ -864,7 +860,7 @@ public class Results {
             private void pause() {
                 playIcon.setImage(
                         new Image(
-                                Main.class.getResourceAsStream("resources/img/play.png"),
+                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/play.png")),
                                 20,
                                 20,
                                 true,

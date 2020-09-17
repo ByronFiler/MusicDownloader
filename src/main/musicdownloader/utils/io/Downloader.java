@@ -36,6 +36,7 @@ public class Downloader implements Runnable {
     private final ArrayList<String> sources = new ArrayList<>();
 
     private byte[] albumArt;
+    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.notification");
 
     public Downloader() {
         new Thread(this, "acquire-download-files").start();
@@ -102,22 +103,56 @@ public class Downloader implements Runnable {
 
         // TODO: attempt every 50ms until 200ms then just say it fucked up
         // TODO: Happens rarely, likely due to a youtube-dl renaming process, consider awaiting for maybe 50 or 100ms?
-        if (currentFiles.size() != 1)
-            Debug.error(
-                    String.format(
-                            "Expected 1 new file to have been created, %s found.", currentFiles.size()
-                    ),
-                    new IllegalArgumentException("Unexpected new files")
-            );
+        final File[] downloadedFile = {null};
+        if (currentFiles.size() != 1) {
 
-        File downloadedFile = currentFiles.get(0);
+            Debug.warn("Did not find the downloaded file, retrying...");
+            final int[] originalRetries = {5};
+            final int[] retries = new int[]{originalRetries[0]};
+            int delay = 50;
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
 
-        if (downloadedFile == null) throw new IOException("Failed to find downloaded file.");
+                    List<File> x = Arrays.asList(Objects.requireNonNull(new File(Resources.getInstance().getApplicationData() + "temp").listFiles()));
+                    x.removeAll(preexistingFiles);
+
+                    if (x.size() == 1) {
+                        Debug.trace("Located the downloaded file.");
+                        downloadedFile[0] = x.get(0);
+                        this.cancel();
+                    } else {
+                        retries[0]--;
+                        Debug.warn(
+                                String.format(
+                                        "Failed to find the file after %sms, waiting %sms and trying again (%s tr%s remaining)",
+                                        originalRetries[0] * delay,
+                                        delay,
+                                        retries[0],
+                                        retries[0] == 1 ? "y" : "ies"
+                                )
+                        );
+                    }
+
+                    if (retries[0] == 0) {
+                        Debug.error(
+                                String.format("Expected 1 new file to have been created, %s found.", currentFiles.size()),
+                                new IOException("Unexpected new files")
+                        );
+                    }
+
+                }
+            }, delay, delay);
+        } else {
+            downloadedFile[0] = currentFiles.get(0);
+        }
+
+        if (downloadedFile[0] == null) throw new IOException("Failed to find downloaded file.");
 
         // Validate
         if (Model.getInstance().settings.getSettingBool("advanced_validation") && song.get("sample") != JSONObject.NULL) {
 
-            float downloadValidity = analysis.compare(downloadedFile.getAbsolutePath());
+            float downloadValidity = analysis.compare(downloadedFile[0].getAbsolutePath());
 
             JSONObject tempValidityLog = new JSONObject();
             tempValidityLog.put("song", song);
@@ -137,7 +172,7 @@ public class Downloader implements Runnable {
 
             if (downloadValidity <= 0.7 && !overrideSimilarity) {
 
-                if (!downloadedFile.delete()) Debug.warn("Failed to delete: " + downloadedFile.getName());
+                if (!downloadedFile[0].delete()) Debug.warn("Failed to delete: " + downloadedFile[0].getName());
 
                 if (song.getJSONArray("source").length() > sourceDepth + 2) {
 
@@ -160,7 +195,7 @@ public class Downloader implements Runnable {
 
             }
 
-            analysis.correctAmplitude(downloadedFile.getAbsolutePath());
+            analysis.correctAmplitude(downloadedFile[0].getAbsolutePath());
             sources.add(song.getJSONArray("source").getString(sourceDepth));
         } else sources.add(song.getJSONArray("source").getString(0));
 
@@ -168,7 +203,7 @@ public class Downloader implements Runnable {
         if (format.equals("mp3")) {
 
             try {
-                Mp3File mp3Applicator = new Mp3File(downloadedFile);
+                Mp3File mp3Applicator = new Mp3File(downloadedFile[0]);
 
                 ID3v2 id3v2tag = new ID3v24Tag();
                 mp3Applicator.setId3v2Tag(id3v2tag);
@@ -205,20 +240,20 @@ public class Downloader implements Runnable {
                     mp3Applicator.save(downloadObject.getJSONObject("metadata").getString("directory") + "/" + song.getString("title").replaceAll("[\u0000-\u001f<>:\"/\\\\|?*\u007f]+", "_") + "." + format);
 
                     // Delete old file
-                    if (!downloadedFile.delete()) Debug.warn("Failed to delete file: " + downloadedFile);
+                    if (!downloadedFile[0].delete()) Debug.warn("Failed to delete file: " + downloadedFile[0]);
 
                 } catch (IOException | NotSupportedException e) {
                     Debug.warn("Failed to apply metadata.");
                 }
             } catch (InvalidDataException | UnsupportedTagException e) {
-                Debug.warn("Failed to apply meta data to: " + downloadedFile);
+                Debug.warn("Failed to apply meta data to: " + downloadedFile[0]);
             }
 
         } else {
 
             // Just move & rename the file
             Files.move(
-                    Paths.get(downloadedFile.getAbsolutePath()),
+                    Paths.get(downloadedFile[0].getAbsolutePath()),
                     Paths.get(downloadObject.getJSONObject("metadata").getString("directory") + "/" + song.getString("title") + "." + format)
             );
 
@@ -455,8 +490,8 @@ public class Downloader implements Runnable {
                 if (Model.getInstance().getPrimaryStage().isIconified() || Model.getInstance().isStageClosed()) {
                     int length = Model.getInstance().download.getDownloadQueue().length();
                     new Notification(
-                            String.format("Download for \"%s\" started", downloadObject.getJSONObject("metadata").getString("album")),
-                            length == 0 ? "" : String.format("%s Item%s left in queue.", length, length == 1 ? "" : "s"),
+                            String.format(resourceBundle.getString("downloadStartedMessage"), downloadObject.getJSONObject("metadata").getString("album")),
+                            length == 0 ? "" : resourceBundle.getString(length == 1 ? "itemsLeftInQueueSingular" : "itemsLeftInQueuePlural"),
                             new File(downloadObject.getJSONObject("metadata").getString("directory")),
                             TrayIcon.MessageType.INFO
                     );
@@ -473,7 +508,7 @@ public class Downloader implements Runnable {
 
             // No items left in queue.
             if (Model.getInstance().getPrimaryStage().isIconified() || Model.getInstance().isStageClosed()) {
-                new Notification("All downloads completed.", "", null, TrayIcon.MessageType.INFO);
+                new Notification(resourceBundle.getString("allDownloadsCompletedMessage"), "", null, TrayIcon.MessageType.INFO);
                 System.exit(0);
             }
 

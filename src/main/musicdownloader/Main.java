@@ -14,23 +14,30 @@ import org.json.JSONObject;
 
 import java.awt.*;
 import java.io.IOException;
+import java.util.Objects;
+import java.util.ResourceBundle;
 
 /*
 TODO
  Add different language options: https://stackoverflow.com/questions/26325403/how-to-implement-language-support-for-javafx-in-fxml-documents
  Support different search databases: https://en.wikipedia.org/wiki/List_of_online_music_databases
- When the window is closed mid download save the object and continue the download?
+ ALL UI TEXT EVEN IN CLASSES MUST BE TRANSLATED FROM RESOURCE BUNDLE OTHERWISE INEFFECTIVE, NEEDS TO BE DONE IN ALL
+ STOP BUILDING STRINGS AS ENGLISH DEFAULT JUST USE PLURAL / SINGULAR TRANSLATIONS
  */
 
 public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-        FXMLLoader loader = new FXMLLoader(Main.class.getResource("resources/fxml/search.fxml"));
+
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getClassLoader().getResource("resources/fxml/search.fxml"),
+                ResourceBundle.getBundle("resources.locale.search")
+        );
         Parent root = loader.load();
 
         primaryStage.setScene(new Scene(root));
-        primaryStage.getIcons().add(new Image(Main.class.getResourceAsStream("resources/img/icon.png")));
+        primaryStage.getIcons().add(new Image(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/icon.png"))));
         primaryStage.setTitle("Music Downloader");
         primaryStage.show();
 
@@ -62,6 +69,7 @@ public class Main extends Application {
         Model.getInstance().setPrimaryStage(primaryStage);
 
         Debug.trace("Primary Stage Generated");
+
     }
 
     public static void main(String[] args) {

@@ -45,7 +45,7 @@ class settingsTest {
 
     @Test
     void testInitialisation() {
-        new FXMLLoader(Main.class.getResource("resources/fxml/settings.fxml"));
+        new FXMLLoader(getClass().getClassLoader().getResource("resources/fxml/settings.fxml"));
     }
 
 }

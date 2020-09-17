@@ -1,14 +1,17 @@
 package musicdownloader.model;
 
-import musicdownloader.Main;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class Settings {
@@ -58,7 +61,7 @@ public class Settings {
         try {
 
             version = new JSONObject(
-                    new Scanner(Main.class.getResourceAsStream("resources/meta.json"))
+                    new Scanner(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/meta.json")))
                             .useDelimiter("\\Z")
                             .next()
             )

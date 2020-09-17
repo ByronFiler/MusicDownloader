@@ -12,15 +12,13 @@
 <?import javafx.scene.layout.VBox?>
 <?import org.controlsfx.control.ToggleSwitch?>
 
-<?import javafx.collections.FXCollections?>
-<?import java.lang.String?>
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="musicdownloader.controllers.Settings" stylesheets="@../css/main.css">
    <StackPane prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
       <BorderPane fx:id="root" styleClass="root" prefHeight="710.0" prefWidth="594.0">
          <bottom>
             <BorderPane prefHeight="40.0" BorderPane.alignment="CENTER">
                <right>
-                  <Button fx:id="cancel" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="80.0" text="Back" BorderPane.alignment="CENTER">
+                  <Button fx:id="cancel" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="80.0" text="%backButton" BorderPane.alignment="CENTER">
                      <BorderPane.margin>
                         <Insets right="10.0"/>
                      </BorderPane.margin>
@@ -41,17 +39,17 @@
                </padding>
                <BorderPane prefHeight="24.0" prefWidth="521.0" styleClass="underline">
                   <top>
-                     <Label text="Settings" BorderPane.alignment="TOP_LEFT" styleClass="sub_title1"/>
+                     <Label text="%settingTitle" BorderPane.alignment="TOP_LEFT" styleClass="sub_title1"/>
                   </top>
                </BorderPane>
                <VBox prefHeight="141.0" prefWidth="510.0">
                   <HBox prefHeight="23.0" prefWidth="570.0" styleClass="underline">
-                     <Label text="Information" styleClass="sub_title1"/>
+                     <Label text="%InformationTitle" styleClass="sub_title1"/>
                   </HBox>
                   <VBox prefHeight="106.0" prefWidth="500.0">
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Label text="Version" BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                           <Label text="%VersionSubtext" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                         </left>
                         <right>
                            <HBox fx:id="versionContainer" spacing="5">
@@ -61,27 +59,27 @@
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Label text="Latest Version" BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                           <Label text="%LatestVersionSubtext" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                         </left>
                         <right>
                            <HBox fx:id="latestVersionContainer" spacing="5">
-                              <Label fx:id="latestVersion" text="Checking..." BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                              <Label fx:id="latestVersion" text="%awaitCheckSubtext" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                            </HBox>
                         </right>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Label text="YouTube-DL Status" BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                           <Label text="%youtubeDlSubtext" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                         </left>
                         <right>
                            <HBox fx:id="youtubeDlContainer" spacing="5">
-                              <Label fx:id="youtubeDl" text="Checking..." BorderPane.alignment="CENTER" styleClass="sub_text" />
+                              <Label fx:id="youtubeDl" text="%awaitCheckSubtext" BorderPane.alignment="CENTER" styleClass="sub_text" />
                            </HBox>
                         </right>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Label text="FFMPEG Status" BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                           <Label text="%ffmpegSubtext" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                         </left>
                         <right>
                            <HBox fx:id="ffmpegContainer" spacing="5">
@@ -93,10 +91,10 @@
                </VBox>
                <VBox prefHeight="113.0" prefWidth="500.0">
                   <HBox prefHeight="25.0" prefWidth="570.0" styleClass="underline">
-                     <Label text="Files" styleClass="sub_title1"/>
+                     <Label text="%FilesTitle" styleClass="sub_title1"/>
                   </HBox>
                   <VBox prefWidth="500.0" spacing="5">
-                     <BorderPane fx:id="saveMusicLine" prefHeight="30.0" prefWidth="500.0">
+                     <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <right>
                            <HBox fx:id="outputDirectoryContainer">
                               <Label fx:id="outputDirectory" accessibleText="Click to change." onMouseClicked="#selectNewFolder" textAlignment="RIGHT" BorderPane.alignment="CENTER" styleClass="sub_text">
@@ -107,50 +105,34 @@
                            </HBox>
                         </right>
                         <left>
-                           <Label fx:id="outputDirectoryInfo" text="Save Music To:" BorderPane.alignment="CENTER" styleClass="sub_text" />
+                           <Label text="%musicDirSubtext" BorderPane.alignment="CENTER" styleClass="sub_text" />
                         </left>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Label text="Music Format:" BorderPane.alignment="CENTER" styleClass="sub_text" />
+                           <Label text="%musicFormatSubtext" BorderPane.alignment="CENTER" styleClass="sub_text" />
                         </left>
                         <right>
                            <ComboBox fx:id="musicFormat" onAction="#saveSettings" prefWidth="150.0" BorderPane.alignment="CENTER" styleClass="selector"/>
-                           <items>
-                              <FXCollections fx:factory="observableArrayList">
-                                 <String fx:value="mp3"/>
-                                 <String fx:value="wav"/>
-                                 <String fx:value="ogg"/>
-                                 <String fx:value="aac"/>
-                              </FXCollections>
-                           </items>
                         </right>
                      </BorderPane>
                      <BorderPane prefHeight="30.0" prefWidth="500.0">
                         <left>
-                           <Label text="Save Album Art:" BorderPane.alignment="CENTER" styleClass="sub_text" />
+                           <Label text="%saveAlbumArtSubtext" BorderPane.alignment="CENTER" styleClass="sub_text" />
                         </left>
                         <right>
                            <ComboBox fx:id="saveAlbumArt" onAction="#saveSettings" prefWidth="150.0" BorderPane.alignment="CENTER" styleClass="selector"/>
-                           <items>
-                              <FXCollections fx:factory="observableArrayList">
-                                 <String fx:value="Never"/>
-                                 <String fx:value="Albums Only"/>
-                                 <String fx:value="Songs Only"/>
-                                 <String fx:value="Always"/>
-                              </FXCollections>
-                           </items>
                         </right>
                      </BorderPane>
                   </VBox>
                </VBox>
                <VBox prefWidth="500.0" spacing="5">
                   <HBox prefHeight="25.0" prefWidth="570.0" styleClass="underline">
-                     <Label text="Audio" styleClass="sub_title1"/>
+                     <Label text="%AudioTitle" styleClass="sub_title1"/>
                   </HBox>
                   <BorderPane prefHeight="30.0" prefWidth="500.0">
                      <left>
-                        <Label text="Advanced Download Validation: " BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                        <Label text="%advancedValidationSubtext" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                      </left>
                      <right>
                         <ToggleSwitch onMouseClicked="#saveSettings" fx:id="advancedValidationToggle" BorderPane.alignment="CENTER"/>
@@ -158,7 +140,7 @@
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="500.0">
                      <left>
-                        <Label text="Volume Correction: " BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                        <Label text="%volumeCorrectionSubtext" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                      </left>
                      <right>
                         <ToggleSwitch onMouseClicked="#saveSettings" fx:id="volumeCorrectionToggle" BorderPane.alignment="CENTER"/>
@@ -167,11 +149,11 @@
                </VBox>
                <VBox prefWidth="100.0" spacing="5">
                   <HBox prefHeight="24.0" prefWidth="570.0" styleClass="underline">
-                     <Label text="Meta-Data Application" styleClass="sub_title1"/>
+                     <Label text="%MetaDataTitle" styleClass="sub_title1"/>
                   </HBox>
                   <BorderPane prefHeight="30.0" prefWidth="200.0">
                      <left>
-                        <Label text="Album Art:" BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                        <Label text="%albumArtSubtext" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                      </left>
                      <right>
                         <ToggleSwitch onMouseClicked="#saveSettings" fx:id="albumArtToggle" BorderPane.alignment="CENTER"/>
@@ -179,7 +161,7 @@
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="200.0">
                      <left>
-                        <Label text="Album Title:" BorderPane.alignment="CENTER" styleClass="sub_text" />
+                        <Label text="%albumTitleSubtext" BorderPane.alignment="CENTER" styleClass="sub_text" />
                      </left>
                      <right>
                         <ToggleSwitch onMouseClicked="#saveSettings" fx:id="albumTitleToggle" BorderPane.alignment="CENTER"/>
@@ -187,7 +169,7 @@
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="200.0">
                      <left>
-                        <Label text="Song Title:" BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                        <Label text="%songTitleSubtext" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                      </left>
                      <right>
                         <ToggleSwitch onMouseClicked="#saveSettings" fx:id="songTitleToggle" BorderPane.alignment="CENTER"/>
@@ -195,7 +177,7 @@
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="200.0">
                      <left>
-                        <Label text="Artist:" BorderPane.alignment="CENTER" styleClass="sub_text" />
+                        <Label text="%artistSubtext" BorderPane.alignment="CENTER" styleClass="sub_text" />
                      </left>
                      <right>
                         <ToggleSwitch onMouseClicked="#saveSettings" fx:id="artistToggle" BorderPane.alignment="CENTER"/>
@@ -203,7 +185,7 @@
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="200.0">
                      <left>
-                        <Label text="Year:" BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                        <Label text="%yearSubtext" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                      </left>
                      <right>
                         <ToggleSwitch onMouseClicked="#saveSettings" fx:id="yearToggle" BorderPane.alignment="CENTER"/>
@@ -211,7 +193,7 @@
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="200.0">
                      <left>
-                        <Label text="Track Number:" BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                        <Label text="%trackNumberSubtext" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                      </left>
                      <right>
                         <ToggleSwitch onMouseClicked="#saveSettings" fx:id="trackNumberToggle" BorderPane.alignment="CENTER"/>
@@ -220,11 +202,11 @@
                </VBox>
                <VBox prefWidth="500.0" spacing="5">
                   <HBox prefHeight="25.0" prefWidth="570.0" styleClass="underline">
-                     <Label text="Application Configuration" styleClass="sub_title1"/>
+                     <Label text="%ApplicationConfigurationTitle" styleClass="sub_title1"/>
                   </HBox>
                   <BorderPane prefHeight="30.0" prefWidth="500.0">
                      <left>
-                        <Label text="Dark Theme:" BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                        <Label text="%darkThemeSubtitle" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                      </left>
                      <right>
                         <ToggleSwitch onMouseClicked="#saveSettings" fx:id="darkThemeToggle" BorderPane.alignment="CENTER"/>
@@ -232,7 +214,7 @@
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="500.0">
                      <left>
-                        <Label text="Data Saver Mode:" BorderPane.alignment="CENTER" styleClass="sub_text"/>
+                        <Label text="%dataSaverSubtitle" BorderPane.alignment="CENTER" styleClass="sub_text"/>
                      </left>
                      <right>
                         <ToggleSwitch onMouseClicked="#saveSettings" fx:id="dataSaverToggle" BorderPane.alignment="CENTER"/>
