@@ -15,10 +15,7 @@ import org.json.JSONObject;
 
 import java.awt.*;
 import java.io.IOException;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.Objects;
-import java.util.ResourceBundle;
+import java.util.*;
 
 /*
 TODO
@@ -29,7 +26,10 @@ TODO
 public class Main extends Application {
 
     static {
-        Locale.setDefault(new Locale("cn"));
+        Locale.setDefault(new Locale(Locale.getDefault().toString().split("_")[0]));
+
+        System.out.println(Locale.getDefault());
+
         try {
             ResourceBundle.getBundle("resources.locale.search");
         } catch (MissingResourceException ignored) {
