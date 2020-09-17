@@ -14,18 +14,32 @@ import org.json.JSONObject;
 
 import java.awt.*;
 import java.io.IOException;
+import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
 /*
 TODO
- Add different language options: https://stackoverflow.com/questions/26325403/how-to-implement-language-support-for-javafx-in-fxml-documents
  Support different search databases: https://en.wikipedia.org/wiki/List_of_online_music_databases
  ALL UI TEXT EVEN IN CLASSES MUST BE TRANSLATED FROM RESOURCE BUNDLE OTHERWISE INEFFECTIVE, NEEDS TO BE DONE IN ALL
  STOP BUILDING STRINGS AS ENGLISH DEFAULT JUST USE PLURAL / SINGULAR TRANSLATIONS
  */
 
 public class Main extends Application {
+
+    // TODO: Move this somewhere else
+    static {
+        Locale.setDefault(new Locale("fr"));
+
+        try {
+            ResourceBundle.getBundle("resources.locale.search");
+        } catch (MissingResourceException ignored) {
+            Debug.warn("Users current locale " + Locale.getDefault() + " is not supported, defaulting to English.");
+            Locale.setDefault(new Locale("en", "GB"));
+        }
+
+    }
 
     @Override
     public void start(Stage primaryStage) throws IOException {
