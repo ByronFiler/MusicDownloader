@@ -22,15 +22,13 @@ import java.util.ResourceBundle;
 /*
 TODO
  Support different search databases: https://en.wikipedia.org/wiki/List_of_online_music_databases
- ALL UI TEXT EVEN IN CLASSES MUST BE TRANSLATED FROM RESOURCE BUNDLE OTHERWISE INEFFECTIVE, NEEDS TO BE DONE IN ALL
- STOP BUILDING STRINGS AS ENGLISH DEFAULT JUST USE PLURAL / SINGULAR TRANSLATIONS
  */
 
 public class Main extends Application {
 
     // TODO: Move this somewhere else
     static {
-        Locale.setDefault(new Locale("de"));
+        Locale.setDefault(new Locale("ru"));
 
         try {
             ResourceBundle.getBundle("resources.locale.search");

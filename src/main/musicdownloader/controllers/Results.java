@@ -654,7 +654,7 @@ public class Results {
             );
             setSubtext(data.getJSONObject("view").getString("meta"));
 
-            MenuItem hide = new MenuItem("Hide");
+            MenuItem hide = new MenuItem(resourceBundle.getString("hideItem"));
             hide.setOnAction(e -> {
                 Results.this.results.getItems().remove(view);
                 Results.this.modifiedResults = true;
@@ -663,7 +663,7 @@ public class Results {
             menu.getItems().setAll(hide);
 
             if (Model.getInstance().settings.getSettingBool("data_saver")) {
-                MenuItem informationRetrieval = new MenuItem("Retrieve Additional Information");
+                MenuItem informationRetrieval = new MenuItem(resourceBundle.getString("retrieveAdditionalInformationItem"));
                 informationRetrieval.setOnAction(e -> {
                     Thread externalInformationRetriever = new Thread(() -> {
 
@@ -724,8 +724,8 @@ public class Results {
 
                 albumParser = new Allmusic.album(data.getJSONObject("data").getString("allmusicAlbumId"));
 
-                hideAlbumSongs = new MenuItem("Hide Songs");
-                getAlbumSongs = new MenuItem("View Songs");
+                hideAlbumSongs = new MenuItem(resourceBundle.getString("showSongsItem"));
+                getAlbumSongs = new MenuItem(resourceBundle.getString("hideSongsItem"));
 
                 hideAlbumSongs.setOnAction(this::hideResult);
                 getAlbumSongs.setOnAction(this::getAlbumSongs);

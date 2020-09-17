@@ -103,6 +103,8 @@ public class Settings {
     // Confirm / Cancel
     @FXML Button cancel;
 
+    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.settings");
+
     @FXML
     protected void initialize() {
 
@@ -566,7 +568,7 @@ public class Settings {
                 new ProcessBuilder(executablePath, "--version").start();
 
                 Platform.runLater(() -> {
-                    element.setText("Configured");
+                    element.setText(resourceBundle.getString("configuredSubtext"));
                     elementContainer.getChildren().add(
                             new ImageView(
                                     new Image(
@@ -584,7 +586,7 @@ public class Settings {
                 Debug.warn(String.format("Failed to verify executable: \"%s\"", executablePath));
 
                 Platform.runLater(() -> {
-                    element.setText("Not Configured");
+                    element.setText(resourceBundle.getString("notConfiguredSubtext"));
                     elementContainer.getChildren().add(
                             new ImageView(
                                 new Image(
@@ -640,7 +642,7 @@ public class Settings {
                 x.setMaxSize(20, 20);
 
                 Platform.runLater(() -> {
-                    element.setText("Configuring...");
+                    element.setText(resourceBundle.getString("configuringSubtext"));
                     elementContainer.setOnMouseClicked(null);
                     elementContainer.setCursor(Cursor.DEFAULT);
                     elementContainer.getChildren().set(1, x);
@@ -650,7 +652,7 @@ public class Settings {
 
                     if (executable.equals("youtube-dl") ? Install.getYoutubeDl() : Install.getFFMPEG())
                         Platform.runLater(() -> {
-                            element.setText("Configured");
+                            element.setText(resourceBundle.getString("configuredSubtext"));
                             elementContainer.getChildren().set(
                                     1,
                                     new ImageView(
@@ -667,7 +669,7 @@ public class Settings {
 
                     else
                         Platform.runLater(() -> {
-                            element.setText("Configure Manually");
+                            element.setText(resourceBundle.getString("configureManuallySubtext"));
                             elementContainer.getChildren().set(
                                     1,
                                     new ImageView(
@@ -684,7 +686,7 @@ public class Settings {
 
                 } catch (IOException e) {
                     Debug.warn("Failed to configure due to likely permission issues, despite that it should be blocked.");
-                    Platform.runLater(() -> {element.setText("Configure Manually");
+                    Platform.runLater(() -> {element.setText(resourceBundle.getString("configureManuallySubtext"));
                         elementContainer.getChildren().set(
                                 1,
                                 new ImageView(
