@@ -30,7 +30,7 @@ public class Main extends Application {
 
     // TODO: Move this somewhere else
     static {
-        Locale.setDefault(new Locale("fr"));
+        Locale.setDefault(new Locale("de"));
 
         try {
             ResourceBundle.getBundle("resources.locale.search");
