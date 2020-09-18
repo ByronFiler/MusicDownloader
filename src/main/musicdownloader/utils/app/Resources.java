@@ -1,7 +1,10 @@
 package musicdownloader.utils.app;
 
+import musicdownloader.model.Model;
+
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.jar.JarException;
 
@@ -25,6 +28,38 @@ public class Resources {
     private String applicationData = null;
     private String youtubeDlExecutable = null;
     private String ffmpegExecutable = null;
+
+    public static final List<Locale> supportedLocals = Arrays.asList(
+            new Locale("en"),
+            new Locale("es"),
+            new Locale("fr"),
+            new Locale("de"),
+            new Locale("ja"),
+            new Locale("zh"),
+            new Locale("ru")
+    );
+
+    static {
+
+        Thread localeLoader = new Thread(() -> {
+
+            if (Model.getInstance().settings.getSettingInt("language") != -1) {
+
+                Locale.setDefault(supportedLocals.get(Model.getInstance().settings.getSettingInt("language")));
+
+            } else if (!Arrays.asList(supportedLocals.stream().map(Locale::getDisplayLanguage).toArray()).contains(Locale.getDefault().getDisplayLanguage()) ) {
+
+                Debug.warn("Default locale is unsupported, using default.");
+                Locale.setDefault(supportedLocals.get(0));
+
+            }
+
+        }, "locale-loader");
+        localeLoader.setDaemon(true);
+        localeLoader.start();
+
+    }
+
 
     public Resources() {
 

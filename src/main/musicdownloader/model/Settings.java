@@ -21,10 +21,9 @@ public class Settings {
     private String version;
 
     public Settings() {
-
         // Declare default settings for reference
         try{
-            defaultSettings = new JSONObject("{\"advanced_validation\": true, \"output_directory\":\"\",\"save_album_art\":0,\"music_format\":0, \"album_art\":true, \"album_title\":true, \"song_title\":true, \"artist\":true, \"year\":true, \"track\":true,\"dark_theme\":false, \"data_saver\":false, \"volume_correction\": true}");
+            defaultSettings = new JSONObject("{\"advanced_validation\": true, \"output_directory\":\"\",\"save_album_art\":0,\"music_format\":0, \"album_art\":true, \"album_title\":true, \"song_title\":true, \"artist\":true, \"year\":true, \"track\":true,\"dark_theme\":false, \"data_saver\":false, \"volume_correction\": true, \"language\": -1}");
         } catch (JSONException e) {
             Debug.error("Default settings are invalid.", e);
         }
@@ -36,7 +35,6 @@ public class Settings {
 
         // Load users actual settings
         try {
-
             JSONObject potentialSettings = new JSONObject(new Scanner(new File(Resources.getInstance().getApplicationData() + "json/config.json")).useDelimiter("\\Z").next());
 
             if (musicdownloader.utils.io.validation.Settings.validate(potentialSettings)) {
@@ -46,7 +44,6 @@ public class Settings {
                 settings = defaultSettings;
                 resetSettings();
             }
-
             settings = new JSONObject(new Scanner(new File(Resources.getInstance().getApplicationData() + "json/config.json")).useDelimiter("\\Z").next());
 
             Debug.trace("Found user settings.");

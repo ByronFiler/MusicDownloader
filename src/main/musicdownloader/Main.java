@@ -20,19 +20,9 @@ import java.util.*;
 /*
 TODO
  Support different search databases: https://en.wikipedia.org/wiki/List_of_online_music_databases
- Allow users to select their own language overwriting local locale *heh*
  */
 
 public class Main extends Application {
-
-    static {
-        try {
-            ResourceBundle.getBundle("resources.locale.search");
-        } catch (MissingResourceException ignored) {
-            Debug.warn("Users current locale " + Locale.getDefault() + " is not supported, defaulting to English.");
-            Locale.setDefault(new Locale("en"));
-        }
-    }
 
     @Override
     public void start(Stage primaryStage) throws IOException {

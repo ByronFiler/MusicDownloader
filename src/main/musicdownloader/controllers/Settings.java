@@ -30,13 +30,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Objects;
-import java.util.ResourceBundle;
 import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
-import static musicdownloader.utils.app.Resources.albumArtOptions;
-import static musicdownloader.utils.app.Resources.songReferences;
+import static musicdownloader.utils.app.Resources.*;
 
 // TODO: Information & Files cutoff when resizing
 
@@ -94,7 +91,9 @@ public class Settings {
     @FXML
     private ToggleSwitch trackNumberToggle;
 
-    // application Configuration
+    // Application Configuration
+    @FXML
+    private ComboBox<String> languageFormat;
     @FXML
     private ToggleSwitch darkThemeToggle;
     @FXML
@@ -116,6 +115,14 @@ public class Settings {
         saveAlbumArt.getItems().add(settingsLocale.getString("songsOnlyOption"));
         saveAlbumArt.getItems().add(settingsLocale.getString("albumsOnlyOption"));
         saveAlbumArt.getItems().add(settingsLocale.getString("neverOption"));
+
+        for (Locale availableLocale: supportedLocals) {
+
+            languageFormat.getItems().add(availableLocale.getDisplayLanguage());
+
+        }
+
+        languageFormat.getSelectionModel().select(supportedLocals.indexOf(new Locale(Locale.getDefault().getLanguage())));
 
         // Information
         if (Model.getInstance().settings.getVersion() == null) {
@@ -324,6 +331,30 @@ public class Settings {
         Model.getInstance().settings.saveSettings(newSettings);
     }
 
+    @FXML
+    protected void updateLanguage(Event e) {
+
+        Locale.setDefault(supportedLocals.get(languageFormat.selectionModelProperty().getValue().getSelectedIndex()));
+
+        try {
+            (
+                    ((Node) e.getSource())
+                            .getScene()
+                            .getWindow()
+            )
+                    .getScene()
+                    .setRoot(
+                            FXMLLoader.load(
+                                    Objects.requireNonNull(getClass().getClassLoader().getResource("resources/fxml/settings.fxml")),
+                                    ResourceBundle.getBundle("resources.locale.settings")
+                            )
+                    );
+
+        } catch(IOException er) {
+            Debug.error("Missing FXML File: Settings.fxml", er);
+        }
+    }
+
     protected JSONObject getNewSettings() {
 
         JSONObject settings = new JSONObject();
@@ -348,6 +379,7 @@ public class Settings {
             // Application Configuration
             settings.put("dark_theme", darkThemeToggle.isSelected());
             settings.put("data_saver", dataSaverToggle.isSelected());
+            settings.put("language", languageFormat.getSelectionModel().getSelectedIndex());
 
         } catch (JSONException e) {
             Debug.error("Failed to generate new settings.", e);

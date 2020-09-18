@@ -30,7 +30,8 @@ public class Settings {
             validInts = new JSONArray(
                     "[" +
                             "{\"var\": \"music_format\", \"min\": 0, \"max\": 3}," +
-                            "{\"var\": \"save_album_art\", \"min\": 0, \"max\": 3}" +
+                            "{\"var\": \"save_album_art\", \"min\": 0, \"max\": 3}," +
+                            "{\"var\": \"language\", \"min\": -1, \"max\": 6}" +
                     "]"
             );
         } catch (JSONException e) {
