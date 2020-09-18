@@ -26,15 +26,11 @@ TODO
 public class Main extends Application {
 
     static {
-        Locale.setDefault(new Locale(Locale.getDefault().toString().split("_")[0]));
-
-        System.out.println(Locale.getDefault());
-
         try {
             ResourceBundle.getBundle("resources.locale.search");
         } catch (MissingResourceException ignored) {
             Debug.warn("Users current locale " + Locale.getDefault() + " is not supported, defaulting to English.");
-            Locale.setDefault(new Locale("en", "GB"));
+            Locale.setDefault(new Locale("en"));
         }
     }
 
