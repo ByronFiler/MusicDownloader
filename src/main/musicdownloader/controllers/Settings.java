@@ -335,6 +335,7 @@ public class Settings {
     protected void updateLanguage(Event e) {
 
         Locale.setDefault(supportedLocals.get(languageFormat.selectionModelProperty().getValue().getSelectedIndex()));
+        saveSettings(e);
 
         try {
             (

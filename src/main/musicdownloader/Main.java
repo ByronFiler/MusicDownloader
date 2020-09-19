@@ -17,11 +17,6 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.*;
 
-/*
-TODO
- Support different search databases: https://en.wikipedia.org/wiki/List_of_online_music_databases
- */
-
 public class Main extends Application {
 
     @Override

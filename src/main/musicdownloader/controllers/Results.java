@@ -47,8 +47,6 @@ import java.util.*;
 /*
 TODO
  - Loaded the additional data about the album should be saved and used to save a web request when building data
- - While it's doing something other interactions should be disable, ie searching -> no queueing or going to downloads, queueing -> no searching or downloads
- - Cancel button should immediately just cancel and not redirect, it should just cancel and turn into a back button
  */
 
 public class Results {
@@ -77,12 +75,12 @@ public class Results {
     private Button cancel;
 
     private generateQueueItem queueAdder;
+    private boolean queueAdditionInProgress = false;
     private String loadedQuery;
     private boolean modifiedResults;
     private JSONObject viewData;
 
     private final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.results");
-
     private final ArrayList<searchResult.MediaController> mediaPlayers = new ArrayList<>();
 
     @FXML
@@ -157,15 +155,17 @@ public class Results {
     public void download() {
 
         try {
+            queueAdditionInProgress = true;
             queueAdditionProgress.setVisible(true);
 
             download.setText(resourceBundle.getString("queueingMessage"));
             download.setDisable(true);
 
             cancel.setText(resourceBundle.getString("cancelButton"));
-            cancel.setOnMouseClicked(e -> queueAdder.kill());
-
-            searchField.setDisable(true);
+            cancel.setOnMouseClicked(e -> {
+                queueAdder.kill();
+                restoreView(false);
+            });
 
             // Selected Item -> Selected Item Data -> Select Item Data in correctly positioned array -> JSON Data needed -> Spawn thread with data to generate a queue item
             queueAdder = new generateQueueItem(
@@ -254,6 +254,8 @@ public class Results {
                                         }
                                         download.setDisable(true);
                                     } else defaultView("No Search Results Found");
+
+                                    downloadButtonCheckInternal();
                                 } catch (JSONException er) {
                                     Debug.error("Failed to get search results.", er);
                                 }
@@ -301,8 +303,9 @@ public class Results {
         );
 
 
-        if (Model.getInstance().settings.getSettingBool("dark_theme"))
+        if (Model.getInstance().settings.getSettingBool("dark_theme")) {
             iconImage.setEffect(new ColorAdjust(0, 0, 1, 0));
+        }
 
         VBox defaultInfoContainer = new VBox(defaultMessage, iconImage);
         defaultInfoContainer.setAlignment(Pos.CENTER);
@@ -313,15 +316,72 @@ public class Results {
     }
 
     private void downloadButtonCheckInternal() {
-        try {
-            if (queueAdder.isDead()) throw new NullPointerException();
-        } catch (NullPointerException ignored) {
+        if (!queueAdditionInProgress) {
 
-            for (BorderPane searchResult: results.getItems()) searchResult.getStyleClass().setAll("result");
-            results.getSelectionModel().getSelectedItems().get(0).getStyleClass().setAll("result_selected");
+            if (results.getSelectionModel().getSelectedItems().size() > 0) {
+                for (BorderPane searchResult : results.getItems()) searchResult.getStyleClass().setAll("result");
+                results.getSelectionModel().getSelectedItems().get(0).getStyleClass().setAll("result_selected");
+            }
 
             Platform.runLater(() -> download.setDisable(results.getSelectionModel().getSelectedIndex() == -1));
         }
+    }
+
+    private void restoreView(boolean displayLink) {
+
+        queueAdditionProgress.setVisible(false);
+
+        download.setText(resourceBundle.getString("downloadButton"));
+        downloadButtonCheckInternal();
+
+        if (displayLink) {
+            Label linkPart0;
+            if (Model.getInstance().download.getDownloadQueue().length() > 0) {
+                linkPart0 = new Label(String.format(resourceBundle.getString("addedToQueueMessage"), Model.getInstance().download.getDownloadQueue().length()));
+            } else linkPart0 = new Label(resourceBundle.getString("downloadStartedMessage"));
+
+            linkPart0.getStyleClass().add("sub_text");
+            Label linkPart1 = new Label(resourceBundle.getString("downloadsTitlePart"));
+            linkPart1.setUnderline(true);
+            linkPart1.setCursor(Cursor.HAND);
+            linkPart1.setOnMouseClicked(e -> {
+                try {
+                    FXMLLoader downloadsLoader = new FXMLLoader(
+                            getClass().getClassLoader().getResource("resources/fxml/downloads.fxml"),
+                            ResourceBundle.getBundle("resources.locale.downloads")
+                    );
+                    Parent controllerView = downloadsLoader.load();
+                    Model.getInstance().download.setDownloadsView(downloadsLoader.getController());
+
+                    (
+                            ((Node) e.getSource())
+                                    .getScene()
+                                    .getWindow()
+                    )
+                            .getScene()
+                            .setRoot(
+                                    controllerView
+                            );
+                } catch (IOException er) {
+                    Debug.error("FXML Error with downloads.fxml", er);
+                }
+            });
+            linkPart1.getStyleClass().add("sub_text");
+
+            HBox downloadsLinkContainer = new HBox(linkPart0, linkPart1);
+            downloadsLinkContainer.setSpacing(5);
+
+            footer.setTop(downloadsLinkContainer);
+        }
+
+        cancel.setText(resourceBundle.getString("backButton"));
+        cancel.setOnMouseClicked(Results.this::searchView);
+
+        results.setDisable(false);
+        download.setDisable(false);
+
+        queueAdditionInProgress = false;
+
     }
 
     // TODO: Add network error handling
@@ -329,7 +389,6 @@ public class Results {
 
         private final JSONObject basicData;
         private volatile boolean kill;
-        private volatile boolean completed = false;
 
         public generateQueueItem(JSONObject basicData) {
             this.basicData = basicData;
@@ -337,6 +396,10 @@ public class Results {
             Thread thread = new Thread(this, "generate-queue-item");
             thread.setDaemon(true);
             thread.start();
+        }
+
+        public void kill() {
+            kill = true;
         }
 
         private synchronized String generateNewCacheArtId(JSONArray downloadItems) {
@@ -439,12 +502,26 @@ public class Results {
 
         }
 
-        public void kill() {
-            kill = true;
-        }
+        private JSONObject parseJsonFromSong(JSONObject metadata, JSONArray collectiveDownloadsObjects, Allmusic.album albumProcessor, Allmusic.album.song song) throws JSONException {
+            JSONObject jSong = new JSONObject();
 
-        public boolean isDead() {
-            return completed;
+            jSong.put("position", albumProcessor.getSongs().indexOf(song) + 1);
+            jSong.put("id", generateNewSongId(collectiveDownloadsObjects));
+            jSong.put("completed", JSONObject.NULL);
+
+            jSong.put(
+                    "source",
+                    getSource(
+                            metadata.get("artist") + " " + song.getTitle(),
+                            song.getPlaytime()
+                    )
+            );
+
+            jSong.put("playtime", song.getPlaytime());
+            jSong.put("title", song.getTitle());
+            jSong.put("sample", song.getSample() == null ? JSONObject.NULL : song.getSample());
+
+            return jSong;
         }
 
         @Override
@@ -549,7 +626,6 @@ public class Results {
                     downloadItem.put("songs", songs);
 
                     Model.getInstance().download.updateDownloadQueue(downloadItem);
-                    Platform.runLater(() -> searchField.setDisable(false));
                 }
 
             } catch (JSONException e) {
@@ -557,82 +633,11 @@ public class Results {
             }
             catch (IOException e) {
                 Debug.warn("Connection error, attempting to reconnect.");
-                Platform.runLater(() -> searchField.setDisable(false));
                 // TODO:  Handle reconnection
             }
 
             // Restore buttons to default
-            Platform.runLater(() -> {
-                queueAdditionProgress.setVisible(false);
-
-                download.setText(resourceBundle.getString("downloadButton"));
-                downloadButtonCheckInternal();
-
-                Label linkPart0;
-                if (Model.getInstance().download.getDownloadQueue().length() > 0) {
-                    linkPart0 = new Label(String.format(resourceBundle.getString("addedToQueueMessage"), Model.getInstance().download.getDownloadQueue().length()));
-                } else linkPart0 = new Label(resourceBundle.getString("downloadStartedMessage"));
-
-                linkPart0.getStyleClass().add("sub_text");
-                Label linkPart1 = new Label(resourceBundle.getString("downloadsTitlePart"));
-                linkPart1.setUnderline(true);
-                linkPart1.setCursor(Cursor.HAND);
-                linkPart1.setOnMouseClicked(e -> {
-                    try {
-                        FXMLLoader downloadsLoader = new FXMLLoader(
-                                getClass().getClassLoader().getResource("resources/fxml/downloads.fxml"),
-                                ResourceBundle.getBundle("resources.locale.downloads")
-                        );
-                        Parent controllerView = downloadsLoader.load();
-                        Model.getInstance().download.setDownloadsView(downloadsLoader.getController());
-
-                        (
-                                ((Node) e.getSource())
-                                        .getScene()
-                                        .getWindow()
-                        )
-                                .getScene()
-                                .setRoot(
-                                        controllerView
-                                );
-                    } catch (IOException er) {
-                        Debug.error("FXML Error with downloads.fxml", er);
-                    }
-                });
-                linkPart1.getStyleClass().add("sub_text");
-
-                HBox downloadsLinkContainer = new HBox(linkPart0, linkPart1);
-                downloadsLinkContainer.setSpacing(5);
-
-                Platform.runLater(() -> footer.setTop(downloadsLinkContainer));
-
-                cancel.setText(resourceBundle.getString("backButton"));
-                cancel.setOnMouseClicked(Results.this::searchView);
-            });
-            completed = true;
-
-        }
-
-        private JSONObject parseJsonFromSong(JSONObject metadata, JSONArray collectiveDownloadsObjects, Allmusic.album albumProcessor, Allmusic.album.song song) throws JSONException {
-            JSONObject jSong = new JSONObject();
-
-            jSong.put("position", albumProcessor.getSongs().indexOf(song) + 1);
-            jSong.put("id", generateNewSongId(collectiveDownloadsObjects));
-            jSong.put("completed", JSONObject.NULL);
-
-            jSong.put(
-                    "source",
-                    getSource(
-                            metadata.get("artist") + " " + song.getTitle(),
-                            song.getPlaytime()
-                    )
-            );
-
-            jSong.put("playtime", song.getPlaytime());
-            jSong.put("title", song.getTitle());
-            jSong.put("sample", song.getSample() == null ? JSONObject.NULL : song.getSample());
-
-            return jSong;
+            Platform.runLater(() -> restoreView(!kill));
         }
     }
 

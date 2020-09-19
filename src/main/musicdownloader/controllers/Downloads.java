@@ -44,11 +44,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
-/*
-TODO
- - Check if iTunes is installed and add a right click to open in iTunes option
- */
-
 public class Downloads {
 
     @FXML
@@ -571,9 +566,6 @@ public class Downloads {
                                 )
                         )
                 ) ? 1 : 0;
-
-                // TODO: TESTING, DELETE
-                // checkedFile = Math.random() > 0.5 ? 1 : 0;
 
                 songs.add(new HistoryResult(title, false, checkedFile));
 

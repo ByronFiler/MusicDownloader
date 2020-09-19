@@ -19,14 +19,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
-public class SpectroAnalysis {
+public class AudioAnalysis {
 
     private final byte[] sample;
     private double sampleAmplitude = -1;
 
     private byte[] comparisonCache = new byte[]{};
 
-    public SpectroAnalysis(String sampleSource) throws IOException, JavaLayerException {
+    public AudioAnalysis(String sampleSource) throws IOException, JavaLayerException {
 
         InputStream mp3Stream = new URL(sampleSource).openStream();
         this.sample = convertMp3(mp3Stream.readAllBytes());

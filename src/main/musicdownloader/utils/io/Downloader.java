@@ -71,7 +71,7 @@ public class Downloader implements Runnable {
 
     }
 
-    private synchronized void downloadFile(JSONObject song, String format, int sourceDepth, String index, boolean overrideSimilarity, SpectroAnalysis analysis) throws IOException, JSONException, JavaLayerException {
+    private synchronized void downloadFile(JSONObject song, String format, int sourceDepth, String index, boolean overrideSimilarity, AudioAnalysis analysis) throws IOException, JSONException, JavaLayerException {
 
         // Start download
         if (!Files.exists(Paths.get(Resources.getInstance().getApplicationData() + "temp")))
@@ -356,9 +356,9 @@ public class Downloader implements Runnable {
             // Working the download
             for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
 
-                SpectroAnalysis analysis = null;
+                AudioAnalysis analysis = null;
                 if (downloadObject.getJSONArray("songs").getJSONObject(i).get("sample") != JSONObject.NULL) {
-                    analysis = new SpectroAnalysis(String.format(Resources.mp3Source, downloadObject.getJSONArray("songs").getJSONObject(i).getString("sample")));
+                    analysis = new AudioAnalysis(String.format(Resources.mp3Source, downloadObject.getJSONArray("songs").getJSONObject(i).getString("sample")));
                 }
 
                 // Will call it's self recursively until it exhausts possible files or succeeds
