@@ -138,7 +138,16 @@ public class YouTube extends Site {
             results.put("secondary", new QuickSort(results.getJSONArray("secondary"), 0, results.getJSONArray("secondary").length() - 1).getSorted());
 
         } catch (JSONException e) {
-            Debug.error("Failed to parse youtube results.", e);
+
+            Debug.warn(String.format("Youtube sent a bad response, resent request, %s retr%s remaining.", retries, retries == 1 ? "y" : "ies"));
+            if (retries > 0) {
+                try {
+                    retries--;
+                    load();
+                } catch (IOException er) {
+                    Debug.warn("Failed to connect to youtube get results.");
+                }
+            }
         }
 
     }

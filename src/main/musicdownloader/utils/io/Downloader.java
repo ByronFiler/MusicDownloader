@@ -101,8 +101,7 @@ public class Downloader implements Runnable {
         ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(Resources.getInstance().getApplicationData() + "temp").listFiles())));
         currentFiles.removeAll(preexistingFiles);
 
-        // TODO: attempt every 50ms until 200ms then just say it fucked up
-        // TODO: Happens rarely, likely due to a youtube-dl renaming process, consider awaiting for maybe 50 or 100ms?
+        // TODO: This doens't actually work as it runs as a thread not on the main thread
         final File[] downloadedFile = {null};
         if (currentFiles.size() != 1) {
 

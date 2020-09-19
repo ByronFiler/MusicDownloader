@@ -15,13 +15,56 @@ import org.json.JSONObject;
 
 import java.awt.*;
 import java.io.IOException;
-import java.util.*;
+import java.util.Objects;
+import java.util.ResourceBundle;
 
 public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
 
+        /*
+        List<String> queries = Arrays.asList(
+                "Speak to Me",
+                "Breathe (In The Air)",
+                "On the Run",
+                "Time",
+                "The Great Gig in the Sky",
+                "Money",
+                "Us and Them",
+                "Any Colour You Like",
+                "Brain Damage",
+                "Eclipse"
+        );
+
+        long pre = Instant.now().toEpochMilli();
+        for (String query: queries) {
+            Jsoup.connect("https://www.youtube.com/results?search_query=Pink+Floyd+" + query).get();
+        }
+        String individual = String.format("Sequential: %sms", (Instant.now().toEpochMilli() - pre));
+
+        pre = Instant.now().toEpochMilli();
+
+        AtomicInteger completed = new AtomicInteger();
+        for (String query: queries) {
+
+            new Thread(() -> {
+                try {
+                    Jsoup.connect("https://www.youtube.com/results?search_query=Pink+Floyd+" + query).get();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                completed.getAndIncrement();
+            }).start();
+        }
+
+        while (completed.get() != queries.size()) {
+            System.out.print(completed.get() + "\r");
+        };
+
+        Debug.trace(individual);
+        Debug.trace(String.format("Threaded: %sms", (Instant.now().toEpochMilli() - pre)));
+         */
         FXMLLoader loader = new FXMLLoader(
                 getClass().getClassLoader().getResource("resources/fxml/search.fxml"),
                 ResourceBundle.getBundle("resources.locale.search")
@@ -37,7 +80,6 @@ public class Main extends Application {
         Model.getInstance().setPrimaryStage(primaryStage);
 
         Debug.trace("Primary Stage Generated");
-
     }
 
     public static void main(String[] args) {
