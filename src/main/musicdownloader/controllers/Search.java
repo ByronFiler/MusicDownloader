@@ -164,13 +164,11 @@ public class Search {
 
                             try {
                                 long preQueryTime = Instant.now().toEpochMilli();
-                                long preBuilderTime = 0;
 
                                 searcher.query(Model.getInstance().settings.getSettingBool("data_saver"));
 
                                 // Can open each song page and find relevant album to display album art, and other information such as genre and year which isn't given in a default search
                                 if (!Model.getInstance().settings.getSettingBool("data_saver")) {
-                                    preBuilderTime = Instant.now().toEpochMilli();
                                     searcher.getSongExternalInformation();
                                 }
 
@@ -183,13 +181,10 @@ public class Search {
                                 if (!Model.getInstance().settings.getSettingBool("data_saver") && searcher.getSongCount() > 0) {
                                     Debug.trace(
                                             String.format(
-                                                    "Query completed in %.2f seconds, containing %s album%s %s song%s and (%.0fms per song average)",
+                                                    "Query completed in %.2f seconds, containing %s album(s) %s song(s)",
                                                     (double) (now - preQueryTime) / 1000,
                                                     searcher.getAlbumCount(),
-                                                    searcher.getAlbumCount() == 1 ? "" : "s",
-                                                    searcher.getSongCount(),
-                                                    searcher.getSongCount() == 1 ? "" : "s",
-                                                    (double) Math.round((double) (now - preBuilderTime) / searcher.getSongCount())
+                                                    searcher.getSongCount()
                                             )
                                     );
                                 }

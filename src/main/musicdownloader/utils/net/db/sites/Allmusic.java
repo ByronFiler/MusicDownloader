@@ -1,12 +1,11 @@
 package musicdownloader.utils.net.db.sites;
 
 import javafx.scene.layout.BorderPane;
-import musicdownloader.Main;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.ui.Result;
 import musicdownloader.utils.net.db.Album;
 import musicdownloader.utils.net.db.Song;
+import musicdownloader.utils.ui.Result;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,11 +17,12 @@ import org.jsoup.nodes.Element;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Objects;
-import java.util.OptionalDouble;
+import java.util.concurrent.atomic.AtomicInteger;
+
+// TODO
+// Getting the data should provide a success or failure check and not just print a debug message and return nothing
 
 // Should contain
 public class Allmusic {
@@ -51,54 +51,56 @@ public class Allmusic {
             }
         }
 
-        public void getSongExternalInformation() throws IOException {
-
+        // TODO: Thread this
+        @SuppressWarnings("StatementWithEmptyBody")
+        public void getSongExternalInformation() {
+            AtomicInteger completedThreads = new AtomicInteger();
+            AtomicInteger threadsToComplete = new AtomicInteger();
             try {
-
-                double[] songTimes = new double[songs.length()];
-
-                long songTime = Instant.now().toEpochMilli();
-
                 for (int i = 0; i < songs.length(); i++) {
+                    if (!songs.getJSONObject(i).getJSONObject("data").getBoolean("album") && songs.getJSONObject(i).getJSONObject("data").has("allmusicSongId")) {
 
-                    try {
-                        if (!songs.getJSONObject(i).getJSONObject("data").getBoolean("album") && songs.getJSONObject(i).getJSONObject("data").has("allmusicSongId")) {
-                            song songProcessor = new song(songs.getJSONObject(i).getJSONObject("data").getString("allmusicSongId"));
-                            songProcessor.load();
+                        int finalI = i;
+                        Thread externalInformationLoader = new Thread(() -> {
+                            threadsToComplete.getAndIncrement();
 
-                            songs.getJSONObject(i).getJSONObject("data").put("art", songProcessor.getAlbumArt());
-                            songs.getJSONObject(i).getJSONObject("data").put("year", songProcessor.getYear());
-                            songs.getJSONObject(i).getJSONObject("data").put("genre", songProcessor.getGenre());
-                            songs.getJSONObject(i).getJSONObject("data").put("allmusicAlbumId", songProcessor.getAlbumId());
+                            try {
+                                song songProcessor = new song(songs.getJSONObject(finalI).getJSONObject("data").getString("allmusicSongId"));
+                                songProcessor.load();
 
-                            songs.getJSONObject(i).getJSONObject("view").put("art", songProcessor.getAlbumArt());
+                                songs.getJSONObject(finalI).getJSONObject("data").put("art", songProcessor.getAlbumArt());
+                                songs.getJSONObject(finalI).getJSONObject("data").put("year", songProcessor.getYear());
+                                songs.getJSONObject(finalI).getJSONObject("data").put("genre", songProcessor.getGenre());
+                                songs.getJSONObject(finalI).getJSONObject("data").put("allmusicAlbumId", songProcessor.getAlbumId());
 
-                            StringBuilder metaInfoRaw = new StringBuilder("Song");
-                            if (!songs.getJSONObject(i).getJSONObject("data").getString("year").isEmpty())
-                                metaInfoRaw.append(" | ").append(songs.getJSONObject(i).getJSONObject("data").getString("year"));
-                            if (!songs.getJSONObject(i).getJSONObject("data").getString("genre").isEmpty())
-                                metaInfoRaw.append(" | ").append(songs.getJSONObject(i).getJSONObject("data").getString("genre"));
+                                songs.getJSONObject(finalI).getJSONObject("view").put("art", songProcessor.getAlbumArt());
 
-                            songs.getJSONObject(i).getJSONObject("view").put("meta", metaInfoRaw.toString());
-                        }
-                    } catch (IllegalCallerException ignored) {}
+                                StringBuilder metaInfoRaw = new StringBuilder("Song");
+                                if (!songs.getJSONObject(finalI).getJSONObject("data").getString("year").isEmpty())
+                                    metaInfoRaw.append(" | ").append(songs.getJSONObject(finalI).getJSONObject("data").getString("year"));
+                                if (!songs.getJSONObject(finalI).getJSONObject("data").getString("genre").isEmpty())
+                                    metaInfoRaw.append(" | ").append(songs.getJSONObject(finalI).getJSONObject("data").getString("genre"));
 
-                    long now = Instant.now().toEpochMilli();
-                    songTimes[i] = now - songTime;
-                    songTime = now;
+                                songs.getJSONObject(finalI).getJSONObject("view").put("meta", metaInfoRaw.toString());
+                            } catch (JSONException e) {
+                                Debug.error("JSONException gathering additional information.", e);
+                            } catch (IOException e) {
+                                Debug.warn("Connection failed");
+                            }
+
+                            completedThreads.getAndIncrement();
+                        }, "external-information-getter");
+                        externalInformationLoader.setDaemon(true);
+                        externalInformationLoader.start();
+                    }
 
                 }
-
-                OptionalDouble timesAverageCheck = Arrays.stream(songTimes).average();
-
-                if (timesAverageCheck.isPresent() && timesAverageCheck.getAsDouble() > 1000) {
-                    Debug.warn("Very slow network connection detected %sms average per song." + timesAverageCheck.getAsDouble());
-                }
-
             } catch (JSONException e) {
-                Debug.error("Failed to parse data to get song album art.", e);
+                Debug.error("failed to parse json to build additional information.", e);
             }
 
+            // TODO: Optimise this
+            while (completedThreads.get() < threadsToComplete.get());
         }
 
         @Override
