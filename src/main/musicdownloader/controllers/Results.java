@@ -854,8 +854,8 @@ public class Results {
 
                 albumParser = new Allmusic.album(data.getJSONObject("data").getString("allmusicAlbumId"));
 
-                hideAlbumSongs = new MenuItem(resourceBundle.getString("showSongsItem"));
-                getAlbumSongs = new MenuItem(resourceBundle.getString("hideSongsItem"));
+                hideAlbumSongs = new MenuItem(resourceBundle.getString("hideSongsItem"));
+                getAlbumSongs = new MenuItem(resourceBundle.getString("showSongsItem"));
 
                 hideAlbumSongs.setOnAction(this::hideResult);
                 getAlbumSongs.setOnAction(this::getAlbumSongs);

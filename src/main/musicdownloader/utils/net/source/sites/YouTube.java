@@ -10,30 +10,6 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 
-// TODO Seems to be failing sometimes:tm:
-/*
-org.json.JSONException: A JSONObject text must begin with '{' at character 1
-	at org.json.JSONTokener.syntaxError(JSONTokener.java:410)
-	at org.json.JSONObject.<init>(JSONObject.java:179)
-	at org.json.JSONObject.<init>(JSONObject.java:402)
-	at musicdownloader.utils.net.source.sites.YouTube.parseJSONResponse(YouTube.java:45)
-	at musicdownloader.utils.net.source.sites.YouTube.load(YouTube.java:24)
-	at musicdownloader.controllers.Results$generateQueueItem.getSource(Results.java:423)
-	at musicdownloader.controllers.Results$generateQueueItem.parseJsonFromSong(Results.java:627)
-	at musicdownloader.controllers.Results$generateQueueItem.run(Results.java:526)
-	at java.base/java.lang.Thread.run(Thread.java:844)
-org.json.JSONException: JSONObject["contents"] not found.
-	at org.json.JSONObject.get(JSONObject.java:498)
-	at org.json.JSONObject.getJSONObject(JSONObject.java:592)
-	at musicdownloader.utils.net.source.sites.YouTube.parseJSONResponse(YouTube.java:52)
-	at musicdownloader.utils.net.source.sites.YouTube.load(YouTube.java:24)
-	at musicdownloader.controllers.Results$generateQueueItem.getSource(Results.java:423)
-	at musicdownloader.controllers.Results$generateQueueItem.parseJsonFromSong(Results.java:627)
-	at musicdownloader.controllers.Results$generateQueueItem.run(Results.java:526)
-	at java.base/java.lang.Thread.run(Thread.java:844)
-ERROR [generate-queue-item: 150] @ 15/09/2020 22:58:35: Failed to parse youtube results.
- */
-
 import java.io.IOException;
 
 public class YouTube extends Site {

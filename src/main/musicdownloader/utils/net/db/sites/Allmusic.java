@@ -21,9 +21,6 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// TODO
-// Getting the data should provide a success or failure check and not just print a debug message and return nothing
-
 // Should contain
 public class Allmusic {
 
@@ -51,7 +48,6 @@ public class Allmusic {
             }
         }
 
-        // TODO: Thread this
         @SuppressWarnings("StatementWithEmptyBody")
         public void getSongExternalInformation() {
             AtomicInteger completedThreads = new AtomicInteger();
@@ -135,12 +131,12 @@ public class Allmusic {
 
                             viewData.put("meta", metaInfoRaw.toString());
 
-                            // TODO: This check (in theory) shouldn't be needed?
-                            if (!result.select("div.title").select("a").attr("href").isEmpty())
+                            if (!result.select("div.title").select("a").attr("href").isEmpty()) {
                                 applicationData.put(
                                         result.select("div.cover").size() > 0 ? "allmusicAlbumId" : "allmusicSongId",
                                         result.select("div.title").select("a").attr("href").split("/")[4]
                                 );
+                            }
 
                             if (result.select("div.cover").size() > 0) {
                                 albumCount++;
@@ -151,13 +147,13 @@ public class Allmusic {
                                 viewData.put(
                                         "art",
                                         potentialAlbumArt.isEmpty() || useDefaultIcons ?
-                                                new File(getClass().getClassLoader().getResource("resources/img/album_default.png").getPath()).toURI().toString() :
+                                                new File(Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/album_default.png")).getPath()).toURI().toString() :
                                                 potentialAlbumArt
                                 );
                                 applicationData.put(
                                         "art",
                                         potentialAlbumArt.isEmpty() ?
-                                                new File(getClass().getClassLoader().getResource("resources/img/album_default.png").getPath()).toURI().toString() :
+                                                new File(Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/album_default.png")).getPath()).toURI().toString() :
                                                 potentialAlbumArt
                                 );
 
@@ -167,8 +163,8 @@ public class Allmusic {
                                 // Song (does not have art)
                                 try {
 
-                                    viewData.put("art", getClass().getClassLoader().getResource("resources/img/song_default.png").toURI().toString());
-                                    applicationData.put("art", getClass().getClassLoader().getResource("resources/img/song_default.png").toURI().toString());
+                                    viewData.put("art", Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/song_default.png")).toURI().toString());
+                                    applicationData.put("art", Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/song_default.png")).toURI().toString());
 
                                 } catch (URISyntaxException e) {
                                     Debug.error("Failed to get default icon for song.", e);
@@ -276,7 +272,7 @@ public class Allmusic {
 
             try {
                 if (albumArtSource.isEmpty())
-                    return getClass().getClassLoader().getResource("resources/img/song_default.png").toURI().toString();
+                    return Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/song_default.png")).toURI().toString();
 
                 else return albumArtSource;
 
