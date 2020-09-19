@@ -486,7 +486,7 @@ public class Downloader implements Runnable {
                 Model.getInstance().download.setDownloadQueue(downloadQueue);
 
                 // Notification
-                if (Model.getInstance().getPrimaryStage().isIconified() || Model.getInstance().isStageClosed()) {
+                if (Model.getInstance().view.getPrimaryStage().isIconified() || Model.getInstance().view.isStageClosed()) {
                     int length = Model.getInstance().download.getDownloadQueue().length();
                     new Notification(
                             String.format(resourceBundle.getString("downloadStartedMessage"), downloadObject.getJSONObject("metadata").getString("album")),
@@ -506,7 +506,7 @@ public class Downloader implements Runnable {
         } else {
 
             // No items left in queue.
-            if (Model.getInstance().getPrimaryStage().isIconified() || Model.getInstance().isStageClosed()) {
+            if (Model.getInstance().view.getPrimaryStage().isIconified() || Model.getInstance().view.isStageClosed()) {
                 new Notification(resourceBundle.getString("allDownloadsCompletedMessage"), "", null, TrayIcon.MessageType.INFO);
                 System.exit(0);
             }
