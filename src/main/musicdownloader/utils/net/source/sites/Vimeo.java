@@ -15,8 +15,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
-// TODO: Seems to failing constantly
-
 public class Vimeo extends Site {
 
     public Vimeo(String query, int targetTime) throws JSONException {
@@ -27,6 +25,20 @@ public class Vimeo extends Site {
 
         requestedPage = Jsoup.connect(Resources.vimeoSearch + query).get();
         AtomicReference<String> processedLine = new AtomicReference<>("");
+
+        requestedPage.select("script").forEach(scriptContent -> {
+            if (scriptContent.toString().contains("    vimeo.config")) {
+                Arrays.asList(requestedPage.select("script")
+                        .get(requestedPage.select("script").indexOf(scriptContent))
+                        .toString()
+                        .split("\n")
+                ).forEach(line -> {
+                    if (line.startsWith("    vimeo.config")) {
+                        processedLine.set(line.trim().substring(45));
+                    }
+                });
+            }
+        });
 
         // Looking for a <script> section containing relevant JSON and extracting the line
         Arrays.asList(requestedPage.select("script").get(15).toString().split("\n")).forEach(e -> { if (e.startsWith("    vimeo.config")) processedLine.set(e.trim().substring(45)); });
@@ -59,12 +71,9 @@ public class Vimeo extends Site {
             results.put("secondary", new QuickSort(results.getJSONArray("secondary"), 0, results.getJSONArray("secondary").length() - 1).getSorted());
 
         } catch (JSONException e) {
+            e.printStackTrace();
             Debug.warn("Failed to parse Vimeo query: " + query);
         }
-
-
-
-
 
     }
 

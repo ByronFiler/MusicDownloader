@@ -75,18 +75,6 @@ public class Result {
         view.setLeft(left);
     }
 
-    // TODO: Fallback use for downloads when album art doesn't exist
-    protected Result(Image albumArt, String title, String artist) {
-
-        sharedInitialisation(title, artist);
-
-        this.albumArt.setImage(albumArt);
-        imageContainer.getChildren().add(this.albumArt);
-
-        left.getChildren().setAll(imageContainer, leftTextContainer);
-        view.setLeft(left);
-    }
-
     private void sharedInitialisation(String title, String artist) {
 
         this.title.setText(title);

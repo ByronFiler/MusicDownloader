@@ -25,7 +25,6 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws IOException {
 
         new CacheManager(Model.getInstance().download.getDownloadHistory());
-
         FXMLLoader loader = new FXMLLoader(
                 getClass().getClassLoader().getResource("resources/fxml/search.fxml"),
                 ResourceBundle.getBundle("resources.locale.search")

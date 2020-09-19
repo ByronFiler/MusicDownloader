@@ -104,6 +104,8 @@ public class Settings {
 
     private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.settings");
 
+    // TODO: Add a reset settings button
+
     @FXML
     protected void initialize() {
 
