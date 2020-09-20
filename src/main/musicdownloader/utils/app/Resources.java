@@ -8,7 +8,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.jar.JarException;
 
-// TODO: Could auto create directories in constructor (if they don't exist)
 public class Resources {
     private final static Resources instance = new Resources();
 

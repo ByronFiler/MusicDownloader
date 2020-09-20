@@ -20,12 +20,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.*;
 
-/*
-TODO
- Download history should include a file md5, creation time?
- When the window is closed the thread seems to hang and not continue to downlaod
- */
-
 public class Downloader implements Runnable {
 
     private JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
@@ -101,47 +95,34 @@ public class Downloader implements Runnable {
         ArrayList<File> currentFiles = new ArrayList<>(Arrays.asList(Objects.requireNonNull(new File(Resources.getInstance().getApplicationData() + "temp").listFiles())));
         currentFiles.removeAll(preexistingFiles);
 
-        // TODO: This doens't actually work as it runs as a thread not on the main thread
         final File[] downloadedFile = {null};
         if (currentFiles.size() != 1) {
 
             Debug.warn("Did not find the downloaded file, retrying...");
-            final int[] originalRetries = {5};
-            final int[] retries = new int[]{originalRetries[0]};
             int delay = 50;
-            new Timer().schedule(new TimerTask() {
-                @Override
-                public void run() {
 
-                    List<File> x = Arrays.asList(Objects.requireNonNull(new File(Resources.getInstance().getApplicationData() + "temp").listFiles()));
-                    x.removeAll(preexistingFiles);
+            for (int retries = 5; retries > 0; retries--) {
 
-                    if (x.size() == 1) {
-                        Debug.trace("Located the downloaded file.");
-                        downloadedFile[0] = x.get(0);
-                        this.cancel();
-                    } else {
-                        retries[0]--;
-                        Debug.warn(
-                                String.format(
-                                        "Failed to find the file after %sms, waiting %sms and trying again (%s tr%s remaining)",
-                                        originalRetries[0] * delay,
-                                        delay,
-                                        retries[0],
-                                        retries[0] == 1 ? "y" : "ies"
-                                )
-                        );
-                    }
+                List<File> x = Arrays.asList(Objects.requireNonNull(new File(Resources.getInstance().getApplicationData() + "temp").listFiles()));
+                x.removeAll(preexistingFiles);
 
-                    if (retries[0] == 0) {
-                        Debug.error(
-                                String.format("Expected 1 new file to have been created, %s found.", currentFiles.size()),
-                                new IOException("Unexpected new files")
-                        );
-                    }
-
+                if (x.size() == 1) {
+                    Debug.trace("Located the downloaded file.");
+                    downloadedFile[0] = x.get(0);
+                    break;
+                } else {
+                    Debug.warn(
+                            String.format(
+                                    "Failed to find the file after %sms, waiting %sms and trying again (%s tr%s remaining)",
+                                    5 * delay,
+                                    delay,
+                                    retries,
+                                    retries == 1 ? "y" : "ies"
+                            )
+                    );
                 }
-            }, delay, delay);
+
+            }
         } else {
             downloadedFile[0] = currentFiles.get(0);
         }

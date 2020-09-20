@@ -37,10 +37,7 @@ import java.util.*;
 
 /*
 TODO
- - Losing connection mid-search generates a partially completed results table, don't let this happen
- - Continue testing connection drops: Control Panel\Network and Internet\Network Connections
- - Search data could also theoretically load songs since the request is already sent to save sending the requests again decreasing load speeds and web requests
- - For quicker general usability try and finish and let the youtube backend threads just complete the search results instead of making the user wait
+ - Network malarkey Control Panel\Network and Internet\Network Connections
  */
 public class Search {
 
@@ -272,8 +269,6 @@ public class Search {
             public void run() {
                 Platform.runLater(() -> {
                     errorMessage.setVisible(false);
-
-                    // TODO: Check & Replace with setAll
                     searchContainer.getChildren().remove(errorMessage);
                     searchContainer.getChildren().add(errorMessage);
                 });

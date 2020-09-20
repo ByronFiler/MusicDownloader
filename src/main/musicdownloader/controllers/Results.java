@@ -44,11 +44,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
-/*
-TODO
- - Loaded the additional data about the album should be saved and used to save a web request when building data
- */
-
 public class Results {
 
     @FXML
@@ -397,7 +392,6 @@ public class Results {
         private final JSONObject metadata = new JSONObject();
         private final JSONArray songs = new JSONArray();
 
-
         public generateQueueItem(JSONObject basicData) {
             this.basicData = basicData;
 
@@ -481,59 +475,18 @@ public class Results {
             return id;
         }
 
-        private JSONObject parseJsonFromSong(JSONObject metadata, JSONArray collectiveDownloadsObjects, Allmusic.album albumProcessor, Allmusic.album.song song) throws JSONException {
+        private JSONObject parseJsonFromSong(JSONArray collectiveDownloadsObjects, Allmusic.album albumProcessor, Allmusic.album.song song) throws JSONException {
             JSONObject jSong = new JSONObject();
 
             jSong.put("position", albumProcessor.getSongs().indexOf(song) + 1);
             jSong.put("id", generateNewSongId(collectiveDownloadsObjects));
             jSong.put("completed", JSONObject.NULL);
-
-            /*
-            jSong.put(
-                    "source",
-                    getSource(
-                            metadata.get("artist") + " " + song.getTitle(),
-                            song.getPlaytime()
-                    )
-            );
-             */
-
             jSong.put("playtime", song.getPlaytime());
             jSong.put("title", song.getTitle());
             jSong.put("sample", song.getSample() == null ? JSONObject.NULL : song.getSample());
 
             return jSong;
         }
-
-        /*
-        private JSONArray getSource(String query, int targetTime) {
-            JSONArray sources = new JSONArray();
-            try {
-
-                YouTube youtubeParser = new YouTube(query, targetTime);
-                youtubeParser.load();
-
-                Vimeo vimeoParser = new Vimeo(query, targetTime);
-                vimeoParser.load();
-
-                for (int i = 0; i < youtubeParser.getResults().getJSONArray("primary").length(); i++) sources.put(Resources.youtubeVideoSource + youtubeParser.getResults().getJSONArray("primary").getString(i));
-                for (int i = 0; i < vimeoParser.getResults().getJSONArray("primary").length(); i++) sources.put(Resources.vimeoVideoSource + vimeoParser.getResults().getJSONArray("primary").getString(i));
-                for (int i = 0; i < youtubeParser.getResults().getJSONArray("secondary").length(); i++) sources.put(Resources.youtubeVideoSource + youtubeParser.getResults().getJSONArray("secondary").getString(i));
-                for (int i = 0; i < vimeoParser.getResults().getJSONArray("secondary").length(); i++) sources.put(Resources.vimeoVideoSource + vimeoParser.getResults().getJSONArray("secondary").getString(i));
-
-            } catch (IOException e) {
-                Debug.warn("Connection error");
-
-                return null;
-                // TODO: Await reconnection
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-            return sources;
-        }
-         */
 
         private synchronized void markThreadCompleted(int position, JSONArray results) throws JSONException {
 
@@ -626,7 +579,6 @@ public class Results {
                     for (Allmusic.album.song song : albumProcessor.getSongs()) {
                         songs.put(
                                 parseJsonFromSong(
-                                        metadata,
                                         collectiveDownloadsObjects,
                                         albumProcessor,
                                         song
@@ -658,7 +610,6 @@ public class Results {
                             );
                     songs.put(
                             parseJsonFromSong(
-                                    metadata,
                                     collectiveDownloadsObjects,
                                     albumProcessor,
                                     song
