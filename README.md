@@ -23,4 +23,4 @@ Features:
 ![Search Results](https://i.imgur.com/l9lyMaU.png)
 ![Downloads Client View: Albums](https://i.imgur.com/1sqLsPx.png)
 ![Downloads Client View: Songs](https://i.imgur.com/RCmFCry.png)
-![Settings](https://i.imgur.com/HrXDOAd.png)
+![Settings](https://i.imgur.com/fVtF9Uj.png)
