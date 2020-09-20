@@ -37,7 +37,7 @@ import java.util.*;
 
 /*
 TODO
- - Network malarkey Control Panel\Network and Internet\Network Connections
+ - Change error message, closer to spotify styling
  */
 public class Search {
 

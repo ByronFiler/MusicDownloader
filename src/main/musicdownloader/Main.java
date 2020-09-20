@@ -30,7 +30,7 @@ public class Main extends Application {
                 ResourceBundle.getBundle("resources.locale.search")
         );
         Parent root = loader.load();
-        primaryStage.setScene(new Scene(root));
+        primaryStage.setScene(new Scene(root, 638, 850));
         primaryStage.getIcons().add(new Image(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/icon.png"))));
         primaryStage.setTitle(ResourceBundle.getBundle("resources.locale.search").getString("hero"));
         primaryStage.show();

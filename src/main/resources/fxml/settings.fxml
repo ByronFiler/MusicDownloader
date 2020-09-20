@@ -209,7 +209,7 @@
                         <Label styleClass="sub_text" text="%languageSubtext" BorderPane.alignment="CENTER" />
                      </left>
                      <right>
-                        <ComboBox fx:id="languageFormat" onAction="#updateLanguage" prefWidth="150.0" styleClass="selector" BorderPane.alignment="CENTER" />
+                        <ComboBox fx:id="language" onAction="#updateLanguage" prefWidth="150.0" styleClass="selector" BorderPane.alignment="CENTER" />
                      </right>
                   </BorderPane>
                   <BorderPane prefHeight="30.0" prefWidth="500.0">
@@ -228,6 +228,19 @@
                         <ToggleSwitch fx:id="dataSaverToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
                      </right>
                   </BorderPane>
+               </VBox>
+               <VBox prefHeight="200.0" prefWidth="100.0">
+                  <children>
+                     <BorderPane prefHeight="200.0" prefWidth="200.0">
+                        <left>
+                           <Label fx:id="reset" onMouseClicked="#resetSettings" onMouseEntered="#selectReset" onMouseExited="#unselectReset" styleClass="sub_text" text="%resetOption" BorderPane.alignment="CENTER">
+                              <cursor>
+                                 <Cursor fx:constant="HAND" />
+                              </cursor>
+                           </Label>
+                        </left>
+                     </BorderPane>
+                  </children>
                </VBox>
             </VBox>
          </top>

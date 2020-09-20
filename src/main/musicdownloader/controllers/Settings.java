@@ -1,6 +1,5 @@
 package musicdownloader.controllers;
 
-import com.google.common.base.CaseFormat;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -12,6 +11,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
@@ -33,7 +33,8 @@ import java.nio.file.Paths;
 import java.util.Timer;
 import java.util.*;
 
-import static musicdownloader.utils.app.Resources.*;
+import static musicdownloader.utils.app.Resources.songReferences;
+import static musicdownloader.utils.app.Resources.supportedLocals;
 
 // TODO: Information & Files cutoff when resizing
 
@@ -93,18 +94,20 @@ public class Settings {
 
     // Application Configuration
     @FXML
-    private ComboBox<String> languageFormat;
+    private ComboBox<String> language;
     @FXML
     private ToggleSwitch darkThemeToggle;
     @FXML
     private ToggleSwitch dataSaverToggle;
 
     // Confirm / Cancel
-    @FXML Button cancel;
+    @FXML
+    private Button cancel;
+
+    @FXML
+    private Label reset;
 
     private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.settings");
-
-    // TODO: Add a reset settings button
 
     @FXML
     protected void initialize() {
@@ -120,11 +123,11 @@ public class Settings {
 
         for (Locale availableLocale: supportedLocals) {
 
-            languageFormat.getItems().add(availableLocale.getDisplayLanguage());
+            language.getItems().add(availableLocale.getDisplayLanguage());
 
         }
 
-        languageFormat.getSelectionModel().select(supportedLocals.indexOf(new Locale(Locale.getDefault().getLanguage())));
+        language.getSelectionModel().select(supportedLocals.indexOf(new Locale(Locale.getDefault().getLanguage())));
 
         // Information
         if (Model.getInstance().settings.getVersion() == null) {
@@ -155,49 +158,11 @@ public class Settings {
             );
         }
 
-
-
         version.setText(Model.getInstance().settings.getVersion() == null ? "Unknown" : Model.getInstance().settings.getVersion());
         new getLatestVersion(false);
         new verifyExecutable(Resources.getInstance().getYoutubeDlExecutable(), youtubeDl, youtubeDlContainer);
         new verifyExecutable(Resources.getInstance().getFfmpegExecutable(), ffmpeg, ffmpegContainer);
-
-
-        // Files
-        String outputDirectoryRaw = Model.getInstance().settings.getSetting("output_directory").equals("") ?
-                System.getProperty("user.dir") :
-                Model.getInstance().settings.getSetting("output_directory");
-        outputDirectory.setText(outputDirectoryRaw);
-        musicFormat.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("music_format")));
-        saveAlbumArt.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("save_album_art")));
-        new validateDirectory(outputDirectoryRaw);
-
-        // Audio
-        advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
-        volumeCorrectionToggle.setSelected(Model.getInstance().settings.getSettingBool("volume_correction"));
-
-        // Meta-Data
-        albumArtToggle.setSelected(Model.getInstance().settings.getSettingBool("album_art"));
-        albumTitleToggle.setSelected(Model.getInstance().settings.getSettingBool("album_title"));
-        songTitleToggle.setSelected(Model.getInstance().settings.getSettingBool("song_title"));
-        artistToggle.setSelected(Model.getInstance().settings.getSettingBool("artist"));
-        yearToggle.setSelected(Model.getInstance().settings.getSettingBool("year"));
-        trackNumberToggle.setSelected(Model.getInstance().settings.getSettingBool("track"));
-
-        // Application
-        darkThemeToggle.setSelected(Model.getInstance().settings.getSettingBool("dark_theme"));
-        dataSaverToggle.setSelected(Model.getInstance().settings.getSettingBool("data_saver"));
-
-        // Load theme
-        root.getStylesheets().setAll(
-                Objects.requireNonNull(
-                        getClass()
-                                .getClassLoader()
-                                .getResource(
-                                        "resources/css/" + (Model.getInstance().settings.getSettingBool("dark_theme") ? "dark" : "standard") + ".css"
-                                )
-                ).toString()
-        );
+        initialiseUiSettings();
 
         Debug.trace("Initialized settings view.");
 
@@ -269,6 +234,7 @@ public class Settings {
 
             ComboBox<String> modifiedSetting = (ComboBox<String>) e.getSource();
 
+            /*
             Debug.trace(
                     String.format(
                             settingsFormatString,
@@ -289,6 +255,8 @@ public class Settings {
                             modifiedSetting.getSelectionModel().getSelectedItem()
                     )
             );
+
+             */
 
         } else if ((e.getSource()).getClass().equals(Label.class)) {
 
@@ -336,7 +304,7 @@ public class Settings {
     @FXML
     protected void updateLanguage(Event e) {
 
-        Locale.setDefault(supportedLocals.get(languageFormat.selectionModelProperty().getValue().getSelectedIndex()));
+        Locale.setDefault(supportedLocals.get(language.selectionModelProperty().getValue().getSelectedIndex()));
         saveSettings(e);
 
         try {
@@ -356,6 +324,30 @@ public class Settings {
         } catch(IOException er) {
             Debug.error("Missing FXML File: Settings.fxml", er);
         }
+    }
+
+    @FXML
+    public void selectReset() {
+
+        reset.setUnderline(true);
+        reset.setTextFill(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.WHITE : Color.BLACK);
+
+    }
+
+    @FXML
+    public void unselectReset() {
+
+        reset.setUnderline(false);
+        reset.setTextFill(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.valueOf("#C1C7C9") : Color.valueOf("#2e242c"));
+
+    }
+
+    @FXML
+    public void resetSettings() {
+
+        Model.getInstance().settings.resetSettings();
+        initialiseUiSettings();
+
     }
 
     protected JSONObject getNewSettings() {
@@ -382,7 +374,7 @@ public class Settings {
             // Application Configuration
             settings.put("dark_theme", darkThemeToggle.isSelected());
             settings.put("data_saver", dataSaverToggle.isSelected());
-            settings.put("language", languageFormat.getSelectionModel().getSelectedIndex());
+            settings.put("language", language.getSelectionModel().getSelectedIndex());
 
         } catch (JSONException e) {
             Debug.error("Failed to generate new settings.", e);
@@ -390,6 +382,45 @@ public class Settings {
 
         return settings;
 
+
+    }
+
+    private void initialiseUiSettings() {
+
+        String outputDirectoryRaw = Model.getInstance().settings.getSetting("output_directory").equals("") ?
+                System.getProperty("user.dir") :
+                Model.getInstance().settings.getSetting("output_directory");
+        outputDirectory.setText(outputDirectoryRaw);
+        musicFormat.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("music_format")));
+        saveAlbumArt.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("save_album_art")));
+        new validateDirectory(outputDirectoryRaw);
+
+        // Audio
+        advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
+        volumeCorrectionToggle.setSelected(Model.getInstance().settings.getSettingBool("volume_correction"));
+
+        // Meta-Data
+        albumArtToggle.setSelected(Model.getInstance().settings.getSettingBool("album_art"));
+        albumTitleToggle.setSelected(Model.getInstance().settings.getSettingBool("album_title"));
+        songTitleToggle.setSelected(Model.getInstance().settings.getSettingBool("song_title"));
+        artistToggle.setSelected(Model.getInstance().settings.getSettingBool("artist"));
+        yearToggle.setSelected(Model.getInstance().settings.getSettingBool("year"));
+        trackNumberToggle.setSelected(Model.getInstance().settings.getSettingBool("track"));
+
+        // Application
+        darkThemeToggle.setSelected(Model.getInstance().settings.getSettingBool("dark_theme"));
+        dataSaverToggle.setSelected(Model.getInstance().settings.getSettingBool("data_saver"));
+
+        // Load theme
+        root.getStylesheets().setAll(
+                Objects.requireNonNull(
+                        getClass()
+                                .getClassLoader()
+                                .getResource(
+                                        "resources/css/" + (Model.getInstance().settings.getSettingBool("dark_theme") ? "dark" : "standard") + ".css"
+                                )
+                ).toString()
+        );
 
     }
 
