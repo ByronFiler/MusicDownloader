@@ -52,8 +52,7 @@ public class QuickSort {
     }
 
     void sort(JSONArray searchData, int low, int high) throws JSONException {
-        if (low < high)
-        {
+        if (low < high) {
             int pi = partition(searchData, low, high);
 
             // Recursively sort elements

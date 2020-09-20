@@ -1,5 +1,6 @@
 package musicdownloader.controllers;
 
+import com.google.common.base.CaseFormat;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -11,11 +12,12 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import musicdownloader.Main;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
 import musicdownloader.utils.io.Install;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.ToggleSwitch;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -29,55 +31,100 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
-// TODO
-// Information & Files cutoff when resizing
+import static musicdownloader.utils.app.Resources.*;
+
+// TODO: Information & Files cutoff when resizing
 
 public class Settings {
 
     @FXML
-    BorderPane root;
+    private BorderPane root;
 
     // Information
-    @FXML Label version;
-    @FXML Label latestVersion;
-    @FXML Label youtubeDl;
-    @FXML Label ffmpeg;
+    @FXML
+    private Label version;
+    @FXML
+    private Label latestVersion;
+    @FXML
+    private Label youtubeDl;
+    @FXML
+    private Label ffmpeg;
 
-    @FXML HBox versionContainer;
-    @FXML HBox latestVersionContainer;
-    @FXML HBox youtubeDlContainer;
-    @FXML HBox ffmpegContainer;
+    @FXML
+    private HBox versionContainer;
+    @FXML
+    private HBox latestVersionContainer;
+    @FXML
+    private HBox youtubeDlContainer;
+    @FXML
+    private HBox ffmpegContainer;
 
     // Files
-    @FXML Label outputDirectory;
-    @FXML BorderPane saveMusicLine;
-    @FXML Label outputDirectoryInfo;
-    @FXML HBox outputDirectoryContainer;
-    @FXML ComboBox<String> musicFormat;
-    @FXML ComboBox<String> saveAlbumArt;
-    @FXML ToggleSwitch advancedValidationToggle;
+    @FXML
+    private Label outputDirectory;
+    @FXML
+    private HBox outputDirectoryContainer;
+    @FXML
+    private ComboBox<String> musicFormat;
+    @FXML
+    private ComboBox<String> saveAlbumArt;
+
+    // Audio
+    @FXML
+    private ToggleSwitch advancedValidationToggle;
+    @FXML
+    private ToggleSwitch volumeCorrectionToggle;
 
     // Meta-Data application
-    @FXML ToggleSwitch albumArtToggle;
-    @FXML ToggleSwitch albumTitleToggle;
-    @FXML ToggleSwitch songTitleToggle;
-    @FXML ToggleSwitch artistToggle;
-    @FXML ToggleSwitch yearToggle;
-    @FXML ToggleSwitch trackNumberToggle;
+    @FXML
+    private ToggleSwitch albumArtToggle;
+    @FXML
+    private ToggleSwitch albumTitleToggle;
+    @FXML
+    private ToggleSwitch songTitleToggle;
+    @FXML
+    private ToggleSwitch artistToggle;
+    @FXML
+    private ToggleSwitch yearToggle;
+    @FXML
+    private ToggleSwitch trackNumberToggle;
 
-    // application Configuration
-    @FXML ToggleSwitch darkThemeToggle;
-    @FXML ToggleSwitch dataSaverToggle;
+    // Application Configuration
+    @FXML
+    private ComboBox<String> languageFormat;
+    @FXML
+    private ToggleSwitch darkThemeToggle;
+    @FXML
+    private ToggleSwitch dataSaverToggle;
 
     // Confirm / Cancel
     @FXML Button cancel;
+
+    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.settings");
+
+    // TODO: Add a reset settings button
 
     @FXML
     protected void initialize() {
 
         // Prepare settings information from model data
+        ResourceBundle settingsLocale = ResourceBundle.getBundle("resources.locale.settings");
+        songReferences.forEach(musicFormatOption -> musicFormat.getItems().add(musicFormatOption));
+
+        saveAlbumArt.getItems().add(settingsLocale.getString("alwaysOption"));
+        saveAlbumArt.getItems().add(settingsLocale.getString("songsOnlyOption"));
+        saveAlbumArt.getItems().add(settingsLocale.getString("albumsOnlyOption"));
+        saveAlbumArt.getItems().add(settingsLocale.getString("neverOption"));
+
+        for (Locale availableLocale: supportedLocals) {
+
+            languageFormat.getItems().add(availableLocale.getDisplayLanguage());
+
+        }
+
+        languageFormat.getSelectionModel().select(supportedLocals.indexOf(new Locale(Locale.getDefault().getLanguage())));
 
         // Information
         if (Model.getInstance().settings.getVersion() == null) {
@@ -85,7 +132,7 @@ public class Settings {
             versionContainer.getChildren().add(
                     new ImageView(
                             new Image(
-                                    Main.class.getResourceAsStream("resources/img/warning.png"),
+                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                                     20,
                                     20,
                                     true,
@@ -98,7 +145,7 @@ public class Settings {
             versionContainer.getChildren().add(
                     new ImageView(
                             new Image(
-                                    Main.class.getResourceAsStream("resources/img/tick.png"),
+                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
                                     20,
                                     20,
                                     true,
@@ -107,6 +154,8 @@ public class Settings {
                     )
             );
         }
+
+
 
         version.setText(Model.getInstance().settings.getVersion() == null ? "Unknown" : Model.getInstance().settings.getVersion());
         new getLatestVersion(false);
@@ -121,8 +170,11 @@ public class Settings {
         outputDirectory.setText(outputDirectoryRaw);
         musicFormat.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("music_format")));
         saveAlbumArt.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("save_album_art")));
-        advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
         new validateDirectory(outputDirectoryRaw);
+
+        // Audio
+        advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
+        volumeCorrectionToggle.setSelected(Model.getInstance().settings.getSettingBool("volume_correction"));
 
         // Meta-Data
         albumArtToggle.setSelected(Model.getInstance().settings.getSettingBool("album_art"));
@@ -138,8 +190,12 @@ public class Settings {
 
         // Load theme
         root.getStylesheets().setAll(
-                Main.class.getResource(
-                        "resources/css/" + (Model.getInstance().settings.getSettingBool("dark_theme") ? "dark" : "standard") + ".css"
+                Objects.requireNonNull(
+                        getClass()
+                                .getClassLoader()
+                                .getResource(
+                                        "resources/css/" + (Model.getInstance().settings.getSettingBool("dark_theme") ? "dark" : "standard") + ".css"
+                                )
                 ).toString()
         );
 
@@ -159,7 +215,8 @@ public class Settings {
                     .getScene()
                     .setRoot(
                             FXMLLoader.load(
-                                    Main.class.getResource("resources/fxml/search.fxml")
+                                    Objects.requireNonNull(getClass().getClassLoader().getResource("resources/fxml/search.fxml")),
+                                    ResourceBundle.getBundle("resources.locale.search")
                             )
                     );
         } catch (IOException e) {
@@ -169,7 +226,7 @@ public class Settings {
     }
 
     @FXML
-    protected void selectNewFolder() {
+    protected void selectNewFolder(javafx.scene.input.MouseEvent e) {
 
         JFileChooser newFolder = new JFileChooser();
         newFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -177,31 +234,128 @@ public class Settings {
 
         outputDirectory.setText(newFolder.getSelectedFile().getPath());
         new validateDirectory(newFolder.getSelectedFile().getPath());
-        saveSettings();
+        saveSettings(e);
 
     }
 
     @FXML
-    protected void saveSettings() {
+    @SuppressWarnings("unchecked")
+    protected void saveSettings(Event e) {
+
+        final String settingsFormatString = "Settings Changed %s: %s -> %s";
+        if ( (e.getSource()).getClass().equals(ToggleSwitch.class) ) {
+
+            ToggleSwitch modifiedSetting = (ToggleSwitch) e.getSource();
+
+            Debug.trace(
+                    String.format(
+                            settingsFormatString,
+                            StringUtils.capitalize(
+                                    StringUtils.join(
+                                            StringUtils.splitByCharacterTypeCamelCase(
+                                                    modifiedSetting.getId().substring(
+                                                            0,
+                                                            modifiedSetting.getId().length() - 6)
+                                            ),
+                                            StringUtils.SPACE
+                                    )
+                            ),
+                            convertSwitchValue(!modifiedSetting.isSelected()),
+                            convertSwitchValue(modifiedSetting.isSelected())
+                    )
+            );
+
+        } else if ((e.getSource()).getClass().equals(ComboBox.class)) {
+
+            ComboBox<String> modifiedSetting = (ComboBox<String>) e.getSource();
+
+            Debug.trace(
+                    String.format(
+                            settingsFormatString,
+                            StringUtils.capitalize(
+                                    StringUtils.join(
+                                            StringUtils.splitByCharacterTypeCamelCase(modifiedSetting.getId()),
+                                            StringUtils.SPACE
+                                    )
+                            ),
+                            (modifiedSetting.getId().equals("musicFormat") ? songReferences : albumArtOptions).get(
+                                    Model.getInstance().settings.getSettingInt(
+                                            CaseFormat.UPPER_CAMEL.to(
+                                                    CaseFormat.LOWER_UNDERSCORE,
+                                                    modifiedSetting.getId()
+                                            )
+                                    )
+                            ),
+                            modifiedSetting.getSelectionModel().getSelectedItem()
+                    )
+            );
+
+        } else if ((e.getSource()).getClass().equals(Label.class)) {
+
+            Label modifiedSetting = (Label) e.getSource();
+
+            // Not correcting '' to the default dir is intentional as this is more representative of the real settings values vs effective
+            Debug.trace(
+                    String.format(
+                            settingsFormatString,
+                            StringUtils.capitalize(
+                                    StringUtils.join(
+                                            StringUtils.splitByCharacterTypeCamelCase(modifiedSetting.getId()),
+                                            StringUtils.SPACE
+                                    )
+                            ),
+                            Model.getInstance().settings.getSetting("output_directory"),
+                            modifiedSetting.getText()
+                    )
+            );
+
+        } else {
+
+            Debug.warn("Unknown setting modification source: " + e.getSource());
+
+        }
 
         JSONObject newSettings = getNewSettings();
         try {
             root.getStylesheets().setAll(
                     String.valueOf(
-                            Main.class.getResource(
+                            getClass().getClassLoader().getResource(
                                     "resources/css/"
                                             + (newSettings.getBoolean("dark_theme") ? "dark" : "standard")
                                             + ".css"
                             )
                     )
             );
-        } catch (JSONException e) {
-            Debug.error("Failed to find dark theme setting.", e);
+        } catch (JSONException er) {
+            Debug.error("Failed to find dark theme setting.", er);
         }
 
         Model.getInstance().settings.saveSettings(newSettings);
+    }
 
-        Debug.trace("New settings saved.");
+    @FXML
+    protected void updateLanguage(Event e) {
+
+        Locale.setDefault(supportedLocals.get(languageFormat.selectionModelProperty().getValue().getSelectedIndex()));
+        saveSettings(e);
+
+        try {
+            (
+                    ((Node) e.getSource())
+                            .getScene()
+                            .getWindow()
+            )
+                    .getScene()
+                    .setRoot(
+                            FXMLLoader.load(
+                                    Objects.requireNonNull(getClass().getClassLoader().getResource("resources/fxml/settings.fxml")),
+                                    ResourceBundle.getBundle("resources.locale.settings")
+                            )
+                    );
+
+        } catch(IOException er) {
+            Debug.error("Missing FXML File: Settings.fxml", er);
+        }
     }
 
     protected JSONObject getNewSettings() {
@@ -212,9 +366,12 @@ public class Settings {
             settings.put("output_directory", outputDirectory.getText().equals(System.getProperty("user.dir")) ? "" : outputDirectory.getText());
             settings.put("music_format", musicFormat.getSelectionModel().getSelectedIndex());
             settings.put("save_album_art", saveAlbumArt.getSelectionModel().getSelectedIndex());
-            settings.put("advanced_validation", advancedValidationToggle.isSelected());
 
-            // Meta-Data ../application
+            // Audio
+            settings.put("advanced_validation", advancedValidationToggle.isSelected());
+            settings.put("volume_correction", volumeCorrectionToggle.isSelected());
+
+            // Meta-Data
             settings.put("album_art", albumArtToggle.isSelected());
             settings.put("album_title", albumTitleToggle.isSelected());
             settings.put("song_title", songTitleToggle.isSelected());
@@ -222,9 +379,10 @@ public class Settings {
             settings.put("year", yearToggle.isSelected());
             settings.put("track", trackNumberToggle.isSelected());
 
-            // ../application Configuration
+            // Application Configuration
             settings.put("dark_theme", darkThemeToggle.isSelected());
             settings.put("data_saver", dataSaverToggle.isSelected());
+            settings.put("language", languageFormat.getSelectionModel().getSelectedIndex());
 
         } catch (JSONException e) {
             Debug.error("Failed to generate new settings.", e);
@@ -233,6 +391,10 @@ public class Settings {
         return settings;
 
 
+    }
+
+    private String convertSwitchValue(boolean enabled) {
+        return enabled ? "ENABLED" : "DISABLED";
     }
 
     // Sends a web-request to the github to check the latest version available
@@ -259,7 +421,7 @@ public class Settings {
                         latestVersionContainer.getChildren().add(
                                 new ImageView(
                                     new Image(
-                                            Main.class.getResourceAsStream("resources/img/tick.png"),
+                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
                                             20,
                                             20,
                                             true,
@@ -283,7 +445,7 @@ public class Settings {
                                 latestVersion,
                                 new ImageView(
                                         new Image(
-                                                Main.class.getResourceAsStream("resources/img/warning.png"),
+                                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                                                 20,
                                                 20,
                                                 true,
@@ -348,7 +510,7 @@ public class Settings {
             if (!Files.exists(Paths.get(directory))) {
 
                 ImageView warningImage = new ImageView(new Image(
-                        Main.class.getResourceAsStream("resources/img/warning.png"),
+                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                         25,
                         25,
                         true,
@@ -378,7 +540,7 @@ public class Settings {
                 if (!checkerTempFile.mkdir() || !checkerTempFile.delete()) {
 
                     ImageView warningImage = new ImageView(new Image(
-                            Main.class.getResourceAsStream("resources/img/warning.png"),
+                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                             25,
                             25,
                             true,
@@ -441,11 +603,11 @@ public class Settings {
                 new ProcessBuilder(executablePath, "--version").start();
 
                 Platform.runLater(() -> {
-                    element.setText("Configured");
+                    element.setText(resourceBundle.getString("configuredSubtext"));
                     elementContainer.getChildren().add(
                             new ImageView(
                                     new Image(
-                                            Main.class.getResourceAsStream("resources/img/tick.png"),
+                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
                                             20,
                                             20,
                                             true,
@@ -456,14 +618,14 @@ public class Settings {
                 });
 
             } catch (IOException ignored) {
-                Debug.warn("Failed to verify executable: " + executablePath);
+                Debug.warn(String.format("Failed to verify executable: \"%s\"", executablePath));
 
                 Platform.runLater(() -> {
-                    element.setText("Not Configured");
+                    element.setText(resourceBundle.getString("notConfiguredSubtext"));
                     elementContainer.getChildren().add(
                             new ImageView(
                                 new Image(
-                                        Main.class.getResourceAsStream("resources/img/warning.png"),
+                                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                                         20,
                                         20,
                                         true,
@@ -477,9 +639,14 @@ public class Settings {
                         if (new File(System.getenv("ProgramFiles(X86)") + "/test/").mkdir() && new File(System.getenv("ProgramFiles(X86)") + "/test/").delete()) {
                             elementContainer.setCursor(Cursor.HAND);
                             Tooltip.install(elementContainer, new Tooltip("Click to configure"));
-                            elementContainer.setOnMouseClicked(e -> new manageInstall(executablePath, element, elementContainer));
-                        } else
-                            Tooltip.install(elementContainer, new Tooltip("Easy installation requires elevated permissions, restart the program and try again."));
+                            elementContainer.setOnMouseClicked(e ->
+                                    new manageInstall(
+                                        FilenameUtils.removeExtension(Paths.get(executablePath).getFileName().toString()),
+                                        element,
+                                        elementContainer
+                                    )
+                            );
+                        } else Tooltip.install(elementContainer, new Tooltip("Easy installation requires elevated permissions, restart the program and try again."));
                     }
                 });
             }
@@ -493,6 +660,9 @@ public class Settings {
             final HBox elementContainer;
 
             manageInstall(String executable, Label element, HBox elementContainer) {
+
+                System.out.println(executable);
+
                 this.executable = executable;
                 this.element = element;
                 this.elementContainer = elementContainer;
@@ -507,7 +677,7 @@ public class Settings {
                 x.setMaxSize(20, 20);
 
                 Platform.runLater(() -> {
-                    element.setText("Configuring...");
+                    element.setText(resourceBundle.getString("configuringSubtext"));
                     elementContainer.setOnMouseClicked(null);
                     elementContainer.setCursor(Cursor.DEFAULT);
                     elementContainer.getChildren().set(1, x);
@@ -517,12 +687,12 @@ public class Settings {
 
                     if (executable.equals("youtube-dl") ? Install.getYoutubeDl() : Install.getFFMPEG())
                         Platform.runLater(() -> {
-                            element.setText("Configured");
+                            element.setText(resourceBundle.getString("configuredSubtext"));
                             elementContainer.getChildren().set(
                                     1,
                                     new ImageView(
                                             new Image(
-                                                    Main.class.getResourceAsStream("resources/img/tick.png"),
+                                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
                                                     20,
                                                     20,
                                                     true,
@@ -534,12 +704,12 @@ public class Settings {
 
                     else
                         Platform.runLater(() -> {
-                            element.setText("Configure Manually");
+                            element.setText(resourceBundle.getString("configureManuallySubtext"));
                             elementContainer.getChildren().set(
                                     1,
                                     new ImageView(
                                             new Image(
-                                                    Main.class.getResourceAsStream("resources/img/warning.png"),
+                                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                                                     20,
                                                     20,
                                                     true,
@@ -551,12 +721,12 @@ public class Settings {
 
                 } catch (IOException e) {
                     Debug.warn("Failed to configure due to likely permission issues, despite that it should be blocked.");
-                    Platform.runLater(() -> {element.setText("Configure Manually");
+                    Platform.runLater(() -> {element.setText(resourceBundle.getString("configureManuallySubtext"));
                         elementContainer.getChildren().set(
                                 1,
                                 new ImageView(
                                         new Image(
-                                                Main.class.getResourceAsStream("resources/img/warning.png"),
+                                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
                                                 20,
                                                 20,
                                                 true,

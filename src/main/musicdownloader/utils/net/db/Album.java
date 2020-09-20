@@ -15,4 +15,6 @@ public interface Album {
 
     int getPlaytime();
 
+    boolean getIsLoaded();
+
 }

@@ -21,7 +21,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import musicdownloader.Main;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.net.db.sites.Allmusic;
@@ -34,17 +33,11 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 /*
 TODO
- - Losing connection mid-search generates a partially completed results table, don't let this happen
- - Continue testing connection drops: Control Panel\Network and Internet\Network Connections
- - Search data could also theoretically load songs since the request is already sent to save sending the requests again decreasing load speeds and web requests
- - For quicker general usability try and finish and let the youtube backend threads just complete the search results instead of making the user wait
- - Stop allowing duplicates in the autocomplete
+ - Network malarkey Control Panel\Network and Internet\Network Connections
  */
 public class Search {
 
@@ -67,32 +60,26 @@ public class Search {
     @FXML
     private ImageView settings;
 
-    // Timer timerRotate;
     private Timer hideErrorMessage;
 
     private generateAutocomplete autoCompleteThread;
     private boolean searchQueryActive = false;
+
+    private final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.search");
 
     @FXML
     private void initialize() {
 
         // Loading in CSS
         if (Model.getInstance().settings.getSettingBool("dark_theme")) {
-
-            root.getStylesheets().add(
-                    String.valueOf(Main.class.getResource("resources/css/dark.css"))
-            );
+            root.getStylesheets().add(String.valueOf(getClass().getClassLoader().getResource("resources/css/dark.css")));
 
             ColorAdjust invert = new ColorAdjust();
             invert.setBrightness(1);
 
             downloads.setEffect(invert);
             settings.setEffect(invert);
-        }
-        else
-            root.getStylesheets().add(
-                    String.valueOf(Main.class.getResource("resources/css/standard.css"))
-            );
+        } else root.getStylesheets().add(String.valueOf(getClass().getClassLoader().getResource("resources/css/standard.css")));
 
         Debug.trace("Initialized search view.");
     }
@@ -101,7 +88,10 @@ public class Search {
     private void downloadsView(Event event) {
         try {
 
-            FXMLLoader downloadsLoader = new FXMLLoader(Main.class.getResource("resources/fxml/downloads.fxml"));
+            FXMLLoader downloadsLoader = new FXMLLoader(
+                    getClass().getClassLoader().getResource("resources/fxml/downloads.fxml"),
+                    ResourceBundle.getBundle("resources.locale.downloads")
+            );
             Parent controllerView = downloadsLoader.load();
             Model.getInstance().download.setDownloadsView(downloadsLoader.getController());
 
@@ -131,10 +121,10 @@ public class Search {
                     .getScene()
                     .setRoot(
                             FXMLLoader.load(
-                                    Main.class.getResource("resources/fxml/settings.fxml")
+                                    Objects.requireNonNull(getClass().getClassLoader().getResource("resources/fxml/settings.fxml")),
+                                    ResourceBundle.getBundle("resources.locale.settings")
                             )
                     );
-
 
         } catch(IOException e) {
             Debug.error("Missing FXML File: Settings.fxml", e);
@@ -162,24 +152,20 @@ public class Search {
                 if (search.getText().length() > 1) {
 
                     // Starting the new search thread
-                    if (searchQueryActive) error("A Search is already in progress, please wait.");
+                    if (searchQueryActive) error(resourceBundle.getString("searchInProgressMessage"));
                     else {
                         loadingIcon.setVisible(true);
                         searchQueryActive = true;
-
                         Thread queryThread = new Thread(() -> {
-
                             Allmusic.Search searcher = new Allmusic.Search(search.getText() + e.getText());
 
                             try {
                                 long preQueryTime = Instant.now().toEpochMilli();
-                                long preBuilderTime = 0;
 
                                 searcher.query(Model.getInstance().settings.getSettingBool("data_saver"));
 
                                 // Can open each song page and find relevant album to display album art, and other information such as genre and year which isn't given in a default search
                                 if (!Model.getInstance().settings.getSettingBool("data_saver")) {
-                                    preBuilderTime = Instant.now().toEpochMilli();
                                     searcher.getSongExternalInformation();
                                 }
 
@@ -189,34 +175,36 @@ public class Search {
 
                                 long now = Instant.now().toEpochMilli();
 
-                                if (!Model.getInstance().settings.getSettingBool("data_saver") && searcher.getSongCount() > 0)
+                                if (!Model.getInstance().settings.getSettingBool("data_saver") && searcher.getSongCount() > 0) {
                                     Debug.trace(
                                             String.format(
-                                                    "Query completed in %.2f seconds, containing %s album%s %s song%s and (%.0fms per song average)",
+                                                    "Query completed in %.2f seconds, containing %s album(s) %s song(s)",
                                                     (double) (now - preQueryTime) / 1000,
                                                     searcher.getAlbumCount(),
-                                                    searcher.getAlbumCount() == 1 ? "" : "s",
-                                                    searcher.getSongCount(),
-                                                    searcher.getSongCount() == 1 ? "" : "s",
-                                                    (double) Math.round((double) (now - preBuilderTime) / searcher.getSongCount())
+                                                    searcher.getSongCount()
                                             )
                                     );
-
-                                try {
-                                    (
-                                            ((Node) e.getSource())
-                                                    .getScene()
-                                                    .getWindow()
-                                    )
-                                            .getScene()
-                                            .setRoot(
-                                                    FXMLLoader.load(
-                                                            Main.class.getResource("resources/fxml/results.fxml")
-                                                    )
-                                            );
-                                } catch (IOException er) {
-                                    Debug.error("FXML Error: Settings.fxml", er);
                                 }
+
+                                Platform.runLater(() -> {
+                                    try {
+                                        (
+                                                ((Node) e.getSource())
+                                                        .getScene()
+                                                        .getWindow()
+                                        )
+                                                .getScene()
+                                                .setRoot(
+                                                        FXMLLoader.load(
+                                                                Objects.requireNonNull(getClass().getClassLoader().getResource("resources/fxml/results.fxml")),
+                                                                ResourceBundle.getBundle("resources.locale.results")
+                                                        )
+                                                );
+                                    } catch (IOException er) {
+                                        Debug.error("FXML Error: Settings.fxml", er);
+                                    } catch (NullPointerException ignored) {}
+                                });
+
 
                             } catch (HttpStatusException ignored) {
 
@@ -224,7 +212,7 @@ public class Search {
                                     loadingIcon.setVisible(false);
                                     searchQueryActive = false;
 
-                                    error("No results found.");
+                                    error(resourceBundle.getString("noResultsFoundMessage"));
                                 });
 
                             } catch (IOException er) {
@@ -243,8 +231,7 @@ public class Search {
                         queryThread.start();
                     }
 
-                } else
-                    error("Query is too short, no results found.");
+                } else error(resourceBundle.getString("queryTooShortMessage"));
 
             }
 
@@ -282,8 +269,6 @@ public class Search {
             public void run() {
                 Platform.runLater(() -> {
                     errorMessage.setVisible(false);
-
-                    // TODO: Check & Replace with setAll
                     searchContainer.getChildren().remove(errorMessage);
                     searchContainer.getChildren().add(errorMessage);
                 });
@@ -420,7 +405,7 @@ public class Search {
                         searchContainer.getChildren().remove(errorMessage);
                         searchContainer.getChildren().add(2, errorMessage);
 
-                        errorMessage.setText("Failed to connect, check internet access, awaiting reconnection...");
+                        errorMessage.setText(resourceBundle.getString("failedToConnectMessage"));
                         errorMessage.setVisible(true);
                     });
 
@@ -435,7 +420,7 @@ public class Search {
                                 searchContainer.getChildren().remove(errorMessage);
                                 searchContainer.getChildren().add(errorMessage);
                             });
-                            Debug.trace("Connection reestablished.");
+                            Debug.trace(resourceBundle.getString("connectionEstablishedMessage"));
                             this.cancel();
 
                         }

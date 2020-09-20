@@ -1,4 +1,4 @@
-package musicdownloader.utils.fx;
+package musicdownloader.utils.ui;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -75,18 +75,6 @@ public class Result {
         view.setLeft(left);
     }
 
-    // TODO: Fallback use for downloads when album art doesn't exist
-    protected Result(Image albumArt, String title, String artist) {
-
-        sharedInitialisation(title, artist);
-
-        this.albumArt.setImage(albumArt);
-        imageContainer.getChildren().add(this.albumArt);
-
-        left.getChildren().setAll(imageContainer, leftTextContainer);
-        view.setLeft(left);
-    }
-
     private void sharedInitialisation(String title, String artist) {
 
         this.title.setText(title);
@@ -156,7 +144,7 @@ public class Result {
         try {
             albumArt.setImage(
                     new Image(
-                            Main.class.getResource("resources/img/song_default.png").toURI().toString(),
+                            getClass().getClassLoader().getResource("resources/img/song_default.png").toURI().toString(),
                             85,
                             85,
                             true,

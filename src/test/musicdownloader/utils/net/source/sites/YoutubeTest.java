@@ -1,5 +1,6 @@
 package musicdownloader.utils.net.source.sites;
 
+import org.json.JSONException;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -7,25 +8,24 @@ import java.io.IOException;
 class YoutubeTest {
 
     @Test
-    void load() {
-        Youtube youtubeRequest;
-
-        // Known working request
-        youtubeRequest = new Youtube("Pink Floyd - Speak To Me", 67);
+    void validRequest() {
         try {
+            YouTube youtubeRequest = new YouTube("Pink Floyd - Speak To Me", 67);
             youtubeRequest.load();
-            assert youtubeRequest.getResults().size() > 0;
-        } catch (IOException e) {
+            assert youtubeRequest.getResults().getJSONArray("primary").length() > 0 || youtubeRequest.getResults().getJSONArray("secondary").length() > 0;
+        } catch (IOException | JSONException e) {
+            assert false;
+        }
+    }
+
+    @Test
+    void invalidRequest() {
+        try {
+            YouTube youtubeRequest = new YouTube("%%%%%%%%", -1);
+            youtubeRequest.load();
+        } catch (IOException | JSONException e) {
             assert false;
         }
 
-        // Bad request
-        youtubeRequest = new Youtube("%%%%%%%%", -1);
-        try {
-            youtubeRequest.load();
-            assert  youtubeRequest.getResults().size() == 0;
-        } catch (IOException e) {
-            assert false;
-        }
     }
 }

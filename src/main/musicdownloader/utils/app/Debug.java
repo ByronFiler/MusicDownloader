@@ -1,5 +1,6 @@
 package musicdownloader.utils.app;
 
+import musicdownloader.model.Model;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
@@ -31,7 +32,7 @@ public class Debug {
 
     private static final List<String> errorTrace = new ArrayList<>();
 
-    private static final boolean useColours = !System.getProperty("os.name").startsWith("Windows");
+    private static final boolean useColours = true; //!System.getProperty("os.name").startsWith("Windows");
 
     @SuppressWarnings("unused")
     public synchronized void set(boolean state)
@@ -201,16 +202,17 @@ public class Debug {
             for (String[] fileData: new String[][]{
                     {"system_info.txt", systemInformation},
                     {"MusicDownloader.log", String.join("\n", errorTrace)},
-                    {"error.txt", sw.toString()}
+                    {"error.txt", sw.toString()},
+                    {"download.json", Model.getInstance().download.getDownloadObject().toString()},
+                    {"queue.json",  Model.getInstance().download.getDownloadQueue().toString()},
+                    {"history.json", Model.getInstance().download.getDownloadHistory().toString()}
             }) {
                 TarArchiveEntry entry = new TarArchiveEntry(fileData[0]);
                 entry.setSize(fileData[1].getBytes().length);
 
                 tarArchive.putArchiveEntry(entry);
 
-                BufferedInputStream bis = new BufferedInputStream(
-                        new ByteArrayInputStream(fileData[1].getBytes())
-                );
+                BufferedInputStream bis = new BufferedInputStream(new ByteArrayInputStream(fileData[1].getBytes()));
 
                 IOUtils.copy(bis, tarArchive);
                 tarArchive.closeArchiveEntry();

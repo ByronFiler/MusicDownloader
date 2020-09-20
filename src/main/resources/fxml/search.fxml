@@ -59,9 +59,9 @@
                <BorderPane.margin>
                   <Insets />
                </BorderPane.margin>
-               <Label styleClass="hero_text" text="Music Downloader" />
+               <Label styleClass="hero_text" text="%hero" />
                <HBox minWidth="40.0" prefWidth="412.0" spacing="5.0">
-                  <TextField fx:id="search" alignment="BASELINE_LEFT" minHeight="40.0" nodeOrientation="LEFT_TO_RIGHT" onKeyPressed="#searchRequest" prefWidth="480.0" promptText="Search for music." styleClass="searchBox">
+                  <TextField fx:id="search" alignment="BASELINE_LEFT" minHeight="40.0" nodeOrientation="LEFT_TO_RIGHT" onKeyPressed="#searchRequest" prefWidth="480.0" promptText="%prompt" styleClass="searchBox">
                      <opaqueInsets>
                         <Insets />
                      </opaqueInsets>
@@ -83,7 +83,7 @@
                      <Insets />
                   </VBox.margin>
                </ListView>
-               <Text fx:id="errorMessage" fill="RED" strokeType="OUTSIDE" strokeWidth="0.0" text="Error Message" textAlignment="CENTER" visible="false" wrappingWidth="400.0">
+               <Text fx:id="errorMessage" fill="RED" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="CENTER" visible="false" wrappingWidth="400.0">
                   <font>
                      <Font name="Arial" size="16.0" />
                   </font>

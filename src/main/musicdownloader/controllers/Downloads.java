@@ -24,11 +24,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
-import musicdownloader.Main;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.fx.Result;
+import musicdownloader.utils.ui.Result;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,23 +41,34 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.ResourceBundle;
 
 public class Downloads {
 
-    @FXML AnchorPane root;
-    @FXML VBox viewContainer;
+    @FXML
+    private AnchorPane root;
+    @FXML
+    private VBox viewContainer;
 
-    @FXML Label eventViewTitle;
-    @FXML ComboBox<String> eventViewSelector;
-    @FXML ListView<BorderPane> eventsViewTable;
+    @FXML
+    private Label eventViewTitle;
+    @FXML
+    private ComboBox<String> eventViewSelector;
+    @FXML
+    private ListView<BorderPane> eventsViewTable;
 
-    @FXML ImageView albumViewSelector;
-    @FXML ImageView songViewSelector;
+    @FXML
+    private ImageView albumViewSelector;
+    @FXML
+    private ImageView songViewSelector;
 
-    @FXML BorderPane albumViewSelectorWrapper;
-    @FXML BorderPane songViewSelectorWrapper;
+    @FXML
+    private BorderPane albumViewSelectorWrapper;
+    @FXML
+    private BorderPane songViewSelectorWrapper;
 
-    // Views should all be built from current, scheduled and history controllers, where each getView methods to generate
+    private final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.downloads");
 
     private final ArrayList<CurrentlyDownloadingResultController> currentlyDownloading = new ArrayList<>();
     private final ArrayList<QueuedResultController> queued = new ArrayList<>();
@@ -71,21 +81,21 @@ public class Downloads {
 
             if (Model.getInstance().download.getDownloadObject().has("metadata")) {
                 currentlyDownloading.add(new CurrentlyDownloadingResultController(Model.getInstance().download.getDownloadObject()));
-                eventViewSelector.getItems().add("Currently Downloading");
+                eventViewSelector.getItems().add(resourceBundle.getString("currentlyDownloadingItem"));
             }
 
             JSONArray queued = Model.getInstance().download.getDownloadQueue();
             if (queued.length() > 0) {
                 for (int i = 0; i < (queued.length()); i++)
                     this.queued.add(new QueuedResultController(queued.getJSONObject(i)));
-                eventViewSelector.getItems().add("Download Queue");
+                eventViewSelector.getItems().add(resourceBundle.getString("downloadQueueItem"));
             }
 
             JSONArray historiesJson = Model.getInstance().download.getDownloadHistory();
             if (historiesJson.length() > 0) {
                 for (int i = 0; i < (historiesJson.length()); i++)
                     this.histories.add(new HistoryResultController(historiesJson.getJSONObject(i)));
-                eventViewSelector.getItems().add("Download History");
+                eventViewSelector.getItems().add(resourceBundle.getString("downloadHistoryItem"));
             }
 
             switch (eventViewSelector.getItems().size()) {
@@ -101,10 +111,9 @@ public class Downloads {
                     break;
 
                 default:
-                    eventViewSelector.getItems().add(0, "All");
+                    eventViewSelector.getItems().add(0, resourceBundle.getString("allItem"));
                     eventViewSelector.getSelectionModel().select(0);
-                    eventViewTitle.setText("All");
-
+                    eventViewTitle.setText(resourceBundle.getString("allItem"));
             }
 
         } catch (JSONException e) {
@@ -112,14 +121,13 @@ public class Downloads {
         }
 
         // Handle switcher & title
-
         if (Model.getInstance().settings.getSettingBool("dark_theme")) {
-            root.getStylesheets().add(String.valueOf(Main.class.getResource("resources/css/dark.css")));
+            root.getStylesheets().add(String.valueOf(getClass().getClassLoader().getResource("resources/css/dark.css")));
             albumViewSelector.setEffect(new ColorAdjust(0, 0, 1, 0));
             songViewSelector.setEffect(new ColorAdjust(0, 0, 1, 0));
         }
 
-        else root.getStylesheets().add(String.valueOf(Main.class.getResource("resources/css/standard.css")));
+        else root.getStylesheets().add(String.valueOf(getClass().getClassLoader().getResource("resources/css/standard.css")));
 
         if (Model.getInstance().download.getDownloadObject().has("metadata") || histories.size() > 0) albumsView();
         else defaultView();
@@ -141,7 +149,8 @@ public class Downloads {
                     .getScene()
                     .setRoot(
                             FXMLLoader.load(
-                                    Main.class.getResource("resources/fxml/search.fxml")
+                                    Objects.requireNonNull(getClass().getClassLoader().getResource("resources/fxml/search.fxml")),
+                                    ResourceBundle.getBundle("resources.locale.search")
                             )
                     );
         } catch(IOException e) {
@@ -154,38 +163,26 @@ public class Downloads {
     public void albumsView() {
 
         String selectedItem = eventViewSelector.getSelectionModel().getSelectedItem();
-
-        if (selectedItem == null) {
+        if (selectedItem == null || selectedItem.equals(resourceBundle.getString("allItem"))) {
 
             eventsViewTable.getItems().setAll(currentlyDownloading.stream().map(CurrentlyDownloadingResultController::getAlbumView).toArray(BorderPane[]::new));
             eventsViewTable.getItems().addAll(queued.stream().map(QueuedResultController::getAlbumView).toArray(BorderPane[]::new));
             eventsViewTable.getItems().addAll(histories.stream().map(HistoryResultController::getAlbumView).toArray(BorderPane[]::new));
 
-        } else {
+        } else if (selectedItem.equals(resourceBundle.getString("currentlyDownloadingItem"))) {
 
-            eventViewTitle.setText(selectedItem);
+            eventsViewTable.getItems().setAll(currentlyDownloading.stream().map(CurrentlyDownloadingResultController::getAlbumView).toArray(BorderPane[]::new));
 
-            switch (eventViewSelector.getSelectionModel().getSelectedItem()) {
+        } else if (selectedItem.equals(resourceBundle.getString("downloadQueueItem"))) {
 
-                case "Currently Downloading":
-                    eventsViewTable.getItems().setAll(currentlyDownloading.stream().map(CurrentlyDownloadingResultController::getAlbumView).toArray(BorderPane[]::new));
-                    break;
+            eventsViewTable.getItems().setAll(queued.stream().map(QueuedResultController::getAlbumView).toArray(BorderPane[]::new));
 
-                case "Download Queue":
-                    eventsViewTable.getItems().setAll(queued.stream().map(QueuedResultController::getAlbumView).toArray(BorderPane[]::new));
-                    break;
+        } else if (selectedItem.equals(resourceBundle.getString("downloadHistoryItem"))) {
 
-                case "Download History":
-                    eventsViewTable.getItems().setAll(histories.stream().map(HistoryResultController::getAlbumView).toArray(BorderPane[]::new));
-                    break;
+            eventsViewTable.getItems().setAll(histories.stream().map(HistoryResultController::getAlbumView).toArray(BorderPane[]::new));
 
-                case "All":
-                    eventsViewTable.getItems().setAll(currentlyDownloading.stream().map(CurrentlyDownloadingResultController::getAlbumView).toArray(BorderPane[]::new));
-                    eventsViewTable.getItems().addAll(queued.stream().map(QueuedResultController::getAlbumView).toArray(BorderPane[]::new));
-                    eventsViewTable.getItems().addAll(histories.stream().map(HistoryResultController::getAlbumView).toArray(BorderPane[]::new));
-                    break;
-            }
         }
+
 
         albumViewSelectorWrapper.getStyleClass().setAll("underline2");
         songViewSelectorWrapper.getStyleClass().setAll();
@@ -194,43 +191,28 @@ public class Downloads {
     @FXML
     public void songsView() {
         String selectedItem = eventViewSelector.getSelectionModel().getSelectedItem();
-
-        if (selectedItem == null) {
+        if (selectedItem == null || selectedItem.equals(resourceBundle.getString("allItem"))) {
 
             eventsViewTable.getItems().clear();
             Arrays.stream(currentlyDownloading.stream().map(CurrentlyDownloadingResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
             Arrays.stream(queued.stream().map(QueuedResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
             Arrays.stream(histories.stream().map(HistoryResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
 
-        } else {
+        } else if (selectedItem.equals(resourceBundle.getString("currentlyDownloadingItem"))) {
 
-            switch (eventViewSelector.getSelectionModel().getSelectedItem()) {
+            eventsViewTable.getItems().clear();
+            Arrays.stream(currentlyDownloading.stream().map(CurrentlyDownloadingResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
 
-                case "Currently Downloading":
-                    eventsViewTable.getItems().clear();
-                    Arrays.stream(currentlyDownloading.stream().map(CurrentlyDownloadingResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
-                    break;
+        } else if (selectedItem.equals(resourceBundle.getString("downloadQueueItem"))) {
 
-                case "Download Queue":
-                    eventsViewTable.getItems().clear();
-                    Arrays.stream(queued.stream().map(QueuedResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
-                    break;
+            eventsViewTable.getItems().clear();
+            Arrays.stream(queued.stream().map(QueuedResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
 
-                case "Download History":
-                    eventsViewTable.getItems().clear();
-                    Arrays.stream(histories.stream().map(HistoryResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
-                    break;
 
-                case "All":
-                    eventsViewTable.getItems().clear();
-                    Arrays.stream(currentlyDownloading.stream().map(CurrentlyDownloadingResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
-                    Arrays.stream(queued.stream().map(QueuedResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
-                    Arrays.stream(histories.stream().map(HistoryResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
-                    break;
+        } else if (selectedItem.equals(resourceBundle.getString("downloadHistoryItem"))) {
 
-                default:
-                    eventViewTitle.setText(eventViewSelector.getSelectionModel().getSelectedItem());
-            }
+            eventsViewTable.getItems().clear();
+            Arrays.stream(histories.stream().map(HistoryResultController::getSongsView).toArray(BorderPane[][]::new)).forEach(e -> eventsViewTable.getItems().addAll(e));
 
         }
 
@@ -256,12 +238,12 @@ public class Downloads {
         viewContainer.getChildren().clear();
         viewContainer.setAlignment(Pos.CENTER);
 
-        Label defaultMessage = new Label("Files you download appear here");
+        Label defaultMessage = new Label(resourceBundle.getString("defaultViewMessage"));
         defaultMessage.getStyleClass().add("sub_title1");
 
         ImageView iconImage = new ImageView(
                 new Image(
-                        Main.class.getResourceAsStream("resources/img/icon.png"),
+                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/icon.png")),
                         50,
                         50,
                         true,
@@ -313,13 +295,11 @@ public class Downloads {
                 else songsView();
 
                 if (queued.size() == 0) {
-                    eventViewSelector.getItems().remove("Download Queue");
+                    eventViewSelector.getItems().remove(resourceBundle.getString("downloadQueueItem"));
 
                     if (eventViewSelector.getItems().size() == 2) {
-
                         eventViewSelector.setVisible(false);
-                        eventViewTitle.setText("Currently Downloading");
-
+                        eventViewTitle.setText(resourceBundle.getString("currentlyDownloadingItem"));
                     }
 
                 }
@@ -338,12 +318,9 @@ public class Downloads {
         public CurrentlyDownloadingResultController(JSONObject downloadObject) throws JSONException {
 
             this.downloadObject = downloadObject;
-
             this.album = new CurrentlyDownloadingResult(downloadObject.getJSONObject("metadata").getString("album"));
             for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++)
-                songs.add(
-                        new CurrentlyDownloadingResult(downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"))
-                );
+                songs.add(new CurrentlyDownloadingResult(downloadObject.getJSONArray("songs").getJSONObject(i).getString("title")));
 
             int completed = 0;
             for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
@@ -406,7 +383,7 @@ public class Downloads {
                             right.getChildren().setAll(
                                     new ImageView(
                                             new Image(
-                                                    Main.class.getResource("resources/img/tick.png").toURI().toString(),
+                                                    Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/tick.png")).toURI().toString(),
                                                     25,
                                                     25,
                                                     true,
@@ -467,7 +444,7 @@ public class Downloads {
                 try {
                     ImageView scheduledIcon = new ImageView(
                             new Image(
-                                    Main.class.getResource("resources/img/scheduled.png").toURI().toString(),
+                                    Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/scheduled.png")).toURI().toString(),
                                     25,
                                     25,
                                     true,
@@ -485,10 +462,10 @@ public class Downloads {
                     right.getChildren().setAll(scheduledIcon);
                     view.setRight(right);
 
-                    MenuItem cancelSong = new MenuItem("Cancel Song");
+                    MenuItem cancelSong = new MenuItem(resourceBundle.getString("cancelSongContext"));
                     cancelSong.setOnAction(this::cancelSong);
 
-                    MenuItem cancel = new MenuItem("Cancel");
+                    MenuItem cancel = new MenuItem(resourceBundle.getString("cancelContext"));
                     cancel.setOnAction(this::cancel);
 
                     if (isAlbum) menu.getItems().addAll(cancel);
@@ -590,9 +567,6 @@ public class Downloads {
                         )
                 ) ? 1 : 0;
 
-                // TODO: TESTING, DELETE
-                // checkedFile = Math.random() > 0.5 ? 1 : 0;
-
                 songs.add(new HistoryResult(title, false, checkedFile));
 
                 existingFiles += checkedFile;
@@ -602,7 +576,15 @@ public class Downloads {
 
         }
 
-        private class HistoryResult extends Result {
+        public BorderPane[] getSongsView() {
+            return songs.stream().map(Result::getView).toArray(BorderPane[]::new);
+        }
+
+        public BorderPane getAlbumView() {
+            return album.getView();
+        }
+
+        protected class HistoryResult extends Result {
 
             private final Line crossLine0 = new Line(20, 0, 0, 20);
             private final Line crossLine1 = new Line(20, 20, 0, 0);
@@ -612,12 +594,10 @@ public class Downloads {
             private int filesExist;
 
             private final MenuItem deleteLocal;
-            private final MenuItem deleteBoth = new MenuItem("Delete Both");
-
-            private final MenuItem reacquireFiles = new MenuItem("Download Missing Files");
+            private final MenuItem deleteBoth = new MenuItem(resourceBundle.getString("deleteBothContext"));
+            private final MenuItem reacquireFiles = new MenuItem(resourceBundle.getString("redownloadMissingFilesContext"));
 
             protected int missingFiles;
-
             public HistoryResult(String resultTitle, boolean isAlbum, int filesExist) throws JSONException {
 
                 super(
@@ -635,8 +615,7 @@ public class Downloads {
                 this.isAlbum = isAlbum;
                 this.resultTitle = resultTitle;
                 this.filesExist = filesExist;
-
-                this.deleteLocal = new MenuItem("Delete File" + (isAlbum ? "s" : ""));
+                this.deleteLocal = new MenuItem(String.format(resourceBundle.getString("deleteFileContext"), isAlbum ? "s" : ""));
 
                 // Generate Cross
                 crossLine0.getStyleClass().add("cross-line");
@@ -668,9 +647,8 @@ public class Downloads {
                     if (isAlbum && filesExist < historyItem.getJSONArray("songs").length()) {
                         setSubtext(
                                 String.format(
-                                        "%s File%s Moved or Deleted.",
-                                        (missingFiles = historyItem.getJSONArray("songs").length() - filesExist),
-                                        missingFiles == 1 ? "" : "s"
+                                        resourceBundle.getString(resourceBundle.getString(missingFiles == 1 ? "filesMovedOrDeletedSingular" : "filesMovedOrDeletedPlural")),
+                                        (missingFiles = historyItem.getJSONArray("songs").length() - filesExist)
                                 )
                         );
                     }
@@ -678,7 +656,7 @@ public class Downloads {
                 }
 
                 // Generate Context Menu
-                MenuItem deleteHistory = new MenuItem("Delete from History");
+                MenuItem deleteHistory = new MenuItem(resourceBundle.getString("deleteFromHistoryContext"));
                 if (isAlbum) deleteHistory.setOnAction(e -> deleteAlbumHistory());
                 else deleteHistory.setOnAction(e -> deleteSongHistory());
 
@@ -739,6 +717,17 @@ public class Downloads {
                     Debug.error("Failed to parse JSON to delete history.", e);
                 }
 
+                if (histories.size() == 0) {
+                    eventViewSelector.getItems().remove(resourceBundle.getString("downloadHistoryItem"));
+
+                    if (eventViewSelector.getItems().size() == 2) {
+                        eventViewSelector.getItems().remove(resourceBundle.getString("allItem"));
+                        eventViewSelector.setVisible(false);
+                        eventViewTitle.setText(eventViewSelector.getItems().get(0));
+                    } else if (currentlyDownloading.size() == 0) defaultView();
+
+                }
+
             }
 
             private synchronized void selectCross(MouseEvent e) {
@@ -780,9 +769,8 @@ public class Downloads {
                             album.setFilesExist(album.getFilesExist() - 1);
                             album.setSubtext(
                                     String.format(
-                                            "%s File%s Moved or Deleted.",
-                                            (album.missingFiles = historyItem.getJSONArray("songs").length() - album.filesExist),
-                                            album.missingFiles == 1 ? "" : "s"
+                                            resourceBundle.getString(album.missingFiles == 1 ? "filesMovedOrDeletedSingular" : "filesMovedOrDeletedPlural"),
+                                            (album.missingFiles = historyItem.getJSONArray("songs").length() - album.filesExist)
                                     )
                             );
                         }
@@ -792,11 +780,8 @@ public class Downloads {
                         Debug.warn("File was detected as existing but failed to be opened.");
                         markUnOpenable();
 
-                        // Rebuild song download histories
-                        // Internal call to redrawn songs and call method to set subtext to inform they don't exist
-
                     } catch (JSONException e) {
-                        e.printStackTrace();
+                        Debug.error("Failed to parse JSON to open file.", e);
                     } finally {
                         event.consume();
                     }
@@ -865,14 +850,6 @@ public class Downloads {
             protected void setFilesExist(int filesExist) {
                 this.filesExist = filesExist;
             }
-        }
-
-        public BorderPane[] getSongsView() {
-            return songs.stream().map(Result::getView).toArray(BorderPane[]::new);
-        }
-
-        public BorderPane getAlbumView() {
-            return album.getView();
         }
     }
 }
