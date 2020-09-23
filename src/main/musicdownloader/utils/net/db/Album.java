@@ -11,7 +11,7 @@ public interface Album {
 
     String getAlbum();
 
-    ArrayList<Allmusic.album.song> getSongs();
+    ArrayList<Allmusic.Album.song> getSongs();
 
     int getPlaytime();
 

@@ -100,10 +100,6 @@ public class Settings {
     @FXML
     private ToggleSwitch dataSaverToggle;
 
-    // Confirm / Cancel
-    @FXML
-    private Button cancel;
-
     @FXML
     private Label reset;
 
@@ -121,12 +117,9 @@ public class Settings {
         saveAlbumArt.getItems().add(settingsLocale.getString("albumsOnlyOption"));
         saveAlbumArt.getItems().add(settingsLocale.getString("neverOption"));
 
-        for (Locale availableLocale: supportedLocals) {
-
-            language.getItems().add(availableLocale.getDisplayLanguage());
-
-        }
-
+        language.getItems().setAll(
+                supportedLocals.stream().map(availableLocale -> availableLocale.getDisplayLanguage().substring(0, 1).toUpperCase() + availableLocale.getDisplayLanguage().substring(1)).toArray(String[]::new)
+        );
         language.getSelectionModel().select(supportedLocals.indexOf(new Locale(Locale.getDefault().getLanguage())));
 
         // Information
@@ -232,9 +225,9 @@ public class Settings {
 
         } else if ((e.getSource()).getClass().equals(ComboBox.class)) {
 
+            /*
             ComboBox<String> modifiedSetting = (ComboBox<String>) e.getSource();
 
-            /*
             Debug.trace(
                     String.format(
                             settingsFormatString,

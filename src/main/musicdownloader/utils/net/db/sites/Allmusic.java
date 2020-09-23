@@ -3,8 +3,6 @@ package musicdownloader.utils.net.db.sites;
 import javafx.scene.layout.BorderPane;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.net.db.Album;
-import musicdownloader.utils.net.db.Song;
 import musicdownloader.utils.ui.Result;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -61,7 +59,7 @@ public class Allmusic {
                             threadsToComplete.getAndIncrement();
 
                             try {
-                                song songProcessor = new song(songs.getJSONObject(finalI).getJSONObject("data").getString("allmusicSongId"));
+                                Song songProcessor = new Song(songs.getJSONObject(finalI).getJSONObject("data").getString("allmusicSongId"));
                                 songProcessor.load();
 
                                 songs.getJSONObject(finalI).getJSONObject("data").put("art", songProcessor.getAlbumArt());
@@ -235,14 +233,14 @@ public class Allmusic {
         }
     }
 
-    public static class song implements Song {
+    public static class Song implements musicdownloader.utils.net.db.Song {
 
         public static final String subdirectory = "song/";
 
         private final String pageUrl;
         private Document doc = null;
 
-        public song(String id) {
+        public Song(String id) {
             this.pageUrl = baseDomain + subdirectory + id;
         }
 
@@ -316,7 +314,7 @@ public class Allmusic {
         }
     }
 
-    public static class album implements Album {
+    public static class Album implements musicdownloader.utils.net.db.Album {
 
         public static final String subdirectory = "album/";
 
@@ -325,7 +323,7 @@ public class Allmusic {
         private final ArrayList<song> songs = new ArrayList<>();
         private boolean isLoaded = false;
 
-        public album(String identifier) {
+        public Album(String identifier) {
             this.pageUrl = baseDomain + subdirectory + identifier;
         }
 

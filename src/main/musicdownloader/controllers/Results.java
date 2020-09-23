@@ -475,7 +475,7 @@ public class Results {
             return id;
         }
 
-        private JSONObject parseJsonFromSong(JSONArray collectiveDownloadsObjects, Allmusic.album albumProcessor, Allmusic.album.song song) throws JSONException {
+        private JSONObject parseJsonFromSong(JSONArray collectiveDownloadsObjects, Allmusic.Album albumProcessor, Allmusic.Album.song song) throws JSONException {
             JSONObject jSong = new JSONObject();
 
             jSong.put("position", albumProcessor.getSongs().indexOf(song) + 1);
@@ -536,7 +536,7 @@ public class Results {
                 } else {
 
                     // Additional connection required to get album id & metadata
-                    Allmusic.song songTraceLinkLoader = new Allmusic.song(basicData.getJSONObject("view").getString("allmusicSongId"));
+                    Allmusic.Song songTraceLinkLoader = new Allmusic.Song(basicData.getJSONObject("view").getString("allmusicSongId"));
                     songTraceLinkLoader.load();
 
                     metadata.put("art", songTraceLinkLoader.getAlbumArt());
@@ -560,7 +560,7 @@ public class Results {
                 }
 
                 // Extract relevant data from the album
-                Allmusic.album albumProcessor = new Allmusic.album(basicData.getJSONObject("data").getString("allmusicAlbumId"));
+                Allmusic.Album albumProcessor = new Allmusic.Album(basicData.getJSONObject("data").getString("allmusicAlbumId"));
                 albumProcessor.load();
 
                 requiredThreadsCompleted = albumProcessor.getSongs().size();
@@ -576,7 +576,7 @@ public class Results {
                 metadata.put("format", Resources.songReferences.get(Model.getInstance().settings.getSettingInt("music_format")));
 
                 if (basicData.getJSONObject("data").getBoolean("album")) {
-                    for (Allmusic.album.song song : albumProcessor.getSongs()) {
+                    for (Allmusic.Album.song song : albumProcessor.getSongs()) {
                         songs.put(
                                 parseJsonFromSong(
                                         collectiveDownloadsObjects,
@@ -592,7 +592,7 @@ public class Results {
                     }
 
                 } else {
-                    Allmusic.album.song song = albumProcessor
+                    Allmusic.Album.song song = albumProcessor
                             .getSongs()
                             .get(
                                     Arrays.asList(
@@ -600,7 +600,7 @@ public class Results {
                                                     .getSongs()
                                                     .stream()
                                                     .map(
-                                                            Allmusic.album.song::getTitle
+                                                            Allmusic.Album.song::getTitle
                                                     ).toArray()
                                     ).indexOf(
                                             basicData
@@ -722,7 +722,7 @@ public class Results {
         private MenuItem getAlbumSongs;
         private MenuItem hideAlbumSongs;
 
-        private Allmusic.album albumParser;
+        private Allmusic.Album albumParser;
         private final ArrayList<MediaController> internalMediaControllers = new ArrayList<>();
 
         public searchResult (JSONObject data) throws JSONException {
@@ -768,7 +768,7 @@ public class Results {
 
                             } else {
 
-                                Allmusic.song songParser = new Allmusic.song(data.getJSONObject("data").getString(
+                                Allmusic.Song songParser = new Allmusic.Song(data.getJSONObject("data").getString(
                                         data.getJSONObject("data").getBoolean("album") ?
                                                 "allmusicAlbumId" : "allmusicSongId"
                                 ));
@@ -803,7 +803,7 @@ public class Results {
 
             if (data.getJSONObject("data").getBoolean("album")) {
 
-                albumParser = new Allmusic.album(data.getJSONObject("data").getString("allmusicAlbumId"));
+                albumParser = new Allmusic.Album(data.getJSONObject("data").getString("allmusicAlbumId"));
 
                 hideAlbumSongs = new MenuItem(resourceBundle.getString("hideSongsItem"));
                 getAlbumSongs = new MenuItem(resourceBundle.getString("showSongsItem"));
@@ -847,7 +847,7 @@ public class Results {
         }
 
         private void generateMediaControllers(VBox songResults) {
-            for (Allmusic.album.song song: albumParser.getSongs()) {
+            for (Allmusic.Album.song song: albumParser.getSongs()) {
                 MediaController songController = new MediaController(song);
                 mediaPlayers.add(songController);
                 internalMediaControllers.add(songController);
@@ -864,7 +864,7 @@ public class Results {
         protected class MediaController {
 
             private BorderPane view;
-            private final Allmusic.album.song song;
+            private final Allmusic.Album.song song;
             private final MediaPlayer mp;
 
             private final HBox playIconContainer = new HBox();
@@ -878,7 +878,7 @@ public class Results {
                     )
             );
 
-            public MediaController(Allmusic.album.song song) {
+            public MediaController(Allmusic.Album.song song) {
                 this.song = song;
                 this.mp = new MediaPlayer(
                         new Media(

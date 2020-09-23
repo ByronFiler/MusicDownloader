@@ -615,7 +615,7 @@ public class Downloads {
                 this.isAlbum = isAlbum;
                 this.resultTitle = resultTitle;
                 this.filesExist = filesExist;
-                this.deleteLocal = new MenuItem(String.format(resourceBundle.getString("deleteFileContext"), isAlbum ? "s" : ""));
+                this.deleteLocal = new MenuItem(resourceBundle.getString(isAlbum ? "deleteFilesPlural": "deleteFile"));
 
                 // Generate Cross
                 crossLine0.getStyleClass().add("cross-line");

@@ -18,7 +18,7 @@
          <bottom>
             <BorderPane prefHeight="40.0" BorderPane.alignment="CENTER">
                <right>
-                  <Button fx:id="cancel" mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="80.0" text="%backButton" BorderPane.alignment="CENTER">
+                  <Button mnemonicParsing="false" onMouseClicked="#searchView" prefHeight="40.0" prefWidth="80.0" text="%backButton" BorderPane.alignment="CENTER">
                      <BorderPane.margin>
                         <Insets right="10.0" />
                      </BorderPane.margin>
