@@ -46,6 +46,8 @@ public class Main extends Application {
     }
 
     private void handleClose(WindowEvent event) {
+
+        final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.notification");
         Model.getInstance().view.setStageClosed(true);
         Debug.trace("Primary stage closed.");
         if (!Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString())) {
@@ -58,8 +60,8 @@ public class Main extends Application {
                 }
 
                 new Notification(
-                        String.format("Downloading \"%s\" in Background...", Model.getInstance().download.getDownloadObject().getJSONObject("metadata").getString("album")),
-                        String.format("%s song%s remaining.", incompleteSongs, incompleteSongs == 1 ? "" : "s"),
+                        String.format(resourceBundle.getString("backgroundDownloadMessage"), Model.getInstance().download.getDownloadObject().getJSONObject("metadata").getString("album")),
+                        String.format(resourceBundle.getString(incompleteSongs == 1 ? "songsRemainingSingular" : "songsRemainingPlural"), incompleteSongs),
                         null,
                         TrayIcon.MessageType.INFO
                 );

@@ -44,7 +44,7 @@ public class YouTube extends Site {
             try {
                 json = new JSONObject(jsonConversion);
             } catch (JSONException e) {
-                e.printStackTrace();
+                Debug.error("Failed to parse JSON response.", e);
             }
 
             // Parsing deep JSON to get relevant data
