@@ -1,12 +1,16 @@
 package musicdownloader.controllers;
 
+import com.google.common.base.CaseFormat;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -103,7 +107,7 @@ public class Settings {
     @FXML
     private Label reset;
 
-    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.settings");
+    private final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.settings");
 
     @FXML
     protected void initialize() {
@@ -124,7 +128,7 @@ public class Settings {
 
         // Information
         if (Model.getInstance().settings.getVersion() == null) {
-            version.setText("Unknown");
+            version.setText(resourceBundle.getString("unknownMessage"));
             versionContainer.getChildren().add(
                     new ImageView(
                             new Image(
@@ -151,7 +155,7 @@ public class Settings {
             );
         }
 
-        version.setText(Model.getInstance().settings.getVersion() == null ? "Unknown" : Model.getInstance().settings.getVersion());
+        version.setText(Model.getInstance().settings.getVersion() == null ? resourceBundle.getString("unknownMessage") : Model.getInstance().settings.getVersion());
         new getLatestVersion(false);
         new verifyExecutable(Resources.getInstance().getYoutubeDlExecutable(), youtubeDl, youtubeDlContainer);
         new verifyExecutable(Resources.getInstance().getFfmpegExecutable(), ffmpeg, ffmpegContainer);
@@ -225,8 +229,9 @@ public class Settings {
 
         } else if ((e.getSource()).getClass().equals(ComboBox.class)) {
 
-            /*
+
             ComboBox<String> modifiedSetting = (ComboBox<String>) e.getSource();
+
 
             Debug.trace(
                     String.format(
@@ -237,7 +242,7 @@ public class Settings {
                                             StringUtils.SPACE
                                     )
                             ),
-                            (modifiedSetting.getId().equals("musicFormat") ? songReferences : albumArtOptions).get(
+                            (modifiedSetting.getItems()).get(
                                     Model.getInstance().settings.getSettingInt(
                                             CaseFormat.UPPER_CAMEL.to(
                                                     CaseFormat.LOWER_UNDERSCORE,
@@ -248,8 +253,6 @@ public class Settings {
                             modifiedSetting.getSelectionModel().getSelectedItem()
                     )
             );
-
-             */
 
         } else if ((e.getSource()).getClass().equals(Label.class)) {
 
@@ -463,7 +466,7 @@ public class Settings {
                 if (!suppressWarning) {
                     Debug.warn("Failed to get latest version, connection issue.");
                     Platform.runLater(() -> {
-                        latestVersion.setText("Unknown");
+                        latestVersion.setText(resourceBundle.getString("unknownMessage"));
                         latestVersionContainer.getChildren().clear();
                         latestVersionContainer.getChildren().addAll(
                                 latestVersion,
@@ -604,13 +607,14 @@ public class Settings {
     }
 
     // Attempts to test an execution
-    static class verifyExecutable implements Runnable {
+    class verifyExecutable implements Runnable {
 
         private final String executablePath;
         private final Label element;
         private final HBox elementContainer;
 
         verifyExecutable(String executablePath, Label element, HBox elementContainer) {
+
             this.executablePath = executablePath;
             this.element = element;
             this.elementContainer = elementContainer;
@@ -620,6 +624,7 @@ public class Settings {
             thread.start();
         }
 
+        @Override
         public void run() {
 
             try {
@@ -677,7 +682,7 @@ public class Settings {
 
         }
 
-        private static class manageInstall implements Runnable {
+        private class manageInstall implements Runnable {
 
             final String executable;
             final Label element;
