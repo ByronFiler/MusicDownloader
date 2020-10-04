@@ -10,11 +10,12 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 <?import org.controlsfx.control.ToggleSwitch?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="musicdownloader.controllers.Settings">
-   <StackPane prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-      <BorderPane fx:id="root" prefHeight="710.0" prefWidth="594.0" styleClass="root">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="850.0" prefWidth="638.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="musicdownloader.controllers.Settings">
+   <StackPane prefHeight="850.0" prefWidth="638.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <BorderPane fx:id="root" prefHeight="800.0" prefWidth="600.0" styleClass="root">
          <bottom>
             <BorderPane prefHeight="40.0" BorderPane.alignment="CENTER">
                <right>
@@ -29,8 +30,8 @@
                </BorderPane.margin>
             </BorderPane>
          </bottom>
-         <top>
-            <VBox minWidth="0.0" pickOnBounds="false" prefHeight="650.0" prefWidth="323.0" spacing="20.0" styleClass="result" BorderPane.alignment="CENTER">
+         <center>
+            <VBox pickOnBounds="false" spacing="20.0" styleClass="result" BorderPane.alignment="CENTER">
                <BorderPane.margin>
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </BorderPane.margin>
@@ -200,49 +201,69 @@
                      </right>
                   </BorderPane>
                </VBox>
-               <VBox prefWidth="500.0" spacing="5">
-                  <HBox prefHeight="25.0" prefWidth="570.0" styleClass="underline">
-                     <Label styleClass="sub_title1" text="%ApplicationConfigurationTitle" />
-                  </HBox>
-                  <BorderPane prefHeight="30.0" prefWidth="500.0">
-                     <left>
-                        <Label styleClass="sub_text" text="%languageSubtext" BorderPane.alignment="CENTER" />
-                     </left>
-                     <right>
-                        <ComboBox fx:id="language" onAction="#updateLanguage" prefWidth="150.0" styleClass="selector" BorderPane.alignment="CENTER" />
-                     </right>
-                  </BorderPane>
-                  <BorderPane prefHeight="30.0" prefWidth="500.0">
-                     <left>
-                        <Label styleClass="sub_text" text="%darkThemeSubtitle" BorderPane.alignment="CENTER" />
-                     </left>
-                     <right>
-                        <ToggleSwitch fx:id="darkThemeToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
-                     </right>
-                  </BorderPane>
-                  <BorderPane prefHeight="30.0" prefWidth="500.0">
-                     <left>
-                        <Label styleClass="sub_text" text="%dataSaverSubtitle" BorderPane.alignment="CENTER" />
-                     </left>
-                     <right>
-                        <ToggleSwitch fx:id="dataSaverToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
-                     </right>
-                  </BorderPane>
-               </VBox>
-               <VBox prefHeight="200.0" prefWidth="100.0">
-                  <children>
-                     <BorderPane prefHeight="200.0" prefWidth="200.0">
-                        <left>
-                           <Label fx:id="reset" onMouseClicked="#resetSettings" onMouseEntered="#selectReset" onMouseExited="#unselectReset" styleClass="sub_text" text="%resetOption" BorderPane.alignment="CENTER">
-                              <cursor>
-                                 <Cursor fx:constant="HAND" />
-                              </cursor>
-                           </Label>
-                        </left>
-                     </BorderPane>
-                  </children>
-               </VBox>
+               <BorderPane>
+                  <top>
+                     <VBox prefWidth="500.0" BorderPane.alignment="CENTER">
+                        <HBox prefHeight="25.0" prefWidth="570.0" styleClass="underline">
+                           <Label styleClass="sub_title1" text="%ApplicationConfigurationTitle" />
+                        </HBox>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <left>
+                              <Label styleClass="sub_text" text="%languageSubtext" BorderPane.alignment="CENTER" />
+                           </left>
+                           <right>
+                              <ComboBox fx:id="language" onAction="#updateLanguage" prefWidth="150.0" styleClass="selector" BorderPane.alignment="CENTER" />
+                           </right>
+                        </BorderPane>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <left>
+                              <Label styleClass="sub_text" text="%darkThemeSubtitle" BorderPane.alignment="CENTER" />
+                           </left>
+                           <right>
+                              <ToggleSwitch fx:id="darkThemeToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
+                           </right>
+                        </BorderPane>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <left>
+                              <Label styleClass="sub_text" text="%dataSaverSubtitle" BorderPane.alignment="CENTER" />
+                           </left>
+                           <right>
+                              <ToggleSwitch fx:id="dataSaverToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
+                           </right>
+                        </BorderPane>
+                     </VBox>
+                  </top>
+                  <bottom>
+                     <VBox prefHeight="30.0" BorderPane.alignment="CENTER">
+                        <children>
+                           <BorderPane maxHeight="30.0" minHeight="30.0" prefHeight="30.0">
+                              <left>
+                                 <Label fx:id="reset" onMouseClicked="#resetSettings" onMouseEntered="#selectReset" onMouseExited="#unselectReset" styleClass="sub_text" text="%resetOption" BorderPane.alignment="CENTER">
+                                    <cursor>
+                                       <Cursor fx:constant="HAND" />
+                                    </cursor>
+                                 </Label>
+                              </left>
+                           </BorderPane>
+                        </children>
+                     </VBox>
+                  </bottom>
+               </BorderPane>
             </VBox>
+         </center>
+         <top>
+            <BorderPane fx:id="offlineNotification" maxHeight="30.0" minHeight="30.0" prefHeight="30.0" prefWidth="638.0" style="-fx-background-color: #1569C7;" visible="false" BorderPane.alignment="CENTER" managed="false">
+               <left>
+                  <Label text="Device is offline" textFill="WHITE" BorderPane.alignment="CENTER">
+                     <BorderPane.margin>
+                        <Insets left="10.0" />
+                     </BorderPane.margin>
+                     <font>
+                        <Font name="Arial Bold" size="12.0" />
+                     </font>
+                  </Label>
+               </left>
+            </BorderPane>
          </top>
       </BorderPane>
    </StackPane>

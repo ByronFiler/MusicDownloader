@@ -39,10 +39,14 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+
+// TODO: Switching view should pause music playing
 
 public class Results {
 
@@ -50,6 +54,9 @@ public class Results {
     private AnchorPane root;
     @FXML
     private BorderPane mainContainer;
+
+    @FXML
+    private BorderPane offlineNotification;
 
     @FXML
     private TextField searchField;
@@ -80,6 +87,8 @@ public class Results {
 
     @FXML
     private void initialize() {
+
+        Model.getInstance().connectionWatcher.switchMode(this);
 
         // Set the table data
         try {
@@ -191,7 +200,6 @@ public class Results {
     public void searchView(Event event) {
 
         try {
-
             (
                     ((Node) event.getSource())
                             .getScene()
@@ -280,6 +288,18 @@ public class Results {
             }
         }
 
+    }
+
+    public void setDisabled(boolean disable) {
+
+        results.setDisable(disable);
+        searchField.setDisable(disable);
+        download.setDisable(disable);
+
+    }
+
+    public BorderPane getOfflineNotification() {
+        return offlineNotification;
     }
 
     private void defaultView(String message) {
@@ -379,7 +399,6 @@ public class Results {
 
     }
 
-    // TODO: Add network error handling
     class generateQueueItem implements Runnable {
 
         private final JSONObject basicData;
@@ -552,9 +571,14 @@ public class Results {
                             new URL(metadata.getString("art")),
                             new File(Resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", metadata.getString("artId")))
                     );
+                } catch (UnknownHostException | SocketException e) {
+                    Debug.warn("Detected connection failure when downloading album art, awaiting reconnection...");
+                    restoreView(false);
+                    setDisabled(true);
+                    return;
+
                 } catch (IOException e) {
                     Debug.error("Failed to download album art.", e);
-                    // TODO: Handle connection
                 } catch (JSONException e) {
                     Debug.error("JSON Error when downloading album art.", e);
                 }
@@ -627,10 +651,8 @@ public class Results {
             }
             catch (IOException e) {
                 Debug.warn("Connection error, attempting to reconnect.");
-                // TODO:  Handle reconnection
             }
         }
-
 
         private class GetSources implements Runnable {
 
@@ -650,7 +672,6 @@ public class Results {
                 Thread executor = new Thread(this, "source-getter");
                 executor.setDaemon(true);
                 executor.start();
-
 
             }
 

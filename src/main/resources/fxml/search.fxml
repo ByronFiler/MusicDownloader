@@ -14,7 +14,6 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<?import javafx.scene.text.Text?>
 
 <AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="musicdownloader.controllers.Search">
    <StackPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -55,7 +54,7 @@
             <Insets />
          </StackPane.margin>
          <center>
-            <VBox fx:id="searchContainer" alignment="CENTER" maxHeight="200.0" maxWidth="500.0" prefHeight="200.0" prefWidth="500.0" styleClass="searchContainer" BorderPane.alignment="CENTER">
+            <VBox alignment="CENTER" maxHeight="200.0" maxWidth="500.0" prefHeight="200.0" prefWidth="500.0" styleClass="searchContainer" BorderPane.alignment="CENTER">
                <BorderPane.margin>
                   <Insets />
                </BorderPane.margin>
@@ -83,16 +82,22 @@
                      <Insets />
                   </VBox.margin>
                </ListView>
-               <Text fx:id="errorMessage" fill="RED" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="CENTER" visible="false" wrappingWidth="400.0">
-                  <font>
-                     <Font name="Arial" size="16.0" />
-                  </font>
-                  <VBox.margin>
-                     <Insets top="10.0" />
-                  </VBox.margin>
-               </Text>
             </VBox>
          </center>
+         <top>
+            <BorderPane fx:id="offlineNotification" maxHeight="30.0" minHeight="30.0" prefHeight="30.0" prefWidth="638.0" style="-fx-background-color: #1569C7;" visible="false" BorderPane.alignment="CENTER" managed="false">
+               <left>
+                  <Label text="Device is offline" textFill="WHITE" BorderPane.alignment="CENTER">
+                     <BorderPane.margin>
+                        <Insets left="10.0" />
+                     </BorderPane.margin>
+                     <font>
+                        <Font name="Arial Bold" size="12.0" />
+                     </font>
+                  </Label>
+               </left>
+            </BorderPane>
+         </top>
       </BorderPane>
    </StackPane>
 

@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
+// TODO: Double click should start download
+// TODO: Hitting back while playing a song should of course pause it
+// TODO: Consider UI imports to download a spotify playlist
+
 public class Main extends Application {
 
     @Override
@@ -48,8 +52,12 @@ public class Main extends Application {
     private void handleClose(WindowEvent event) {
 
         final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.notification");
+
         Model.getInstance().view.setStageClosed(true);
+        Model.getInstance().connectionWatcher.close();
+
         Debug.trace("Primary stage closed.");
+
         if (!Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString())) {
 
             try {

@@ -19,8 +19,6 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.net.db.sites.Allmusic;
@@ -29,29 +27,25 @@ import org.json.JSONException;
 import org.jsoup.HttpStatusException;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Objects;
+import java.util.ResourceBundle;
 
-/*
-TODO
- - Change error message, closer to spotify styling
- */
 public class Search {
 
     @FXML
     private AnchorPane root;
 
     @FXML
-    private VBox searchContainer;
+    private BorderPane offlineNotification;
+
     @FXML
     private TextField search;
     @FXML
     private ProgressIndicator loadingIcon;
-    @FXML
-    private Text errorMessage;
     @FXML
     private ListView<HBox> autocompleteResults;
 
@@ -60,15 +54,18 @@ public class Search {
     @FXML
     private ImageView settings;
 
-    private Timer hideErrorMessage;
-
     private generateAutocomplete autoCompleteThread;
     private boolean searchQueryActive = false;
 
-    private final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.search");
-
     @FXML
     private void initialize() {
+
+        Model.getInstance().connectionWatcher.switchMode(this);
+        if (Model.getInstance().connectionWatcher.isOffline()) {
+            offlineNotification.setVisible(true);
+            offlineNotification.setManaged(true);
+            search.setDisable(true);
+        }
 
         // Loading in CSS
         if (Model.getInstance().settings.getSettingBool("dark_theme")) {
@@ -152,8 +149,7 @@ public class Search {
                 if (search.getText().length() > 1) {
 
                     // Starting the new search thread
-                    if (searchQueryActive) error(resourceBundle.getString("searchInProgressMessage"));
-                    else {
+                    if (!searchQueryActive) {
                         loadingIcon.setVisible(true);
                         searchQueryActive = true;
                         Thread queryThread = new Thread(() -> {
@@ -211,8 +207,6 @@ public class Search {
                                 Platform.runLater(() -> {
                                     loadingIcon.setVisible(false);
                                     searchQueryActive = false;
-
-                                    error(resourceBundle.getString("noResultsFoundMessage"));
                                 });
 
                             } catch (IOException er) {
@@ -222,7 +216,6 @@ public class Search {
                                     searchQueryActive = false;
 
                                     Debug.warn("Failed to connect to " + Allmusic.baseDomain + Allmusic.Search.subdirectory + search.getText() + e.getText());
-                                    new awaitReconnection();
                                 });
                             }
 
@@ -231,7 +224,7 @@ public class Search {
                         queryThread.start();
                     }
 
-                } else error(resourceBundle.getString("queryTooShortMessage"));
+                }
 
             }
 
@@ -247,34 +240,12 @@ public class Search {
         }
     }
 
-    private void error(String message) {
+    public synchronized TextField getSearch() {
+        return search;
+    }
 
-        autocompleteResults.getItems().clear();
-        autocompleteResults.setVisible(false);
-
-        // Repositioning directly below search bar, taking autocomplete space
-        searchContainer.getChildren().remove(errorMessage);
-        searchContainer.getChildren().add(2, errorMessage);
-
-        errorMessage.setText(message);
-        errorMessage.setVisible(true);
-
-        try {
-            hideErrorMessage.cancel();
-        } catch (NullPointerException ignored) {}
-
-        hideErrorMessage = new Timer();
-        hideErrorMessage.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                Platform.runLater(() -> {
-                    errorMessage.setVisible(false);
-                    searchContainer.getChildren().remove(errorMessage);
-                    searchContainer.getChildren().add(errorMessage);
-                });
-            }
-        }, 2000);
-
+    public BorderPane getOfflineNotification() {
+        return offlineNotification;
     }
 
     // Updating the UI with the autocomplete suggestions
@@ -368,68 +339,13 @@ public class Search {
             } catch (SocketException | UnknownHostException ignored) {
 
                 // Failed to connect, handling
-                Debug.trace("Error sending web request: https://www.allmusic.com/search/all/" + query);
-                Platform.runLater(() -> {
-                    search.setDisable(true);
-                    new awaitReconnection();
-                });
+                Debug.warn("Error sending web request: https://www.allmusic.com/search/all/" + query);
             } catch (HttpStatusException ignored) {
                 // Malformed request
             } catch (IOException e) {
                 Debug.error("Unknown exception when requesting user search.", e);
             }
 
-        }
-
-    }
-
-    // Check that when internet connection is lost, they must reconnect before doing anything else
-    private class awaitReconnection implements Runnable {
-
-        public awaitReconnection() {
-            Thread thread = new Thread(this, "reconnection");
-            thread.start();
-        }
-
-        public void run() {
-
-            new Timer().schedule(new TimerTask() {
-
-                @Override
-                public void run() {
-
-                    Platform.runLater(() -> {
-                        autocompleteResults.getItems().clear();
-                        autocompleteResults.setVisible(false);
-
-                        searchContainer.getChildren().remove(errorMessage);
-                        searchContainer.getChildren().add(2, errorMessage);
-
-                        errorMessage.setText(resourceBundle.getString("failedToConnectMessage"));
-                        errorMessage.setVisible(true);
-                    });
-
-                    try {
-
-                        if (InetAddress.getByName("allmusic.com").isReachable(1000)) {
-
-                            Platform.runLater(() -> {
-                                search.setDisable(false);
-                                errorMessage.setVisible(false);
-
-                                searchContainer.getChildren().remove(errorMessage);
-                                searchContainer.getChildren().add(errorMessage);
-                            });
-                            Debug.trace(resourceBundle.getString("connectionEstablishedMessage"));
-                            this.cancel();
-
-                        }
-
-                    } catch (IOException ignored) {}
-
-                }
-
-            }, 0, 1000);
         }
 
     }
