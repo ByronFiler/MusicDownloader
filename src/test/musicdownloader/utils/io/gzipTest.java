@@ -16,7 +16,7 @@ class gzipTest {
     void decompressFile() {
 
         try {
-            Gzip.decompressFile(new File("src/test/resources/downloads0.gz"));
+            GZip.decompressFile(new File("src/test/resources/downloads0.gz"));
 
         } catch (IOException e) {
             assert false;
@@ -29,7 +29,7 @@ class gzipTest {
 
         try {
 
-            Gzip.compressData(
+            GZip.compressData(
                     new ByteArrayInputStream("Example test".getBytes()),
                     new File("src/test/resources/test.gz")
             );

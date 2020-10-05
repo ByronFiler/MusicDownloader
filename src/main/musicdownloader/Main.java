@@ -22,6 +22,8 @@ import java.util.ResourceBundle;
 // TODO: Double click should start download
 // TODO: Hitting back while playing a song should of course pause it
 // TODO: Consider UI imports to download a spotify playlist
+// TODO: Restructure UI to be more similar to twitter style
+// TODO: Start using abstract classes for result and some similar things
 
 public class Main extends Application {
 

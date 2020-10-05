@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionWatcher extends TimerTask {
@@ -36,8 +37,43 @@ public class ConnectionWatcher extends TimerTask {
 
     private String mode;
 
+    private CountDownLatch latch = new CountDownLatch(1);
+
     public ConnectionWatcher() {
         checkerHandler.schedule(this, 0, 50);
+    }
+
+    public void switchMode(Settings settings) {
+        this.settings = settings;
+        this.offlineNotification = settings.getOfflineNotification();
+        this.hosts = settingsHosts;
+
+        mode = "settings";
+    }
+
+    public void switchMode(Search search) {
+        this.search = search;
+        this.offlineNotification = search.getOfflineNotification();
+        this.hosts = searchHosts;
+
+        mode = "search";
+    }
+
+    public void switchMode(Results results) {
+        this.results = results;
+        this.offlineNotification = results.getOfflineNotification();
+        this.hosts = resultsHosts;
+
+        mode = "results";
+    }
+
+    public void switchMode(Downloads downloads) {
+
+        this.downloads = downloads;
+        this.offlineNotification = downloads.getOfflineNotification();
+        this.hosts = downloadsHosts;
+
+        mode = "downloads";
     }
 
     @Override
@@ -64,6 +100,7 @@ public class ConnectionWatcher extends TimerTask {
                     if (!online) {
 
                         online = true;
+                        latch.countDown();
                         stateChanged = true;
 
                         Platform.runLater(() -> {
@@ -82,6 +119,7 @@ public class ConnectionWatcher extends TimerTask {
                 if (fails.get() == reattemptsLimit && online) {
 
                     online = false;
+                    latch = new CountDownLatch(1);
                     stateChanged = true;
 
                     Platform.runLater(() -> {
@@ -139,41 +177,12 @@ public class ConnectionWatcher extends TimerTask {
         return !online;
     }
 
-    public void close() {
+    public synchronized void close() {
         checkerHandler.cancel();
     }
 
-    public void switchMode(Settings settings) {
-        this.settings = settings;
-        this.offlineNotification = settings.getOfflineNotification();
-        this.hosts = settingsHosts;
-
-        mode = "settings";
-    }
-
-    public void switchMode(Search search) {
-        this.search = search;
-        this.offlineNotification = search.getOfflineNotification();
-        this.hosts = searchHosts;
-
-        mode = "search";
-    }
-
-    public void switchMode(Results results) {
-        this.results = results;
-        this.offlineNotification = results.getOfflineNotification();
-        this.hosts = resultsHosts;
-
-        mode = "results";
-    }
-
-    public void switchMode(Downloads downloads) {
-
-        this.downloads = downloads;
-        this.offlineNotification = downloads.getOfflineNotification();
-        this.hosts = downloadsHosts;
-
-        mode = "downloads";
+    public synchronized CountDownLatch getLatch() {
+        return latch;
     }
 
 }

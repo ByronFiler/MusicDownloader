@@ -137,10 +137,10 @@ public class Downloads {
         if (Model.getInstance().download.getDownloadObject().has("metadata") || histories.size() > 0) albumsView();
         else defaultView();
 
-        if (Model.getInstance().connectionWatcher.isOffline() && currentlyDownloading.size() > 0) {
+        if (Model.getInstance().connectionWatcher.isOffline()) {
             offlineNotification.setVisible(true);
             offlineNotification.setManaged(true);
-            markDownloads(false);
+            if (currentlyDownloading.size() > 0) markDownloads(false);
         }
 
         Debug.trace("Initialized downloads view.");

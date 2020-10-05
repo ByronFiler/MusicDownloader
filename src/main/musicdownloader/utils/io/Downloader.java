@@ -14,6 +14,7 @@ import org.json.JSONObject;
 import java.awt.*;
 import java.io.*;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -36,6 +37,19 @@ public class Downloader implements Runnable {
         new Thread(this, "acquire-download-files").start();
     }
 
+    public static void debugProcess(ProcessBuilder builder) throws IOException {
+        builder.redirectErrorStream(true);
+        Process process = builder.start();
+        InputStream is = process.getInputStream();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            Debug.log(line);
+            if (line.contains("ERROR")) throw new IOException();
+        }
+    }
+
     private String generateFolder(String folderRequest) {
 
         if (Files.exists(Paths.get(folderRequest))) {
@@ -43,22 +57,15 @@ public class Downloader implements Runnable {
             while (true) {
 
                 // File exists so move onto the next one
-                if (Files.exists(Paths.get(folderRequest + "(" + i + ")")))
-                    i++;
+                if (Files.exists(Paths.get(folderRequest + "(" + i + ")"))) i++;
                 else {
-                    if (new File(folderRequest + "(" + i + ")").mkdir())
-                        return folderRequest + "(" + i + ")";
-                    else {
-                        Debug.error("Failed to create directory: " + folderRequest + "(" + i + ")", null);
-                    }
+                    if (new File(folderRequest + "(" + i + ")").mkdir()) return folderRequest + "(" + i + ")";
+                    else Debug.error("Failed to create directory: " + folderRequest + "(" + i + ")", null);
                 }
             }
         } else {
-            if (new File(folderRequest).mkdir())
-                return folderRequest;
-            else {
-                Debug.error("Failed to create directory: " + folderRequest, null);
-            }
+            if (new File(folderRequest).mkdir()) return folderRequest;
+            else Debug.error("Failed to create directory: " + folderRequest, null);
         }
 
         return "";
@@ -89,6 +96,7 @@ public class Downloader implements Runnable {
                 song.getJSONArray("source").getString(sourceDepth)
         );
         builder.directory(new File(Resources.getInstance().getApplicationData() + "temp"));
+
         debugProcess(builder);
 
         // Silent debug to not spam console
@@ -123,9 +131,7 @@ public class Downloader implements Runnable {
                 }
 
             }
-        } else {
-            downloadedFile[0] = currentFiles.get(0);
-        }
+        } else downloadedFile[0] = currentFiles.get(0);
 
         if (downloadedFile[0] == null) throw new IOException("Failed to find downloaded file.");
 
@@ -243,18 +249,13 @@ public class Downloader implements Runnable {
 
     }
 
-    public static void debugProcess(ProcessBuilder builder) throws IOException {
-        builder.redirectErrorStream(true);
-        Process process = builder.start();
-        InputStream is = process.getInputStream();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-
-        String line;
-        while ((line = reader.readLine()) != null) Debug.log(line);
-    }
-
     @Override
     public void run() {
+
+        if (Model.getInstance().connectionWatcher.isOffline()) {
+            run();
+            return;
+        }
 
         try {
             Debug.trace(
@@ -279,29 +280,51 @@ public class Downloader implements Runnable {
                             downloadObject.getJSONObject("metadata").getBoolean("is_album") ?
                                 generateFolder(downloadObject.getJSONObject("metadata").getString("directory")) : downloadObject.getJSONObject("metadata").getString("directory")
                     );
-        } catch (JSONException ignored) {}
+        } catch (JSONException e) {
+            Debug.error("JSON Exception generating directory", e);
+        }
 
         // Loading album art
         try {
             if (Files.exists(Paths.get(Resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))))) {
 
                 try {
-                    this.albumArt = Files.readAllBytes(Paths.get(Resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
+                    this.albumArt = Files.readAllBytes(
+                            Paths.get(
+                                    Resources.getInstance().getApplicationData() + String.format(
+                                            "cached/%s.jpg", downloadObject.getJSONObject("metadata").getString("artId")
+                                    )
+                            )
+                    );
                 } catch (IOException e) {
                     Debug.error("Failed to read all bytes, album art was likely a corrupt download.", e);
                 }
             } else {
 
                 Debug.warn("Failed to use cached album art, should've already been in cache if downloading, reacquiring file.");
-                try {
-                    FileUtils.copyURLToFile(
-                            new URL(downloadObject.getJSONObject("metadata").getString("art")),
-                            new File(Resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", downloadObject.getJSONObject("metadata").getString("artId")))
-                    );
-                    this.albumArt = Files.readAllBytes(Paths.get(Resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
-                } catch (IOException e) {
-                    Debug.error("Failed to connect and download album art.", e);
-                    // TODO: Handle reconnection
+
+                while (true) {
+
+                    try {
+                        FileUtils.copyURLToFile(
+                                new URL(downloadObject.getJSONObject("metadata").getString("art")),
+                                new File(Resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", downloadObject.getJSONObject("metadata").getString("artId")))
+                        );
+                        this.albumArt = Files.readAllBytes(Paths.get(Resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))));
+                        break;
+
+                    } catch (IOException e) {
+
+                        try {
+                            if (Model.getInstance().connectionWatcher.isOffline()) {
+                                Model.getInstance().connectionWatcher.getLatch().await();
+                            }
+                        } catch (InterruptedException e1) {
+                            Debug.error("Thread interrupted when awaiting for reconnection.", e);
+                        }
+
+                        Debug.warn("Failed to connect and download album art.");
+                    }
                 }
 
             }
@@ -338,26 +361,58 @@ public class Downloader implements Runnable {
 
                 AudioAnalysis analysis = null;
                 if (downloadObject.getJSONArray("songs").getJSONObject(i).get("sample") != JSONObject.NULL) {
-                    analysis = new AudioAnalysis(String.format(Resources.mp3Source, downloadObject.getJSONArray("songs").getJSONObject(i).getString("sample")));
+                    while (true) {
+                        try {
+
+                            analysis = new AudioAnalysis(String.format(Resources.mp3Source, downloadObject.getJSONArray("songs").getJSONObject(i).getString("sample")));
+                            break;
+
+                        } catch (UnknownHostException e) {
+
+                            try {
+                                if (Model.getInstance().connectionWatcher.isOffline()) {
+                                    Model.getInstance().connectionWatcher.getLatch().await();
+                                }
+                            } catch (InterruptedException e1) {
+                                Debug.error("Thread interrupted while awaiting reconnection.", e1);
+                            }
+
+                        }
+                    }
                 }
 
                 // Will call it's self recursively until it exhausts possible files or succeeds
-                try {
-                    downloadFile(
-                            downloadObject.getJSONArray("songs").getJSONObject(i),
-                            downloadObject.getJSONObject("metadata").getString("format"),
-                            0,
-                            String.valueOf(i+1),
-                            false,
-                            analysis
-                    );
-                } catch (IOException | JSONException e) {
+                while (true) {
                     try {
-                        Debug.error("Error downloading song: " + downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"), e);
-                    } catch (JSONException er) {
-                        Debug.error("JSON Error downloading song", er);
-                    }
+                        downloadFile(
+                                downloadObject.getJSONArray("songs").getJSONObject(i),
+                                downloadObject.getJSONObject("metadata").getString("format"),
+                                0,
+                                String.valueOf(i + 1),
+                                false,
+                                analysis
+                        );
+                        break;
 
+                    } catch (IOException e) {
+
+                        // TODO: Internet error
+                        try {
+                            if (Model.getInstance().connectionWatcher.isOffline()) {
+                                Model.getInstance().connectionWatcher.getLatch().await();
+                            }
+                        } catch (InterruptedException e1) {
+                            Debug.error("Interrupt exception while waiting for reconnection.", e);
+                        }
+
+                    } catch (JSONException e) {
+                        try {
+                            Debug.error("JSON Error downloading song: " + downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"), e);
+                        } catch (JSONException er) {
+                            Debug.error("JSON Error downloading song", er);
+                        }
+
+                    }
                 }
 
                 // Update internal referencing
@@ -402,20 +457,49 @@ public class Downloader implements Runnable {
             Debug.error("Failed to set new download history with current download.", e);
         }
 
+        // TODO: INTERNET
         try {
             switch (Model.getInstance().settings.getSettingInt("save_album_art")) {
-
                 // Delete album art always
                 case 0:
                     break;
 
                 // Keep For Albums
                 case 1:
-                    if (downloadObject.getJSONArray("songs").length() > 1)
-                        FileUtils.copyFile(
-                                new File(Resources.getInstance().getApplicationData() + "cached/" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
-                                new File(downloadObject.getJSONObject("metadata").getString("directory") + "/art.jpg")
-                        );
+                    if (downloadObject.getJSONArray("songs").length() > 1) {
+
+                        if (Files.exists(Paths.get(Resources.getInstance().getApplicationData() + "cached/" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"))) {
+
+                            FileUtils.copyFile(
+                                    new File(Resources.getInstance().getApplicationData() + "cached/" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
+                                    new File(downloadObject.getJSONObject("metadata").getString("directory") + "/art.jpg")
+                            );
+
+                        } else {
+
+                            Debug.warn("Failed to find cached file, using remote resource.");
+                            while (true) {
+                                try {
+                                    FileUtils.copyURLToFile(
+                                            new URL(downloadObject.getJSONObject("metadata").getString("art")),
+                                            new File(downloadObject.getJSONObject("metadata").getString("directory") + "/art.jpg")
+                                    );
+                                    break;
+                                } catch (IOException e) {
+
+                                    try {
+                                        if (Model.getInstance().connectionWatcher.isOffline()) {
+                                            Model.getInstance().connectionWatcher.getLatch().await();
+                                        }
+                                    } catch (InterruptedException e1) {
+                                        Debug.error("Thread interrupted while awaiting reconnection.", e);
+                                    }
+
+                                }
+                            }
+
+                        }
+                    }
                     break;
 
                 // Keep for songs

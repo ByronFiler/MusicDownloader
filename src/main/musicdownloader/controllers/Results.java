@@ -296,6 +296,13 @@ public class Results {
         searchField.setDisable(disable);
         download.setDisable(disable);
 
+        queueAdditionProgress.setVisible(false);
+        queueAdditionInProgress = false;
+
+        download.setText(resourceBundle.getString("downloadButton"));
+        cancel.setText(resourceBundle.getString("backButton"));
+        cancel.setOnMouseClicked(Results.this::searchView);
+
     }
 
     public BorderPane getOfflineNotification() {
@@ -663,6 +670,8 @@ public class Results {
             private JSONObject youtubeResponses = null;
             private JSONObject vimeoResponses = null;
 
+            private boolean compile = true;
+
             public GetSources(int position, String query, int targetTime) {
 
                 this.position = position;
@@ -678,7 +687,7 @@ public class Results {
             @Override
             public void run() {
 
-                new Thread(() -> {
+                Thread youtubeSearchThread = new Thread(() -> {
                     try {
                         YouTube youtubeParser = new YouTube(query, targetTime);
                         youtubeParser.load();
@@ -686,13 +695,17 @@ public class Results {
                         youtubeResponses = youtubeParser.getResults();
                         compile();
 
-                    } catch (IOException | JSONException e) {
-                        e.printStackTrace();
+                    } catch (IOException e) {
+                        compile = false;
+                    } catch (JSONException e) {
+                        Debug.error("Unknown error parsing youtube JSON", e);
                     }
 
-                }, "youtube-parser").start();
+                }, "youtube-parser");
+                youtubeSearchThread.setDaemon(true);
+                youtubeSearchThread.start();
 
-                new Thread(() -> {
+                Thread vimeoSearchThread = new Thread(() -> {
                     try {
                         Vimeo vimeoParser = new Vimeo(query, targetTime);
                         vimeoParser.load();
@@ -700,17 +713,21 @@ public class Results {
                         vimeoResponses = vimeoParser.getResults();
                         compile();
 
-                    } catch (IOException | JSONException e) {
-                        e.printStackTrace();
+                    } catch (IOException e) {
+                        compile = false;
+                    } catch (JSONException e) {
+                        Debug.error("Unknown error parsing youtube JSON", e);
                     }
 
-                }, "vimeo-parser").start();
+                }, "vimeo-parser");
+                vimeoSearchThread.setDaemon(true);
+                vimeoSearchThread.start();
 
             }
 
             private synchronized void compile() {
 
-                if (youtubeResponses != null && vimeoResponses != null) {
+                if (youtubeResponses != null && vimeoResponses != null && compile) {
 
                     JSONArray sources = new JSONArray();
 
