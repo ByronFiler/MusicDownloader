@@ -1,5 +1,6 @@
 package musicdownloader.utils.net.source.sites;
 
+import com.sun.nio.sctp.IllegalReceiveException;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
 import musicdownloader.utils.io.QuickSort;
@@ -11,6 +12,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class YouTube extends Site {
     public YouTube(String query, int targetTime) throws JSONException {
@@ -31,9 +33,26 @@ public class YouTube extends Site {
 
         // YouTube has given us the data stored in json stored script tags which be parsed
         JSONObject searchDataTemp;
+
+        AtomicReference<Element> jsDataAtm = new AtomicReference<>();
+        requestedPage.select("script").forEach(script -> {
+
+            if (script.toString().contains("window[\"ytInitialData\"]")) {
+                jsDataAtm.set(script);
+            }
+
+        });
+
+        if (jsDataAtm.get() == null) {
+            //jsDataAtm.set(requestedPage.select("script").get(24));
+            Debug.error("Failed to find youtube response.", new IllegalReceiveException());
+        }
+
         try {
             // Web Data -> [JavaScript] -> String -> Json -> Data
-            Element jsData = requestedPage.select("script").get(24);
+            Element jsData = jsDataAtm.get();
+
+            //Element jsData = requestedPage.select("script").get(24);
 
             // Web Data -> JavaScript -> [String] -> Json -> Data
             String jsonConversion = jsData.toString();
@@ -44,7 +63,12 @@ public class YouTube extends Site {
             try {
                 json = new JSONObject(jsonConversion);
             } catch (JSONException e) {
+
+                // TODO: ANALYSE THIS
+                requestedPage.select("script").forEach(System.out::println);
+
                 Debug.error("Failed to parse JSON response.", e);
+
             }
 
             // Parsing deep JSON to get relevant data

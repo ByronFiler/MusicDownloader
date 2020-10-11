@@ -36,8 +36,6 @@ class gzipTest {
             String md5Hash = DigestUtils.md5Hex(Files.newInputStream(Paths.get("src/test/resources/test.gz")));
             Files.delete(Paths.get("src/test/resources/test.gz"));
 
-            System.out.println(md5Hash);
-
             Assert.assertEquals(
                     "860c806c3db0f3540d99a7be8366442f",
                     md5Hash

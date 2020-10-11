@@ -3,9 +3,9 @@ package musicdownloader.model;
 import musicdownloader.controllers.Downloads;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.io.validation.History;
 import musicdownloader.utils.io.Downloader;
 import musicdownloader.utils.io.GZip;
+import musicdownloader.utils.io.validation.History;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 public class Download {
 
@@ -23,6 +24,8 @@ public class Download {
     private JSONArray downloadHistory = new JSONArray();
 
     private Downloads downloadsView = null;
+
+    private Downloader downloader;
 
     public Download() {
 
@@ -86,7 +89,7 @@ public class Download {
             }
 
             downloadObject = queueItem;
-            new Downloader();
+            downloader = new Downloader();
 
         } else {
 
@@ -221,4 +224,19 @@ public class Download {
         }
 
     }
+
+    public void cancel(int songIndex) {
+        Objects.requireNonNull(downloader).cancel(songIndex);
+    }
+
+    public void markCancelled(int songIndex) {
+
+        if (downloadsView != null) {
+
+            downloadsView.markCancelled(songIndex);
+
+        }
+
+    }
+
 }

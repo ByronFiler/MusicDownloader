@@ -706,8 +706,6 @@ public class Settings {
 
             manageInstall(String executable, Label element, HBox elementContainer) {
 
-                System.out.println(executable);
-
                 this.executable = executable;
                 this.element = element;
                 this.elementContainer = elementContainer;

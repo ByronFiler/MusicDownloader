@@ -13,8 +13,12 @@ import org.apache.commons.io.FilenameUtils;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -79,13 +83,27 @@ public class AudioAnalysis {
     }
 
     public void correctAmplitude(String targetFile) {
-        if (comparisonCache.length == 0) Debug.error("Get amplitude was called with no comparison, likely called out of intended usage, check usage.", new IllegalCallerException());
+        if (comparisonCache.length == 0) {
+
+            // Need to build a comparison cache of this
+            try {
+                compare(targetFile);
+            } catch (IOException | JavaLayerException e) {
+                Debug.error("Failed to correct amplitude, error in attempting to compare downloaded to remote to build cache.", e);
+            }
+        }
+
         try {
-            double downloadedAmplitude = getAmplitude(AudioSystem.getAudioInputStream(new ByteArrayInputStream(comparisonCache)));
+            double downloadedAmplitude = getAmplitude(
+                    AudioSystem.getAudioInputStream(
+                            new ByteArrayInputStream(comparisonCache)
+                    )
+            );
 
             double amplitudeCorrection = Math.abs(sampleAmplitude - downloadedAmplitude) / ((sampleAmplitude + downloadedAmplitude) / 2);
 
-            Debug.trace(String.format("Found a amplitude difference of %.2f%%.", (amplitudeCorrection * 100) ));
+
+            double correctedAmplitude = (amplitudeCorrection * 100);
 
             double amplitudeCorrectionCalculated =  1 + amplitudeCorrection;
 
@@ -100,9 +118,15 @@ public class AudioAnalysis {
                     targetFile
             );
             converter.directory(new File(Resources.getInstance().getApplicationData() + "\\temp\\"));
-            Downloader.debugProcess(converter);
 
-            Debug.trace("Amplitude corrected.");
+            ProcessDebugger debugger = new ProcessDebugger(converter);
+            try {
+                debugger.getAwaiter().await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            Debug.trace(String.format("Corrected an amplitude difference of %.2f%%.", correctedAmplitude));
 
         } catch (UnsupportedAudioFileException | IOException e) {
             Debug.error("Failed to get amplitude for a pre-converted cached file, this is very unexpected, check conversion.", e);
@@ -153,10 +177,14 @@ public class AudioAnalysis {
                 null,
                 null
         );
-        byte[] wavData = Files.readAllBytes(Paths.get(wavPath));
-        Files.delete(Paths.get(wavPath));
+        try {
+            byte[] wavData = Files.readAllBytes(Paths.get(wavPath));
+            Files.delete(Paths.get(wavPath));
 
-        return wavData;
+            return wavData;
+        } catch (ClosedByInterruptException e) {
+            return new byte[]{};
+        }
 
     }
 
@@ -179,7 +207,13 @@ public class AudioAnalysis {
                 Resources.getInstance().getApplicationData() + "\\temp\\" + "converter.wav"
         );
         converter.directory(new File(Resources.getInstance().getApplicationData() + "\\temp\\"));
-        Downloader.debugProcess(converter);
+
+        ProcessDebugger debugger = new ProcessDebugger(converter);
+        try {
+            debugger.getAwaiter().await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         File convertedFile = new File(Resources.getInstance().getApplicationData() + "\\temp\\" + "converter.wav");
 

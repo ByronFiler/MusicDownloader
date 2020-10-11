@@ -24,6 +24,7 @@ import java.util.ResourceBundle;
 // TODO: Consider UI imports to download a spotify playlist
 // TODO: Restructure UI to be more similar to twitter style
 // TODO: Start using abstract classes for result and some similar things
+// TODO: Generify youtube and vimeo classes
 
 public class Main extends Application {
 

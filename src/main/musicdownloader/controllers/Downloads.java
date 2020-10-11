@@ -44,6 +44,9 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
+// TODO: If like 10/10 files are deleted, just say they're all deleted otherwise it's weird
+// TODO: Cancelling file
+
 public class Downloads {
 
     @FXML
@@ -98,8 +101,9 @@ public class Downloads {
 
             JSONArray historiesJson = Model.getInstance().download.getDownloadHistory();
             if (historiesJson.length() > 0) {
-                for (int i = 0; i < (historiesJson.length()); i++)
+                for (int i = 0; i < (historiesJson.length()); i++) {
                     this.histories.add(new HistoryResultController(historiesJson.getJSONObject(i)));
+                }
                 eventViewSelector.getItems().add(resourceBundle.getString("downloadHistoryItem"));
             }
 
@@ -298,36 +302,72 @@ public class Downloads {
     public void markDownloadCompleted() {
 
         Platform.runLater(() -> {
-            currentlyDownloading.get(currentlyDownloading.size() - 1).markCompleted();
+            if (currentlyDownloading.size() > 0) {
+                currentlyDownloading.get(currentlyDownloading.size() - 1).markCompleted();
+            }
+
+            queuedToLive();
+        });
+    }
+
+    public void markCancelled(int songIndex) {
+
+        // Don't forget to delete the files
+        CurrentlyDownloadingResultController cancelledController = currentlyDownloading.get(currentlyDownloading.size() - 1);
+        if (songIndex == -1 || cancelledController.getSongs().size() == 1) {
+
+            eventsViewTable.getItems().remove(cancelledController.getAlbumView());
+            Arrays.asList(cancelledController.getSongsView()).forEach(song -> eventsViewTable.getItems().remove(song));
 
             if (queued.size() > 0) {
-
                 queued.remove(0);
 
                 try {
                     currentlyDownloading.add(new CurrentlyDownloadingResultController(Model.getInstance().download.getDownloadObject()));
                 } catch (JSONException e) {
-                    Debug.error("Failed to create new currently downloading object.", e);
+                    e.printStackTrace();
                 }
+            }
 
-                if (albumViewSelectorWrapper.getStyleClass().contains("underline2")) albumsView();
-                else songsView();
+            if (eventsViewTable.getItems().size() == 0) defaultView();
 
-                if (queued.size() == 0) {
-                    eventViewSelector.getItems().remove(resourceBundle.getString("downloadQueueItem"));
+        } else {
 
-                    if (eventViewSelector.getItems().size() == 2) {
-                        eventViewSelector.setVisible(false);
-                        eventViewTitle.setText(resourceBundle.getString("currentlyDownloadingItem"));
-                    }
+            eventsViewTable.getItems().remove(cancelledController.getSongsView()[songIndex]);
+            cancelledController.getSongs().remove(songIndex);
 
+        }
+    }
+
+    private void queuedToLive() {
+        if (queued.size() > 0) {
+
+            queued.remove(0);
+
+            try {
+                currentlyDownloading.add(new CurrentlyDownloadingResultController(Model.getInstance().download.getDownloadObject()));
+            } catch (JSONException e) {
+                Debug.error("Failed to create new currently downloading object.", e);
+            }
+
+            if (albumViewSelectorWrapper.getStyleClass().contains("underline2")) albumsView();
+            else songsView();
+
+            if (queued.size() == 0) {
+                eventViewSelector.getItems().remove(resourceBundle.getString("downloadQueueItem"));
+
+                if (eventViewSelector.getItems().size() == 2) {
+                    eventViewSelector.setVisible(false);
+                    eventViewTitle.setText(resourceBundle.getString("currentlyDownloadingItem"));
                 }
 
             }
-        });
+
+        }
     }
 
-    public static class CurrentlyDownloadingResultController {
+    public class CurrentlyDownloadingResultController {
+
         private final CurrentlyDownloadingResult album;
         private final ArrayList<CurrentlyDownloadingResult> songs = new ArrayList<>();
 
@@ -336,7 +376,7 @@ public class Downloads {
         public CurrentlyDownloadingResultController(JSONObject downloadObject) throws JSONException {
 
             this.downloadObject = downloadObject;
-            this.album = new CurrentlyDownloadingResult(downloadObject.getJSONObject("metadata").getString("album"));
+            this.album = new CurrentlyDownloadingResult(downloadObject.getJSONObject("metadata").getString("album"), -1);
 
             for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
                 songs.add(
@@ -344,7 +384,8 @@ public class Downloads {
                                 downloadObject
                                         .getJSONArray("songs")
                                         .getJSONObject(i)
-                                        .getString("title")
+                                        .getString("title"),
+                                i
                         )
                 );
             }
@@ -385,6 +426,14 @@ public class Downloads {
             return album.getView();
         }
 
+        public synchronized CurrentlyDownloadingResult getAlbum() {
+            return album;
+        }
+
+        public synchronized ArrayList<CurrentlyDownloadingResult> getSongs() {
+            return songs;
+        }
+
         public void markCompleted() {
 
             ColorAdjust markFinished = new ColorAdjust(
@@ -421,12 +470,20 @@ public class Downloads {
             return downloadObject;
         }
 
+        public void cancel(int index) {
+
+            Model.getInstance().download.cancel(index);
+
+        }
+
         private class CurrentlyDownloadingResult extends Result {
 
             private double progress = 0;
             private final Tooltip offlineTooltip = new Tooltip("Download paused due to connection issues, will resume upon reconnection.");
 
-            public CurrentlyDownloadingResult(String title) throws JSONException {
+            private final MenuItem cancel;
+
+            public CurrentlyDownloadingResult(String title, int songIndex) throws JSONException {
 
                 super(
                         String.format(
@@ -439,6 +496,11 @@ public class Downloads {
                         title,
                         downloadObject.getJSONObject("metadata").getString("artist")
                 );
+
+                cancel = new MenuItem(resourceBundle.getString(songIndex == -1 ? "cancelContext" : "cancelSongContext"));
+                cancel.setOnAction(e -> CurrentlyDownloadingResultController.this.cancel(songIndex));
+
+                menu.getItems().add(cancel);
 
             }
 
@@ -501,6 +563,7 @@ public class Downloads {
                                             )
                                     )
                             );
+                            menu.getItems().remove(cancel);
                             break;
 
                         default:
@@ -516,7 +579,6 @@ public class Downloads {
                 view.setRight(right);
 
             }
-
         }
 
     }
