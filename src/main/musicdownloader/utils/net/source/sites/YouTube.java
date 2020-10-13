@@ -15,15 +15,23 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class YouTube extends Site {
-    public YouTube(String query, int targetTime) throws JSONException {
+    public YouTube(String query, int targetTime){
         super(query, targetTime);
     }
 
-    public void load() throws IOException {
-        requestedPage = Jsoup.connect(Resources.youtubeSearch + query).get();
+    @Override
+    public void run() {
 
-        if (requestedPage.select("script").size() == 17) parseHTMLResponse();
-        else parseJSONResponse();
+        try {
+            requestedPage = Jsoup.connect(Resources.youtubeSearch + query).get();
+
+            if (requestedPage.select("script").size() == 17) parseHTMLResponse();
+            else parseJSONResponse();
+        } catch (IOException e) {
+            Debug.log("Failed to connect to: " + Resources.youtubeSearch + query);
+        }
+
+        latch.countDown();
 
     }
 
@@ -86,13 +94,10 @@ public class YouTube extends Site {
             if (contents.length() < 10) {
                 Debug.warn(String.format("Youtube sent a bad response, resent request, %s retr%s remaining.", retries, retries == 1 ? "y" : "ies"));
                 if (retries == 0) return;
-                else
-                    try {
-                        retries--;
-                        load();
-                    } catch (IOException e) {
-                        Debug.warn("Failed to connect to youtube get results.");
-                    }
+                else {
+                    retries--;
+                    run();
+                }
             }
 
             for (int i = 0; i < contents.length(); i++) {
@@ -141,12 +146,8 @@ public class YouTube extends Site {
 
             Debug.warn(String.format("Youtube sent a bad response, resent request, %s retr%s remaining.", retries, retries == 1 ? "y" : "ies"));
             if (retries > 0) {
-                try {
-                    retries--;
-                    load();
-                } catch (IOException er) {
-                    Debug.warn("Failed to connect to youtube get results.");
-                }
+                retries--;
+                run();
             }
         }
 

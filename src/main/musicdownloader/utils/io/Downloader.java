@@ -24,6 +24,8 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.IntStream;
 
+// todo cancel anything is still buggy and not fully implemented
+
 // Handles All Downloads From Queue
 public class Downloader implements Runnable {
 

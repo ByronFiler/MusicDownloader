@@ -1,6 +1,5 @@
 package musicdownloader.controllers;
 
-import com.sun.nio.sctp.IllegalReceiveException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -30,6 +29,7 @@ import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
 import musicdownloader.utils.net.db.sites.Allmusic;
+import musicdownloader.utils.net.source.Site;
 import musicdownloader.utils.net.source.sites.Vimeo;
 import musicdownloader.utils.net.source.sites.YouTube;
 import musicdownloader.utils.ui.Result;
@@ -665,19 +665,15 @@ public class Results {
         }
 
         private class GetSources implements Runnable {
-
-            private final String query;
-            private final int targetTime;
-
-            private JSONObject youtubeResponses = null;
-            private JSONObject vimeoResponses = null;
+            private final YouTube youtube;
+            private final Vimeo vimeo;
 
             private final CountDownLatch sitesAwaiter = new CountDownLatch(2);
 
             public GetSources(String query, int targetTime) {
 
-                this.query = query;
-                this.targetTime = targetTime;
+                youtube = new YouTube(query, targetTime);
+                vimeo = new Vimeo(query, targetTime);
 
                 Thread executor = new Thread(this, "source-getter");
                 executor.setDaemon(true);
@@ -685,62 +681,20 @@ public class Results {
 
             }
 
+            public <T extends Site> void getResults(T site) {
+
+                site.setLatch(this.sitesAwaiter);
+
+                Thread executor = new Thread(site, "site-executor");
+                executor.setDaemon(true);
+                executor.start();
+
+            }
+
             @Override
             public void run() {
-
-                Thread youtubeSearchThread = new Thread(() -> {
-
-                    int allowedFails = 5;
-
-                    synchronized (this) {
-
-                        for (int fails = 0; fails < allowedFails; fails++) {
-
-                            try {
-                                YouTube youtubeParser = new YouTube(query, targetTime);
-                                youtubeParser.load();
-
-                                youtubeResponses = youtubeParser.getResults();
-                                sitesAwaiter.countDown();
-
-                                return;
-
-
-                            } catch (IOException e) {
-                                return;
-                            } catch (JSONException e) {
-                                Debug.warn("Unknown error parsing youtube JSON, retrying...");
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                    }
-
-                    Debug.error(String.format("Failed to get a valid response from youtube after %s attempts", allowedFails), new IllegalReceiveException());
-
-                }, "youtube-parser");
-                youtubeSearchThread.setDaemon(true);
-                youtubeSearchThread.start();
-
-                Thread vimeoSearchThread = new Thread(() -> {
-
-                    try {
-
-                        Vimeo vimeoParser = new Vimeo(query, targetTime);
-                        vimeoParser.load();
-
-                        vimeoResponses = vimeoParser.getResults();
-                        sitesAwaiter.countDown();
-
-                    } catch (IOException ignored) {
-                    } catch (JSONException e) {
-                        Debug.error("Unknown error parsing youtube JSON", e);
-                    }
-
-                }, "vimeo-parser");
-                vimeoSearchThread.setDaemon(true);
-                vimeoSearchThread.start();
+                getResults(youtube);
+                getResults(vimeo);
             }
 
             public JSONArray getSources() {
@@ -750,20 +704,23 @@ public class Results {
                 try {
                     sitesAwaiter.await();
 
+                    JSONObject youtubeResponses = youtube.getResults();
+                    JSONObject vimeoResponses = vimeo.getResults();
+
                     try {
 
                         // Building source array Youtube Primary > Vimeo Primary > Youtube Secondary > Vimeo Secondary
-                        for (int i = 0; i < youtubeResponses.getJSONArray("primary").length(); i++) {
-                            sources.put(Resources.youtubeVideoSource + youtubeResponses.getJSONArray("primary").getString(i));
+                        for (int i = 0; i < Objects.requireNonNull(youtubeResponses).getJSONArray("primary").length(); i++) {
+                            sources.put(Resources.youtubeVideoSource + Objects.requireNonNull(youtubeResponses).getJSONArray("primary").getString(i));
                         }
-                        for (int i = 0; i < vimeoResponses.getJSONArray("primary").length(); i++) {
-                            sources.put(Resources.vimeoVideoSource + vimeoResponses.getJSONArray("primary").getString(i));
+                        for (int i = 0; i < Objects.requireNonNull(vimeoResponses).getJSONArray("primary").length(); i++) {
+                            sources.put(Resources.vimeoVideoSource + Objects.requireNonNull(vimeoResponses).getJSONArray("primary").getString(i));
                         }
-                        for (int i = 0; i < youtubeResponses.getJSONArray("secondary").length(); i++) {
-                            sources.put(Resources.youtubeVideoSource + youtubeResponses.getJSONArray("secondary").getString(i));
+                        for (int i = 0; i < Objects.requireNonNull(youtubeResponses).getJSONArray("secondary").length(); i++) {
+                            sources.put(Resources.youtubeVideoSource + Objects.requireNonNull(youtubeResponses).getJSONArray("secondary").getString(i));
                         }
-                        for (int i = 0; i < vimeoResponses.getJSONArray("secondary").length(); i++) {
-                            sources.put(Resources.vimeoVideoSource + vimeoResponses.getJSONArray("secondary").getString(i));
+                        for (int i = 0; i < Objects.requireNonNull(vimeoResponses).getJSONArray("secondary").length(); i++) {
+                            sources.put(Resources.vimeoVideoSource + Objects.requireNonNull(vimeoResponses).getJSONArray("secondary").getString(i));
                         }
 
                         generateQueueItem.this.threadAwaiter.countDown();
