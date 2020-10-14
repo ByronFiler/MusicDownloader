@@ -12,6 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import javax.sound.sampled.UnsupportedAudioFileException;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
@@ -24,10 +25,38 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.IntStream;
 
-// todo cancel anything is still buggy and not fully implemented
+/*
+ todo
+
+ - cancelling albums uses a deprecated method
+ - cancelling songs doesn't really work (?)
+ - cancelling album doesn't update the model to mark queued as active download
+
+ - should really implement a safe termination method and await it's completion on the main thread via use of a flag
+
+ - modern termination flag not properly implemented in downloads
+ - termination flags untested in "Download" class
+ - process termination untested in "Download" class to ProcessDebugger
+
+// todo on cancelling songs, it seems the issue is on being redrawn, hence download items should have a cancelled flag in the model
+
+// todo; should spawn a new thread to the model, not a new fucking thread from it self that's just dumb, v memory inefficent
+
+ */
 
 // Handles All Downloads From Queue
 public class Downloader implements Runnable {
+
+    // download states
+    enum State {
+
+        INITIALISING,
+        PRELIMINARY_IO,
+        DOWNLOADING,
+        POST_IO,
+        TERMINATED
+
+    }
 
     private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.notification");
 
@@ -38,6 +67,11 @@ public class Downloader implements Runnable {
     private final Thread mainThread;
     private boolean[] allowedDownloads;
     private byte[] albumArt;
+
+    private State threadState = State.INITIALISING;
+
+    private boolean cancelDownload = false;
+    private CountDownLatch terminationAwaiter = new CountDownLatch(1);
 
     public Downloader() {
 
@@ -55,56 +89,48 @@ public class Downloader implements Runnable {
     public void cancel(int songIndex) {
 
         if (songIndex == -1 || (IntStream.range(0, allowedDownloads.length).mapToObj(ind -> allowedDownloads[ind]).mapToInt(e -> e ? 1 : 0).sum() <= 1)) {
-            mainThread.interrupt();
-        } else {
-            allowedDownloads[songIndex] = false;
-        }
 
-        /*
-        // Killing threads and stopping the current download
-        if (songIndex == -1) {
+            // todo fix, use flag based in-place of forced quit, fix depreciated code
 
-            this.kill = true;
-            if (youtubeDlWorker != null && youtubeDlWorker.isAlive()) youtubeDlWorker.destroy();
+            if (Math.random() > 0) {
+                mainThread.stop();
+                processQueue();
+            } else {
 
-            try {
-                latch.await(100, TimeUnit.MILLISECONDS);
+                State preQuitState = threadState;
 
-                if (latch.getCount() == 1) {
-                    youtubeDlWorker.destroyForcibly();
-                    latch.await();
+                mainThread.interrupt();
+                cancelDownload = true;
+
+                switch (preQuitState) {
+
+                    case INITIALISING:
+                        break;
+
+                    case PRELIMINARY_IO:
+                        break;
+
+                    case DOWNLOADING:
+                        break;
+
+                    case POST_IO:
+                        break;
+
+                    case TERMINATED:
+                        break;
+
+                    default:
+                        // uhh what?
+
                 }
 
-            } catch (InterruptedException e) {
-                Debug.error("Unexpected interruption while awaiting thread termination.", e);
             }
 
-            // Model
-            processQueue();
 
-            // Delete files relevant to the current download
-            try {
-                Arrays.asList(new File(Resources.getInstance().getApplicationData() + "/temp/").listFiles()).forEach(file -> {
-                    if (!file.delete()) Debug.warn("Failed to delete: " + file.getAbsolutePath());
-                });
-                Arrays.asList(new File(downloadObject.getJSONObject("metadata").getString("directory")).listFiles()).forEach(file -> {
-                    if (!file.delete()) Debug.warn("Failed to delete: " + file.getAbsolutePath());
-                });
-                if (!new File(Resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", downloadObject.getJSONObject("metadata").getString("artId"))).delete()) {
-                    Debug.warn("Failed to delete album art cached from cancelled download.");
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-        } else {
-
-            cancelledSongs.set(songIndex, false);
-
-        }
+        // todo this doesn't work lmao
+        } else allowedDownloads[songIndex] = false;
 
         Model.getInstance().download.markCancelled(songIndex);
-         */
 
     }
 
@@ -293,9 +319,11 @@ public class Downloader implements Runnable {
                 Debug.error("Failed to load JSON data when reading album art.", e);
             }
 
-            if (mainThread.isInterrupted()) throw new InterruptedException();
+            if (cancelDownload) throw new InterruptedException();
 
         } catch (InterruptedException e) {
+
+            Debug.warn("Interrupt received mid light io");
 
             try {
                 Files.delete(Paths.get(downloadObject.getJSONObject("metadata").getString("directory")));
@@ -309,8 +337,9 @@ public class Downloader implements Runnable {
             } catch (IOException e1) {
                 Debug.error("Failed to delete files after cancelled download.", e);
             }
-            return;
         }
+
+        Debug.warn("Folders and album art stored.");
 
         // Download files
         JSONObject newHistory = new JSONObject();
@@ -319,7 +348,7 @@ public class Downloader implements Runnable {
 
             JSONArray songs = new JSONArray();
 
-            for (int i = 0; i < downloadObject.getJSONArray("songs").length(); i++) {
+            for (int i = 0; i < downloadObject.getJSONArray("songs").length() && !cancelDownload; i++) {
 
                 if (allowedDownloads[i]) {
 
@@ -360,107 +389,113 @@ public class Downloader implements Runnable {
 
                         // todo delete file in download directory
 
-
                     }
 
                 }
 
             }
 
+            if (cancelDownload) throw new InterruptedException();
+
             newHistory.put("metadata", downloadObject.getJSONObject("metadata"));
             newHistory.put("songs", songs);
-
-            if (mainThread.isInterrupted()) throw new InterruptedException();
 
         } catch (JSONException e) {
             Debug.error("JSON Error when attempting to access songs to download.", e);
 
-        }  catch (InterruptedException e) {
+        } catch (InterruptedException e) {
+
+            Debug.warn("Interrupt received mid download");
+            if (download != null) download.cancel();
+
+            else Debug.warn("Cancelled mid download without a download in progress?");
 
             // TODO
             if (download != null) download.cancel();
 
-            /*
-            Files =>
-                Clear Album Art
-                Clear downloads folder
-                Clear temp directory
-             */
         }
+
+        Debug.warn("Downloads completed");
 
 
         // Updating the history
         try {
-            downloadHistory.put(newHistory);
-            Model.getInstance().download.setDownloadHistory(downloadHistory);
+            if (!cancelDownload) {
+                downloadHistory.put(newHistory);
+                Model.getInstance().download.setDownloadHistory(downloadHistory);
+            }
 
         } catch (IOException e) {
             Debug.error("Failed to set new download history with current download.", e);
         }
 
+        Debug.warn("History handled completed");
+
         try {
-            switch (Model.getInstance().settings.getSettingInt("save_album_art")) {
-                // Delete album art always
-                case 0:
-                    break;
+            if (!cancelDownload) {
+                switch (Model.getInstance().settings.getSettingInt("save_album_art")) {
+                    // Delete album art always
+                    case 0:
+                        break;
 
-                // Keep For Albums
-                case 1:
-                    if (downloadObject.getJSONArray("songs").length() > 1) {
+                    // Keep For Albums
+                    case 1:
+                        if (downloadObject.getJSONArray("songs").length() > 1) {
 
-                        if (Files.exists(Paths.get(Resources.getInstance().getApplicationData() + "cached/" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"))) {
+                            if (Files.exists(Paths.get(Resources.getInstance().getApplicationData() + "cached/" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"))) {
 
+                                FileUtils.copyFile(
+                                        new File(Resources.getInstance().getApplicationData() + "cached/" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
+                                        new File(downloadObject.getJSONObject("metadata").getString("directory") + "/art.jpg")
+                                );
+
+                            } else {
+
+                                Debug.warn("Failed to find cached file, using remote resource.");
+                                while (true) {
+                                    try {
+                                        FileUtils.copyURLToFile(
+                                                new URL(downloadObject.getJSONObject("metadata").getString("art")),
+                                                new File(downloadObject.getJSONObject("metadata").getString("directory") + "/art.jpg")
+                                        );
+                                        break;
+                                    } catch (IOException e) {
+
+                                        try {
+                                            if (Model.getInstance().connectionWatcher.isOffline()) {
+                                                Model.getInstance().connectionWatcher.getLatch().await();
+                                            }
+                                        } catch (InterruptedException e1) {
+                                            Debug.error("Thread interrupted while awaiting reconnection.", e);
+                                        }
+
+                                    }
+                                }
+
+                            }
+                        }
+                        break;
+
+                    // Keep for songs
+                    case 2:
+                        if (downloadObject.getJSONArray("songs").length() == 1)
                             FileUtils.copyFile(
                                     new File(Resources.getInstance().getApplicationData() + "cached/" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
                                     new File(downloadObject.getJSONObject("metadata").getString("directory") + "/art.jpg")
                             );
+                        break;
 
-                        } else {
-
-                            Debug.warn("Failed to find cached file, using remote resource.");
-                            while (true) {
-                                try {
-                                    FileUtils.copyURLToFile(
-                                            new URL(downloadObject.getJSONObject("metadata").getString("art")),
-                                            new File(downloadObject.getJSONObject("metadata").getString("directory") + "/art.jpg")
-                                    );
-                                    break;
-                                } catch (IOException e) {
-
-                                    try {
-                                        if (Model.getInstance().connectionWatcher.isOffline()) {
-                                            Model.getInstance().connectionWatcher.getLatch().await();
-                                        }
-                                    } catch (InterruptedException e1) {
-                                        Debug.error("Thread interrupted while awaiting reconnection.", e);
-                                    }
-
-                                }
-                            }
-
-                        }
-                    }
-                    break;
-
-                // Keep for songs
-                case 2:
-                    if (downloadObject.getJSONArray("songs").length() == 1)
+                    // Keep always
+                    case 3:
                         FileUtils.copyFile(
                                 new File(Resources.getInstance().getApplicationData() + "cached/" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
                                 new File(downloadObject.getJSONObject("metadata").getString("directory") + "/art.jpg")
                         );
-                    break;
+                        break;
 
-                // Keep always
-                case 3:
-                    FileUtils.copyFile(
-                            new File(Resources.getInstance().getApplicationData() + "cached/" + downloadObject.getJSONObject("metadata").getString("artId") + ".jpg"),
-                            new File(downloadObject.getJSONObject("metadata").getString("directory") + "/art.jpg")
-                    );
-                    break;
-
-                default:
-                    Debug.error("Unexpected value: " + Model.getInstance().settings.getSettingInt("save_album_art"), new IllegalStateException());
+                    default:
+                        Debug.error("Unexpected value: " + Model.getInstance().settings.getSettingInt("save_album_art"), new IllegalStateException());
+                }
             }
         } catch (JSONException e) {
             Debug.error("Failed to perform check to copy album art to download.", e);
@@ -468,8 +503,17 @@ public class Downloader implements Runnable {
             Debug.warn("Failed to copy album art into downloads folder.");
         }
 
+        Debug.warn("Album art dealt with");
+
         // Move onto the next item if necessary
         processQueue();
+
+        Debug.warn("Queue processed");
+
+        Debug.success("Downloader thread terminated");
+
+
+
     }
 
     // Handles: Downloading File & Post Processing => (Validation of File, Audio Correction & Application of Metadata)
@@ -515,8 +559,12 @@ public class Downloader implements Runnable {
                     downloadedFile = downloadToDisk(song.getJSONArray("source").getString(sourceDepth));
 
                     if (Model.getInstance().settings.getSettingBool("advanced_validation") & !kill) {
-                        analysis = new AudioAnalysis(song.getString("sample"));
-                        compare = analysis.compare(Objects.requireNonNull(downloadedFile).getAbsolutePath());
+                        try {
+                            analysis = new AudioAnalysis(song.getString("sample"));
+                            compare = analysis.compare(Objects.requireNonNull(downloadedFile).getAbsolutePath());
+                        } catch (UnsupportedAudioFileException e) {
+                            Debug.warn("Failed to convert sample");
+                        }
                     }
 
                 } catch (IOException e) {
@@ -585,15 +633,23 @@ public class Downloader implements Runnable {
             // Loop Terminated
             try {
 
-                // Best download found, correct volume
-                if (volumeCorrection && !kill) {
-                    if (analysis == null) analysis = new AudioAnalysis(String.format(Resources.mp3Source, song.getString("sample")));
-                    analysis.correctAmplitude(Objects.requireNonNull(bestFile).getAbsolutePath());
-                }
+                try {
+                    if (mainThread.isInterrupted() || bestFile == null) return;
 
-                // Apply-metadata
-                if (!kill) {
-                    applyMeta(Objects.requireNonNull(bestFile));
+                    // Best download found, correct volume
+                    if (volumeCorrection) {
+                        if (analysis == null)
+                            analysis = new AudioAnalysis(String.format(Resources.mp3Source, song.getString("sample")));
+                        analysis.correctAmplitude(Objects.requireNonNull(bestFile).getAbsolutePath());
+                    }
+
+                    // Apply-metadata
+                    if (!mainThread.isInterrupted()) {
+                        applyMeta(Objects.requireNonNull(bestFile));
+                    }
+                } catch (UnsupportedAudioFileException e) {
+
+                    // cancel shouldn't happen often
                 }
 
             } catch (IOException | InvalidDataException | UnsupportedTagException | JSONException | JavaLayerException e) {
@@ -655,7 +711,8 @@ public class Downloader implements Runnable {
             try {
                 processDebugger.getAwaiter().await();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                processDebugger.kill();
+                return null;
             }
 
             // May receive a kill signal in way of download, should hence just return null

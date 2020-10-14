@@ -30,19 +30,13 @@ public class AudioAnalysis {
 
     private byte[] comparisonCache = new byte[]{};
 
-    public AudioAnalysis(String sampleSource) throws IOException, JavaLayerException {
+    public AudioAnalysis(String sampleSource) throws IOException, JavaLayerException, UnsupportedAudioFileException {
 
         InputStream mp3Stream = new URL(sampleSource).openStream();
         this.sample = convertMp3(mp3Stream.readAllBytes());
         mp3Stream.close();
 
-        try {
-            this.sampleAmplitude = getAmplitude(AudioSystem.getAudioInputStream(new ByteArrayInputStream(sample)));
-        } catch (UnsupportedAudioFileException e) {
-            Debug.error("Get amplitude failed on converted sample file, check conversion, this is very unexpected.", e);
-        }
-
-
+        this.sampleAmplitude = getAmplitude(AudioSystem.getAudioInputStream(new ByteArrayInputStream(sample)));
     }
 
     public float compare(String downloadedFile) throws IOException, JavaLayerException {

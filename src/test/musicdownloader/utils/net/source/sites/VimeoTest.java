@@ -22,12 +22,7 @@ class VimeoTest {
     @Test
     void invalidRequest() {
 
-        try {
-            Vimeo vimeoRequest = new Vimeo("%%%%%%%%%%%%", -1);
-
-        } catch (JSONException e) {
-            assert false;
-        }
+        Vimeo vimeoRequest = new Vimeo("%%%%%%%%%%%%", -1);
 
     }
 

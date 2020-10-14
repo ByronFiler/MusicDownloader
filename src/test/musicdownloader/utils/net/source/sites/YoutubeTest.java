@@ -18,11 +18,6 @@ class YoutubeTest {
 
     @Test
     void invalidRequest() {
-        try {
-            YouTube youtubeRequest = new YouTube("%%%%%%%%", -1);
-        } catch (JSONException e) {
-            assert false;
-        }
-
+        YouTube youtubeRequest = new YouTube("%%%%%%%%", -1);
     }
 }

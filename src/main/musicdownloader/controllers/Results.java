@@ -590,11 +590,13 @@ public class Results {
                 metadata.put("is_album", basicData.getJSONObject("data").getBoolean("album"));
                 metadata.put("format", Resources.songReferences.get(Model.getInstance().settings.getSettingInt("music_format")));
 
+                ArrayList<GetSources> sourcesGetters = new ArrayList<>();
+                threadAwaiter = new CountDownLatch(albumProcessor.getSongs().size());
+
                 if (basicData.getJSONObject("data").getBoolean("album")) {
 
-                    threadAwaiter = new CountDownLatch(albumProcessor.getSongs().size());
-
                     for (Allmusic.Album.song song : albumProcessor.getSongs()) {
+
                         songs.put(
                                 parseJsonFromSong(
                                         collectiveDownloadsObjects,
@@ -602,12 +604,12 @@ public class Results {
                                         song
                                 )
                         );
-                        songs.getJSONObject(albumProcessor.getSongs().indexOf(song)).put(
-                                "source",
-                                new GetSources(
-                                    metadata.get("artist") + " " + song.getTitle(),
-                                    song.getPlaytime()
-                                ).getSources()
+
+                        sourcesGetters.add(
+                                    new GetSources(
+                                            metadata.get("artist") + " " + song.getTitle(),
+                                            song.getPlaytime()
+                            )
                         );
                     }
 
@@ -638,16 +640,24 @@ public class Results {
                                     song
                             )
                     );
-                    songs.getJSONObject(0).put(
-                            "source",
+
+                    sourcesGetters.add(
                             new GetSources(
                                     metadata.get("artist") + " " + song.getTitle(),
                                     song.getPlaytime()
-                            ).getSources()
+                            )
                     );
                 }
 
                 threadAwaiter.await();
+
+                sourcesGetters.forEach(e -> {
+                    try {
+                        songs.getJSONObject(sourcesGetters.indexOf(e)).put("source", e.getSources());
+                    } catch (JSONException jsonException) {
+                        jsonException.printStackTrace();
+                    }
+                });
 
                 downloadItem.put("metadata", metadata);
                 downloadItem.put("songs", songs);
@@ -671,7 +681,6 @@ public class Results {
             private final CountDownLatch sitesAwaiter = new CountDownLatch(2);
 
             public GetSources(String query, int targetTime) {
-
                 youtube = new YouTube(query, targetTime);
                 vimeo = new Vimeo(query, targetTime);
 
@@ -695,6 +704,14 @@ public class Results {
             public void run() {
                 getResults(youtube);
                 getResults(vimeo);
+
+                try {
+                    sitesAwaiter.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                threadAwaiter.countDown();
             }
 
             public JSONArray getSources() {

@@ -19,6 +19,9 @@ public class YouTube extends Site {
         super(query, targetTime);
     }
 
+    private int fails = 0;
+    private final int failsLimit = 5;
+
     @Override
     public void run() {
 
@@ -52,8 +55,14 @@ public class YouTube extends Site {
         });
 
         if (jsDataAtm.get() == null) {
-            //jsDataAtm.set(requestedPage.select("script").get(24));
-            Debug.error("Failed to find youtube response.", new IllegalReceiveException());
+
+            fails++;
+
+            if (fails == failsLimit) Debug.error("Failed to find youtube response.", new IllegalReceiveException());
+            else {
+                run();
+                return;
+            }
         }
 
         try {
@@ -63,20 +72,20 @@ public class YouTube extends Site {
             //Element jsData = requestedPage.select("script").get(24);
 
             // Web Data -> JavaScript -> [String] -> Json -> Data
-            String jsonConversion = jsData.toString();
-            jsonConversion = jsonConversion.substring(39, jsonConversion.length() - 119);
+            String jsonConversion = "";
+            try {
+                jsonConversion = jsData.toString();
+                jsonConversion = jsonConversion.substring(39, jsonConversion.length() - 119);
+            } catch (NullPointerException e) {
+                System.out.println(jsData);
+            }
 
             // Web Data -> JavaScript -> String -> [Json] -> Data
             JSONObject json = new JSONObject();
             try {
                 json = new JSONObject(jsonConversion);
             } catch (JSONException e) {
-
-                // TODO: ANALYSE THIS
-                requestedPage.select("script").forEach(System.out::println);
-
                 Debug.error("Failed to parse JSON response.", e);
-
             }
 
             // Parsing deep JSON to get relevant data
