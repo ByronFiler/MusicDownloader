@@ -62,6 +62,9 @@ public class Results {
     private BorderPane offlineNotification;
 
     @FXML
+    private BorderPane resultsSpaceContainer;
+
+    @FXML
     private TextField searchField;
     @FXML
     private ProgressIndicator loadingIndicator;
@@ -231,9 +234,12 @@ public class Results {
 
                 // Search is valid to attempt
                 String tempQuery = searchField.getText();
+
                 Allmusic.Search search = new Allmusic.Search(tempQuery);
                 loadingIndicator.setVisible(true);
+
                 Thread resultsSearch = new Thread(() -> {
+
                     try {
                         search.query(Model.getInstance().settings.getSettingBool("data_saver"));
 
@@ -243,8 +249,10 @@ public class Results {
                     } catch (IOException er) {
                         defaultView("Connection issue detected, please verify connection and retry.");
                     }
+
                     try {
                         if (search.getResults().getJSONArray("songs").length() > 0) {
+
                             Platform.runLater(() -> {
                                 loadingIndicator.setVisible(false);
                                 loadedQuery = tempQuery;
@@ -253,9 +261,9 @@ public class Results {
 
                                 try {
                                     JSONArray songs = search.getResults().getJSONArray("songs");
-
                                     this.viewData = search.getResults();
-                                    mainContainer.setCenter(results);
+
+                                    resultsSpaceContainer.setCenter(results);
                                     results.getItems().clear();
 
                                     if (songs.length() > 0) {
@@ -341,7 +349,7 @@ public class Results {
         defaultInfoContainer.setAlignment(Pos.CENTER);
         defaultInfoContainer.setPadding(new Insets(0, 0, 40, 0));
 
-        mainContainer.setCenter(defaultInfoContainer);
+        resultsSpaceContainer.setCenter(defaultInfoContainer);
 
     }
 

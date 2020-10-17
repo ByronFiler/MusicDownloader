@@ -40,7 +40,7 @@
          </BorderPane>
       </bottom>
       <center>
-         <BorderPane BorderPane.alignment="CENTER">
+         <BorderPane fx:id="resultsSpaceContainer" BorderPane.alignment="CENTER">
             <top>
                <HBox maxHeight="40.0" minWidth="40.0" prefWidth="412.0" spacing="5.0" BorderPane.alignment="CENTER">
                   <padding>
