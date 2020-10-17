@@ -7,10 +7,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -31,11 +28,10 @@ import org.jsoup.nodes.Document;
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import static musicdownloader.utils.app.Resources.songReferences;
 import static musicdownloader.utils.app.Resources.supportedLocals;
@@ -148,13 +144,29 @@ public class Settings {
         saveAlbumArt.getItems().add(settingsLocale.getString("albumsOnlyOption"));
         saveAlbumArt.getItems().add(settingsLocale.getString("neverOption"));
 
-        language.getItems().setAll(
-                supportedLocals.stream().map(
-                        availableLocale -> availableLocale
-                                .getDisplayLanguage()
-                                .substring(0, 1)
-                                .toUpperCase() + availableLocale.getDisplayLanguage().substring(1)).toArray(String[]::new)
-        );
+        File[] flagIconFiles = supportedLocals.stream().map(
+                availableLocale -> {
+                    try {
+                        return new File(Objects.requireNonNull(getClass()
+                                .getClassLoader()
+                                .getResource(
+                                        String.format(
+                                                "resources/img/flags/%s.png",
+                                                availableLocale.getLanguage()
+                                        )
+                                )).toURI());
+                    } catch (URISyntaxException e) {
+                        Debug.error("Missing resource: " + availableLocale.getLanguage() + ".png", new MissingResourceException(getClass().toString(), "language icon", availableLocale.getLanguage() + ".png"));
+                        return new File("");
+                    }
+                }
+        ).toArray(File[]::new);
+
+        language.setCellFactory(c -> new LanguageIconCell());
+        language.setButtonCell(new LanguageIconCell());
+
+        Arrays.stream(flagIconFiles).forEach(flagIcon -> language.getItems().add("file:" + flagIcon.getAbsolutePath()));
+
         language.getSelectionModel().select(supportedLocals.indexOf(new Locale(Locale.getDefault().getLanguage())));
 
         // Information
@@ -262,6 +274,33 @@ public class Settings {
 
             ComboBox<String> modifiedSetting = (ComboBox<String>) e.getSource();
 
+            String preSetting;
+            String newSetting;
+            if (modifiedSetting == language) {
+
+                preSetting = fileNameToLanguage(modifiedSetting.getItems().get(
+                        Model.getInstance().settings.getSettingInt(
+                                CaseFormat.UPPER_CAMEL.to(
+                                        CaseFormat.LOWER_UNDERSCORE,
+                                        modifiedSetting.getId()
+                                )
+                        )
+                ));
+                newSetting = fileNameToLanguage(modifiedSetting.getSelectionModel().getSelectedItem());
+
+            } else {
+
+                preSetting = (modifiedSetting.getItems()).get(
+                        Model.getInstance().settings.getSettingInt(
+                                CaseFormat.UPPER_CAMEL.to(
+                                        CaseFormat.LOWER_UNDERSCORE,
+                                        modifiedSetting.getId()
+                                )
+                        )
+                );
+                newSetting = modifiedSetting.getSelectionModel().getSelectedItem();
+
+            }
 
             Debug.trace(
                     String.format(
@@ -272,15 +311,8 @@ public class Settings {
                                             StringUtils.SPACE
                                     )
                             ),
-                            (modifiedSetting.getItems()).get(
-                                    Model.getInstance().settings.getSettingInt(
-                                            CaseFormat.UPPER_CAMEL.to(
-                                                    CaseFormat.LOWER_UNDERSCORE,
-                                                    modifiedSetting.getId()
-                                            )
-                                    )
-                            ),
-                            modifiedSetting.getSelectionModel().getSelectedItem()
+                            preSetting,
+                            newSetting
                     )
             );
 
@@ -462,6 +494,13 @@ public class Settings {
 
     private String convertSwitchValue(boolean enabled) {
         return enabled ? "ENABLED" : "DISABLED";
+    }
+
+    private String fileNameToLanguage(String fileName) {
+
+        String displayLanguage = new Locale(FilenameUtils.removeExtension(new File(fileName).getName())).getDisplayLanguage();
+        return displayLanguage.substring(0, 1).toUpperCase() + displayLanguage.substring(1);
+
     }
 
     // Sends a web-request to the github to check the latest version available
@@ -783,6 +822,27 @@ public class Settings {
                 }
             }
         }
+    }
+
+    private class LanguageIconCell extends ListCell<String> {
+
+        protected void updateItem(String item, boolean empty) {
+
+            super.updateItem(item, empty);
+
+            if (item != null) {
+                ImageView iv = new ImageView(new Image(item));
+                iv.setFitWidth(30);
+                iv.setFitHeight(20);
+                setGraphic(iv);
+
+                setText(fileNameToLanguage(item));
+
+            }
+
+        }
+
+
     }
 
 }
