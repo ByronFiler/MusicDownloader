@@ -42,7 +42,7 @@ class AllmusicTest {
     @Test
     void validSong() {
 
-        Allmusic.song validRequest = new Allmusic.song("time-mt0042078650");
+        Allmusic.Song validRequest = new Allmusic.Song("time-mt0042078650");
         try {
             validRequest.load();
             assert (!validRequest.getAlbumArt().isEmpty()) && (!validRequest.getAlbumId().isEmpty()) && (!validRequest.getYear().isEmpty());
@@ -54,7 +54,7 @@ class AllmusicTest {
     @Test
     void invalidSong() {
 
-        Allmusic.song invalidRequest = new Allmusic.song("%%%%%%%");
+        Allmusic.Song invalidRequest = new Allmusic.Song("%%%%%%%");
         try {
             invalidRequest.load();
         } catch (IOException e) {
@@ -66,7 +66,7 @@ class AllmusicTest {
     @Test
     void validAlbum() {
 
-        Allmusic.album validAlbum = new Allmusic.album("the-dark-side-of-the-moon-mw0000191308");
+        Allmusic.Album validAlbum = new Allmusic.Album("the-dark-side-of-the-moon-mw0000191308");
         try {
             validAlbum.load();
             assert validAlbum.getSongs().size() == 10 && validAlbum.getPlaytime() > 0 && !validAlbum.getAlbum().isEmpty();
@@ -78,7 +78,7 @@ class AllmusicTest {
     @Test
     void invalidAlbum() {
 
-        Allmusic.album invalidAlbum = new Allmusic.album("%%%%%%%");
+        Allmusic.Album invalidAlbum = new Allmusic.Album("%%%%%%%");
         try {
             invalidAlbum.load();
         } catch (IOException e) {

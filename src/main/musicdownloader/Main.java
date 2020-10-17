@@ -19,6 +19,13 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
+// TODO: Double click should start download
+// TODO: Hitting back while playing a song should of course pause it
+// TODO: Consider UI imports to download a spotify playlist
+// TODO: Restructure UI to be more similar to twitter style
+// TODO: Start using abstract classes for result and some similar things
+// TODO: Generify youtube and vimeo classes
+
 public class Main extends Application {
 
     @Override
@@ -30,7 +37,7 @@ public class Main extends Application {
                 ResourceBundle.getBundle("resources.locale.search")
         );
         Parent root = loader.load();
-        primaryStage.setScene(new Scene(root));
+        primaryStage.setScene(new Scene(root, 638, 850));
         primaryStage.getIcons().add(new Image(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/icon.png"))));
         primaryStage.setTitle(ResourceBundle.getBundle("resources.locale.search").getString("hero"));
         primaryStage.show();
@@ -46,8 +53,14 @@ public class Main extends Application {
     }
 
     private void handleClose(WindowEvent event) {
+
+        final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.notification");
+
         Model.getInstance().view.setStageClosed(true);
+        Model.getInstance().connectionWatcher.close();
+
         Debug.trace("Primary stage closed.");
+
         if (!Model.getInstance().download.getDownloadObject().toString().equals(new JSONObject().toString())) {
 
             try {
@@ -58,8 +71,8 @@ public class Main extends Application {
                 }
 
                 new Notification(
-                        String.format("Downloading \"%s\" in Background...", Model.getInstance().download.getDownloadObject().getJSONObject("metadata").getString("album")),
-                        String.format("%s song%s remaining.", incompleteSongs, incompleteSongs == 1 ? "" : "s"),
+                        String.format(resourceBundle.getString("backgroundDownloadMessage"), Model.getInstance().download.getDownloadObject().getJSONObject("metadata").getString("album")),
+                        String.format(resourceBundle.getString(incompleteSongs == 1 ? "songsRemainingSingular" : "songsRemainingPlural"), incompleteSongs),
                         null,
                         TrayIcon.MessageType.INFO
                 );

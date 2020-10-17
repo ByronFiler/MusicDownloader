@@ -3,9 +3,9 @@ package musicdownloader.model;
 import musicdownloader.controllers.Downloads;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
-import musicdownloader.utils.io.validation.History;
 import musicdownloader.utils.io.Downloader;
-import musicdownloader.utils.io.Gzip;
+import musicdownloader.utils.io.GZip;
+import musicdownloader.utils.io.validation.History;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 public class Download {
 
@@ -23,8 +24,10 @@ public class Download {
     private JSONArray downloadHistory = new JSONArray();
 
     private Downloads downloadsView = null;
+    private Downloader downloader;
 
     public Download() {
+
         refreshDownloadHistory();
         if (downloadHistory.length() > 0) {
 
@@ -77,7 +80,7 @@ public class Download {
             }
 
             downloadObject = queueItem;
-            new Downloader();
+            downloader = new Downloader();
 
         } else {
 
@@ -105,17 +108,6 @@ public class Download {
 
     }
 
-    public synchronized void deleteQueue(JSONObject targetDeletion) {
-        // Adding all to history except history item to remove
-        try {
-
-            this.downloadQueue = jsonArrayRemoval(targetDeletion, downloadQueue);
-
-        } catch (JSONException e) {
-            Debug.error("Failed to validate download queue to remove element.", e);
-        }
-    }
-
     private JSONArray jsonArrayRemoval(JSONObject targetDeletion, JSONArray downloadQueue) throws JSONException {
 
         JSONArray newQueue = new JSONArray();
@@ -140,7 +132,7 @@ public class Download {
     }
 
     public synchronized void setDownloadHistory(JSONArray downloadHistory) throws IOException{
-        Gzip.compressData(
+        GZip.compressData(
                 new ByteArrayInputStream(downloadHistory.toString().getBytes()),
                 new File(Resources.getInstance().getApplicationData() + "json/downloads.gz")
         );
@@ -159,7 +151,7 @@ public class Download {
 
         try {
             JSONArray diskHistory = new JSONArray(
-                    Gzip.decompressFile(
+                    GZip.decompressFile(
                             new File(
                                     Resources.getInstance().getApplicationData() + "json/downloads.gz"
                             )
@@ -223,4 +215,27 @@ public class Download {
         }
 
     }
+
+    public void cancel(int songIndex) {
+        Objects.requireNonNull(downloader).cancel(songIndex);
+
+        if (songIndex != -1) {
+            try {
+                downloadObject.getJSONArray("songs").getJSONObject(songIndex).put("cancelled", true);
+            } catch (JSONException e) {
+                Debug.error("Failed to access songs to mark song as cancelled.", e);
+            }
+        }
+    }
+
+    public void markCancelled(int songIndex) {
+
+        if (downloadsView != null) {
+
+            downloadsView.markCancelled(songIndex);
+
+        }
+
+    }
+
 }

@@ -7,11 +7,15 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
@@ -27,20 +31,25 @@ import org.jsoup.nodes.Document;
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Timer;
-import java.util.*;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.ResourceBundle;
 
-import static musicdownloader.utils.app.Resources.*;
+import static musicdownloader.utils.app.Resources.songReferences;
+import static musicdownloader.utils.app.Resources.supportedLocals;
 
 // TODO: Information & Files cutoff when resizing
+// TODO: Constraints
 
 public class Settings {
 
     @FXML
     private BorderPane root;
+
+    @FXML
+    private BorderPane offlineNotification;
 
     // Information
     @FXML
@@ -93,21 +102,42 @@ public class Settings {
 
     // Application Configuration
     @FXML
-    private ComboBox<String> languageFormat;
+    private ComboBox<String> language;
     @FXML
     private ToggleSwitch darkThemeToggle;
     @FXML
     private ToggleSwitch dataSaverToggle;
 
-    // Confirm / Cancel
-    @FXML Button cancel;
+    @FXML
+    private Label reset;
 
-    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.settings");
-
-    // TODO: Add a reset settings button
+    private final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.settings");
+    private boolean versionLoaded = false;
 
     @FXML
     protected void initialize() {
+
+        Model.getInstance().connectionWatcher.switchMode(this);
+        if (Model.getInstance().connectionWatcher.isOffline()) {
+
+            latestVersion.setText(resourceBundle.getString("unknownMessage"));
+            latestVersionContainer.getChildren().clear();
+            latestVersionContainer.getChildren().addAll(
+                    latestVersion,
+                    new ImageView(
+                            new Image(
+                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                                    20,
+                                    20,
+                                    true,
+                                    true
+                            )
+                    )
+            );
+
+            offlineNotification.setVisible(true);
+            offlineNotification.setManaged(true);
+        } else new getLatestVersion(false);
 
         // Prepare settings information from model data
         ResourceBundle settingsLocale = ResourceBundle.getBundle("resources.locale.settings");
@@ -118,17 +148,18 @@ public class Settings {
         saveAlbumArt.getItems().add(settingsLocale.getString("albumsOnlyOption"));
         saveAlbumArt.getItems().add(settingsLocale.getString("neverOption"));
 
-        for (Locale availableLocale: supportedLocals) {
-
-            languageFormat.getItems().add(availableLocale.getDisplayLanguage());
-
-        }
-
-        languageFormat.getSelectionModel().select(supportedLocals.indexOf(new Locale(Locale.getDefault().getLanguage())));
+        language.getItems().setAll(
+                supportedLocals.stream().map(
+                        availableLocale -> availableLocale
+                                .getDisplayLanguage()
+                                .substring(0, 1)
+                                .toUpperCase() + availableLocale.getDisplayLanguage().substring(1)).toArray(String[]::new)
+        );
+        language.getSelectionModel().select(supportedLocals.indexOf(new Locale(Locale.getDefault().getLanguage())));
 
         // Information
         if (Model.getInstance().settings.getVersion() == null) {
-            version.setText("Unknown");
+            version.setText(resourceBundle.getString("unknownMessage"));
             versionContainer.getChildren().add(
                     new ImageView(
                             new Image(
@@ -155,49 +186,10 @@ public class Settings {
             );
         }
 
-
-
-        version.setText(Model.getInstance().settings.getVersion() == null ? "Unknown" : Model.getInstance().settings.getVersion());
-        new getLatestVersion(false);
+        version.setText(Model.getInstance().settings.getVersion() == null ? resourceBundle.getString("unknownMessage") : Model.getInstance().settings.getVersion());
         new verifyExecutable(Resources.getInstance().getYoutubeDlExecutable(), youtubeDl, youtubeDlContainer);
         new verifyExecutable(Resources.getInstance().getFfmpegExecutable(), ffmpeg, ffmpegContainer);
-
-
-        // Files
-        String outputDirectoryRaw = Model.getInstance().settings.getSetting("output_directory").equals("") ?
-                System.getProperty("user.dir") :
-                Model.getInstance().settings.getSetting("output_directory");
-        outputDirectory.setText(outputDirectoryRaw);
-        musicFormat.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("music_format")));
-        saveAlbumArt.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("save_album_art")));
-        new validateDirectory(outputDirectoryRaw);
-
-        // Audio
-        advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
-        volumeCorrectionToggle.setSelected(Model.getInstance().settings.getSettingBool("volume_correction"));
-
-        // Meta-Data
-        albumArtToggle.setSelected(Model.getInstance().settings.getSettingBool("album_art"));
-        albumTitleToggle.setSelected(Model.getInstance().settings.getSettingBool("album_title"));
-        songTitleToggle.setSelected(Model.getInstance().settings.getSettingBool("song_title"));
-        artistToggle.setSelected(Model.getInstance().settings.getSettingBool("artist"));
-        yearToggle.setSelected(Model.getInstance().settings.getSettingBool("year"));
-        trackNumberToggle.setSelected(Model.getInstance().settings.getSettingBool("track"));
-
-        // Application
-        darkThemeToggle.setSelected(Model.getInstance().settings.getSettingBool("dark_theme"));
-        dataSaverToggle.setSelected(Model.getInstance().settings.getSettingBool("data_saver"));
-
-        // Load theme
-        root.getStylesheets().setAll(
-                Objects.requireNonNull(
-                        getClass()
-                                .getClassLoader()
-                                .getResource(
-                                        "resources/css/" + (Model.getInstance().settings.getSettingBool("dark_theme") ? "dark" : "standard") + ".css"
-                                )
-                ).toString()
-        );
+        initialiseUiSettings();
 
         Debug.trace("Initialized settings view.");
 
@@ -243,7 +235,7 @@ public class Settings {
     protected void saveSettings(Event e) {
 
         final String settingsFormatString = "Settings Changed %s: %s -> %s";
-        if ( (e.getSource()).getClass().equals(ToggleSwitch.class) ) {
+        if ((e.getSource()).getClass().equals(ToggleSwitch.class)) {
 
             ToggleSwitch modifiedSetting = (ToggleSwitch) e.getSource();
 
@@ -267,7 +259,9 @@ public class Settings {
 
         } else if ((e.getSource()).getClass().equals(ComboBox.class)) {
 
+
             ComboBox<String> modifiedSetting = (ComboBox<String>) e.getSource();
+
 
             Debug.trace(
                     String.format(
@@ -278,7 +272,7 @@ public class Settings {
                                             StringUtils.SPACE
                                     )
                             ),
-                            (modifiedSetting.getId().equals("musicFormat") ? songReferences : albumArtOptions).get(
+                            (modifiedSetting.getItems()).get(
                                     Model.getInstance().settings.getSettingInt(
                                             CaseFormat.UPPER_CAMEL.to(
                                                     CaseFormat.LOWER_UNDERSCORE,
@@ -336,7 +330,7 @@ public class Settings {
     @FXML
     protected void updateLanguage(Event e) {
 
-        Locale.setDefault(supportedLocals.get(languageFormat.selectionModelProperty().getValue().getSelectedIndex()));
+        Locale.setDefault(supportedLocals.get(language.selectionModelProperty().getValue().getSelectedIndex()));
         saveSettings(e);
 
         try {
@@ -353,8 +347,42 @@ public class Settings {
                             )
                     );
 
-        } catch(IOException er) {
+        } catch (IOException er) {
             Debug.error("Missing FXML File: Settings.fxml", er);
+        }
+    }
+
+    @FXML
+    public void selectReset() {
+
+        reset.setUnderline(true);
+        reset.setTextFill(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.WHITE : Color.BLACK);
+
+    }
+
+    @FXML
+    public void unselectReset() {
+
+        reset.setUnderline(false);
+        reset.setTextFill(Model.getInstance().settings.getSettingBool("dark_theme") ? Color.valueOf("#C1C7C9") : Color.valueOf("#2e242c"));
+
+    }
+
+    @FXML
+    public void resetSettings() {
+
+        Model.getInstance().settings.resetSettings();
+        initialiseUiSettings();
+
+    }
+
+    public BorderPane getOfflineNotification() {
+        return offlineNotification;
+    }
+
+    public synchronized void versionCheck() {
+        if (!versionLoaded) {
+            new getLatestVersion(false);
         }
     }
 
@@ -382,7 +410,7 @@ public class Settings {
             // Application Configuration
             settings.put("dark_theme", darkThemeToggle.isSelected());
             settings.put("data_saver", dataSaverToggle.isSelected());
-            settings.put("language", languageFormat.getSelectionModel().getSelectedIndex());
+            settings.put("language", language.getSelectionModel().getSelectedIndex());
 
         } catch (JSONException e) {
             Debug.error("Failed to generate new settings.", e);
@@ -390,6 +418,45 @@ public class Settings {
 
         return settings;
 
+
+    }
+
+    private void initialiseUiSettings() {
+
+        String outputDirectoryRaw = Model.getInstance().settings.getSetting("output_directory").equals("") ?
+                System.getProperty("user.dir") :
+                Model.getInstance().settings.getSetting("output_directory");
+        outputDirectory.setText(outputDirectoryRaw);
+        musicFormat.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("music_format")));
+        saveAlbumArt.getSelectionModel().select(Integer.parseInt(Model.getInstance().settings.getSetting("save_album_art")));
+        new validateDirectory(outputDirectoryRaw);
+
+        // Audio
+        advancedValidationToggle.setSelected(Model.getInstance().settings.getSettingBool("advanced_validation"));
+        volumeCorrectionToggle.setSelected(Model.getInstance().settings.getSettingBool("volume_correction"));
+
+        // Meta-Data
+        albumArtToggle.setSelected(Model.getInstance().settings.getSettingBool("album_art"));
+        albumTitleToggle.setSelected(Model.getInstance().settings.getSettingBool("album_title"));
+        songTitleToggle.setSelected(Model.getInstance().settings.getSettingBool("song_title"));
+        artistToggle.setSelected(Model.getInstance().settings.getSettingBool("artist"));
+        yearToggle.setSelected(Model.getInstance().settings.getSettingBool("year"));
+        trackNumberToggle.setSelected(Model.getInstance().settings.getSettingBool("track"));
+
+        // Application
+        darkThemeToggle.setSelected(Model.getInstance().settings.getSettingBool("dark_theme"));
+        dataSaverToggle.setSelected(Model.getInstance().settings.getSettingBool("data_saver"));
+
+        // Load theme
+        root.getStylesheets().setAll(
+                Objects.requireNonNull(
+                        getClass()
+                                .getClassLoader()
+                                .getResource(
+                                        "resources/css/" + (Model.getInstance().settings.getSettingBool("dark_theme") ? "dark" : "standard") + ".css"
+                                )
+                ).toString()
+        );
 
     }
 
@@ -416,10 +483,18 @@ public class Settings {
                 Document githubRequestLatestVersion = Jsoup.connect(Resources.remoteVersionUrl).get();
                 JSONObject jsonData = new JSONObject(githubRequestLatestVersion.text());
                 Platform.runLater(() -> {
+
                     try {
                         latestVersion.setText(jsonData.getString("version"));
-                        latestVersionContainer.getChildren().add(
-                                new ImageView(
+                        versionLoaded = true;
+                    } catch (JSONException e) {
+                        Debug.error("Found data syntactically incorrect.", e);
+                    }
+
+                    latestVersionContainer.getChildren().clear();
+                    latestVersionContainer.getChildren().add(latestVersion);
+                    latestVersionContainer.getChildren().add(
+                            new ImageView(
                                     new Image(
                                             Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
                                             20,
@@ -427,19 +502,18 @@ public class Settings {
                                             true,
                                             true
                                     )
-                                )
-                        );
+                            )
+                    );
 
-                    } catch (JSONException ignored) {
-                        Debug.warn("Found data syntactically incorrect.");
-                    }
+                    offlineNotification.setVisible(false);
+                    offlineNotification.setManaged(false);
                 });
 
             } catch (IOException | JSONException e) {
                 if (!suppressWarning) {
                     Debug.warn("Failed to get latest version, connection issue.");
                     Platform.runLater(() -> {
-                        latestVersion.setText("Unknown");
+                        latestVersion.setText(resourceBundle.getString("unknownMessage"));
                         latestVersionContainer.getChildren().clear();
                         latestVersionContainer.getChildren().addAll(
                                 latestVersion,
@@ -455,38 +529,7 @@ public class Settings {
                         );
                     });
                 }
-                new awaitReconnection();
             }
-        }
-
-    }
-
-    // Will attempt to check the version in the event of failure will update
-    class awaitReconnection implements Runnable {
-
-        public awaitReconnection() {
-            Thread thread = new Thread(this, "reconnection-get-version");
-            thread.setDaemon(true);
-            thread.start();
-        }
-
-        public void run() {
-
-            // Sending repeated connection attempts is fine as we only need one to succeed, rest go nowhere
-            Timer connectionAttempt = new Timer();
-            connectionAttempt.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    try {
-                        if (InetAddress.getByName("github.com").isReachable(1000)) {
-                            new getLatestVersion(true);
-                            connectionAttempt.cancel();
-                        }
-                    } catch (IOException ignored) {}
-
-                }
-            }, 0, 1000);
-
         }
 
     }
@@ -553,9 +596,9 @@ public class Settings {
 
                     // Warn user
                     Platform.runLater(() ->
-                        outputDirectoryContainer
-                                .getChildren()
-                                .add(warningImage)
+                            outputDirectoryContainer
+                                    .getChildren()
+                                    .add(warningImage)
                     );
 
                     Debug.trace("Output directory was found, but lacking write permissions.");
@@ -570,7 +613,6 @@ public class Settings {
                 }
 
 
-
             }
 
 
@@ -580,13 +622,14 @@ public class Settings {
     }
 
     // Attempts to test an execution
-    static class verifyExecutable implements Runnable {
+    class verifyExecutable implements Runnable {
 
         private final String executablePath;
         private final Label element;
         private final HBox elementContainer;
 
         verifyExecutable(String executablePath, Label element, HBox elementContainer) {
+
             this.executablePath = executablePath;
             this.element = element;
             this.elementContainer = elementContainer;
@@ -596,6 +639,7 @@ public class Settings {
             thread.start();
         }
 
+        @Override
         public void run() {
 
             try {
@@ -624,14 +668,14 @@ public class Settings {
                     element.setText(resourceBundle.getString("notConfiguredSubtext"));
                     elementContainer.getChildren().add(
                             new ImageView(
-                                new Image(
-                                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
-                                        20,
-                                        20,
-                                        true,
-                                        true
-                                )
-                        )
+                                    new Image(
+                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                                            20,
+                                            20,
+                                            true,
+                                            true
+                                    )
+                            )
                     );
 
                     // Installation requires admin permissions, hence verify the user is a admin, or inform them
@@ -641,27 +685,26 @@ public class Settings {
                             Tooltip.install(elementContainer, new Tooltip("Click to configure"));
                             elementContainer.setOnMouseClicked(e ->
                                     new manageInstall(
-                                        FilenameUtils.removeExtension(Paths.get(executablePath).getFileName().toString()),
-                                        element,
-                                        elementContainer
+                                            FilenameUtils.removeExtension(Paths.get(executablePath).getFileName().toString()),
+                                            element,
+                                            elementContainer
                                     )
                             );
-                        } else Tooltip.install(elementContainer, new Tooltip("Easy installation requires elevated permissions, restart the program and try again."));
+                        } else
+                            Tooltip.install(elementContainer, new Tooltip("Easy installation requires elevated permissions, restart the program and try again."));
                     }
                 });
             }
 
         }
 
-        private static class manageInstall implements Runnable {
+        private class manageInstall implements Runnable {
 
             final String executable;
             final Label element;
             final HBox elementContainer;
 
             manageInstall(String executable, Label element, HBox elementContainer) {
-
-                System.out.println(executable);
 
                 this.executable = executable;
                 this.element = element;
@@ -704,24 +747,26 @@ public class Settings {
 
                     else
                         Platform.runLater(() -> {
-                            element.setText(resourceBundle.getString("configureManuallySubtext"));
-                            elementContainer.getChildren().set(
-                                    1,
-                                    new ImageView(
-                                            new Image(
-                                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
-                                                    20,
-                                                    20,
-                                                    true,
-                                                    true
+                                    element.setText(resourceBundle.getString("configureManuallySubtext"));
+                                    elementContainer.getChildren().set(
+                                            1,
+                                            new ImageView(
+                                                    new Image(
+                                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                                                            20,
+                                                            20,
+                                                            true,
+                                                            true
+                                                    )
                                             )
-                                    )
-                            );}
+                                    );
+                                }
                         );
 
                 } catch (IOException e) {
                     Debug.warn("Failed to configure due to likely permission issues, despite that it should be blocked.");
-                    Platform.runLater(() -> {element.setText(resourceBundle.getString("configureManuallySubtext"));
+                    Platform.runLater(() -> {
+                        element.setText(resourceBundle.getString("configureManuallySubtext"));
                         elementContainer.getChildren().set(
                                 1,
                                 new ImageView(

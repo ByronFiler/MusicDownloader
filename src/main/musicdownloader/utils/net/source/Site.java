@@ -1,24 +1,40 @@
 package musicdownloader.utils.net.source;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-public class Site {
+import java.util.concurrent.CountDownLatch;
+
+public abstract class Site implements Runnable {
 
     protected final String query;
     protected final int targetTime;
 
-    protected final JSONObject results = new JSONObject("{\"primary\": [], \"secondary\": []}");
+    protected final JSONObject results = new JSONObject();
     protected int retries = 5;
 
     protected Document requestedPage = null;
+    protected CountDownLatch latch;
 
-    public Site(String query, int targetTime) throws JSONException {
+    public Site(String query, int targetTime) {
+        try {
+            results.put("primary", new JSONArray());
+            results.put("secondary", new JSONArray());
+        } catch (JSONException ignored) {}
 
         this.query = query;
         this.targetTime = targetTime;
 
+    }
+
+    public void setLatch(CountDownLatch latch) {
+        this.latch = latch;
+    }
+
+    public JSONObject getResults() {
+        return results;
     }
 
     protected int timeConversion(String stringTime) {
@@ -30,10 +46,6 @@ public class Site {
             songLenSec += (Double.parseDouble(songDataBreak[Math.abs(i - songDataBreak.length + 1)]) * Math.pow(60, i));
 
         return songLenSec;
-    }
-
-    public JSONObject getResults() {
-        return results;
     }
 
 }

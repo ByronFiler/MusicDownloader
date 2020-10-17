@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-public class Gzip {
+public class GZip {
 
     static byte[] buffer = new byte[1024];
     static int len;

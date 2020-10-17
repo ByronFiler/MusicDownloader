@@ -16,7 +16,7 @@ class gzipTest {
     void decompressFile() {
 
         try {
-            Gzip.decompressFile(new File("src/test/resources/downloads0.gz"));
+            GZip.decompressFile(new File("src/test/resources/downloads0.gz"));
 
         } catch (IOException e) {
             assert false;
@@ -29,14 +29,12 @@ class gzipTest {
 
         try {
 
-            Gzip.compressData(
+            GZip.compressData(
                     new ByteArrayInputStream("Example test".getBytes()),
                     new File("src/test/resources/test.gz")
             );
             String md5Hash = DigestUtils.md5Hex(Files.newInputStream(Paths.get("src/test/resources/test.gz")));
             Files.delete(Paths.get("src/test/resources/test.gz"));
-
-            System.out.println(md5Hash);
 
             Assert.assertEquals(
                     "860c806c3db0f3540d99a7be8366442f",

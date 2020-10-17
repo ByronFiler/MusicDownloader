@@ -11,13 +11,13 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import musicdownloader.Main;
 import musicdownloader.utils.app.Debug;
 
 import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 public class Result {
 
@@ -27,10 +27,15 @@ public class Result {
     protected final ImageView albumArt = new ImageView();
     protected final BorderPane leftTextContainer = new BorderPane();
     protected final BorderPane imageContainer = new BorderPane();
+    protected final HBox titleContainer = new HBox();
     protected final Label title = new Label();
 
     protected final HBox right = new HBox();
     protected final ContextMenu menu = new ContextMenu();
+
+    protected boolean albumArtRendered = false;
+    protected boolean threadRunning = false;
+    protected final String remoteArtResource;
 
     public Result(
             String localArtResource,
@@ -39,51 +44,18 @@ public class Result {
             String title,
             String artist
     ) {
-        sharedInitialisation(title, artist);
-        if (localArtResource != null && Files.exists(Paths.get(localArtResource))) {
-
-            albumArt.setImage(
-                    new Image(
-                            new File(localArtResource).toURI().toString(),
-                            85,
-                            85,
-                            true,
-                            true
-                    )
-            );
-
-        } else {
-            if (forceLoadRemote) fetchRemoteResource(remoteArtResource);
-
-            else
-                new Thread(() -> {
-                    useFallbackAlbumArt();
-
-                    try {
-                        Thread.sleep((long) (Math.random() * 1000));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                    fetchRemoteResource(remoteArtResource);
-                }, "album-art-loader").start();
-
-        }
-
-        imageContainer.getChildren().add(albumArt);
-        left.getChildren().setAll(imageContainer, leftTextContainer);
-        view.setLeft(left);
-    }
-
-    private void sharedInitialisation(String title, String artist) {
 
         this.title.setText(title);
         this.title.getStyleClass().setAll("sub_title1");
 
+        this.remoteArtResource = remoteArtResource;
+
         Label artistLabel = new Label(artist);
         artistLabel.getStyleClass().setAll("sub_title2");
 
-        VBox songArtistContainer = new VBox(this.title, artistLabel);
+        titleContainer.getChildren().add(this.title);
+
+        VBox songArtistContainer = new VBox(titleContainer, artistLabel);
         songArtistContainer.setAlignment(Pos.TOP_LEFT);
 
         leftTextContainer.setTop(songArtistContainer);
@@ -109,6 +81,35 @@ public class Result {
         });
         view.addEventHandler(MouseEvent.MOUSE_PRESSED, event -> menu.hide());
         view.getStyleClass().add("result");
+
+        if (localArtResource != null && Files.exists(Paths.get(localArtResource))) {
+
+            albumArt.setImage(
+                    new Image(
+                            new File(localArtResource).toURI().toString(),
+                            85,
+                            85,
+                            true,
+                            true
+                    )
+            );
+
+        } else {
+
+            useFallbackAlbumArt();
+
+            if (forceLoadRemote) {
+                new loadAlbumArt(remoteArtResource).run();
+            } else {
+                Thread albumArtLoader = new Thread(new loadAlbumArt(remoteArtResource), "album-art-loader");
+                albumArtLoader.setDaemon(true);
+                albumArtLoader.start();
+            }
+        }
+
+        imageContainer.getChildren().add(albumArt);
+        left.getChildren().setAll(imageContainer, leftTextContainer);
+        view.setLeft(left);
     }
 
     public synchronized BorderPane getView() {
@@ -125,6 +126,10 @@ public class Result {
 
     }
 
+    public synchronized void setAlbumArt(Image art) {
+        albumArt.setImage(art);
+    }
+
     protected void fetchRemoteResource(String remoteArtResource) {
         Image albumArtImage = new Image(
                 remoteArtResource,
@@ -135,8 +140,9 @@ public class Result {
         );
 
         if (albumArtImage.getHeight() == 0) useFallbackAlbumArt();
-
         else albumArt.setImage(albumArtImage);
+
+        albumArtRendered = true;
     }
 
     private void useFallbackAlbumArt() {
@@ -144,7 +150,7 @@ public class Result {
         try {
             albumArt.setImage(
                     new Image(
-                            getClass().getClassLoader().getResource("resources/img/song_default.png").toURI().toString(),
+                            Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/song_default.png")).toURI().toString(),
                             85,
                             85,
                             true,
@@ -153,6 +159,40 @@ public class Result {
             );
         } catch (URISyntaxException er) {
             Debug.error("Failed to set default album art.", er);
+        }
+
+    }
+
+    protected class loadAlbumArt implements Runnable {
+
+        private final String remoteArtResource;
+
+        public loadAlbumArt(String remoteArtResource) {
+            threadRunning = true;
+            this.remoteArtResource = remoteArtResource;
+        }
+
+        @Override
+        public void run() {
+
+            if (remoteArtResource == null) useFallbackAlbumArt();
+            else {
+                Image albumArtImage = new Image(
+                        remoteArtResource,
+                        85,
+                        85,
+                        true,
+                        true
+                );
+
+                if (albumArtImage.getHeight() == 0) useFallbackAlbumArt();
+                else {
+                    albumArt.setImage(albumArtImage);
+                    albumArtRendered = true;
+                }
+            }
+
+            threadRunning = false;
         }
 
     }

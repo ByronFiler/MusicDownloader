@@ -72,7 +72,9 @@ public class Settings {
 
     }
 
-    private void resetSettings() {
+    public void resetSettings() {
+
+        settings = defaultSettings;
 
         try {
 
@@ -87,26 +89,6 @@ public class Settings {
 
             else Debug.error("Failed to reset settings.", e);
         }
-    }
-
-    private boolean resetDirectories() {
-
-        boolean wasUseful = false;
-
-        // Checking for non existing folders
-        if (!Files.exists(Paths.get(Resources.getInstance().getApplicationData() + "cached"))) {
-            wasUseful = true;
-            if (!new File(Resources.getInstance().getApplicationData() + "cached").mkdirs())
-                Debug.error("Failed to create non existing directory: " + Resources.getInstance().getApplicationData() + "cached", new IOException());
-        }
-
-        if (!Files.exists(Paths.get(Resources.getInstance().getApplicationData() + "json"))) {
-            wasUseful = true;
-            if (!new File(Resources.getInstance().getApplicationData() + "json").mkdirs())
-                Debug.error("Failed to create non existing directory: " + Resources.getInstance().getApplicationData() + "json", new IOException());
-        }
-
-        return wasUseful;
     }
 
     public void saveSettings(JSONObject settings) {
@@ -157,6 +139,26 @@ public class Settings {
 
     public synchronized JSONObject getSettings() {
         return settings;
+    }
+
+    private boolean resetDirectories() {
+
+        boolean wasUseful = false;
+
+        // Checking for non existing folders
+        if (!Files.exists(Paths.get(Resources.getInstance().getApplicationData() + "cached"))) {
+            wasUseful = true;
+            if (!new File(Resources.getInstance().getApplicationData() + "cached").mkdirs())
+                Debug.error("Failed to create non existing directory: " + Resources.getInstance().getApplicationData() + "cached", new IOException());
+        }
+
+        if (!Files.exists(Paths.get(Resources.getInstance().getApplicationData() + "json"))) {
+            wasUseful = true;
+            if (!new File(Resources.getInstance().getApplicationData() + "json").mkdirs())
+                Debug.error("Failed to create non existing directory: " + Resources.getInstance().getApplicationData() + "json", new IOException());
+        }
+
+        return wasUseful;
     }
 
     public String getVersion() {

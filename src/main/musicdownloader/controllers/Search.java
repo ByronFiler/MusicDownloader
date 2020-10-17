@@ -19,8 +19,6 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.net.db.sites.Allmusic;
@@ -29,29 +27,25 @@ import org.json.JSONException;
 import org.jsoup.HttpStatusException;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Objects;
+import java.util.ResourceBundle;
 
-/*
-TODO
- - Network malarkey Control Panel\Network and Internet\Network Connections
- */
 public class Search {
 
     @FXML
     private AnchorPane root;
 
     @FXML
-    private VBox searchContainer;
+    private BorderPane offlineNotification;
+
     @FXML
     private TextField search;
     @FXML
     private ProgressIndicator loadingIcon;
-    @FXML
-    private Text errorMessage;
     @FXML
     private ListView<HBox> autocompleteResults;
 
@@ -60,15 +54,18 @@ public class Search {
     @FXML
     private ImageView settings;
 
-    private Timer hideErrorMessage;
-
     private generateAutocomplete autoCompleteThread;
     private boolean searchQueryActive = false;
 
-    private final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.search");
-
     @FXML
     private void initialize() {
+
+        Model.getInstance().connectionWatcher.switchMode(this);
+        if (Model.getInstance().connectionWatcher.isOffline()) {
+            offlineNotification.setVisible(true);
+            offlineNotification.setManaged(true);
+            search.setDisable(true);
+        }
 
         // Loading in CSS
         if (Model.getInstance().settings.getSettingBool("dark_theme")) {
@@ -144,7 +141,7 @@ public class Search {
                 if (search.getText().length() > 0) {
                     // Kill previous & spawn a new autocomplete thread
                     try {autoCompleteThread.kill();} catch (NullPointerException ignored) {}
-                    autoCompleteThread = new generateAutocomplete(search.getText() + e.getText());
+                    autoCompleteThread = new generateAutocomplete(search.getText() + e.getText(), e);
                 }
 
             } else if (e.getCode() == KeyCode.ENTER) {
@@ -152,86 +149,10 @@ public class Search {
                 if (search.getText().length() > 1) {
 
                     // Starting the new search thread
-                    if (searchQueryActive) error(resourceBundle.getString("searchInProgressMessage"));
-                    else {
-                        loadingIcon.setVisible(true);
-                        searchQueryActive = true;
-                        Thread queryThread = new Thread(() -> {
-                            Allmusic.Search searcher = new Allmusic.Search(search.getText() + e.getText());
+                    search.setText(search.getText() + e.getCharacter());
+                    search(e);
 
-                            try {
-                                long preQueryTime = Instant.now().toEpochMilli();
-
-                                searcher.query(Model.getInstance().settings.getSettingBool("data_saver"));
-
-                                // Can open each song page and find relevant album to display album art, and other information such as genre and year which isn't given in a default search
-                                if (!Model.getInstance().settings.getSettingBool("data_saver")) {
-                                    searcher.getSongExternalInformation();
-                                }
-
-                                // This causes a lot of time:tm:
-                                Model.getInstance().search.setSearchResults(searcher.buildView().toArray(new BorderPane[0]));
-                                Model.getInstance().search.setSearchResultsJson(searcher.getResults());
-
-                                long now = Instant.now().toEpochMilli();
-
-                                if (!Model.getInstance().settings.getSettingBool("data_saver") && searcher.getSongCount() > 0) {
-                                    Debug.trace(
-                                            String.format(
-                                                    "Query completed in %.2f seconds, containing %s album(s) %s song(s)",
-                                                    (double) (now - preQueryTime) / 1000,
-                                                    searcher.getAlbumCount(),
-                                                    searcher.getSongCount()
-                                            )
-                                    );
-                                }
-
-                                Platform.runLater(() -> {
-                                    try {
-                                        (
-                                                ((Node) e.getSource())
-                                                        .getScene()
-                                                        .getWindow()
-                                        )
-                                                .getScene()
-                                                .setRoot(
-                                                        FXMLLoader.load(
-                                                                Objects.requireNonNull(getClass().getClassLoader().getResource("resources/fxml/results.fxml")),
-                                                                ResourceBundle.getBundle("resources.locale.results")
-                                                        )
-                                                );
-                                    } catch (IOException er) {
-                                        Debug.error("FXML Error: Settings.fxml", er);
-                                    } catch (NullPointerException ignored) {}
-                                });
-
-
-                            } catch (HttpStatusException ignored) {
-
-                                Platform.runLater(() -> {
-                                    loadingIcon.setVisible(false);
-                                    searchQueryActive = false;
-
-                                    error(resourceBundle.getString("noResultsFoundMessage"));
-                                });
-
-                            } catch (IOException er) {
-                                Platform.runLater(() -> {
-
-                                    loadingIcon.setVisible(false);
-                                    searchQueryActive = false;
-
-                                    Debug.warn("Failed to connect to " + Allmusic.baseDomain + Allmusic.Search.subdirectory + search.getText() + e.getText());
-                                    new awaitReconnection();
-                                });
-                            }
-
-                        });
-                        queryThread.setDaemon(true);
-                        queryThread.start();
-                    }
-
-                } else error(resourceBundle.getString("queryTooShortMessage"));
+                }
 
             }
 
@@ -245,46 +166,111 @@ public class Search {
             } catch (NullPointerException ignored) {}
 
         }
+
     }
 
-    private void error(String message) {
+    private void search(KeyEvent event) {
 
-        autocompleteResults.getItems().clear();
-        autocompleteResults.setVisible(false);
+        if (!searchQueryActive) {
 
-        // Repositioning directly below search bar, taking autocomplete space
-        searchContainer.getChildren().remove(errorMessage);
-        searchContainer.getChildren().add(2, errorMessage);
+            loadingIcon.setVisible(true);
+            searchQueryActive = true;
 
-        errorMessage.setText(message);
-        errorMessage.setVisible(true);
+            Thread queryThread = new Thread(() -> {
+                Allmusic.Search searcher = new Allmusic.Search(search.getText());
 
-        try {
-            hideErrorMessage.cancel();
-        } catch (NullPointerException ignored) {}
+                try {
+                    long preQueryTime = Instant.now().toEpochMilli();
 
-        hideErrorMessage = new Timer();
-        hideErrorMessage.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                Platform.runLater(() -> {
-                    errorMessage.setVisible(false);
-                    searchContainer.getChildren().remove(errorMessage);
-                    searchContainer.getChildren().add(errorMessage);
-                });
-            }
-        }, 2000);
+                    searcher.query(Model.getInstance().settings.getSettingBool("data_saver"));
 
+                    // Can open each song page and find relevant album to display album art, and other information such as genre and year which isn't given in a default search
+                    if (!Model.getInstance().settings.getSettingBool("data_saver")) {
+                        searcher.getSongExternalInformation();
+                    }
+
+                    // This causes a lot of time:tm:
+                    Model.getInstance().search.setSearchResults(searcher.buildView().toArray(new BorderPane[0]));
+                    Model.getInstance().search.setSearchResultsJson(searcher.getResults());
+
+                    long now = Instant.now().toEpochMilli();
+
+                    if (!Model.getInstance().settings.getSettingBool("data_saver") && searcher.getSongCount() > 0) {
+                        Debug.trace(
+                                String.format(
+                                        "Query completed in %.2f seconds, containing %s album(s) %s song(s)",
+                                        (double) (now - preQueryTime) / 1000,
+                                        searcher.getAlbumCount(),
+                                        searcher.getSongCount()
+                                )
+                        );
+                    }
+
+                    Platform.runLater(() -> {
+                        try {
+                            (
+                                    ((Node) event.getSource())
+                                            .getScene()
+                                            .getWindow()
+                            )
+                                    .getScene()
+                                    .setRoot(
+                                            FXMLLoader.load(
+                                                    Objects.requireNonNull(getClass().getClassLoader().getResource("resources/fxml/results.fxml")),
+                                                    ResourceBundle.getBundle("resources.locale.results")
+                                            )
+                                    );
+                        } catch (IOException er) {
+                            Debug.error("FXML Error: Settings.fxml", er);
+                        } catch (NullPointerException ignored) {}
+                    });
+
+
+                } catch (HttpStatusException ignored) {
+
+                    Platform.runLater(() -> {
+                        loadingIcon.setVisible(false);
+                        searchQueryActive = false;
+                    });
+
+                } catch (IOException er) {
+                    Platform.runLater(() -> {
+
+                        loadingIcon.setVisible(false);
+                        searchQueryActive = false;
+
+                        Debug.warn("Failed to connect to " + Allmusic.baseDomain + Allmusic.Search.subdirectory + search.getText());
+                    });
+                }
+
+            }, "search-thread");
+            queryThread.setDaemon(true);
+            queryThread.start();
+        }
+
+    }
+
+
+    public synchronized TextField getSearch() {
+        return search;
+    }
+
+    public BorderPane getOfflineNotification() {
+        return offlineNotification;
     }
 
     // Updating the UI with the autocomplete suggestions
     private class generateAutocomplete implements Runnable {
 
         private volatile boolean killRequest = false;
-        private final String query;
 
-        generateAutocomplete (String query){
+        private final String query;
+        private final KeyEvent event;
+
+        generateAutocomplete(String query, KeyEvent event){
+
             this.query = query;
+            this.event = event;
 
             Thread thread = new Thread(this, "autocomplete");
             thread.setDaemon(true);
@@ -297,8 +283,7 @@ public class Search {
 
         public void run() {
 
-            if (Model.getInstance().settings.getSettingBool("data_saver"))
-                return;
+            if (Model.getInstance().settings.getSettingBool("data_saver")) return;
 
             try {
                 Allmusic.Search autocompleteSearch = new Allmusic.Search(query);
@@ -340,6 +325,8 @@ public class Search {
                             autocompleteResultView.setOnMouseClicked(e -> {
                                 try {
                                     search.setText(finalAutocompleteProcessedResults.getJSONObject(finalI).getJSONObject("view").getString("title"));
+                                    search(event);
+
                                 } catch (JSONException er) {
                                     Debug.warn("Failed to set autocomplete result.");
                                 }
@@ -368,68 +355,13 @@ public class Search {
             } catch (SocketException | UnknownHostException ignored) {
 
                 // Failed to connect, handling
-                Debug.trace("Error sending web request: https://www.allmusic.com/search/all/" + query);
-                Platform.runLater(() -> {
-                    search.setDisable(true);
-                    new awaitReconnection();
-                });
+                Debug.warn("Error sending web request: https://www.allmusic.com/search/all/" + query);
             } catch (HttpStatusException ignored) {
                 // Malformed request
             } catch (IOException e) {
                 Debug.error("Unknown exception when requesting user search.", e);
             }
 
-        }
-
-    }
-
-    // Check that when internet connection is lost, they must reconnect before doing anything else
-    private class awaitReconnection implements Runnable {
-
-        public awaitReconnection() {
-            Thread thread = new Thread(this, "reconnection");
-            thread.start();
-        }
-
-        public void run() {
-
-            new Timer().schedule(new TimerTask() {
-
-                @Override
-                public void run() {
-
-                    Platform.runLater(() -> {
-                        autocompleteResults.getItems().clear();
-                        autocompleteResults.setVisible(false);
-
-                        searchContainer.getChildren().remove(errorMessage);
-                        searchContainer.getChildren().add(2, errorMessage);
-
-                        errorMessage.setText(resourceBundle.getString("failedToConnectMessage"));
-                        errorMessage.setVisible(true);
-                    });
-
-                    try {
-
-                        if (InetAddress.getByName("allmusic.com").isReachable(1000)) {
-
-                            Platform.runLater(() -> {
-                                search.setDisable(false);
-                                errorMessage.setVisible(false);
-
-                                searchContainer.getChildren().remove(errorMessage);
-                                searchContainer.getChildren().add(errorMessage);
-                            });
-                            Debug.trace(resourceBundle.getString("connectionEstablishedMessage"));
-                            this.cancel();
-
-                        }
-
-                    } catch (IOException ignored) {}
-
-                }
-
-            }, 0, 1000);
         }
 
     }

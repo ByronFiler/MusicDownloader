@@ -29,6 +29,7 @@ import musicdownloader.model.Model;
 import musicdownloader.utils.app.Debug;
 import musicdownloader.utils.app.Resources;
 import musicdownloader.utils.net.db.sites.Allmusic;
+import musicdownloader.utils.net.source.Site;
 import musicdownloader.utils.net.source.sites.Vimeo;
 import musicdownloader.utils.net.source.sites.YouTube;
 import musicdownloader.utils.ui.Result;
@@ -39,10 +40,16 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+
+// TODO: Switching view should pause music playing
+// TODO: Researching breaks the results table
 
 public class Results {
 
@@ -50,6 +57,12 @@ public class Results {
     private AnchorPane root;
     @FXML
     private BorderPane mainContainer;
+
+    @FXML
+    private BorderPane offlineNotification;
+
+    @FXML
+    private BorderPane resultsSpaceContainer;
 
     @FXML
     private TextField searchField;
@@ -80,6 +93,8 @@ public class Results {
 
     @FXML
     private void initialize() {
+
+        Model.getInstance().connectionWatcher.switchMode(this);
 
         // Set the table data
         try {
@@ -191,7 +206,7 @@ public class Results {
     public void searchView(Event event) {
 
         try {
-
+            Results.this.mediaPlayers.forEach(searchResult.MediaController::pause);
             (
                     ((Node) event.getSource())
                             .getScene()
@@ -212,15 +227,19 @@ public class Results {
 
     @FXML
     public void newQuery(KeyEvent e) {
+
         if (e.getCode() == KeyCode.ENTER && (!searchField.getText().equals(loadedQuery) || modifiedResults)) {
 
             if (searchField.getText().length() >= 3) {
 
                 // Search is valid to attempt
                 String tempQuery = searchField.getText();
+
                 Allmusic.Search search = new Allmusic.Search(tempQuery);
                 loadingIndicator.setVisible(true);
+
                 Thread resultsSearch = new Thread(() -> {
+
                     try {
                         search.query(Model.getInstance().settings.getSettingBool("data_saver"));
 
@@ -230,8 +249,10 @@ public class Results {
                     } catch (IOException er) {
                         defaultView("Connection issue detected, please verify connection and retry.");
                     }
+
                     try {
                         if (search.getResults().getJSONArray("songs").length() > 0) {
+
                             Platform.runLater(() -> {
                                 loadingIndicator.setVisible(false);
                                 loadedQuery = tempQuery;
@@ -241,13 +262,16 @@ public class Results {
                                 try {
                                     JSONArray songs = search.getResults().getJSONArray("songs");
                                     this.viewData = search.getResults();
-                                    mainContainer.setCenter(results);
+
+                                    resultsSpaceContainer.setCenter(results);
                                     results.getItems().clear();
+
                                     if (songs.length() > 0) {
                                         for (int i = 0; i < songs.length(); i++) {
                                             results.getItems().add(new searchResult(songs.getJSONObject(i)).getView());
                                         }
                                         download.setDisable(true);
+
                                     } else defaultView("No Search Results Found");
 
                                     downloadButtonCheckInternal();
@@ -282,6 +306,25 @@ public class Results {
 
     }
 
+    public void setDisabled(boolean disable) {
+
+        results.setDisable(disable);
+        searchField.setDisable(disable);
+        download.setDisable(disable);
+
+        queueAdditionProgress.setVisible(false);
+        queueAdditionInProgress = false;
+
+        download.setText(resourceBundle.getString("downloadButton"));
+        cancel.setText(resourceBundle.getString("backButton"));
+        cancel.setOnMouseClicked(Results.this::searchView);
+
+    }
+
+    public BorderPane getOfflineNotification() {
+        return offlineNotification;
+    }
+
     private void defaultView(String message) {
 
         Label defaultMessage = new Label(message);
@@ -306,7 +349,7 @@ public class Results {
         defaultInfoContainer.setAlignment(Pos.CENTER);
         defaultInfoContainer.setPadding(new Insets(0, 0, 40, 0));
 
-        mainContainer.setCenter(defaultInfoContainer);
+        resultsSpaceContainer.setCenter(defaultInfoContainer);
 
     }
 
@@ -346,6 +389,7 @@ public class Results {
                             ResourceBundle.getBundle("resources.locale.downloads")
                     );
                     Parent controllerView = downloadsLoader.load();
+                    Results.this.mediaPlayers.forEach(searchResult.MediaController::pause);
                     Model.getInstance().download.setDownloadsView(downloadsLoader.getController());
 
                     (
@@ -379,18 +423,16 @@ public class Results {
 
     }
 
-    // TODO: Add network error handling
     class generateQueueItem implements Runnable {
 
         private final JSONObject basicData;
         private volatile boolean kill;
 
-        private int completedThreads = 0;
-        private int requiredThreadsCompleted = -1;
-
         private final JSONObject downloadItem = new JSONObject();
         private final JSONObject metadata = new JSONObject();
         private final JSONArray songs = new JSONArray();
+
+        private CountDownLatch threadAwaiter;
 
         public generateQueueItem(JSONObject basicData) {
             this.basicData = basicData;
@@ -475,12 +517,13 @@ public class Results {
             return id;
         }
 
-        private JSONObject parseJsonFromSong(JSONArray collectiveDownloadsObjects, Allmusic.album albumProcessor, Allmusic.album.song song) throws JSONException {
+        private JSONObject parseJsonFromSong(JSONArray collectiveDownloadsObjects, Allmusic.Album albumProcessor, Allmusic.Album.song song) throws JSONException {
             JSONObject jSong = new JSONObject();
 
             jSong.put("position", albumProcessor.getSongs().indexOf(song) + 1);
             jSong.put("id", generateNewSongId(collectiveDownloadsObjects));
             jSong.put("completed", JSONObject.NULL);
+            jSong.put("cancelled", false);
             jSong.put("playtime", song.getPlaytime());
             jSong.put("title", song.getTitle());
             jSong.put("sample", song.getSample() == null ? JSONObject.NULL : song.getSample());
@@ -488,29 +531,9 @@ public class Results {
             return jSong;
         }
 
-        private synchronized void markThreadCompleted(int position, JSONArray results) throws JSONException {
-
-            completedThreads++;
-            songs.getJSONObject(position).put("source", results);
-
-            if (completedThreads == requiredThreadsCompleted) {
-
-                if (!kill) {
-
-                    downloadItem.put("metadata", metadata);
-                    downloadItem.put("songs", songs);
-
-                    Model.getInstance().download.updateDownloadQueue(downloadItem);
-
-                }
-
-                Platform.runLater(() -> restoreView(!kill));
-            }
-
-        }
-
         @Override
         public void run() {
+
             try {
 
                 // Getting other download items for the purpose of ID validation
@@ -536,7 +559,7 @@ public class Results {
                 } else {
 
                     // Additional connection required to get album id & metadata
-                    Allmusic.song songTraceLinkLoader = new Allmusic.song(basicData.getJSONObject("view").getString("allmusicSongId"));
+                    Allmusic.Song songTraceLinkLoader = new Allmusic.Song(basicData.getJSONObject("view").getString("allmusicSongId"));
                     songTraceLinkLoader.load();
 
                     metadata.put("art", songTraceLinkLoader.getAlbumArt());
@@ -552,18 +575,22 @@ public class Results {
                             new URL(metadata.getString("art")),
                             new File(Resources.getInstance().getApplicationData() + String.format("cached/%s.jpg", metadata.getString("artId")))
                     );
+                } catch (UnknownHostException | SocketException e) {
+                    Debug.warn("Detected connection failure when downloading album art, awaiting reconnection...");
+                    restoreView(false);
+                    setDisabled(true);
+                    return;
+
                 } catch (IOException e) {
                     Debug.error("Failed to download album art.", e);
-                    // TODO: Handle connection
                 } catch (JSONException e) {
                     Debug.error("JSON Error when downloading album art.", e);
                 }
 
                 // Extract relevant data from the album
-                Allmusic.album albumProcessor = new Allmusic.album(basicData.getJSONObject("data").getString("allmusicAlbumId"));
+                Allmusic.Album albumProcessor = new Allmusic.Album(basicData.getJSONObject("data").getString("allmusicAlbumId"));
                 albumProcessor.load();
 
-                requiredThreadsCompleted = albumProcessor.getSongs().size();
                 StringBuilder outputDirectory = new StringBuilder(Model.getInstance().settings.getSetting("output_directory"));
                 if (basicData.getJSONObject("data").getBoolean("album"))
                     outputDirectory.append("/").append(albumProcessor.getAlbum());
@@ -575,8 +602,13 @@ public class Results {
                 metadata.put("is_album", basicData.getJSONObject("data").getBoolean("album"));
                 metadata.put("format", Resources.songReferences.get(Model.getInstance().settings.getSettingInt("music_format")));
 
+                ArrayList<GetSources> sourcesGetters = new ArrayList<>();
+                threadAwaiter = new CountDownLatch(albumProcessor.getSongs().size());
+
                 if (basicData.getJSONObject("data").getBoolean("album")) {
-                    for (Allmusic.album.song song : albumProcessor.getSongs()) {
+
+                    for (Allmusic.Album.song song : albumProcessor.getSongs()) {
+
                         songs.put(
                                 parseJsonFromSong(
                                         collectiveDownloadsObjects,
@@ -584,15 +616,20 @@ public class Results {
                                         song
                                 )
                         );
-                        new GetSources(
-                                albumProcessor.getSongs().indexOf(song),
-                                metadata.get("artist") + " " + song.getTitle(),
-                                song.getPlaytime()
+
+                        sourcesGetters.add(
+                                    new GetSources(
+                                            metadata.get("artist") + " " + song.getTitle(),
+                                            song.getPlaytime()
+                            )
                         );
                     }
 
                 } else {
-                    Allmusic.album.song song = albumProcessor
+
+                    threadAwaiter = new CountDownLatch(1);
+
+                    Allmusic.Album.song song = albumProcessor
                             .getSongs()
                             .get(
                                     Arrays.asList(
@@ -600,7 +637,7 @@ public class Results {
                                                     .getSongs()
                                                     .stream()
                                                     .map(
-                                                            Allmusic.album.song::getTitle
+                                                            Allmusic.Album.song::getTitle
                                                     ).toArray()
                                     ).indexOf(
                                             basicData
@@ -615,101 +652,115 @@ public class Results {
                                     song
                             )
                     );
-                    new GetSources(
-                            0,
-                            metadata.get("artist") + " " + song.getTitle(),
-                            song.getPlaytime()
+
+                    sourcesGetters.add(
+                            new GetSources(
+                                    metadata.get("artist") + " " + song.getTitle(),
+                                    song.getPlaytime()
+                            )
                     );
                 }
 
+                threadAwaiter.await();
+
+                sourcesGetters.forEach(e -> {
+                    try {
+                        songs.getJSONObject(sourcesGetters.indexOf(e)).put("source", e.getSources());
+                    } catch (JSONException jsonException) {
+                        jsonException.printStackTrace();
+                    }
+                });
+
+                downloadItem.put("metadata", metadata);
+                downloadItem.put("songs", songs);
+
+                Model.getInstance().download.updateDownloadQueue(downloadItem);
+                Platform.runLater(() -> restoreView(!kill));
+
             } catch (JSONException e) {
                 Debug.error("Error in JSON processing download item.", e);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 Debug.warn("Connection error, attempting to reconnect.");
-                // TODO:  Handle reconnection
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
-
         private class GetSources implements Runnable {
+            private final YouTube youtube;
+            private final Vimeo vimeo;
 
-            private final int position;
-            private final String query;
-            private final int targetTime;
+            private final CountDownLatch sitesAwaiter = new CountDownLatch(2);
 
-            private JSONObject youtubeResponses = null;
-            private JSONObject vimeoResponses = null;
-
-            public GetSources(int position, String query, int targetTime) {
-
-                this.position = position;
-                this.query = query;
-                this.targetTime = targetTime;
+            public GetSources(String query, int targetTime) {
+                youtube = new YouTube(query, targetTime);
+                vimeo = new Vimeo(query, targetTime);
 
                 Thread executor = new Thread(this, "source-getter");
                 executor.setDaemon(true);
                 executor.start();
 
+            }
+
+            public <T extends Site> void getResults(T site) {
+
+                site.setLatch(this.sitesAwaiter);
+
+                Thread executor = new Thread(site, "site-executor");
+                executor.setDaemon(true);
+                executor.start();
 
             }
 
             @Override
             public void run() {
+                getResults(youtube);
+                getResults(vimeo);
 
-                new Thread(() -> {
-                    try {
-                        YouTube youtubeParser = new YouTube(query, targetTime);
-                        youtubeParser.load();
+                try {
+                    sitesAwaiter.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
 
-                        youtubeResponses = youtubeParser.getResults();
-                        compile();
-
-                    } catch (IOException | JSONException e) {
-                        e.printStackTrace();
-                    }
-
-                }, "youtube-parser").start();
-
-                new Thread(() -> {
-                    try {
-                        Vimeo vimeoParser = new Vimeo(query, targetTime);
-                        vimeoParser.load();
-
-                        vimeoResponses = vimeoParser.getResults();
-                        compile();
-
-                    } catch (IOException | JSONException e) {
-                        e.printStackTrace();
-                    }
-
-                }, "vimeo-parser").start();
-
+                threadAwaiter.countDown();
             }
 
-            private synchronized void compile() {
+            public JSONArray getSources() {
 
-                if (youtubeResponses != null && vimeoResponses != null) {
+                JSONArray sources = new JSONArray();
 
-                    JSONArray sources = new JSONArray();
+                try {
+                    sitesAwaiter.await();
+
+                    JSONObject youtubeResponses = youtube.getResults();
+                    JSONObject vimeoResponses = vimeo.getResults();
 
                     try {
-                        for (int i = 0; i < youtubeResponses.getJSONArray("primary").length(); i++)
-                            sources.put(Resources.youtubeVideoSource + youtubeResponses.getJSONArray("primary").getString(i));
-                        for (int i = 0; i < vimeoResponses.getJSONArray("primary").length(); i++)
-                            sources.put(Resources.vimeoVideoSource + vimeoResponses.getJSONArray("primary").getString(i));
-                        for (int i = 0; i < youtubeResponses.getJSONArray("secondary").length(); i++)
-                            sources.put(Resources.youtubeVideoSource + youtubeResponses.getJSONArray("secondary").getString(i));
-                        for (int i = 0; i < vimeoResponses.getJSONArray("secondary").length(); i++)
-                            sources.put(Resources.vimeoVideoSource + vimeoResponses.getJSONArray("secondary").getString(i));
 
-                        generateQueueItem.this.markThreadCompleted(position, sources);
+                        // Building source array Youtube Primary > Vimeo Primary > Youtube Secondary > Vimeo Secondary
+                        for (int i = 0; i < Objects.requireNonNull(youtubeResponses).getJSONArray("primary").length(); i++) {
+                            sources.put(Resources.youtubeVideoSource + Objects.requireNonNull(youtubeResponses).getJSONArray("primary").getString(i));
+                        }
+                        for (int i = 0; i < Objects.requireNonNull(vimeoResponses).getJSONArray("primary").length(); i++) {
+                            sources.put(Resources.vimeoVideoSource + Objects.requireNonNull(vimeoResponses).getJSONArray("primary").getString(i));
+                        }
+                        for (int i = 0; i < Objects.requireNonNull(youtubeResponses).getJSONArray("secondary").length(); i++) {
+                            sources.put(Resources.youtubeVideoSource + Objects.requireNonNull(youtubeResponses).getJSONArray("secondary").getString(i));
+                        }
+                        for (int i = 0; i < Objects.requireNonNull(vimeoResponses).getJSONArray("secondary").length(); i++) {
+                            sources.put(Resources.vimeoVideoSource + Objects.requireNonNull(vimeoResponses).getJSONArray("secondary").getString(i));
+                        }
 
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                        generateQueueItem.this.threadAwaiter.countDown();
+
+                    } catch (JSONException e1) {
+                        e1.printStackTrace();
                     }
 
-                }
+                } catch (InterruptedException ignored) {}
+
+                return sources;
 
             }
 
@@ -722,7 +773,7 @@ public class Results {
         private MenuItem getAlbumSongs;
         private MenuItem hideAlbumSongs;
 
-        private Allmusic.album albumParser;
+        private Allmusic.Album albumParser;
         private final ArrayList<MediaController> internalMediaControllers = new ArrayList<>();
 
         public searchResult (JSONObject data) throws JSONException {
@@ -768,7 +819,7 @@ public class Results {
 
                             } else {
 
-                                Allmusic.song songParser = new Allmusic.song(data.getJSONObject("data").getString(
+                                Allmusic.Song songParser = new Allmusic.Song(data.getJSONObject("data").getString(
                                         data.getJSONObject("data").getBoolean("album") ?
                                                 "allmusicAlbumId" : "allmusicSongId"
                                 ));
@@ -803,7 +854,7 @@ public class Results {
 
             if (data.getJSONObject("data").getBoolean("album")) {
 
-                albumParser = new Allmusic.album(data.getJSONObject("data").getString("allmusicAlbumId"));
+                albumParser = new Allmusic.Album(data.getJSONObject("data").getString("allmusicAlbumId"));
 
                 hideAlbumSongs = new MenuItem(resourceBundle.getString("hideSongsItem"));
                 getAlbumSongs = new MenuItem(resourceBundle.getString("showSongsItem"));
@@ -847,7 +898,7 @@ public class Results {
         }
 
         private void generateMediaControllers(VBox songResults) {
-            for (Allmusic.album.song song: albumParser.getSongs()) {
+            for (Allmusic.Album.song song: albumParser.getSongs()) {
                 MediaController songController = new MediaController(song);
                 mediaPlayers.add(songController);
                 internalMediaControllers.add(songController);
@@ -864,7 +915,7 @@ public class Results {
         protected class MediaController {
 
             private BorderPane view;
-            private final Allmusic.album.song song;
+            private final Allmusic.Album.song song;
             private final MediaPlayer mp;
 
             private final HBox playIconContainer = new HBox();
@@ -878,7 +929,7 @@ public class Results {
                     )
             );
 
-            public MediaController(Allmusic.album.song song) {
+            public MediaController(Allmusic.Album.song song) {
                 this.song = song;
                 this.mp = new MediaPlayer(
                         new Media(

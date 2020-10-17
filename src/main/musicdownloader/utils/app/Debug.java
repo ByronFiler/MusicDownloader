@@ -29,6 +29,7 @@ public class Debug {
     private static final String ANSI_RED = "\u001B[31m";
     private static final String ANSI_RESET = "\u001B[0m";
     private static final String ANSI_YELLOW = "\u001B[33m";
+    private static final String ANSI_GREEN = "\u001B[32m";
 
     private static final List<String> errorTrace = new ArrayList<>();
 
@@ -106,6 +107,34 @@ public class Debug {
                 );
 
                 if (useColours) System.out.println(ANSI_YELLOW + traceMessage + ANSI_RESET);
+
+                else System.out.println(traceMessage);
+
+                errorTrace.add(traceMessage);
+            }
+        }
+
+    }
+
+    public static synchronized void success(String msg) {
+
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        String traceMessage;
+
+        if (debug){
+            synchronized ( Debug.class )
+            {
+
+                traceMessage = String.format(
+                        "DEBUG%s[%s: %d] @ %s: %s",
+                        advancedDebug ? prettyExecutionTrace() : " ",
+                        Thread.currentThread().getName(),
+                        Thread.currentThread().getId(),
+                        formatter.format(new Date()),
+                        msg
+                );
+
+                if (useColours) System.out.println(ANSI_GREEN + traceMessage + ANSI_RESET);
 
                 else System.out.println(traceMessage);
 
