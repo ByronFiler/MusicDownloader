@@ -9,7 +9,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -20,7 +19,6 @@ public class YouTube extends Site {
     }
 
     private int fails = 0;
-    private final int failsLimit = 5;
 
     @Override
     public void run() {
@@ -28,8 +26,11 @@ public class YouTube extends Site {
         try {
             requestedPage = Jsoup.connect(Resources.youtubeSearch + query).get();
 
-            if (requestedPage.select("script").size() == 17) parseHTMLResponse();
-            else parseJSONResponse();
+            if (requestedPage.select("script").size() == 17) {
+                parseHTMLResponse();
+            } else {
+                parseJSONResponse();
+            }
         } catch (IOException e) {
             Debug.log("Failed to connect to: " + Resources.youtubeSearch + query);
         }
@@ -45,20 +46,28 @@ public class YouTube extends Site {
         // YouTube has given us the data stored in json stored script tags which be parsed
         JSONObject searchDataTemp;
 
-        AtomicReference<Element> jsDataAtm = new AtomicReference<>();
+        AtomicReference<String> extractScraperData = new AtomicReference<>();
         requestedPage.select("script").forEach(script -> {
 
-            if (script.toString().contains("window[\"ytInitialData\"]")) {
-                jsDataAtm.set(script);
+            if (script.toString().contains("scraper_data_begin")) {
+
+                String foundScraperData = script.toString();
+                foundScraperData = foundScraperData.substring(foundScraperData.indexOf("{"), foundScraperData.lastIndexOf("}") + 1);
+                extractScraperData.set(foundScraperData);
+
             }
 
         });
 
-        if (jsDataAtm.get() == null) {
+        if (extractScraperData.get() == null) {
 
             fails++;
 
-            if (fails == failsLimit) Debug.error("Failed to find youtube response.", new IllegalReceiveException());
+            int failsLimit = 5;
+            if (fails == failsLimit) {
+
+                Debug.error("Failed to find youtube response.", new IllegalReceiveException());
+            }
             else {
                 run();
                 return;
@@ -66,27 +75,8 @@ public class YouTube extends Site {
         }
 
         try {
-            // Web Data -> [JavaScript] -> String -> Json -> Data
-            Element jsData = jsDataAtm.get();
-
-            //Element jsData = requestedPage.select("script").get(24);
-
-            // Web Data -> JavaScript -> [String] -> Json -> Data
-            String jsonConversion = "";
-            try {
-                jsonConversion = jsData.toString();
-                jsonConversion = jsonConversion.substring(39, jsonConversion.length() - 119);
-            } catch (NullPointerException e) {
-                System.out.println(jsData);
-            }
-
             // Web Data -> JavaScript -> String -> [Json] -> Data
-            JSONObject json = new JSONObject();
-            try {
-                json = new JSONObject(jsonConversion);
-            } catch (JSONException e) {
-                Debug.error("Failed to parse JSON response.", e);
-            }
+            JSONObject json = new JSONObject(extractScraperData.get());
 
             // Parsing deep JSON to get relevant data
             JSONArray contents = json
@@ -101,6 +91,7 @@ public class YouTube extends Site {
 
             // If youtube gives a bad response, just retry
             if (contents.length() < 10) {
+
                 Debug.warn(String.format("Youtube sent a bad response, resent request, %s retr%s remaining.", retries, retries == 1 ? "y" : "ies"));
                 if (retries == 0) return;
                 else {

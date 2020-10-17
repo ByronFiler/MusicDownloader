@@ -512,6 +512,7 @@ public class Results {
             jSong.put("position", albumProcessor.getSongs().indexOf(song) + 1);
             jSong.put("id", generateNewSongId(collectiveDownloadsObjects));
             jSong.put("completed", JSONObject.NULL);
+            jSong.put("cancelled", false);
             jSong.put("playtime", song.getPlaytime());
             jSong.put("title", song.getTitle());
             jSong.put("sample", song.getSample() == null ? JSONObject.NULL : song.getSample());

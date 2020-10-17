@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /*
@@ -47,17 +48,6 @@ import java.util.stream.IntStream;
 // Handles All Downloads From Queue
 public class Downloader implements Runnable {
 
-    // download states
-    enum State {
-
-        INITIALISING,
-        PRELIMINARY_IO,
-        DOWNLOADING,
-        POST_IO,
-        TERMINATED
-
-    }
-
     private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("resources.locale.notification");
 
     private JSONObject downloadObject = Model.getInstance().download.getDownloadObject();
@@ -68,9 +58,8 @@ public class Downloader implements Runnable {
     private boolean[] allowedDownloads;
     private byte[] albumArt;
 
-    private State threadState = State.INITIALISING;
-
-    private boolean cancelDownload = false;
+    private volatile boolean cancelDownload = false;
+    private boolean downloadTerminated = false;
     private CountDownLatch terminationAwaiter = new CountDownLatch(1);
 
     public Downloader() {
@@ -92,42 +81,41 @@ public class Downloader implements Runnable {
 
             // todo fix, use flag based in-place of forced quit, fix depreciated code
 
-            if (Math.random() > 0) {
+            boolean forceKillDefault = false;
+            if (forceKillDefault) {
+
                 mainThread.stop();
                 processQueue();
-            } else {
 
-                State preQuitState = threadState;
+            } else {
 
                 mainThread.interrupt();
                 cancelDownload = true;
 
-                switch (preQuitState) {
+                try {
+                    terminationAwaiter.await(50, TimeUnit.MILLISECONDS);
 
-                    case INITIALISING:
-                        break;
+                    boolean isStillRunning = false;
+                    
+                    if (isStillRunning) {
+                        mainThread.stop();
+                        Debug.warn("Thread did not comply with termination, force killed.");
+                    }
 
-                    case PRELIMINARY_IO:
-                        break;
+                    // always clear temp
+                    // delete album art
+                    // delete folder
 
-                    case DOWNLOADING:
-                        break;
+                    // processQueue but have it refactored
 
-                    case POST_IO:
-                        break;
-
-                    case TERMINATED:
-                        break;
-
-                    default:
-                        // uhh what?
-
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
 
             }
 
 
-        // todo this doesn't work lmao
+        // todo this doesn't work lmao, use flags
         } else allowedDownloads[songIndex] = false;
 
         Model.getInstance().download.markCancelled(songIndex);
@@ -277,7 +265,6 @@ public class Downloader implements Runnable {
 
     @Override
     public void run() {
-
         try {
             if (Model.getInstance().connectionWatcher.isOffline()) {
                 Model.getInstance().connectionWatcher.getLatch().await();
@@ -323,8 +310,6 @@ public class Downloader implements Runnable {
 
         } catch (InterruptedException e) {
 
-            Debug.warn("Interrupt received mid light io");
-
             try {
                 Files.delete(Paths.get(downloadObject.getJSONObject("metadata").getString("directory")));
                 Files.delete(Paths.get(
@@ -339,13 +324,12 @@ public class Downloader implements Runnable {
             }
         }
 
-        Debug.warn("Folders and album art stored.");
-
         // Download files
-        JSONObject newHistory = new JSONObject();
-        Download download = null;
-        try {
 
+        // todo: if the thingy is set it's obviously going to run here u fucking idiot
+        JSONObject newHistory = new JSONObject();
+        Download download;
+        try {
             JSONArray songs = new JSONArray();
 
             for (int i = 0; i < downloadObject.getJSONArray("songs").length() && !cancelDownload; i++) {
@@ -385,17 +369,13 @@ public class Downloader implements Runnable {
                             Debug.error("Fatal error building history", e);
                         }
 
-                    } else {
-
-                        // todo delete file in download directory
-
                     }
 
                 }
 
             }
 
-            if (cancelDownload) throw new InterruptedException();
+            if (cancelDownload) return;
 
             newHistory.put("metadata", downloadObject.getJSONObject("metadata"));
             newHistory.put("songs", songs);
@@ -405,18 +385,9 @@ public class Downloader implements Runnable {
 
         } catch (InterruptedException e) {
 
-            Debug.warn("Interrupt received mid download");
-            if (download != null) download.cancel();
-
-            else Debug.warn("Cancelled mid download without a download in progress?");
-
-            // TODO
-            if (download != null) download.cancel();
+            return;
 
         }
-
-        Debug.warn("Downloads completed");
-
 
         // Updating the history
         try {
@@ -428,8 +399,6 @@ public class Downloader implements Runnable {
         } catch (IOException e) {
             Debug.error("Failed to set new download history with current download.", e);
         }
-
-        Debug.warn("History handled completed");
 
         try {
             if (!cancelDownload) {
@@ -503,16 +472,9 @@ public class Downloader implements Runnable {
             Debug.warn("Failed to copy album art into downloads folder.");
         }
 
-        Debug.warn("Album art dealt with");
-
         // Move onto the next item if necessary
+        // todo queue processing should be completed by the model, this should callback to the model, excessive internal calls leads to in-efficent mem management
         processQueue();
-
-        Debug.warn("Queue processed");
-
-        Debug.success("Downloader thread terminated");
-
-
 
     }
 

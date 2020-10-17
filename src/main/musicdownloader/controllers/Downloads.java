@@ -479,30 +479,9 @@ public class Downloads {
         private class CurrentlyDownloadingResult extends Result {
 
             private double progress = 0;
-            private final Tooltip offlineTooltip = new Tooltip("Download paused due to connection issues, will resume upon reconnection.");
+            private final Tooltip offlineTooltip = new Tooltip("Download paused due to connection issues, will resume upon reconnection."); //todo translate
 
             private final MenuItem cancel;
-
-            public CurrentlyDownloadingResult(String title, int songIndex) throws JSONException {
-
-                super(
-                        String.format(
-                                "%scached/%s.jpg",
-                                Resources.getInstance().getApplicationData(),
-                                downloadObject.getJSONObject("metadata").getString("artId")
-                        ),
-                        null,
-                        false,
-                        title,
-                        downloadObject.getJSONObject("metadata").getString("artist")
-                );
-
-                cancel = new MenuItem(resourceBundle.getString(songIndex == -1 ? "cancelContext" : "cancelSongContext"));
-                cancel.setOnAction(e -> CurrentlyDownloadingResultController.this.cancel(songIndex));
-
-                menu.getItems().add(cancel);
-
-            }
 
             public void markPaused() {
 
@@ -577,6 +556,31 @@ public class Downloads {
                     Debug.error("URI Syntax exception loading tick.", e);
                 }
                 view.setRight(right);
+
+            }
+
+            public CurrentlyDownloadingResult(String title, int songIndex) throws JSONException {
+
+                super(
+                        String.format(
+                                "%scached/%s.jpg",
+                                Resources.getInstance().getApplicationData(),
+                                downloadObject.getJSONObject("metadata").getString("artId")
+                        ),
+                        null,
+                        false,
+                        title,
+                        downloadObject.getJSONObject("metadata").getString("artist")
+                );
+
+                if (songIndex != -1) {
+                    view.setVisible(!downloadObject.getJSONArray("songs").getJSONObject(songIndex).getBoolean("cancelled"));
+                }
+
+                cancel = new MenuItem(resourceBundle.getString(songIndex == -1 ? "cancelContext" : "cancelSongContext"));
+                cancel.setOnAction(e -> CurrentlyDownloadingResultController.this.cancel(songIndex));
+
+                menu.getItems().add(cancel);
 
             }
         }
