@@ -203,6 +203,7 @@ public class Results {
     public void searchView(Event event) {
 
         try {
+            Results.this.mediaPlayers.forEach(searchResult.MediaController::pause);
             (
                     ((Node) event.getSource())
                             .getScene()
@@ -252,14 +253,17 @@ public class Results {
 
                                 try {
                                     JSONArray songs = search.getResults().getJSONArray("songs");
+
                                     this.viewData = search.getResults();
                                     mainContainer.setCenter(results);
                                     results.getItems().clear();
+
                                     if (songs.length() > 0) {
                                         for (int i = 0; i < songs.length(); i++) {
                                             results.getItems().add(new searchResult(songs.getJSONObject(i)).getView());
                                         }
                                         download.setDisable(true);
+
                                     } else defaultView("No Search Results Found");
 
                                     downloadButtonCheckInternal();
@@ -377,6 +381,7 @@ public class Results {
                             ResourceBundle.getBundle("resources.locale.downloads")
                     );
                     Parent controllerView = downloadsLoader.load();
+                    Results.this.mediaPlayers.forEach(searchResult.MediaController::pause);
                     Model.getInstance().download.setDownloadsView(downloadsLoader.getController());
 
                     (
@@ -410,8 +415,6 @@ public class Results {
 
     }
 
-    // todo fails on "The Queen is Dead" not building sources
-    // todo should use CountDownLatch not just awaiting threads completion
     class generateQueueItem implements Runnable {
 
         private final JSONObject basicData;
