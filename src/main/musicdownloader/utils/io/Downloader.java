@@ -23,7 +23,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /*
@@ -59,8 +58,6 @@ public class Downloader implements Runnable {
     private byte[] albumArt;
 
     private volatile boolean cancelDownload = false;
-    private boolean downloadTerminated = false;
-    private CountDownLatch terminationAwaiter = new CountDownLatch(1);
 
     public Downloader() {
 
@@ -79,43 +76,14 @@ public class Downloader implements Runnable {
 
         if (songIndex == -1 || (IntStream.range(0, allowedDownloads.length).mapToObj(ind -> allowedDownloads[ind]).mapToInt(e -> e ? 1 : 0).sum() <= 1)) {
 
-            // todo fix, use flag based in-place of forced quit, fix depreciated code
+            mainThread.interrupt();
+            cancelDownload = true;
+            processQueue();
 
-            boolean forceKillDefault = false;
-            if (forceKillDefault) {
+            // always clear temp
+            // delete album art
+            // delete folder
 
-                mainThread.stop();
-                processQueue();
-
-            } else {
-
-                mainThread.interrupt();
-                cancelDownload = true;
-
-                try {
-                    terminationAwaiter.await(50, TimeUnit.MILLISECONDS);
-
-                    boolean isStillRunning = false;
-                    
-                    if (isStillRunning) {
-                        mainThread.stop();
-                        Debug.warn("Thread did not comply with termination, force killed.");
-                    }
-
-                    // always clear temp
-                    // delete album art
-                    // delete folder
-
-                    // processQueue but have it refactored
-
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-
-        // todo this doesn't work lmao, use flags
         } else allowedDownloads[songIndex] = false;
 
         Model.getInstance().download.markCancelled(songIndex);
@@ -325,8 +293,6 @@ public class Downloader implements Runnable {
         }
 
         // Download files
-
-        // todo: if the thingy is set it's obviously going to run here u fucking idiot
         JSONObject newHistory = new JSONObject();
         Download download;
         try {
@@ -336,8 +302,8 @@ public class Downloader implements Runnable {
 
                 if (allowedDownloads[i]) {
 
+                    // download start
                     download = new Download(downloadObject.getJSONArray("songs").getJSONObject(i));
-                    download.start();
                     download.getCompleted().await();
 
                     if (allowedDownloads[i]) {
@@ -347,15 +313,6 @@ public class Downloader implements Runnable {
                         downloadObject.getJSONArray("songs").getJSONObject(i).put("downloadCompleted", Instant.now().toEpochMilli());
 
                         Model.getInstance().download.markCompletedSong(i);
-
-                        Debug.trace(
-                                String.format(
-                                        "Downloaded \"%s\" (%s of %s)",
-                                        downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
-                                        i + 1,
-                                        downloadObject.getJSONArray("songs").length()
-                                )
-                        );
 
                         try {
                             JSONObject newSongHistory = new JSONObject();
@@ -369,7 +326,38 @@ public class Downloader implements Runnable {
                             Debug.error("Fatal error building history", e);
                         }
 
+                        Debug.trace(
+                                String.format(
+                                        "Downloaded \"%s\" (%s of %s)",
+                                        downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
+                                        i + 1,
+                                        downloadObject.getJSONArray("songs").length()
+                                )
+                        );
+
+                    } else {
+
+                        Debug.trace(
+                                String.format(
+                                        "Downloaded \"%s\" (%s of %s)",
+                                        downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
+                                        i + 1,
+                                        downloadObject.getJSONArray("songs").length()
+                                )
+                        );
+
                     }
+
+                } else {
+
+                    Debug.trace(
+                            String.format(
+                                    "Skipped (Cancelled) \"%s\" (%s of %s)",
+                                    downloadObject.getJSONArray("songs").getJSONObject(i).getString("title"),
+                                    i + 1,
+                                    downloadObject.getJSONArray("songs").length()
+                            )
+                    );
 
                 }
 
@@ -384,6 +372,8 @@ public class Downloader implements Runnable {
             Debug.error("JSON Error when attempting to access songs to download.", e);
 
         } catch (InterruptedException e) {
+
+            Debug.success("Got interrupt mid-download");
 
             return;
 
@@ -479,7 +469,7 @@ public class Downloader implements Runnable {
     }
 
     // Handles: Downloading File & Post Processing => (Validation of File, Audio Correction & Application of Metadata)
-    private class Download {
+    private class Download implements Runnable {
 
         // Inherits from downloads object
         private final JSONObject downloadObject = Downloader.this.downloadObject;
@@ -498,11 +488,19 @@ public class Downloader implements Runnable {
         // Constructors
         private final JSONObject song;
 
+        private final Thread downloadExecutor;
+
         public Download(JSONObject song) {
             this.song = song;
+
+            downloadExecutor = new Thread(this, "download-song-thread");
+            downloadExecutor.setDaemon(true);
+            downloadExecutor.start();
+
         }
 
-        public void start() {
+        @Override
+        public void run() {
 
             // Something containing File, And Validity
             DownloadResultsData downloadsData = new DownloadResultsData();
@@ -616,9 +614,9 @@ public class Downloader implements Runnable {
 
             } catch (IOException | InvalidDataException | UnsupportedTagException | JSONException | JavaLayerException e) {
                 e.printStackTrace();
+            } finally {
+                completed.countDown();
             }
-
-            completed.countDown();
         }
 
         public void cancel() {

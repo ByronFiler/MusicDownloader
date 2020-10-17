@@ -50,7 +50,6 @@ public class YouTube extends Site {
         requestedPage.select("script").forEach(script -> {
 
             if (script.toString().contains("scraper_data_begin")) {
-
                 String foundScraperData = script.toString();
                 foundScraperData = foundScraperData.substring(foundScraperData.indexOf("{"), foundScraperData.lastIndexOf("}") + 1);
                 extractScraperData.set(foundScraperData);
@@ -63,7 +62,7 @@ public class YouTube extends Site {
 
             fails++;
 
-            int failsLimit = 5;
+            int failsLimit = 20;
             if (fails == failsLimit) {
 
                 Debug.error("Failed to find youtube response.", new IllegalReceiveException());

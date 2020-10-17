@@ -317,7 +317,9 @@ public class Downloads {
         if (songIndex == -1 || cancelledController.getSongs().size() == 1) {
 
             eventsViewTable.getItems().remove(cancelledController.getAlbumView());
-            Arrays.asList(cancelledController.getSongsView()).forEach(song -> eventsViewTable.getItems().remove(song));
+            cancelledController.getSongs().forEach(song -> eventsViewTable.getItems().remove(song.getView()));
+
+            currentlyDownloading.remove(cancelledController);
 
             if (queued.size() > 0) {
                 queued.remove(0);
@@ -333,8 +335,7 @@ public class Downloads {
 
         } else {
 
-            eventsViewTable.getItems().remove(cancelledController.getSongsView()[songIndex]);
-            cancelledController.getSongs().remove(songIndex);
+            cancelledController.getSongs().get(songIndex).markCancelled();
 
         }
     }
@@ -482,6 +483,7 @@ public class Downloads {
             private final Tooltip offlineTooltip = new Tooltip("Download paused due to connection issues, will resume upon reconnection."); //todo translate
 
             private final MenuItem cancel;
+            private boolean cancelled = false;
 
             public void markPaused() {
 
@@ -519,7 +521,16 @@ public class Downloads {
 
             }
 
+            public void markCancelled() {
+                this.cancelled = true;
+                this.title.getStyleClass().add("sub_title1_strikethrough");
+                setSubtext("Cancelled");
+                right.getChildren().clear();
+            }
+
             private void setProgress(double progress) {
+
+                if (this.cancelled) return;
 
                 this.progress = progress;
 
@@ -573,14 +584,14 @@ public class Downloads {
                         downloadObject.getJSONObject("metadata").getString("artist")
                 );
 
-                if (songIndex != -1) {
-                    view.setVisible(!downloadObject.getJSONArray("songs").getJSONObject(songIndex).getBoolean("cancelled"));
-                }
-
                 cancel = new MenuItem(resourceBundle.getString(songIndex == -1 ? "cancelContext" : "cancelSongContext"));
                 cancel.setOnAction(e -> CurrentlyDownloadingResultController.this.cancel(songIndex));
 
                 menu.getItems().add(cancel);
+
+                if (songIndex != -1 && downloadObject.getJSONArray("songs").getJSONObject(songIndex).getBoolean("cancelled")) {
+                    markCancelled();
+                }
 
             }
         }
