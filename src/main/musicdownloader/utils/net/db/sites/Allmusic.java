@@ -145,13 +145,13 @@ public class Allmusic {
                                 viewData.put(
                                         "art",
                                         potentialAlbumArt.isEmpty() || useDefaultIcons ?
-                                                new File(Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/album_default.png")).getPath()).toURI().toString() :
+                                                new File(Objects.requireNonNull(getClass().getClassLoader().getResource("img/misc/album_default.png")).getPath()).toURI().toString() :
                                                 potentialAlbumArt
                                 );
                                 applicationData.put(
                                         "art",
                                         potentialAlbumArt.isEmpty() ?
-                                                new File(Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/album_default.png")).getPath()).toURI().toString() :
+                                                new File(Objects.requireNonNull(getClass().getClassLoader().getResource("img/misc/album_default.png")).getPath()).toURI().toString() :
                                                 potentialAlbumArt
                                 );
 
@@ -161,8 +161,8 @@ public class Allmusic {
                                 // Song (does not have art)
                                 try {
 
-                                    viewData.put("art", Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/song_default.png")).toURI().toString());
-                                    applicationData.put("art", Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/song_default.png")).toURI().toString());
+                                    viewData.put("art", Objects.requireNonNull(getClass().getClassLoader().getResource("img/misc/song_default.png")).toURI().toString());
+                                    applicationData.put("art", Objects.requireNonNull(getClass().getClassLoader().getResource("img/misc/song_default.png")).toURI().toString());
 
                                 } catch (URISyntaxException e) {
                                     Debug.error("Failed to get default icon for song.", e);
@@ -270,7 +270,7 @@ public class Allmusic {
 
             try {
                 if (albumArtSource.isEmpty())
-                    return Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/song_default.png")).toURI().toString();
+                    return Objects.requireNonNull(getClass().getClassLoader().getResource("img/misc/song_default.png")).toURI().toString();
 
                 else return albumArtSource;
 

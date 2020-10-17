@@ -1,6 +1,5 @@
 package musicdownloader.utils.ui;
 
-import musicdownloader.Main;
 import musicdownloader.utils.app.Debug;
 
 import java.awt.*;
@@ -20,7 +19,7 @@ public class Notification {
             try {
                 SystemTray tray = SystemTray.getSystemTray();
                 TrayIcon ti = new TrayIcon(
-                        Toolkit.getDefaultToolkit().createImage(getClass().getClassLoader().getResource("resources/img/icon.png")),
+                        Toolkit.getDefaultToolkit().createImage(getClass().getClassLoader().getResource("resources/img/icons/icon.png")),
                         directory == null ? "" : "View Files"
                 );
                 ti.setImageAutoSize(true);
