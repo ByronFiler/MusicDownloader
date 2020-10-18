@@ -12,4 +12,5 @@ Gradle/gradle
 *.webm
 *.log
 *.idea
+!gradlew.bat
 !meta.json
