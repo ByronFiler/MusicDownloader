@@ -11,4 +11,5 @@ Gradle/gradle
 *.mp3
 *.webm
 *.log
+*.idea
 !meta.json

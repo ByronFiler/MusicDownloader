@@ -29,105 +29,6 @@
   <component name="ChangeListManager">
     <list default="true" id="7cb7ac38-a675-4fe4-843c-4fbbe0dde603" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/6.1/executionHistory/executionHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/6.1/executionHistory/executionHistory.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/6.1/executionHistory/executionHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/6.1/executionHistory/executionHistory.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/6.1/fileContent/fileContent.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/6.1/fileContent/fileContent.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/6.1/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/6.1/fileHashes/fileHashes.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/6.1/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/6.1/fileHashes/fileHashes.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/buildOutputCleanup/outputFiles.bin" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/buildOutputCleanup/outputFiles.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/checksums/checksums.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/checksums/md5-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/checksums/md5-checksums.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/checksums/sha1-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/checksums/sha1-checksums.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/build/libs/Gradle-1.0-SNAPSHOT.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/build/tmp/jar/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/build/tmp/jar/MANIFEST.MF" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gradle/settings.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/settings.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/controllers/Search.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/model/Download.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/model/Model.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/model/Search.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/model/Settings.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/model/View.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/app/Debug.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/app/Resources.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/AudioAnalysis.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/CacheManager.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/ConnectionWatcher.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/Downloader.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/GZip.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/Install.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/ProcessDebugger.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/QuickSort.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/validation/History.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/validation/Settings.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/net/db/Album.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/net/db/Search.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/net/db/Song.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/net/source/Site.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/net/source/sites/Vimeo.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/net/source/sites/YouTube.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/css/dark.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/css/main.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/css/standard.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/fxml/results.fxml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/fxml/settings.fxml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/de.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/en.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/es.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/fr.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/ja.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/ru.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/zh.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_de.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_en.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_es.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_fr.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_ja.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_ru.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_zh.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_de.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_en.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_es.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_fr.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_ja.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_ru.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_zh.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_de.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_en.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_es.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_fr.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_ja.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_ru.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_zh.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_de.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_en.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_es.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_fr.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_ja.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_ru.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_zh.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_de.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_en.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_es.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_fr.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_ja.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_ru.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_zh.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/meta.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/controllers/settingsTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/app/ResourcesTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/io/cacheManagerTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/io/gzipTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/io/installTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/net/db/sites/AllmusicTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/net/source/sites/VimeoTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/net/source/sites/YoutubeTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/416791769641077.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/4619245642105123.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/808553218544595.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/downloads0.gz" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/downloads1.gz" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -499,7 +400,7 @@
       <workItem from="1602979089907" duration="65000" />
       <workItem from="1602979245396" duration="1537000" />
       <workItem from="1603004024206" duration="2955000" />
-      <workItem from="1603007038198" duration="712000" />
+      <workItem from="1603007038198" duration="907000" />
     </task>
     <servers />
   </component>
