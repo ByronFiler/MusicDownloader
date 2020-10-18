@@ -56,7 +56,7 @@
                            <BorderPane.margin>
                               <Insets bottom="5.0" />
                            </BorderPane.margin>
-                           <Image url="@../img/album_default.png" />
+                           <Image url="@../img/misc/album_default.png" />
                         </ImageView>
                      </center>
                      <cursor>
@@ -69,7 +69,7 @@
                            <BorderPane.margin>
                               <Insets bottom="5.0" />
                            </BorderPane.margin>
-                           <Image url="@../img/song_default.png" />
+                           <Image url="@../img/misc/song_default.png" />
                         </ImageView>
                      </center>
                      <cursor>

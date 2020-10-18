@@ -31,7 +31,7 @@
                      <cursor>
                         <Cursor fx:constant="HAND" />
                      </cursor>
-                     <Image url="@../img/settings.png" />
+                     <Image url="@../img/section_icons/settings.png" />
                   </ImageView>
                </left>
                <right>
@@ -42,7 +42,7 @@
                      <cursor>
                         <Cursor fx:constant="HAND" />
                      </cursor>
-                     <Image url="@../img/icon.png" />
+                     <Image url="@../img/icons/icon.png" />
                   </ImageView>
                </right>
             </BorderPane>

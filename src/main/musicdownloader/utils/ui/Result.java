@@ -150,7 +150,7 @@ public class Result {
         try {
             albumArt.setImage(
                     new Image(
-                            Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/song_default.png")).toURI().toString(),
+                            Objects.requireNonNull(getClass().getClassLoader().getResource("img/misc/song_default.png")).toURI().toString(),
                             85,
                             85,
                             true,

@@ -144,7 +144,7 @@ public class Results {
                     download,
                     new ImageView(
                             new Image(
-                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/warning.png")),
                                     40,
                                     40,
                                     true,
@@ -332,7 +332,7 @@ public class Results {
 
         ImageView iconImage = new ImageView(
                 new Image(
-                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/song_default.png")),
+                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/misc/song_default.png")),
                         50,
                         50,
                         true,
@@ -921,7 +921,7 @@ public class Results {
             private final HBox playIconContainer = new HBox();
             private final ImageView playIcon = new ImageView(
                     new Image(
-                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/play.png")),
+                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/media/play.png")),
                             20,
                             20,
                             true,
@@ -978,7 +978,7 @@ public class Results {
                 Results.this.mediaPlayers.forEach(MediaController::pause);
                 playIcon.setImage(
                         new Image(
-                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/paused.png")),
+                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/media/paused.png")),
                                 20,
                                 20,
                                 true,
@@ -992,7 +992,7 @@ public class Results {
             private void pause() {
                 playIcon.setImage(
                         new Image(
-                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/play.png")),
+                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/media/play.png")),
                                 20,
                                 20,
                                 true,

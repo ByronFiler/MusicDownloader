@@ -266,7 +266,7 @@ public class Downloads {
 
         ImageView iconImage = new ImageView(
                 new Image(
-                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/icon.png")),
+                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/icons/icon.png")),
                         50,
                         50,
                         true,
@@ -492,7 +492,7 @@ public class Downloads {
                     right.getChildren().setAll(
                             new ImageView(
                                     new Image(
-                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/warning.png")),
                                             24,
                                             24,
                                             true,
@@ -545,7 +545,7 @@ public class Downloads {
                             right.getChildren().setAll(
                                     new ImageView(
                                             new Image(
-                                                    Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/tick.png")).toURI().toString(),
+                                                    Objects.requireNonNull(getClass().getClassLoader().getResource("img/statuses/tick.png")).toURI().toString(),
                                                     25,
                                                     25,
                                                     true,
@@ -670,7 +670,7 @@ public class Downloads {
                 try {
                     ImageView scheduledIcon = new ImageView(
                             new Image(
-                                    Objects.requireNonNull(getClass().getClassLoader().getResource("resources/img/scheduled.png")).toURI().toString(),
+                                    Objects.requireNonNull(getClass().getClassLoader().getResource("img/statuses/scheduled.png")).toURI().toString(),
                                     25,
                                     25,
                                     true,

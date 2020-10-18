@@ -122,7 +122,7 @@ public class Settings {
                     latestVersion,
                     new ImageView(
                             new Image(
-                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/warning.png")),
                                     20,
                                     20,
                                     true,
@@ -175,7 +175,7 @@ public class Settings {
             versionContainer.getChildren().add(
                     new ImageView(
                             new Image(
-                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/warning.png")),
                                     20,
                                     20,
                                     true,
@@ -188,7 +188,7 @@ public class Settings {
             versionContainer.getChildren().add(
                     new ImageView(
                             new Image(
-                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
+                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/tick.png")),
                                     20,
                                     20,
                                     true,
@@ -535,7 +535,7 @@ public class Settings {
                     latestVersionContainer.getChildren().add(
                             new ImageView(
                                     new Image(
-                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
+                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/tick.png")),
                                             20,
                                             20,
                                             true,
@@ -558,7 +558,7 @@ public class Settings {
                                 latestVersion,
                                 new ImageView(
                                         new Image(
-                                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/warning.png")),
                                                 20,
                                                 20,
                                                 true,
@@ -592,7 +592,7 @@ public class Settings {
             if (!Files.exists(Paths.get(directory))) {
 
                 ImageView warningImage = new ImageView(new Image(
-                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                        Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/warning.png")),
                         25,
                         25,
                         true,
@@ -622,7 +622,7 @@ public class Settings {
                 if (!checkerTempFile.mkdir() || !checkerTempFile.delete()) {
 
                     ImageView warningImage = new ImageView(new Image(
-                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/warning.png")),
                             25,
                             25,
                             true,
@@ -690,7 +690,7 @@ public class Settings {
                     elementContainer.getChildren().add(
                             new ImageView(
                                     new Image(
-                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
+                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/tick.png")),
                                             20,
                                             20,
                                             true,
@@ -708,7 +708,7 @@ public class Settings {
                     elementContainer.getChildren().add(
                             new ImageView(
                                     new Image(
-                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/warning.png")),
                                             20,
                                             20,
                                             true,
@@ -774,7 +774,7 @@ public class Settings {
                                     1,
                                     new ImageView(
                                             new Image(
-                                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/tick.png")),
+                                                    Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/tick.png")),
                                                     20,
                                                     20,
                                                     true,
@@ -791,7 +791,7 @@ public class Settings {
                                             1,
                                             new ImageView(
                                                     new Image(
-                                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                                                            Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/warning.png")),
                                                             20,
                                                             20,
                                                             true,
@@ -810,7 +810,7 @@ public class Settings {
                                 1,
                                 new ImageView(
                                         new Image(
-                                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/warning.png")),
+                                                Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/statuses/warning.png")),
                                                 20,
                                                 20,
                                                 true,

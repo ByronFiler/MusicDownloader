@@ -35,7 +35,7 @@ public class Main extends Application {
         );
         Parent root = loader.load();
         primaryStage.setScene(new Scene(root, 638, 850));
-        primaryStage.getIcons().add(new Image(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/icon.png"))));
+        primaryStage.getIcons().add(new Image(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("resources/img/icons/icon.png"))));
         primaryStage.setTitle(ResourceBundle.getBundle("resources.locale.search").getString("hero"));
         primaryStage.show();
         primaryStage.setOnCloseRequest(this::handleClose);
