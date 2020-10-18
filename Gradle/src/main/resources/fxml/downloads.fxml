@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane id="root" fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="600.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"  fx:controller="musicdownloader.controllers.Downloads">
+   <BorderPane prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <center>
+         <VBox fx:id="viewContainer" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+            <BorderPane.margin>
+               <Insets bottom="10.0" left="30.0" right="30.0" top="30.0" />
+            </BorderPane.margin>
+            <Label styleClass="title" text="%title">
+               <padding>
+                  <Insets bottom="10.0" />
+               </padding>
+            </Label>
+            <BorderPane prefHeight="30.0" prefWidth="540.0">
+               <left>
+                  <Label fx:id="eventViewTitle" styleClass="sub_title3" underline="true" BorderPane.alignment="CENTER" />
+               </left>
+               <right>
+                  <ComboBox fx:id="eventViewSelector" onAction="#selectionUpdate" prefWidth="150.0" BorderPane.alignment="CENTER" />
+               </right>
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+            </BorderPane>
+            <ListView fx:id="eventsViewTable" styleClass="table" VBox.vgrow="ALWAYS">
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin></ListView>
+         </VBox>
+      </center>
+      <bottom>
+         <BorderPane maxHeight="45.0" minHeight="40.0" prefHeight="45.0" BorderPane.alignment="CENTER">
+            <right>
+               <Button mnemonicParsing="false" onAction="#searchView" prefHeight="40.0" prefWidth="120.0" text="%backButton" BorderPane.alignment="CENTER" />
+            </right>
+            <left>
+               <HBox prefHeight="100.0" prefWidth="200.0" spacing="10.0" BorderPane.alignment="CENTER">
+                  <BorderPane fx:id="albumViewSelectorWrapper" maxHeight="40.0" maxWidth="40.0" onMouseClicked="#albumsView" prefHeight="40.0" prefWidth="40.0" styleClass="underline2">
+                     <center>
+                        <ImageView fx:id="albumViewSelector" fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true" BorderPane.alignment="CENTER">
+                           <BorderPane.margin>
+                              <Insets bottom="5.0" />
+                           </BorderPane.margin>
+                           <Image url="@../img/album_default.png" />
+                        </ImageView>
+                     </center>
+                     <cursor>
+                        <Cursor fx:constant="HAND" />
+                     </cursor>
+                  </BorderPane>
+                  <BorderPane fx:id="songViewSelectorWrapper" maxHeight="45.0" maxWidth="40.0" minHeight="45.0" minWidth="40.0" onMouseClicked="#songsView" prefHeight="45.0" prefWidth="40.0">
+                     <center>
+                        <ImageView fx:id="songViewSelector" fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true" BorderPane.alignment="CENTER">
+                           <BorderPane.margin>
+                              <Insets bottom="5.0" />
+                           </BorderPane.margin>
+                           <Image url="@../img/song_default.png" />
+                        </ImageView>
+                     </center>
+                     <cursor>
+                        <Cursor fx:constant="HAND" />
+                     </cursor>
+                  </BorderPane>
+               </HBox>
+            </left>
+            <BorderPane.margin>
+               <Insets bottom="30.0" left="30.0" right="30.0" />
+            </BorderPane.margin>
+         </BorderPane>
+      </bottom>
+      <top>
+         <BorderPane fx:id="offlineNotification" managed="false" maxHeight="30.0" minHeight="30.0" prefHeight="30.0" prefWidth="638.0" style="-fx-background-color: #1569C7;" visible="false" BorderPane.alignment="CENTER">
+            <left>
+               <Label text="Device is offline" textFill="WHITE" BorderPane.alignment="CENTER">
+                  <BorderPane.margin>
+                     <Insets left="10.0" />
+                  </BorderPane.margin>
+                  <font>
+                     <Font name="Arial Bold" size="12.0" />
+                  </font>
+               </Label>
+            </left>
+         </BorderPane>
+      </top>
+   </BorderPane>
+</AnchorPane>

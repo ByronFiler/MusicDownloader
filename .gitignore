@@ -1,7 +1,6 @@
-/out
-/target
-/.idea
-/src/META-INF
+Gradle/.gradle
+Gradle/build
+Gradle/gradle
 *.class
 *.DS_Store
 *.txt

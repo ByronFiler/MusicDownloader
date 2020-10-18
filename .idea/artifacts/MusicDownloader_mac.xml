@@ -1,0 +1,53 @@
+<component name="ArtifactManager">
+  <artifact type="javafx" name="MusicDownloader mac">
+    <output-path>$PROJECT_DIR$/out/artifacts/MusicDownloader_mac</output-path>
+    <properties id="javafx-properties">
+      <options>
+        <option name="appClass" value="musicdownloader.Main" />
+        <option name="convertCss2Bin" value="true" />
+        <option name="description" value="A tool for downloading songs and albums." />
+        <option name="height" value="800" />
+        <option name="htmlPlaceholderId" value="" />
+        <option name="icons">
+          <JavaFxApplicationIcons>
+            <option name="linuxIcon" value="$PROJECT_DIR$/src/main/resources/img/icon.png" />
+            <option name="macIcon" value="$PROJECT_DIR$/src/main/resources/img/icon.icns" />
+            <option name="windowsIcon" value="$PROJECT_DIR$/src/main/resources/img/icon.ico" />
+          </JavaFxApplicationIcons>
+        </option>
+        <option name="nativeBundle" value="dmg" />
+        <option name="title" value="Music Downloader" />
+        <option name="vendor" value="Byron Filer" />
+        <option name="version" value="1.0" />
+      </options>
+    </properties>
+    <root id="root">
+      <element id="archive" name="MusicDownloader.jar">
+        <element id="module-output" name="MusicDownloader" />
+        <element id="module-output" name="Gradle.main" />
+        <element id="library" level="project" name="Gradle: com.mpatric:mp3agic:0.9.1" />
+        <element id="library" level="project" name="Gradle: commons-io:commons-io:2.6" />
+        <element id="library" level="project" name="Gradle: org.jsoup:jsoup:1.11.3" />
+        <element id="library" level="project" name="Gradle: org.json:json:20090211" />
+        <element id="library" level="project" name="Gradle: commons-codec:commons-codec:1.9" />
+        <element id="library" level="project" name="Gradle: org.controlsfx:controlsfx:11.0.1" />
+        <element id="library" level="project" name="Gradle: com.github.fracpete:musicg:1.4.2.2" />
+        <element id="library" level="project" name="Gradle: javazoom:jlayer:1.0.1" />
+        <element id="library" level="project" name="Gradle: org:jaudiotagger:2.0.3" />
+        <element id="library" level="project" name="Gradle: org.webjars:font-awesome:5.13.1" />
+        <element id="library" level="project" name="Gradle: org.apache.commons:commons-compress:1.1" />
+        <element id="library" level="project" name="Gradle: org.openjfx:javafx-web:linux:11.0.2" />
+        <element id="library" level="project" name="Gradle: org.openjfx:javafx-controls:11.0.2" />
+        <element id="library" level="project" name="Gradle: org.openjfx:javafx-controls:linux:11.0.2" />
+        <element id="library" level="project" name="Gradle: org.openjfx:javafx-swing:linux:11.0.2" />
+        <element id="library" level="project" name="Gradle: org.openjfx:javafx-media:11.0.2" />
+        <element id="library" level="project" name="Gradle: org.openjfx:javafx-media:linux:11.0.2" />
+        <element id="library" level="project" name="Gradle: org.openjfx:javafx-graphics:11.0.2" />
+        <element id="library" level="project" name="Gradle: org.openjfx:javafx-graphics:linux:11.0.2" />
+        <element id="library" level="project" name="Gradle: org.openjfx:javafx-base:11.0.2" />
+        <element id="library" level="project" name="Gradle: org.openjfx:javafx-base:linux:11.0.2" />
+        <element id="dir-copy" path="$PROJECT_DIR$/src/main/resources" />
+      </element>
+    </root>
+  </artifact>
+</component>

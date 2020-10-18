@@ -1,0 +1,698 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ArtifactsWorkspaceSettings">
+    <artifacts-to-build>
+      <artifact name="MusicDownloader" />
+    </artifacts-to-build>
+  </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="7cb7ac38-a675-4fe4-843c-4fbbe0dde603" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/6.1/executionHistory/executionHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/6.1/executionHistory/executionHistory.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/6.1/executionHistory/executionHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/6.1/executionHistory/executionHistory.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/6.1/fileContent/fileContent.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/6.1/fileContent/fileContent.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/6.1/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/6.1/fileHashes/fileHashes.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/6.1/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/6.1/fileHashes/fileHashes.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/buildOutputCleanup/outputFiles.bin" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/buildOutputCleanup/outputFiles.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/checksums/checksums.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/checksums/md5-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/checksums/md5-checksums.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/.gradle/checksums/sha1-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/.gradle/checksums/sha1-checksums.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/build/libs/Gradle-1.0-SNAPSHOT.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/build/tmp/jar/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/build/tmp/jar/MANIFEST.MF" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gradle/settings.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/Gradle/settings.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/controllers/Search.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/model/Download.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/model/Model.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/model/Search.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/model/Settings.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/model/View.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/app/Debug.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/app/Resources.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/AudioAnalysis.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/CacheManager.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/ConnectionWatcher.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/Downloader.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/GZip.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/Install.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/ProcessDebugger.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/QuickSort.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/validation/History.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/io/validation/Settings.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/net/db/Album.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/net/db/Search.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/net/db/Song.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/net/source/Site.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/net/source/sites/Vimeo.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/musicdownloader/utils/net/source/sites/YouTube.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/css/dark.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/css/main.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/css/standard.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/fxml/results.fxml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/fxml/settings.fxml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/de.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/en.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/es.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/fr.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/ja.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/ru.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/img/flags/zh.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_de.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_en.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_es.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_fr.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_ja.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_ru.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/downloads_zh.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_de.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_en.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_es.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_fr.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_ja.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_ru.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/notification_zh.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_de.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_en.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_es.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_fr.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_ja.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_ru.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/results_zh.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_de.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_en.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_es.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_fr.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_ja.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_ru.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/search_zh.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_de.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_en.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_es.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_fr.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_ja.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_ru.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/locale/settings_zh.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/meta.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/controllers/settingsTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/app/ResourcesTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/io/cacheManagerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/io/gzipTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/io/installTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/net/db/sites/AllmusicTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/net/source/sites/VimeoTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/musicdownloader/utils/net/source/sites/YoutubeTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/resources/416791769641077.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/resources/4619245642105123.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/resources/808553218544595.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/resources/downloads0.gz" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/resources/downloads1.gz" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CodeInsightWorkspaceSettings">
+    <option name="optimizeImportsOnTheFly" value="true" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$/Gradle">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <task path="$PROJECT_DIR$/Gradle">
+          <activation />
+        </task>
+        <task path="">
+          <activation />
+        </task>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="musicdownloader" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Tag Library Descriptor" />
+        <option value="Interface" />
+        <option value="JUnit5 Test Class" />
+        <option value="FxmlFile" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="mavenHome" value="C:\Program Files\JetBrains\IntelliJ IDEA 2019.3.4\plugins\maven\lib\maven3" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="ProjectId" id="1fYvksxgdh7xmezpMsXoLQMbpus" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="showLibraryContents" value="true" />
+    <option name="sortByType" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
+    <property name="Downloaded.Files.Path.Enabled" value="false" />
+    <property name="Repository.Attach.Annotations" value="false" />
+    <property name="Repository.Attach.JavaDocs" value="false" />
+    <property name="Repository.Attach.Sources" value="false" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary" value="JUnit5" />
+    <property name="com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit5" value="" />
+    <property name="extract.method.default.visibility" value="private" />
+    <property name="last_directory_selection" value="$PROJECT_DIR$/src/main/musicdownloader" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../timetable" />
+    <property name="nodejs_package_manager_path" value="npm" />
+    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.proportion" value="0.15" />
+    <property name="project.structure.side.proportion" value="0.3954023" />
+    <property name="restartRequiresConfirmation" value="false" />
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
+    <property name="settings.editor.selected.configurable" value="reference.projectsettings.compiler.javacompiler" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CreateTestDialog.RecentsKey">
+      <recent name="musicdownloader.utils.net.source.sites" />
+      <recent name="musicdownloader.utils.app" />
+      <recent name="musicdownloader.utils.fx" />
+      <recent name="musicdownloader.utils.net.db.sites" />
+      <recent name="MusicDownloader.controllers" />
+    </key>
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="musicdownloader.utils.io" />
+      <recent name="main" />
+      <recent name="MusicDownloader.model" />
+      <recent name="MusicDownloader.utils.io" />
+      <recent name="sample.utils" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\byron\Documents\Dev\MusicDownloader\src\main\resources\fxml" />
+      <recent name="C:\Users\byron\Documents\Dev\MusicDownloader\src\main\resources\locale" />
+    </key>
+    <key name="CreateTestDialog.Recents.Supers">
+      <recent name="" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\byron\Documents\Dev\MusicDownloader\Gradle\src\main" />
+      <recent name="C:\Users\byron\Documents\Dev\MusicDownloader\Gradle" />
+      <recent name="C:\Users\byron\Documents\Dev\MusicDownloader\src\main\resources\fxml" />
+      <recent name="C:\Users\byron\Documents\Dev\MusicDownloader\src\main\resources\img\misc" />
+      <recent name="C:\Users\byron\Documents\Dev\MusicDownloader\src\main\resources\img\media" />
+    </key>
+  </component>
+  <component name="RunAnythingCache">
+    <option name="myCommands">
+      <command value="gradle build" />
+    </option>
+  </component>
+  <component name="RunManager" selected="Gradle.Gradle [run]">
+    <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="musicdownloader.Main" />
+      <module name="musicdownloader.main" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="musicdownloader.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="ArquillianTestNG" factoryName="" nameIsGenerated="true">
+      <option name="arquillianRunConfiguration">
+        <value>
+          <option name="containerStateName" value="" />
+        </value>
+      </option>
+      <option name="TEST_OBJECT" value="CLASS" />
+      <properties />
+      <listeners />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Gradle [dependencies]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Gradle" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="dependencies" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <GradleScriptDebugEnabled>true</GradleScriptDebugEnabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="Gradle [jar]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Gradle" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="jar" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <GradleScriptDebugEnabled>true</GradleScriptDebugEnabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="Gradle [run]" type="GradleRunConfiguration" factoryName="Gradle">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Gradle" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="--warning-mode all --scan --scan --stacktrace" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="run" />
+          </list>
+        </option>
+        <option name="vmOptions" value="" />
+      </ExternalSystemSettings>
+      <GradleScriptDebugEnabled>true</GradleScriptDebugEnabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="Gradle" type="GradleRunConfiguration" factoryName="Gradle" nameIsGenerated="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Gradle" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list />
+        </option>
+        <option name="vmOptions" value="" />
+      </ExternalSystemSettings>
+      <GradleScriptDebugEnabled>true</GradleScriptDebugEnabled>
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Application.Main" />
+      <item itemvalue="Gradle.Gradle [run]" />
+      <item itemvalue="Gradle.Gradle" />
+      <item itemvalue="Gradle.Gradle [jar]" />
+      <item itemvalue="Gradle.Gradle [dependencies]" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Gradle.Gradle [jar]" />
+        <item itemvalue="Gradle.Gradle [dependencies]" />
+        <item itemvalue="Application.Main" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="7cb7ac38-a675-4fe4-843c-4fbbe0dde603" name="Default Changelist" comment="" />
+      <created>1596407988428</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1596407988428</updated>
+      <workItem from="1596407989598" duration="341000" />
+      <workItem from="1596408338925" duration="913000" />
+      <workItem from="1596409262498" duration="1589000" />
+      <workItem from="1596410861406" duration="155000" />
+      <workItem from="1596415598509" duration="6665000" />
+      <workItem from="1596456426242" duration="2856000" />
+      <workItem from="1596460471749" duration="1697000" />
+      <workItem from="1596462182120" duration="63000" />
+      <workItem from="1596462254669" duration="1247000" />
+      <workItem from="1596463686158" duration="21000" />
+      <workItem from="1596463718199" duration="10072000" />
+      <workItem from="1596492530758" duration="514000" />
+      <workItem from="1596493058909" duration="236000" />
+      <workItem from="1596493304106" duration="226000" />
+      <workItem from="1596493541336" duration="7821000" />
+      <workItem from="1596504213961" duration="3165000" />
+      <workItem from="1596546943396" duration="10194000" />
+      <workItem from="1596638080588" duration="2073000" />
+      <workItem from="1596678951413" duration="4899000" />
+      <workItem from="1596683894749" duration="12000" />
+      <workItem from="1596753632497" duration="1387000" />
+      <workItem from="1596803419903" duration="10517000" />
+      <workItem from="1596932575010" duration="6494000" />
+      <workItem from="1597007916303" duration="11736000" />
+      <workItem from="1597066061009" duration="24102000" />
+      <workItem from="1597159953913" duration="14174000" />
+      <workItem from="1597264541186" duration="15004000" />
+      <workItem from="1597310594718" duration="30171000" />
+      <workItem from="1597390401984" duration="20443000" />
+      <workItem from="1597443862476" duration="5408000" />
+      <workItem from="1597502603949" duration="23518000" />
+      <workItem from="1597535808522" duration="8316000" />
+      <workItem from="1597602572635" duration="10703000" />
+      <workItem from="1597667862116" duration="3461000" />
+      <workItem from="1597673358425" duration="91000" />
+      <workItem from="1597673702189" duration="12817000" />
+      <workItem from="1597711103633" duration="1112000" />
+      <workItem from="1597760824735" duration="5481000" />
+      <workItem from="1597878084763" duration="723000" />
+      <workItem from="1597924020629" duration="6587000" />
+      <workItem from="1597947584867" duration="10349000" />
+      <workItem from="1597976064750" duration="4122000" />
+      <workItem from="1597982097190" duration="1910000" />
+      <workItem from="1598013590125" duration="5820000" />
+      <workItem from="1598036668480" duration="164000" />
+      <workItem from="1598108800324" duration="45000" />
+      <workItem from="1598126225297" duration="8350000" />
+      <workItem from="1598141503943" duration="3383000" />
+      <workItem from="1598147319527" duration="1453000" />
+      <workItem from="1598188826478" duration="2400000" />
+      <workItem from="1598261007944" duration="8436000" />
+      <workItem from="1598273365685" duration="1545000" />
+      <workItem from="1598274920241" duration="3105000" />
+      <workItem from="1598285874896" duration="1566000" />
+      <workItem from="1598353422977" duration="14259000" />
+      <workItem from="1598430825478" duration="18960000" />
+      <workItem from="1598469527213" duration="2595000" />
+      <workItem from="1598472158108" duration="15737000" />
+      <workItem from="1598535927021" duration="15468000" />
+      <workItem from="1598566940840" duration="7061000" />
+      <workItem from="1598630617173" duration="15992000" />
+      <workItem from="1598698741761" duration="13340000" />
+      <workItem from="1598771716389" duration="24772000" />
+      <workItem from="1598836739008" duration="798000" />
+      <workItem from="1598959749848" duration="39849000" />
+      <workItem from="1599141319496" duration="21938000" />
+      <workItem from="1599183409558" duration="1955000" />
+      <workItem from="1599239882409" duration="15016000" />
+      <workItem from="1599267714282" duration="13000" />
+      <workItem from="1599324954938" duration="4592000" />
+      <workItem from="1599389755860" duration="13000000" />
+      <workItem from="1599437939922" duration="1230000" />
+      <workItem from="1599498278635" duration="12264000" />
+      <workItem from="1599532289711" duration="454000" />
+      <workItem from="1599533566923" duration="2397000" />
+      <workItem from="1599536911099" duration="197000" />
+      <workItem from="1599577536809" duration="109000" />
+      <workItem from="1599577658263" duration="5565000" />
+      <workItem from="1599609308405" duration="4233000" />
+      <workItem from="1599672570146" duration="12366000" />
+      <workItem from="1599747754707" duration="8789000" />
+      <workItem from="1599794347184" duration="2236000" />
+      <workItem from="1599835446358" duration="18698000" />
+      <workItem from="1599864474637" duration="125000" />
+      <workItem from="1599864627990" duration="5285000" />
+      <workItem from="1599876865528" duration="342000" />
+      <workItem from="1599916308676" duration="6443000" />
+      <workItem from="1599953840164" duration="9357000" />
+      <workItem from="1600001526274" duration="25813000" />
+      <workItem from="1600076276833" duration="5015000" />
+      <workItem from="1600126332092" duration="2736000" />
+      <workItem from="1600185235189" duration="16020000" />
+      <workItem from="1600265578167" duration="16158000" />
+      <workItem from="1600348578484" duration="4761000" />
+      <workItem from="1600354674595" duration="3195000" />
+      <workItem from="1600390388857" duration="4129000" />
+      <workItem from="1600434203411" duration="8064000" />
+      <workItem from="1600471003917" duration="6620000" />
+      <workItem from="1600529191068" duration="15452000" />
+      <workItem from="1600608164219" duration="7000" />
+      <workItem from="1600702236806" duration="739000" />
+      <workItem from="1600703004153" duration="100000" />
+      <workItem from="1600769287941" duration="602000" />
+      <workItem from="1600849454941" duration="5568000" />
+      <workItem from="1600855955924" duration="24141000" />
+      <workItem from="1601400965927" duration="21447000" />
+      <workItem from="1601645347670" duration="4924000" />
+      <workItem from="1601729965078" duration="10890000" />
+      <workItem from="1601901433205" duration="2014000" />
+      <workItem from="1601906703146" duration="14059000" />
+      <workItem from="1601980074771" duration="17580000" />
+      <workItem from="1602352222730" duration="29140000" />
+      <workItem from="1602537379611" duration="9334000" />
+      <workItem from="1602601304822" duration="8955000" />
+      <workItem from="1602690773008" duration="6977000" />
+      <workItem from="1602713531112" duration="3634000" />
+      <workItem from="1602875644340" duration="3870000" />
+      <workItem from="1602890898857" duration="4327000" />
+      <workItem from="1602948860164" duration="1177000" />
+      <workItem from="1602958114459" duration="14274000" />
+      <workItem from="1602973646205" duration="5350000" />
+      <workItem from="1602979089907" duration="65000" />
+      <workItem from="1602979245396" duration="1537000" />
+      <workItem from="1603004024206" duration="2955000" />
+      <workItem from="1603007038198" duration="712000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="586" y="198" key="#Inspections" timestamp="1599184438413">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="586" y="198" key="#Inspections/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1599184438413" />
+    <state x="666" y="291" key="#Log_Highlighting_(ideolog)" timestamp="1596679214580">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="666" y="291" key="#Log_Highlighting_(ideolog)/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1596679214580" />
+    <state x="440" y="94" key="#Project_Structure" timestamp="1599520275947">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="440" y="94" key="#Project_Structure/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1599520275947" />
+    <state x="414" y="62" width="1092" height="978" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1603005636219">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="414" y="62" width="1092" height="978" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1603005636219" />
+    <state x="92" y="92" width="1736" height="856" key="#com.intellij.execution.junit2.states.ComparisonFailureState$DiffDialog" timestamp="1598476710006">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="92" y="92" width="1736" height="856" key="#com.intellij.execution.junit2.states.ComparisonFailureState$DiffDialog/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1598476710006" />
+    <state x="699" y="322" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1599917051955">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="699" y="322" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1599917051955" />
+    <state x="765" y="226" key="#com.intellij.ide.util.MemberChooser" timestamp="1602959978471">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="765" y="226" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1602959978471" />
+    <state x="689" y="322" key="#com.intellij.ide.util.TreeClassChooserDialog" timestamp="1599520217521">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="689" y="322" key="#com.intellij.ide.util.TreeClassChooserDialog/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1599520217521" />
+    <state x="790" y="230" key="#com.intellij.openapi.roots.ui.configuration.libraryEditor.LibraryEditorDialog" timestamp="1597711883859">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="790" y="230" key="#com.intellij.openapi.roots.ui.configuration.libraryEditor.LibraryEditorDialog/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1597711883859" />
+    <state x="633" y="444" key="#com.intellij.refactoring.move.MoveHandler.SelectRefactoringDialog" timestamp="1598273867145">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="633" y="444" key="#com.intellij.refactoring.move.MoveHandler.SelectRefactoringDialog/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1598273867145" />
+    <state x="743" y="389" width="433" height="268" key="#com.intellij.refactoring.move.moveClassesOrPackages.MoveClassesOrPackagesDialog.classes" timestamp="1600009011073">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="743" y="389" width="433" height="268" key="#com.intellij.refactoring.move.moveClassesOrPackages.MoveClassesOrPackagesDialog.classes/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1600009011073" />
+    <state x="756" y="401" key="#com.intellij.refactoring.move.moveClassesOrPackages.MoveClassesOrPackagesDialog.packages" timestamp="1598272305143">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="756" y="401" key="#com.intellij.refactoring.move.moveClassesOrPackages.MoveClassesOrPackagesDialog.packages/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1598272305143" />
+    <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog" timestamp="1601831322530">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1601831322530" />
+    <state x="690" y="267" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1600307082228">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="690" y="267" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1600307082228" />
+    <state x="690" y="267" key="#com.intellij.refactoring.typeMigration.ui.FailedConversionsDialog" timestamp="1602594973801">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="690" y="267" key="#com.intellij.refactoring.typeMigration.ui.FailedConversionsDialog/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1602594973801" />
+    <state x="749" y="273" key="#xdebugger.XInspectDialog" timestamp="1596847441167">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="749" y="273" key="#xdebugger.XInspectDialog/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1596847441167" />
+    <state x="707" y="354" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1" timestamp="1597318123247">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="707" y="354" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1597318123247" />
+    <state x="635" y="237" key="FileChooserDialogImpl" timestamp="1602973893829">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="635" y="237" key="FileChooserDialogImpl/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1602973893829" />
+    <state width="1877" height="277" key="GridCell.Tab.0.bottom" timestamp="1603007552370">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1877" height="274" key="GridCell.Tab.0.bottom/0.0.1920.1040/-1920.0.1920.1040@-1920.0.1920.1040" timestamp="1601905633958" />
+    <state width="1877" height="277" key="GridCell.Tab.0.bottom/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1603007552370" />
+    <state width="1877" height="277" key="GridCell.Tab.0.center" timestamp="1603007552369">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1877" height="274" key="GridCell.Tab.0.center/0.0.1920.1040/-1920.0.1920.1040@-1920.0.1920.1040" timestamp="1601905633958" />
+    <state width="1877" height="277" key="GridCell.Tab.0.center/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1603007552369" />
+    <state width="1877" height="277" key="GridCell.Tab.0.left" timestamp="1603007552369">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1877" height="274" key="GridCell.Tab.0.left/0.0.1920.1040/-1920.0.1920.1040@-1920.0.1920.1040" timestamp="1601905633958" />
+    <state width="1877" height="277" key="GridCell.Tab.0.left/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1603007552369" />
+    <state width="1877" height="277" key="GridCell.Tab.0.right" timestamp="1603007552369">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1877" height="274" key="GridCell.Tab.0.right/0.0.1920.1040/-1920.0.1920.1040@-1920.0.1920.1040" timestamp="1601905633958" />
+    <state width="1877" height="277" key="GridCell.Tab.0.right/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1603007552369" />
+    <state width="1877" height="348" key="GridCell.Tab.1.bottom" timestamp="1603004591834">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1877" height="348" key="GridCell.Tab.1.bottom/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1603004591834" />
+    <state width="1877" height="348" key="GridCell.Tab.1.center" timestamp="1603004591834">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1877" height="348" key="GridCell.Tab.1.center/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1603004591834" />
+    <state width="1877" height="348" key="GridCell.Tab.1.left" timestamp="1603004591833">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1877" height="348" key="GridCell.Tab.1.left/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1603004591833" />
+    <state width="1877" height="348" key="GridCell.Tab.1.right" timestamp="1603004591834">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1877" height="348" key="GridCell.Tab.1.right/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1603004591834" />
+    <state x="440" y="94" key="SettingsEditor" timestamp="1603006409925">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="-1480" y="94" key="SettingsEditor/0.0.1920.1040/-1920.0.1920.1040@-1920.0.1920.1040" timestamp="1601902371136" />
+    <state x="440" y="94" key="SettingsEditor/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1603006409925" />
+    <state x="776" y="298" key="chooseDestDirectoryDialog" timestamp="1598276787224">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="776" y="298" key="chooseDestDirectoryDialog/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1598276787224" />
+    <state x="664" y="412" key="com.intellij.jarRepository.RepositoryAttachDialog-DOWNLOAD" timestamp="1598457609370">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="664" y="412" key="com.intellij.jarRepository.RepositoryAttachDialog-DOWNLOAD/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1598457609370" />
+    <state x="565" y="130" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser" timestamp="1600558199807">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="565" y="130" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1600558199807" />
+    <state x="636" y="136" key="com.intellij.testIntegration.createTest.CreateTestDialog" timestamp="1599866138040">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="636" y="136" key="com.intellij.testIntegration.createTest.CreateTestDialog/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1599866138040" />
+    <state x="512" y="249" width="895" height="629" key="com.intellij.xdebugger.impl.breakpoints.ui.BreakpointsDialogFactory$2" timestamp="1596682484041">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="512" y="249" width="895" height="629" key="com.intellij.xdebugger.impl.breakpoints.ui.BreakpointsDialogFactory$2/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1596682484041" />
+    <state x="270" y="0" width="1150" height="1027" key="dock-window-1" timestamp="1602590849332">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="270" y="0" width="1150" height="1027" key="dock-window-1/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1602590849332" />
+    <state x="-1536" y="70" width="1552" height="725" maximized="true" key="dock-window-2" timestamp="1600221664713">
+      <screen x="-1920" y="0" width="1920" height="1040" />
+    </state>
+    <state x="-1536" y="70" width="1552" height="725" maximized="true" key="dock-window-2/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1600221664713" />
+    <state x="-1536" y="2" width="1552" height="725" maximized="true" key="dock-window-3" timestamp="1600265814076">
+      <screen x="-1920" y="0" width="1920" height="1040" />
+    </state>
+    <state x="-1536" y="2" width="1552" height="725" maximized="true" key="dock-window-3/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1600265814076" />
+    <state x="1137" y="203" key="extract.method.dialog" timestamp="1602386178851">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="1137" y="203" key="extract.method.dialog/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1602386178851" />
+    <state x="754" y="183" width="585" height="592" key="find.popup" timestamp="1602975535063">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="754" y="183" width="585" height="592" key="find.popup/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1602975535063" />
+    <state x="342" y="181" key="new project wizard" timestamp="1602974780535">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="342" y="181" key="new project wizard/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1602974780535" />
+    <state x="616" y="240" width="672" height="677" key="run.anything.popup" timestamp="1596410140308">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="616" y="240" width="672" height="677" key="run.anything.popup/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1596410140308" />
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1602695007563">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1602695007563" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.lang.UnsupportedOperationException" package="java.lang" />
+          <option name="timeStamp" value="1" />
+        </breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>
