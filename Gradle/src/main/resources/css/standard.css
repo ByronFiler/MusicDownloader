@@ -16,12 +16,24 @@
     -fx-text-fill: #211a23;
 }
 
-.sub_title1_selected {
-    -fx-text-fill: black;
+.sub_title1_unselected {
+    -fx-text-fill: #707070;
 }
 
 .sub_title2 {
     -fx-text-fill: #2e242c;
+}
+
+.sectionLinkContainer {
+    -fx-border-radius: 25 25 25 25;
+    -fx-background-radius: 25 25 25 25;
+    -fx-border-width: 2;
+
+    -fx-border-color: transparent;
+}
+
+.sectionLinkContainer:hover {
+    -fx-border-color: black;
 }
 
 .sub_text {

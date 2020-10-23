@@ -29,12 +29,21 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws IOException {
 
         new CacheManager(Model.getInstance().download.getDownloadHistory());
+
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getClassLoader().getResource("fxml/container.fxml"),
+                ResourceBundle.getBundle("locale.container")
+        );
+
+        /*
         FXMLLoader loader = new FXMLLoader(
                 getClass().getClassLoader().getResource("fxml/search.fxml"),
                 ResourceBundle.getBundle("locale.search")
         );
+         */
+
         Parent root = loader.load();
-        primaryStage.setScene(new Scene(root, 638, 850));
+        primaryStage.setScene(new Scene(root, 850, 800));
         primaryStage.getIcons().add(new Image(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("img/icon.png"))));
         primaryStage.setTitle(ResourceBundle.getBundle("locale.search").getString("hero"));
         primaryStage.show();

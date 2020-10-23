@@ -16,6 +16,11 @@
     -fx-font-size: 22px;
 }
 
+.sub_title1_unselected {
+    -fx-font-weight: bold;
+    -fx-font-size: 22px;
+}
+
 .sub_title1_strikethrough .text{
     -fx-strikethrough: true;
 }

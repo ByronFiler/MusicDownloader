@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import org.controlsfx.control.ToggleSwitch?>
+
+<BorderPane fx:id="root" prefHeight="800.0" prefWidth="600.0" styleClass="root" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="musicdownloader.controllers.Settings">
+   <center>
+      <VBox pickOnBounds="false" spacing="20.0" styleClass="result" BorderPane.alignment="CENTER">
+         <BorderPane.margin>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </BorderPane.margin>
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+         <children>
+            <BorderPane prefHeight="24.0" prefWidth="521.0" styleClass="underline">
+               <top>
+                  <Label styleClass="sub_title1" text="%settingTitle" BorderPane.alignment="TOP_LEFT" />
+               </top>
+            </BorderPane>
+            <VBox prefHeight="141.0" prefWidth="510.0">
+               <children>
+                  <HBox prefHeight="23.0" prefWidth="570.0" styleClass="underline">
+                     <children>
+                        <Label styleClass="sub_title1" text="%InformationTitle" />
+                     </children>
+                  </HBox>
+                  <VBox prefHeight="106.0" prefWidth="500.0">
+                     <children>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <left>
+                              <Label styleClass="sub_text" text="%VersionSubtext" BorderPane.alignment="CENTER" />
+                           </left>
+                           <right>
+                              <HBox fx:id="versionContainer" spacing="5">
+                                 <children>
+                                    <Label fx:id="version" styleClass="sub_text" text="%awaitCheckSubtext" BorderPane.alignment="CENTER" />
+                                 </children>
+                              </HBox>
+                           </right>
+                        </BorderPane>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <left>
+                              <Label styleClass="sub_text" text="%LatestVersionSubtext" BorderPane.alignment="CENTER" />
+                           </left>
+                           <right>
+                              <HBox fx:id="latestVersionContainer" spacing="5">
+                                 <children>
+                                    <Label fx:id="latestVersion" styleClass="sub_text" text="%awaitCheckSubtext" BorderPane.alignment="CENTER" />
+                                 </children>
+                              </HBox>
+                           </right>
+                        </BorderPane>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <left>
+                              <Label styleClass="sub_text" text="%youtubeDlSubtext" BorderPane.alignment="CENTER" />
+                           </left>
+                           <right>
+                              <HBox fx:id="youtubeDlContainer" spacing="5">
+                                 <children>
+                                    <Label fx:id="youtubeDl" styleClass="sub_text" text="%awaitCheckSubtext" BorderPane.alignment="CENTER" />
+                                 </children>
+                              </HBox>
+                           </right>
+                        </BorderPane>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <left>
+                              <Label styleClass="sub_text" text="%ffmpegSubtext" BorderPane.alignment="CENTER" />
+                           </left>
+                           <right>
+                              <HBox fx:id="ffmpegContainer" spacing="5">
+                                 <children>
+                                    <Label fx:id="ffmpeg" styleClass="sub_text" text="%awaitCheckSubtext" BorderPane.alignment="CENTER" />
+                                 </children>
+                              </HBox>
+                           </right>
+                        </BorderPane>
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
+            <VBox prefHeight="113.0" prefWidth="500.0">
+               <children>
+                  <HBox prefHeight="25.0" prefWidth="570.0" styleClass="underline">
+                     <children>
+                        <Label styleClass="sub_title1" text="%FilesTitle" />
+                     </children>
+                  </HBox>
+                  <VBox prefWidth="500.0" spacing="5">
+                     <children>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <right>
+                              <HBox fx:id="outputDirectoryContainer">
+                                 <children>
+                                    <Label fx:id="outputDirectory" accessibleText="Click to change." onMouseClicked="#selectNewFolder" styleClass="sub_text" textAlignment="RIGHT" BorderPane.alignment="CENTER">
+                                       <cursor>
+                                          <Cursor fx:constant="HAND" />
+                                       </cursor>
+                                    </Label>
+                                 </children>
+                              </HBox>
+                           </right>
+                           <left>
+                              <Label styleClass="sub_text" text="%musicDirSubtext" BorderPane.alignment="CENTER" />
+                           </left>
+                        </BorderPane>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <left>
+                              <Label styleClass="sub_text" text="%musicFormatSubtext" BorderPane.alignment="CENTER" />
+                           </left>
+                           <right>
+                              <ComboBox fx:id="musicFormat" onAction="#saveSettings" prefWidth="150.0" styleClass="selector" BorderPane.alignment="CENTER" />
+                           </right>
+                        </BorderPane>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <left>
+                              <Label styleClass="sub_text" text="%saveAlbumArtSubtext" BorderPane.alignment="CENTER" />
+                           </left>
+                           <right>
+                              <ComboBox fx:id="saveAlbumArt" onAction="#saveSettings" prefWidth="150.0" styleClass="selector" BorderPane.alignment="CENTER" />
+                           </right>
+                        </BorderPane>
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
+            <VBox prefWidth="500.0" spacing="5">
+               <children>
+                  <HBox prefHeight="25.0" prefWidth="570.0" styleClass="underline">
+                     <children>
+                        <Label styleClass="sub_title1" text="%AudioTitle" />
+                     </children>
+                  </HBox>
+                  <BorderPane prefHeight="30.0" prefWidth="500.0">
+                     <left>
+                        <Label styleClass="sub_text" text="%advancedValidationSubtext" BorderPane.alignment="CENTER" />
+                     </left>
+                     <right>
+                        <ToggleSwitch fx:id="advancedValidationToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
+                     </right>
+                  </BorderPane>
+                  <BorderPane prefHeight="30.0" prefWidth="500.0">
+                     <left>
+                        <Label styleClass="sub_text" text="%volumeCorrectionSubtext" BorderPane.alignment="CENTER" />
+                     </left>
+                     <right>
+                        <ToggleSwitch fx:id="volumeCorrectionToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
+                     </right>
+                  </BorderPane>
+               </children>
+            </VBox>
+            <VBox prefWidth="100.0" spacing="5">
+               <children>
+                  <HBox prefHeight="24.0" prefWidth="570.0" styleClass="underline">
+                     <children>
+                        <Label styleClass="sub_title1" text="%MetaDataTitle" />
+                     </children>
+                  </HBox>
+                  <BorderPane prefHeight="30.0" prefWidth="200.0">
+                     <left>
+                        <Label styleClass="sub_text" text="%albumArtSubtext" BorderPane.alignment="CENTER" />
+                     </left>
+                     <right>
+                        <ToggleSwitch fx:id="albumArtToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
+                     </right>
+                  </BorderPane>
+                  <BorderPane prefHeight="30.0" prefWidth="200.0">
+                     <left>
+                        <Label styleClass="sub_text" text="%albumTitleSubtext" BorderPane.alignment="CENTER" />
+                     </left>
+                     <right>
+                        <ToggleSwitch fx:id="albumTitleToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
+                     </right>
+                  </BorderPane>
+                  <BorderPane prefHeight="30.0" prefWidth="200.0">
+                     <left>
+                        <Label styleClass="sub_text" text="%songTitleSubtext" BorderPane.alignment="CENTER" />
+                     </left>
+                     <right>
+                        <ToggleSwitch fx:id="songTitleToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
+                     </right>
+                  </BorderPane>
+                  <BorderPane prefHeight="30.0" prefWidth="200.0">
+                     <left>
+                        <Label styleClass="sub_text" text="%artistSubtext" BorderPane.alignment="CENTER" />
+                     </left>
+                     <right>
+                        <ToggleSwitch fx:id="artistToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
+                     </right>
+                  </BorderPane>
+                  <BorderPane prefHeight="30.0" prefWidth="200.0">
+                     <left>
+                        <Label styleClass="sub_text" text="%yearSubtext" BorderPane.alignment="CENTER" />
+                     </left>
+                     <right>
+                        <ToggleSwitch fx:id="yearToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
+                     </right>
+                  </BorderPane>
+                  <BorderPane prefHeight="30.0" prefWidth="200.0">
+                     <left>
+                        <Label styleClass="sub_text" text="%trackNumberSubtext" BorderPane.alignment="CENTER" />
+                     </left>
+                     <right>
+                        <ToggleSwitch fx:id="trackNumberToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
+                     </right>
+                  </BorderPane>
+               </children>
+            </VBox>
+            <BorderPane>
+               <top>
+                  <VBox prefWidth="500.0" BorderPane.alignment="CENTER">
+                     <children>
+                        <HBox prefHeight="25.0" prefWidth="570.0" styleClass="underline">
+                           <children>
+                              <Label styleClass="sub_title1" text="%ApplicationConfigurationTitle" />
+                           </children>
+                        </HBox>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <left>
+                              <Label styleClass="sub_text" text="%languageSubtext" BorderPane.alignment="CENTER" />
+                           </left>
+                           <right>
+                              <ComboBox fx:id="language" onAction="#updateLanguage" prefWidth="150.0" styleClass="selector" BorderPane.alignment="CENTER" />
+                           </right>
+                        </BorderPane>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <left>
+                              <Label styleClass="sub_text" text="%darkThemeSubtitle" BorderPane.alignment="CENTER" />
+                           </left>
+                           <right>
+                              <ToggleSwitch fx:id="darkThemeToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
+                           </right>
+                        </BorderPane>
+                        <BorderPane prefHeight="30.0" prefWidth="500.0">
+                           <left>
+                              <Label styleClass="sub_text" text="%dataSaverSubtitle" BorderPane.alignment="CENTER" />
+                           </left>
+                           <right>
+                              <ToggleSwitch fx:id="dataSaverToggle" onMouseClicked="#saveSettings" BorderPane.alignment="CENTER" />
+                           </right>
+                        </BorderPane>
+                     </children>
+                  </VBox>
+               </top>
+               <bottom>
+                  <VBox prefHeight="30.0" BorderPane.alignment="CENTER">
+                     <children>
+                        <BorderPane maxHeight="30.0" minHeight="30.0" prefHeight="30.0">
+                           <left>
+                              <Label fx:id="reset" onMouseClicked="#resetSettings" onMouseEntered="#selectReset" onMouseExited="#unselectReset" styleClass="sub_text" text="%resetOption" BorderPane.alignment="CENTER">
+                                 <cursor>
+                                    <Cursor fx:constant="HAND" />
+                                 </cursor>
+                              </Label>
+                           </left>
+                        </BorderPane>
+                     </children>
+                  </VBox>
+               </bottom>
+            </BorderPane>
+         </children>
+      </VBox>
+   </center>
+   <top>
+      <BorderPane fx:id="offlineNotification" managed="false" maxHeight="30.0" minHeight="30.0" prefHeight="30.0" prefWidth="638.0" style="-fx-background-color: #1569C7;" visible="false" BorderPane.alignment="CENTER">
+         <left>
+            <Label text="Device is offline" textFill="WHITE" BorderPane.alignment="CENTER">
+               <BorderPane.margin>
+                  <Insets left="10.0" />
+               </BorderPane.margin>
+               <font>
+                  <Font name="Arial Bold" size="12.0" />
+               </font>
+            </Label>
+         </left>
+      </BorderPane>
+   </top>
+</BorderPane>

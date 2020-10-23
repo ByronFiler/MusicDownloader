@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="850.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="musicdownloader.controllers.Container">
+   <children>
+      <StackPane prefHeight="150.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <BorderPane fx:id="viewContainer" prefHeight="200.0" prefWidth="200.0" styleClass="root">
+               <left>
+                  <BorderPane maxWidth="250.0" minWidth="250.0" prefHeight="800.0" prefWidth="250.0" BorderPane.alignment="CENTER">
+                     <center>
+                        <VBox fillWidth="false" maxHeight="160.0" maxWidth="200.0" prefHeight="200.0" prefWidth="100.0" spacing="40.0" BorderPane.alignment="CENTER">
+                           <children>
+                              <HBox onMouseClicked="#searchView" onMouseEntered="#selectSearchView" onMouseExited="#unSelectSearchView" prefHeight="40.0" spacing="10.0" styleClass="sectionLinkContainer">
+                                 <children>
+                                    <ImageView fx:id="searchIcon" fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true">
+                                       <image>
+                                          <Image url="@../img/search.png" />
+                                       </image>
+                                    </ImageView>
+                                    <BorderPane prefHeight="40.0" prefWidth="100.0">
+                                       <center>
+                                          <Label fx:id="searchText" prefHeight="26.0" prefWidth="102.0" styleClass="sub_title1_unselected" text="%search" BorderPane.alignment="CENTER" />
+                                       </center>
+                                    </BorderPane>
+                                 </children>
+                                 <cursor>
+                                    <Cursor fx:constant="HAND" />
+                                 </cursor>
+                                 <padding>
+                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                 </padding>
+                              </HBox>
+                              <HBox onMouseEntered="#selectConverterView" onMouseExited="#unSelectConverterView" onMousePressed="#converterView" prefHeight="32.0" prefWidth="176.0" spacing="10.0" styleClass="sectionLinkContainer">
+                                 <children>
+                                    <ImageView fx:id="converterIcon" fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true">
+                                       <image>
+                                          <Image url="@../img/converter.png" />
+                                       </image>
+                                    </ImageView>
+                                    <BorderPane prefHeight="40.0">
+                                       <center>
+                                          <Label fx:id="converterText" styleClass="sub_title1_unselected" text="%converter" BorderPane.alignment="CENTER" />
+                                       </center>
+                                    </BorderPane>
+                                 </children>
+                                 <cursor>
+                                    <Cursor fx:constant="HAND" />
+                                 </cursor>
+                                 <padding>
+                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                 </padding>
+                              </HBox>
+                              <HBox onMouseEntered="#selectDownloadsView" onMouseExited="#unSelectDownloadsView" onMousePressed="#downloadsView" prefHeight="40.0" prefWidth="188.0" spacing="10.0" styleClass="sectionLinkContainer">
+                                 <children>
+                                    <ImageView fx:id="downloaderIcon" fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true">
+                                       <image>
+                                          <Image url="@../img/icon.png" />
+                                       </image>
+                                    </ImageView>
+                                    <BorderPane prefHeight="40.0" prefWidth="135.0" styleClass="sub_title1_unselected">
+                                       <center>
+                                          <Label fx:id="downloaderText" styleClass="sub_title1_unselected" text="%downloads" BorderPane.alignment="CENTER" />
+                                       </center>
+                                    </BorderPane>
+                                 </children>
+                                 <cursor>
+                                    <Cursor fx:constant="HAND" />
+                                 </cursor>
+                                 <opaqueInsets>
+                                    <Insets />
+                                 </opaqueInsets>
+                                 <padding>
+                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                 </padding>
+                              </HBox>
+                           </children>
+                        </VBox>
+                     </center>
+                     <bottom>
+                        <HBox onMouseEntered="#selectSettingsView" onMouseExited="#unSelectSettingsView" onMousePressed="#settingsView" prefHeight="40.0" spacing="10.0" styleClass="sectionLinkContainer" BorderPane.alignment="CENTER">
+                           <children>
+                              <ImageView fx:id="settingsIcon" fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true">
+                                 <image>
+                                    <Image url="@../img/settings.png" />
+                                 </image>
+                              </ImageView>
+                              <BorderPane prefHeight="40.0">
+                                 <center>
+                                    <Label fx:id="settingsText" styleClass="sub_title1_unselected" text="%settings" BorderPane.alignment="CENTER" />
+                                 </center>
+                              </BorderPane>
+                           </children>
+                           <cursor>
+                              <Cursor fx:constant="HAND" />
+                           </cursor>
+                           <padding>
+                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                           </padding>
+                        </HBox>
+                     </bottom>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </BorderPane>
+               </left>
+               <top>
+                  <BorderPane fx:id="offlineNotification" managed="false" maxHeight="30.0" minHeight="30.0" prefHeight="30.0" prefWidth="638.0" style="-fx-background-color: #1569C7;" visible="false" BorderPane.alignment="CENTER">
+                     <left>
+                        <Label text="Device is offline" textFill="WHITE" BorderPane.alignment="CENTER">
+                           <BorderPane.margin>
+                              <Insets left="10.0" />
+                           </BorderPane.margin>
+                           <font>
+                              <Font name="Arial Bold" size="12.0" />
+                           </font>
+                        </Label>
+                     </left>
+                  </BorderPane>
+               </top>
+               <center>
+                  <AnchorPane prefHeight="800.0" prefWidth="600.0" BorderPane.alignment="CENTER">
+                     <children>
+                        <StackPane fx:id="controllerContainer" prefHeight="800.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                     </children>
+                  </AnchorPane>
+               </center>
+            </BorderPane>
+         </children>
+      </StackPane>
+   </children>
+</AnchorPane>
